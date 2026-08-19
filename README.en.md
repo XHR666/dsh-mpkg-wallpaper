@@ -16,7 +16,7 @@ One plugin covers the whole wallpaper chain — import, parsing, playback, rotat
 - **Video files**: pick an mp4/webm file directly as a video background
 
 **🌊 Full-screen frosted blur suite**
-- **Unified blur (own section)**: one slider controls the wallpaper blur degree of the whole screen (0 = sharp, higher = more blurred); sidebar/title-bar fog thickness, chat-area follow and new-chat button follow are adjustable independently; when on it takes over the items below (sidebar frost, title-bar frost and the frosted-blur slider are disabled with a hint)
+- **Unified blur (own section)**: one slider controls the wallpaper blur degree of the whole screen (0 = sharp, higher = more blurred); sidebar fog thickness, chat-area follow and new-chat button follow are adjustable independently; when on it takes over the sidebar frost and the frosted-blur slider (the title bar is NOT taken over - it follows its own frost slider, transparent by default)
 - **UI blur (own section)**:
   - **Blur dialogs**: generic center-screen windows + the chat input box (frosted backdrop; text scrolling under the input box turns hazy)
   - **Blur settings panel**: the DSH settings panel with its own toggle + amount
@@ -51,7 +51,7 @@ One plugin covers the whole wallpaper chain — import, parsing, playback, rotat
 
 - **Background source**: master toggle, hybrid large-file mode, .mpkg file, image URL, local image/GIF, local wallpaper library (Steam discovery + custom folder + folder picker), wallpaper switching & rotation
 - **Appearance**: panel opacity, frosted blur, lens zoom, lens position
-- **Unified blur**: full-screen blur toggle + amount, sidebar/title-bar fog thickness, chat-area follow, new-chat button follow
+- **Unified blur**: full-screen blur toggle + amount, sidebar fog thickness, chat-area follow, new-chat button follow
 - **UI blur**: dialog / settings panel / download-confirm popup blur (each with its own toggle + amount), popover blur, mask blur, sidebar frost (Aqua scheme), Deep diving background box, title-bar frost/show (independent frost amount)
 - **Other**: sidebar shows wallpaper, light sharpen, third-party UI radius compat (off by default), update check / one-click hot update, restore defaults
 
@@ -106,7 +106,7 @@ Settings → **Wallpaper Engine Background**:
 | Image URL / local image | Plain images or GIFs |
 | Panel opacity | 50–100% |
 | Frosted blur | How blurred the wallpaper itself is, 0–40px (0 = sharp) |
-| Unified blur (own section) | One slider controls the whole screen's wallpaper blur degree (0=sharp, higher=more blurred); sidebar/title-bar fog thickness, chat-area follow and new-chat follow adjustable; takes over the items below when on |
+| Unified blur (own section) | One slider controls the whole screen's wallpaper blur degree (0=sharp, higher=more blurred); sidebar fog thickness, chat-area follow and new-chat follow adjustable; takes over sidebar frost and the frosted-blur slider when on (title bar keeps its own frost slider) |
 | Dialog / settings panel / confirm popup / popover / mask blur | Each with its own toggle + amount slider; sidebar frost (Aqua scheme, auto-lifted while a dialog is open) |
 | Lens zoom / position | Zoom (10–2000%) and pan the background; zoom out to see components at the picture edges |
 | Sidebar / title-bar wallpaper | Toggles; off = solid opaque color for that area; title-bar frost amount adjustable independently |
