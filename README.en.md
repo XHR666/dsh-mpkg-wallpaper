@@ -230,3 +230,8 @@ dsh-mpkg-wallpaper/
   - **Mobile**: screen-record in the Wallpaper Engine app
 - The plugin behaves identically on every platform (Windows/Linux/macOS/mobile): preview.gif, embedded video textures and time-of-day switching all work.
 
+## Acknowledgements
+
+- [Bil812](https://github.com/Bil812) — proposed wallpaper tint, adaptive text color and full-screen unified-mask appearance ideas in [PR #2](https://github.com/XHR666/dsh-mpkg-wallpaper/pull/2) and maintains a long-running fork. The wallpaper tint, adaptive ink, blue-cleanup and color-picker ideas were absorbed as the plugin's **Aqua experiment** mode (toggles, off by default).
+- [awesome-dsh-plugin](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin) community — listing & promotion.
+
