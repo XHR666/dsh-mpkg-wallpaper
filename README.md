@@ -117,47 +117,41 @@
 
 ## 安装
 
-### 方式一：dsh plugin add（推荐）
+插件已发布到 npm（`dsh-mpkg-wallpaper`）。任选一种：
+
+### 方式一：dsh plugin add（推荐，市场可识别）
 
 ```bash
 dsh plugin --profile web add dsh-mpkg-wallpaper
 # 重启 dsh web 后浏览器 Ctrl+F5 生效
 ```
 
-### 方式二：pnpm 安装（profile 是 pnpm workspace 时的标准做法）
+从 npm 官方仓库安装，会写入 profile 的 `package.json` 依赖表——插件市场自动识别为「已安装」，并可显示下载量、用市场管理更新。
+
+### 方式二：pnpm 手动安装（profile 是 pnpm workspace 时）
 
 ```bash
-# 1. 把插件目录放到 profile 的 node_modules 下
-#    （或用 GitHub 下载的 zip 解压）
-git clone https://github.com/XHR666/dsh-mpkg-wallpaper.git $DSH_HOME/profiles/web/node_modules/dsh-mpkg-wallpaper
-#    （若 profile 不在 ~/.dsh/profiles/web，把路径换成你的 profile 目录）
-
-# 2. 在 profile 的 cordis.patch.yml 注册一行：
-#    - insert:
-#        - id: dsh-mpkg-wallpaper
-#          name: dsh-mpkg-wallpaper
-
-# 3. 重启 dsh web，浏览器 Ctrl+F5 生效
+# 在 profile 目录下执行（将 <profile> 换成你的 profile 名，如 web）
+pnpm --dir $DSH_HOME/profiles/<profile> add dsh-mpkg-wallpaper
+# 重启 dsh web，浏览器 Ctrl+F5 生效
 ```
 
-> 注：DSH profile 使用 pnpm workspace（`pnpm-workspace.yaml`，`nodeLinker: hoisted`），
-> 插件目录放在 profile 的 `node_modules/` 下即可被 pnpm 的 hoisted 链接识别，
-> 无需手动改 lockfile；若你更习惯 registry 安装，用方式一 `dsh plugin add`。
+同样写入依赖表，市场可识别。若你的环境没有 pnpm，用方式一（`dsh plugin add` 内部就是 pnpm）。
 
-### 方式三：GitHub 克隆
+### 方式三：GitHub 克隆（开发者 / 离线场景）
 
 ```bash
 git clone https://github.com/XHR666/dsh-mpkg-wallpaper.git $DSH_HOME/profiles/node_modules/dsh-mpkg-wallpaper
+# 然后在 profile 的 cordis.patch.yml 注册：
+#   - insert:
+#       - id: dsh-mpkg-wallpaper
+#         name: dsh-mpkg-wallpaper
+# 重启后生效
 ```
 
-卸载：`dsh plugin --profile web remove dsh-mpkg-wallpaper`（或删除挂载行 + 插件目录 + 重启）。
+> 注：方式三是手动放置，**不会**写入依赖表——插件市场不识别为「已安装」（仅影响市场显示，不影响功能）。要市场识别请用方式一/方式二，并移除旧的手动副本（`cordis.patch.yml` 的 insert 行 + 插件目录），避免同一插件被加载两次。
 
-> **为什么插件市场里显示了本插件、但「已安装插件」列表里没有？**
-> 插件市场的已安装检测只读 profile 的 `package.json` 依赖表。方式二/方式三（手动 clone
-> 到 `node_modules` + `cordis.patch.yml` insert）不会被依赖表记录，所以市场判为「未安装」
-> ——不影响壁纸功能，只是市场显示如此。想被市场识别为已安装（并可用市场管理更新），
-> 请用**方式一** `dsh plugin add` 安装，并把旧的手动副本（`cordis.patch.yml` 的 insert 行 +
-> 插件目录）移除，避免同一插件被加载两次。
+卸载：`dsh plugin --profile web remove dsh-mpkg-wallpaper`。
 
 
 ## 官方文档

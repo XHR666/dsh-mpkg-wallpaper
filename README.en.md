@@ -117,48 +117,47 @@ Settings → **Wallpaper Engine Background**:
 
 ## Install
 
-### Option 1: dsh plugin add (recommended)
+The plugin is published on npm (`dsh-mpkg-wallpaper`). Pick one:
+
+### Option 1: dsh plugin add (recommended, market-recognized)
 
 ```bash
 dsh plugin --profile web add dsh-mpkg-wallpaper
 # restart dsh web, then hard-refresh the browser (Ctrl+F5)
 ```
 
-### Option 2: pnpm install (standard for the pnpm-workspace profile)
+Installs from the official npm registry and writes into the profile's `package.json`
+dependencies — the plugin market recognizes it as installed, shows the download count,
+and can manage updates.
+
+### Option 2: pnpm manual install (pnpm-workspace profile)
 
 ```bash
-# 1. Put the plugin folder under the profile's node_modules (or extract the GitHub zip)
-git clone https://github.com/XHR666/dsh-mpkg-wallpaper.git $DSH_HOME/profiles/web/node_modules/dsh-mpkg-wallpaper
-#    (if your profile is not at ~/.dsh/profiles/web, use your profile directory)
-
-# 2. Register a line in the profile's cordis.patch.yml:
-#    - insert:
-#        - id: dsh-mpkg-wallpaper
-#          name: dsh-mpkg-wallpaper
-
-# 3. Restart dsh web, then Ctrl+F5 in the browser
+# run in the profile directory (replace <profile> with your profile name, e.g. web)
+pnpm --dir $DSH_HOME/profiles/<profile> add dsh-mpkg-wallpaper
+# restart dsh web, then Ctrl+F5 in the browser
 ```
 
-> Note: the DSH profile is a pnpm workspace (`pnpm-workspace.yaml`, `nodeLinker: hoisted`),
-> so a plugin folder under the profile's `node_modules/` is picked up by pnpm's hoisted
-> linking automatically — no manual lockfile edits. Prefer Option 1 (`dsh plugin add`) if
-> you want a registry install.
+Also writes into the dependency table, so the market recognizes it. No pnpm available?
+Use Option 1 (`dsh plugin add` wraps pnpm).
 
-### Option 3: Git clone
+### Option 3: Git clone (developers / offline)
 
 ```bash
 git clone https://github.com/XHR666/dsh-mpkg-wallpaper.git $DSH_HOME/profiles/node_modules/dsh-mpkg-wallpaper
+# then register in the profile's cordis.patch.yml:
+#   - insert:
+#       - id: dsh-mpkg-wallpaper
+#         name: dsh-mpkg-wallpaper
+# restart to take effect
 ```
 
-Uninstall: `dsh plugin --profile web remove dsh-mpkg-wallpaper` (or remove the mount line + delete the plugin directory + restart).
-
-> **Why does the plugin market show this plugin but not in the "installed plugins" list?**
-> The market's installed detection reads only the profile's `package.json` dependencies.
-> Manual installs (Option 2/3: clone into `node_modules` + `cordis.patch.yml` insert) are
-> not recorded there, so the market reports "not installed" — this only affects the market
-> display, not the wallpaper feature. To be recognized as installed (and market-managed for
-> updates), install via **Option 1** `dsh plugin add` and remove the old manual copy (the
+> Note: Option 3 is a manual placement and is **not** recorded in the dependency table —
+> the market won't report it as installed (market display only; the wallpaper feature is
+> unaffected). For market recognition use Option 1/2, and remove the old manual copy (the
 > `cordis.patch.yml` insert line + plugin directory) to avoid double-loading the plugin.
+
+Uninstall: `dsh plugin --profile web remove dsh-mpkg-wallpaper`.
 
 
 ## Official Docs
