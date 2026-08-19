@@ -195,6 +195,11 @@ dsh-mpkg-wallpaper/
 ```
 
 
+## 致谢
+
+- [Bil812](https://github.com/Bil812) — 在 [PR #2](https://github.com/XHR666/dsh-mpkg-wallpaper/pull/2) 中提出壁纸取色、自适应文字色、全屏统一遮罩等外观方案，并长期维护 fork。其中**壁纸取色、自适应文字色、蓝色清理、取色盘**等思路已吸收为本插件的「Aqua 实验」模式（可开关，默认关）。
+- [awesome-dsh-plugin](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin) 社区 — 收录与推广。
+
 ## GitHub 发布说明
 
 ### 可移植性（在他人的设备上也能用）
@@ -227,9 +232,4 @@ dsh-mpkg-wallpaper/
   - **Linux 桌面**：we-layerd 渲染 → 录屏
   - **移动端**：壁纸引擎 App 录屏
 - 插件在任意平台（Windows/Linux/macOS/移动端）的 dsh web 上功能一致：preview.gif / 内嵌视频纹理 / 多时段切换全部可用
-
-## 致谢
-
-- [Bil812](https://github.com/Bil812) — 在 [PR #2](https://github.com/XHR666/dsh-mpkg-wallpaper/pull/2) 中提出壁纸取色、自适应文字色、全屏统一遮罩等外观方案，并长期维护 fork。其中**壁纸取色、自适应文字色、蓝色清理、取色盘**等思路已吸收为本插件的「Aqua 实验」模式（可开关，默认关）。
-- [awesome-dsh-plugin](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin) 社区 — 收录与推广。
 
