@@ -64,7 +64,7 @@ The plugin offers two partial solutions (chosen automatically by scene content):
 1. **Static-frame extraction**: parses `scene.pkg` (PKG container + LZ4 + TEX decode) and picks the main texture → **high-resolution static image** (photography/illustration scenes near-original quality; tested up to 7680×4320)
 2. **Layer compositing**: parses all `image` layers in `scene.json` (background + subject + layered character parts) and draws them **accurately composited** on a canvas using the source coordinates/sizes; time-variation scenes pick the frame for the current hour
 
-**Not covered**: MDL puppet characters (Kal'sit, Blue Archive characters, etc. — the body is assembled from rig parts; the flat textures are nearly empty, e.g. `girl.tex` is 0.1% opaque), shader wave/particle effects, scripted interactions. These fall back to the **official preview animation** (preview.gif).
+**Not covered**: MDL puppet characters (the body is assembled from rig parts; the flat textures are nearly empty), shader wave/particle effects, scripted interactions. These fall back to the **official preview animation** (preview.gif).
 
 > For full dynamic scenes, the practical path: render externally to video → use the plugin's **video wallpaper** (Windows: official WE app screen-record; Linux: we-layerd; mobile: WE app screen-record).
 
