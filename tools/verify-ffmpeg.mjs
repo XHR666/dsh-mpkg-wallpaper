@@ -27,10 +27,14 @@ const check = (name, cond, extra = '') => {
 
 const rCheck = routes.find((r) => r.path === '/api/mpkg-wallpaper/ffmpeg-check');
 const rDownload = routes.find((r) => r.path === '/api/mpkg-wallpaper/ffmpeg-download');
+const rUninstall = routes.find((r) => r.path === '/api/mpkg-wallpaper/ffmpeg-uninstall');
 const rProgress = routes.find((r) => r.path === '/api/mpkg-wallpaper/transcode-progress');
 const rTranscode = routes.find((r) => r.kind === 'prefix' && r.path === '/api/mpkg-wallpaper/transcode');
 
 check('route ffmpeg-check registered', !!rCheck);
+check('route ffmpeg-uninstall registered', !!rUninstall);
+const rCheckRes = rCheck ? call(rCheck, '/api/mpkg-wallpaper/ffmpeg-check') : null;
+check('ffmpeg-check reports source', rCheckRes ? /"source"/.test(rCheckRes.res.body || '') : false, rCheckRes ? rCheckRes.res.body : '');
 check('route ffmpeg-download registered', !!rDownload);
 check('route transcode-progress registered', !!rProgress);
 check('route transcode (prefix) registered', !!rTranscode);
