@@ -126,22 +126,23 @@ Uninstall: `dsh plugin --profile web remove dsh-mpkg-wallpaper`.
 - **Huge assets** (pure-browser mode): standalone video >600MB, video textures >250MB, images >200MB unsupported; **hybrid mode** has no such limit
 - Scene static-frame / layer-composite **first extraction takes a few seconds** (longer for 8K textures); afterwards served from cache
 
-## Screenshots
+<!-- ## Screenshots
 
-![Sidebar collapsed · new session](screenshots/dhsw1.jpg)
+<!-- ![Sidebar collapsed · new session](screenshots/dhsw1.jpg) -->
 
-*The dynamic wallpaper fills the whole UI. Sidebar collapsed, chat box centered with frosted blur; the sidebar is fully transparent so the wallpaper shows through cleanly.*
+<!-- *The dynamic wallpaper fills the whole UI. Sidebar collapsed, chat box centered with frosted blur; the sidebar is fully transparent so the wallpaper shows through cleanly.* -->
 
-![Sidebar expanded](screenshots/dshw2.jpg)
+<!-- ![Sidebar expanded](screenshots/dshw2.jpg) -->
 
-*After adjusting panel opacity and unified blur: most UI areas are opacity-adjustable, the sidebar is semi-transparent with the wallpaper faintly visible behind.*
+<!-- *After adjusting panel opacity and unified blur: most UI areas are opacity-adjustable, the sidebar is semi-transparent with the wallpaper faintly visible behind.* -->
 
-![Settings page](screenshots/dshw3.jpg)
+<!-- ![Settings page](screenshots/dshw3.jpg) -->
 
-*The wallpaper settings page. Beyond the screenshot, nearly everything is adjustable: unified blur, UI blur (dialogs/panels/popups/popovers/mask/sidebar frost), lens zoom & pan, wallpaper flip, theme color, sidebar/title-bar visibility, sharpen, and scene layer compositing with time-frame switching.*
+<!-- *The wallpaper settings page. Beyond the screenshot, nearly everything is adjustable: unified blur, UI blur (dialogs/panels/popups/popovers/mask/sidebar frost), lens zoom & pan, wallpaper flip, theme color, sidebar/title-bar visibility, sharpen, and scene layer compositing with time-frame switching.* -->
 
-Wallpapers in the screenshots are by Bilibili UP【-夜莺Night】: [author page](https://b23.tv/86CyaFw)
+<!-- Wallpapers in the screenshots are by Bilibili UP【-夜莺Night】: [author page](https://b23.tv/86CyaFw) -->
 
+-->
 ## Official Docs
 
 Wallpaper Engine official help site: [help.wallpaperengine.io](https://help.wallpaperengine.io). mpkg/tex/mdl are proprietary formats without official docs (format knowledge in this plugin comes from RePKG / lwe public reverse-engineering).
