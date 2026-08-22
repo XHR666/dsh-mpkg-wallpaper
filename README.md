@@ -71,7 +71,7 @@
 ## 可调参数与网页壁纸的设置接入
 
 - **mpkg 壁纸**：项目自带的**可调参数**在「可调参数」折叠区**只读展示**（浏览器显示的是预渲染素材，修改需在壁纸引擎 App 中生效），供对照。
-- **网页壁纸（部分已接入，Live2D 立绘类）**：部分网页壁纸（如碧蓝档案 / 星穹铁道的 Live2D 立绘，通常含 `loadJson.json` 的 `SettingModel`）自带设置项，现在**已经接入插件设置页**——在**同一个「可调参数」折叠区**里可直接修改：
+- **网页壁纸（部分已接入，Live2D 立绘类）**：部分网页壁纸（Live2D 立绘，通常含 `loadJson.json` 的 `SettingModel`）自带设置项，现在**已经接入插件设置页**——在**同一个「可调参数」折叠区**里可直接修改：
   - **分辨率 2k / 4k / 8k**（重载生效）
   - **语言**（按壁纸实际提供：中文 / 日本語 / English / Tiếng Việt / Русский 等）
   - **背景音乐与语音音量**（实时生效，不重载）
@@ -171,10 +171,6 @@ git clone https://github.com/XHR666/dsh-mpkg-wallpaper.git $DSH_HOME/profiles/no
 <!-- 截图中的壁纸来自 B 站 UP 主【-夜莺Night】的壁纸作品：[作者主页](https://b23.tv/86CyaFw) -->
 
 -->
-## 官方文档
-
-Wallpaper Engine 官方帮助站 [help.wallpaperengine.io](https://help.wallpaperengine.io)；mpkg/tex/mdl 为专有格式，官方未公开文档（本插件格式知识来自 RePKG / lwe 公开逆向）。
-
 ## 反馈 Bug
 
 反馈问题时请附带：

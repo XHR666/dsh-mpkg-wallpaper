@@ -71,7 +71,7 @@ A plugin for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harn
 ## Adjustable options & web-wallpaper settings wiring
 
 - **mpkg wallpapers**: the project's own **adjustable options** are shown **read-only** in the collapsible "Adjustable options" area (the browser shows pre-rendered assets; apply changes in the WE app).
-- **Web wallpapers (some wired in — Live2D portraits)**: some web wallpapers (e.g. Blue Archive / Honkai Star Rail Live2D portraits, usually with a `loadJson.json` `SettingModel`) have built-in options — now **wired into the plugin settings page**, editable in the **same collapsible "Adjustable options" area**:
+- **Web wallpapers (some wired in — Live2D portraits)**: some web wallpapers (Live2D portraits, usually with a `loadJson.json` `SettingModel`) have built-in options — now **wired into the plugin settings page**, editable in the **same collapsible "Adjustable options" area**:
   - **Resolution 2k / 4k / 8k** (reloads the wallpaper)
   - **Language** (per wallpaper: 中文 / 日本語 / English / Tiếng Việt / Русский …)
   - **BGM & voice volume** (live, no reload)
@@ -171,10 +171,6 @@ Uninstall: `dsh plugin --profile web remove dsh-mpkg-wallpaper`.
 <!-- Wallpapers in the screenshots are by Bilibili UP【-夜莺Night】: [author page](https://b23.tv/86CyaFw) -->
 
 -->
-## Official Docs
-
-Wallpaper Engine official help site: [help.wallpaperengine.io](https://help.wallpaperengine.io). mpkg/tex/mdl are proprietary formats without official docs (format knowledge in this plugin comes from RePKG / lwe public reverse-engineering).
-
 ## Bug Reports
 
 Please include:
