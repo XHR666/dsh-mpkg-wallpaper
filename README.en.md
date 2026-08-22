@@ -35,6 +35,15 @@ A plugin for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harn
 - **Unified fog** (full-screen mask with one fog color, strength slider), **panel wallpaper-matching color** (auto sample + strength slider + custom picker), **adaptive text + blue cleanup** (brand unified, custom picker), **dark-background text readability**, **todo-list frost**
 - Appearance tab also has: floating cards, clock, etc.
 
+**🧩 dsh-better-sidebar adaptation (shown when that plugin is detected)**
+- When [dsh-better-sidebar](https://github.com/) is installed, an **adaptation section** appears in the "Appearance / Other" tabs with a master toggle + sub-toggles:
+  - **Floating double-layer fix** (bsFloat): makes the floating sidebar's inner `pane/tabBar` background transparent so no double solid rectangle appears when floating
+  - **Reveal level** (bsReveal + bsRevealAlpha slider): how much wallpaper shows through the better-sidebar surface (higher = more transparent)
+  - **Follow theme / Aqua** (bsAlpha / bsAqua): better-sidebar panel follows the theme base / the unified-fog color
+  - **Bottom panel avoidance** (bsBottomAvoid): the bottom panel stays aligned with the DSH center column (handled by better-sidebar's own ResizeObserver — no manual offset)
+  - Font follow (bsFont) and other sub-toggles
+- The host `/ping` endpoint auto-detects whether better-sidebar is installed; the section is hidden when it is not
+
 **🎬 Lens & picture**
 - Lens zoom (10–2000%) & pan, brightness (50–150%), light sharpen, Deep diving background box
 
@@ -46,18 +55,28 @@ A plugin for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harn
 
 **🖼️ Local wallpaper library**
 - **Steam auto-discovery** + **custom folder** (any directory + cross-platform folder picker; .mpkg files and workshop folders can be mixed freely)
-- **Switching & rotation**: prev/next one-click, timed auto-rotation (interval adjustable)
+- **Switching & rotation**: prev/next one-click, timed auto-rotation (interval adjustable); rotation-list checkboxes keep scroll position (no jump-to-top), and unnamed lists get auto-numbered (`Unnamed list N`) so they never collide
 
 **🛡️ Safety & coexistence**
 - **Conflict detection**: auto-disables when another wallpaper/theme plugin is detected
 - **Security boundaries**: .exe/application wallpapers are completely excluded (virus-injection defense); custom folders only read media files; host routes validate against path traversal; web-wallpaper iframes are sandboxed
 
 **🔄 Updates**
-- "Check update" compares **versions** (semver) — un-pushed local changes don't false-positive; "Apply update" pulls the latest code from GitHub, restart to take effect
+- "Check update" compares **versions** (semver) — un-pushed local changes don't false-positive; **the plugin marketplace is the recommended path** (its semver check matches); "Apply update" pulls the latest code from GitHub, restart to take effect
 
 **💾 Backup & restore / settings persistence**
 - The "Other" tab provides **backup & restore**: export appearance settings (Appearance / Unified blur / UI blur / Aqua / Other) to a **shareable JSON file**, import to restore — not the current wallpaper or scanned dirs
 - **Settings persist to a host file**: besides localStorage, settings are written to `~/.dsh-mpkg-wallpaper/settings.json` — **survives port changes / browser-data clears** (following elysia395 v0.4.0)
+
+## ⚡ Performance & stability
+
+- **mpkg head-only reads** (no whole-file load): container parsing reads only the first 2MB head (`openSync+readSync`), so even an 834MB mpkg cold-starts near-instantly — fixes the old "read whole file then slice" 9-second load
+- **Restart self-healing**: custom-folder wallpapers are rebuilt by **filename token** after restart (media 404 retries exhausted → re-parse by mpkgKey); the wallpaper no longer comes back blank after restart
+- **Re-entry guards**: both `applyFromStorage` and the Aqua theme watcher carry a re-entry flag + debounce, preventing "overrideTokens → theme/change → re-entry" infinite loops (the dark-mode + unified-fog scenario once froze the main thread)
+- **Scene cache is byte-bounded**: layer cache has a 128MB byte budget + count cap double-guard; scene.pkg is only read in full on a cache miss (stat-first)
+- **Listeners/timers register once**: storage listener, 60s slot check, inline-style watcher, etc. are de-duplicated — repeated apply/RTC reconnects never accumulate
+- **Lazy loading prevents OOM**: time-variation wallpapers extract only the current slot; hybrid streams large files with minimal memory
+- **Weak-device throttling**: heavy compositing (full-screen backdrop-filter over streaming video) is globally throttled; for extreme WebView combos, Edge / desktop browsers still give the best experience
 
 ## Supported Types & Status
 
@@ -101,7 +120,7 @@ The plugin offers these partial solutions (chosen automatically by scene content
 
 ## Web Wallpapers (Experimental)
 
-- HTML wallpapers load full-screen in a **sandboxed iframe** (`allow-scripts` isolation; **mute toggle, default on**; does not auto-reload after refresh — refresh the page to recover if frozen)
+- HTML wallpapers load full-screen in a **sandboxed iframe** (`allow-scripts` isolation; **mute toggle, default on**; **webUrl is persisted** — auto-recovers after refresh / route changes / RTC reconnects without losing config; refresh the page manually if it ever freezes)
 - **Risk preflight**: auto-classified during scan; badges shown in the list and confirm dialog:
   - **⚠heavy animation**: Spine/L2D skeletal wallpapers — may freeze on low-end devices
   - **🌐external**: depends on external SDK/CDN (e.g. miHoYo event pages) — may fail to load
@@ -111,12 +130,11 @@ The plugin offers these partial solutions (chosen automatically by scene content
 
 - **Source**: master switch, hybrid, mpkg file, image/video files, custom folder (can point at the workshop root), local library (Steam scan), switching/rotation, **time-variation slot lock**
 - **Wallpaper**: mute, mirror flip (horizontal/vertical), video playback speed, adjustable options (mpkg read-only / web wallpapers editable), decode fps cap, resolution cap, ffmpeg status
-- **Appearance**: theme color, floating, frosted blur, lens zoom/position, brightness
+- **Appearance**: theme color, floating, frosted blur, lens zoom/position, brightness, **wallpaper reveal** (sidebar/title-bar visibility, title-bar frost amount, sharpen)
 - **Unified blur**: full-screen blur + sidebar/title-bar fog, chat follow, new-chat follow
 - **UI blur**: dialog/settings/popup/popover/mask/sidebar frost each independent
-- **Wallpaper reveal**: sidebar/title-bar visibility, title-bar frost amount, sharpen
 - **Aqua**: unified fog / panel tint / adaptive text experiment toggles
-- **Other**: clock, update check/apply, **backup & restore**, restore all defaults
+- **Other**: clock, update check/apply, **backup & restore**, restore all defaults; the better-sidebar **adaptation section** appears here when that plugin is installed
 
 ## Installation
 
