@@ -33,10 +33,13 @@ A plugin for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harn
 **🎨 Theme color & glass appearance (Aqua experiment, off by default)**
 - **Theme color (accent)**: color picker + 6 presets driving brand buttons/sliders/selected items/links/send button (`--dsw-alias-brand-*` tokens)
 - **Unified fog** (full-screen mask with one fog color, strength slider), **panel wallpaper-matching color** (auto sample + strength slider + custom picker), **adaptive text + blue cleanup** (brand unified, custom picker), **dark-background text readability**, **todo-list frost**
-- Appearance tab also has: **wallpaper flip** (flipX/flipY), floating cards, clock, etc.
+- Appearance tab also has: floating cards, clock, etc.
 
 **🎬 Lens & picture**
-- Lens zoom (10–2000%) & pan, brightness (50–150%), light sharpen, wallpaper flip, Deep diving background box
+- Lens zoom (10–2000%) & pan, brightness (50–150%), light sharpen, Deep diving background box
+
+**🎛️ Wallpaper settings (tab)**
+- Everything directly tied to the **current wallpaper** lives here: mute (web wallpapers), mirror flip (horizontal/vertical), video playback speed (0.5–2x), adjustable options (mpkg read-only / web wallpapers editable), **decode fps cap** (24/30/48/60, ffmpeg frame-sampling), **resolution cap** (720p/1080p/2K, ffmpeg downscale to cut load), ffmpeg status with download/uninstall
 
 **🚀 Hybrid large-file mode (default on)**
 - mpkg streams to the DSH host → disk storage → HTTP Range streaming, **>600MB files supported**, low memory usage
@@ -64,7 +67,7 @@ A plugin for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harn
 | **mpkg (scene)** | 🟡 Partial | static-frame / layer composite / preview animation (below); slots with video textures auto-switch |
 | **Time-variation wallpaper** | ✅ Full | multi-slot auto-switch + manual lock, lazy loading to avoid OOM |
 | **Video (mp4/webm)** | ✅ Full | plays directly |
-| **Web (HTML)** | 🟡 Experimental | sandboxed iframe; **web wallpapers with settings are wired into the plugin (below)** |
+| **Web (HTML)** | 🟡 Experimental | sandboxed iframe; **web wallpapers with settings are wired into the plugin (below)**; **interactive-feature wallpapers not adapted yet** |
 | **Scene raw folder (scene.pkg)** | 🟡 Partial | same as mpkg scene |
 | **Application (.exe)** | ❌ Excluded | safety: never read/executed |
 
@@ -78,7 +81,7 @@ A plugin for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harn
   - **Show touch-area boxes / show text box** toggles
   - Changes are written to the wallpaper iframe's same-origin localStorage (key = skeleton name), then the wallpaper reloads
 - **Hide the wallpaper's own settings panel**: these web wallpapers show a "Settings" button + panel in the top-right of the wallpaper surface, which can't be interacted with — the plugin **auto-hides it** on iframe load, and you operate the options via the plugin page.
-- **A few web wallpapers are still in progress**: web wallpapers relying on external SDKs / special interaction logic (e.g. some miHoYo event pages) haven't had their built-in options wired in yet; they load as-is.
+- **Wallpapers with interactive features are not adapted yet**: web wallpapers relying on external SDKs / special interaction logic (e.g. some miHoYo event pages, or wallpapers that need login or click interaction) haven't had their built-in options wired in yet — they display fine, but **the in-plugin adjustable options are unavailable for them**.
 
 > These editable web-wallpaper controls only appear after the plugin detects the wallpaper's `loadJson.json`; plain image/video web wallpapers or those without settings show nothing extra.
 
@@ -107,7 +110,8 @@ The plugin offers these partial solutions (chosen automatically by scene content
 ## Settings Tabs
 
 - **Source**: master switch, hybrid, mpkg file, image/video files, custom folder (can point at the workshop root), local library (Steam scan), switching/rotation, **time-variation slot lock**
-- **Appearance**: theme color, flip, floating, frosted blur, lens zoom/position, brightness
+- **Wallpaper**: mute, mirror flip (horizontal/vertical), video playback speed, adjustable options (mpkg read-only / web wallpapers editable), decode fps cap, resolution cap, ffmpeg status
+- **Appearance**: theme color, floating, frosted blur, lens zoom/position, brightness
 - **Unified blur**: full-screen blur + sidebar/title-bar fog, chat follow, new-chat follow
 - **UI blur**: dialog/settings/popup/popover/mask/sidebar frost each independent
 - **Wallpaper reveal**: sidebar/title-bar visibility, title-bar frost amount, sharpen
@@ -150,7 +154,7 @@ Uninstall: `dsh plugin --profile web remove dsh-mpkg-wallpaper`.
 ## Limitations
 
 - **Scene wallpapers cannot be fully dynamic on the web** (see [Scene wallpaper adaptation](#scene-wallpaper-adaptation)); mpkg adjustable options are read-only (apply changes in the WE app)
-- **Web wallpapers are experimental**: heavy animation / external dependencies may freeze or fail (preflight tags + refresh recovery); **web wallpapers with built-in options are partly wired in — a few are still in progress**
+- **Web wallpapers are experimental**: heavy animation / external dependencies may freeze or fail (preflight tags + refresh recovery); **web wallpapers with built-in options are partly wired in — wallpapers with interactive features are not adapted yet**
 - **Huge assets** (pure-browser mode): standalone video >600MB, video textures >250MB, images >200MB unsupported; **hybrid mode** has no such limit
 - Scene static-frame / layer-composite **first extraction takes a few seconds** (longer for 8K textures); afterwards served from cache
 
