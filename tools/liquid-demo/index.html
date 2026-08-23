@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>液态玻璃 · Liquid Glass 演示 (测试页)</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #0e1420; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #eef1f7; }
+  #glassCanvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 1; }
+  /* 背景层：内置渐变 或 上传的视频，都在 glass canvas 之下 */
+  #bgVideo { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; display: none; }
+  #bgFallback { position: fixed; inset: 0; z-index: 0; background:
+    radial-gradient(1200px 800px at 20% 10%, #3a5bd8 0%, transparent 60%),
+    radial-gradient(1000px 700px at 80% 30%, #d84a9a 0%, transparent 55%),
+    radial-gradient(900px 900px at 60% 90%, #12a5b8 0%, transparent 60%),
+    linear-gradient(160deg, #16213a 0%, #0e1420 100%); }
+  /* 顶部控制条 */
+  #bar { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 10; display: flex; gap: 10px; align-items: center; padding: 10px 16px; border-radius: 14px; background: rgba(10,16,30,.72); border: 1px solid rgba(255,255,255,.14); backdrop-filter: blur(12px); font-size: 13px; }
+  #bar button { padding: 6px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.08); color: #eef1f7; font-size: 13px; cursor: pointer; }
+  #bar button:hover { background: rgba(255,255,255,.16); }
+  #bar button.primary { background: #3964fe; border-color: #3964fe; }
+  #bar input[type=file] { display: none; }
+  #bar label { cursor: pointer; padding: 6px 14px; border-radius: 8px; border: 1px dashed rgba(255,255,255,.3); }
+  /* 右侧参数面板 */
+  #panel { position: fixed; right: 16px; top: 50%; transform: translateY(-50%); z-index: 10; width: 240px; padding: 16px; border-radius: 16px; background: rgba(10,16,30,.78); border: 1px solid rgba(255,255,255,.14); backdrop-filter: blur(14px); font-size: 12px; }
+  #panel h3 { margin-bottom: 10px; font-size: 13px; opacity: .85; }
+  #panel .row { margin-bottom: 10px; }
+  #panel label { display: flex; justify-content: space-between; margin-bottom: 2px; opacity: .8; }
+  #panel input[type=range] { width: 100%; }
+  #panel .val { opacity: .9; }
+  #hint { position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 10; font-size: 12px; opacity: .6; background: rgba(0,0,0,.4); padding: 6px 14px; border-radius: 20px; }
+  #status { position: fixed; top: 16px; right: 16px; z-index: 11; font-size: 11px; opacity: .7; text-align: right; }
+</style>
+</head>
+<body>
+<div id="bgFallback"></div>
+<video id="bgVideo" loop muted playsinline></video>
+<canvas id="glassCanvas"></canvas>
+
+<div id="bar">
+  <button class="primary" id="btnWallpaper">🖼 默认壁纸</button>
+  <label for="fileInput">📁 上传视频作壁纸</label>
+  <input type="file" id="fileInput" accept="video/mp4,video/webm,video/*">
+  <button id="btnShape">⬛ 换玻璃形状</button>
+  <button id="btnReset">↺ 重置参数</button>
+</div>
+
+<div id="panel">
+  <h3>⚙️ 液态玻璃参数（V2 清透光学）</h3>
+  <div class="row"><label>磨砂 frost <span class="val" id="vFrost">0.35</span></label><input type="range" id="sFrost" min="0" max="1" step="0.01" value="0.35"></div>
+  <div class="row"><label>折射 refraction <span class="val" id="vRefr">0.6</span></label><input type="range" id="sRefr" min="0" max="2" step="0.01" value="0.6"></div>
+  <div class="row"><label>色调 tint <span class="val" id="vTint">0.2</span></label><input type="range" id="sTint" min="0" max="1" step="0.01" value="0.2"></div>
+  <div class="row"><label>玻璃高度 height <span class="val" id="vH">0.5</span></label><input type="range" id="sH" min="0" max="2" step="0.01" value="0.5"></div>
+  <div class="row"><label>色散 dispersion <span class="val" id="vDisp">0.5</span></label><input type="range" id="sDisp" min="0" max="1" step="0.01" value="0.5"></div>
+  <div class="row"><label>边缘高光 rim <span class="val" id="vRim">0.5</span></label><input type="range" id="sRim" min="0" max="1" step="0.01" value="0.5"></div>
+</div>
+
+<div id="hint">🖱 鼠标划过玻璃面板看折射效果 · 拖底部滑块调参数 · 这是独立测试页（端口 3081），不影响主插件</div>
+<div id="status">LiquidGlass V2 · 状态: 初始化中…</div>
+
+<script type="module">
+import { LiquidGlassWebGLV2 } from './vendor/v2.js';
+
+const canvas = document.getElementById('glassCanvas');
+const bgVideo = document.getElementById('bgVideo');
+const status = document.getElementById('status');
+const fileInput = document.getElementById('fileInput');
+
+// 形状循环
+const SHAPES = ['rect', 'pill', 'circle'];
+let shapeIdx = 0;
+const ELEMENTS = () => [
+  { id: 'a', shape: SHAPES[shapeIdx], x: 90, y: 90, width: 320, height: 200 },
+  { id: 'b', shape: 'pill', x: 460, y: 130, width: 260, height: 96 },
+  { id: 'c', shape: 'circle', x: 780, y: 90, size: 140 },
+  { id: 'd', shape: 'rect', x: 140, y: 360, width: 260, height: 220 },
+  { id: 'e', shape: 'pill', x: 480, y: 340, width: 300, height: 110 },
+];
+
+let glass = null;
+let videoMode = false;
+
+function setStatus(s) { status.textContent = 'LiquidGlass V2 · ' + s; }
+
+function buildGlass() {
+  if (!glass) {
+    glass = new LiquidGlassWebGLV2(canvas, { preserveDrawingBuffer: true });
+  }
+  glass.setElements(ELEMENTS());
+  applyParams();
+}
+
+// 参数绑定
+const bind = (id, valId, key) => {
+  const slider = document.getElementById(id);
+  slider.addEventListener('input', () => {
+    document.getElementById(valId).textContent = slider.value;
+    if (glass) { glass.setMaterial({ [key]: Number(slider.value) }); }
+  });
+};
+bind('sFrost','vFrost','frost');
+bind('sRefr','vRefr','refraction');
+bind('sTint','vTint','tint');
+bind('sH','vH','height');
+bind('sDisp','vDisp','dispersion');
+bind('sRim','vRim','rim');
+
+function applyParams() {
+  if (!glass) return;
+  const g = (id) => Number(document.getElementById(id).value);
+  glass.setMaterial({
+    frost: g('sFrost'), refraction: g('sRefr'), tint: g('sTint'),
+    height: g('sH'), dispersion: g('sDisp'), rim: g('sRim'),
+  });
+}
+
+// 默认壁纸：纯色渐变背景（无视频时玻璃直接采样 DOM 背景 canvas？V2 需要 backdrop 源）
+// 用程序生成的 canvas 渐变作为静态 backdrop
+function makeDefaultBackdrop() {
+  const c = document.createElement('canvas');
+  c.width = 1280; c.height = 720;
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(300, 150, 50, 640, 360, 900);
+  g.addColorStop(0, '#4a6cf7'); g.addColorStop(0.4, '#8a4ad8'); g.addColorStop(0.7, '#d84a9a'); g.addColorStop(1, '#123456');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, 1280, 720);
+  // 画一些光斑让折射可见
+  for (let i = 0; i < 12; i++) {
+    ctx.beginPath();
+    ctx.arc(Math.random()*1280, Math.random()*720, 20+Math.random()*60, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(255,255,255,${0.05+Math.random()*0.12})`;
+    ctx.fill();
+  }
+  return c;
+}
+
+async function init() {
+  try {
+    if (!LiquidGlassWebGLV2) throw new Error('LiquidGlassWebGLV2 未导出');
+    setStatus('初始化…');
+    buildGlass();
+    // 先放默认渐变 backdrop
+    await glass.loadBackdrop(makeDefaultBackdrop());
+    glass.render();
+    setStatus('就绪 · 默认渐变壁纸');
+    console.log('[liquid-demo] V2 ready');
+  } catch (err) {
+    setStatus('初始化失败: ' + (err && err.message || err));
+    console.error('[liquid-demo]', err);
+  }
+}
+
+// 上传视频
+fileInput.addEventListener('change', async () => {
+  const f = fileInput.files && fileInput.files[0];
+  if (!f) return;
+  const url = URL.createObjectURL(f);
+  bgVideo.src = url;
+  bgVideo.style.display = 'block';
+  await bgVideo.play().catch(() => {});
+  // live 模式：视频作为动态 backdrop
+  glass.setBackdrop(bgVideo, { update: 'live', autoStart: true });
+  videoMode = true;
+  setStatus('播放中: ' + f.name);
+  console.log('[liquid-demo] video backdrop', f.name);
+});
+
+document.getElementById('btnWallpaper').addEventListener('click', async () => {
+  videoMode = false;
+  bgVideo.style.display = 'none';
+  bgVideo.pause();
+  await glass.loadBackdrop(makeDefaultBackdrop());
+  glass.render();
+  setStatus('就绪 · 默认渐变壁纸');
+});
+
+document.getElementById('btnShape').addEventListener('click', () => {
+  shapeIdx = (shapeIdx + 1) % SHAPES.length;
+  glass.setElements(ELEMENTS());
+});
+
+document.getElementById('btnReset').addEventListener('click', () => {
+  const vals = { sFrost:0.35, sRefr:0.6, sTint:0.2, sH:0.5, sDisp:0.5, sRim:0.5 };
+  for (const [id,v] of Object.entries(vals)) {
+    document.getElementById(id).value = v;
+    document.getElementById('v'+id.slice(1)).textContent = v;
+  }
+  applyParams();
+});
+
+// 窗口 resize
+window.addEventListener('resize', () => { if (glass) glass.render(); });
+
+init();
+</script>
+</body>
+</html>
