@@ -48,12 +48,12 @@
 
 <div id="panel">
   <h3>⚙️ 液态玻璃参数（V2 清透光学）</h3>
-  <div class="row"><label>磨砂 frost <span class="val" id="vFrost">0.35</span></label><input type="range" id="sFrost" min="0" max="1" step="0.01" value="0.35"></div>
-  <div class="row"><label>折射 refraction <span class="val" id="vRefr">0.6</span></label><input type="range" id="sRefr" min="0" max="2" step="0.01" value="0.6"></div>
-  <div class="row"><label>色调 tint <span class="val" id="vTint">0.2</span></label><input type="range" id="sTint" min="0" max="1" step="0.01" value="0.2"></div>
-  <div class="row"><label>玻璃高度 height <span class="val" id="vH">0.5</span></label><input type="range" id="sH" min="0" max="2" step="0.01" value="0.5"></div>
-  <div class="row"><label>色散 dispersion <span class="val" id="vDisp">0.5</span></label><input type="range" id="sDisp" min="0" max="1" step="0.01" value="0.5"></div>
-  <div class="row"><label>边缘高光 rim <span class="val" id="vRim">0.5</span></label><input type="range" id="sRim" min="0" max="1" step="0.01" value="0.5"></div>
+  <div class="row"><label>折射 refraction <span class="val" id="vRefr">90</span></label><input type="range" id="sRefr" min="0" max="110" step="1" value="90"></div>
+  <div class="row"><label>磨砂 frost <span class="val" id="vFrost">0.18</span></label><input type="range" id="sFrost" min="0" max="1" step="0.01" value="0.18"></div>
+  <div class="row"><label>色调 tint <span class="val" id="vTint">0</span></label><input type="range" id="sTint" min="0" max="1.5" step="0.01" value="0"></div>
+  <div class="row"><label>色散 dispersion <span class="val" id="vDisp">2</span></label><input type="range" id="sDisp" min="0" max="7" step="0.1" value="2"></div>
+  <div class="row"><label>边缘光 rim <span class="val" id="vRim">0.72</span></label><input type="range" id="sRim" min="0" max="1" step="0.01" value="0.72"></div>
+  <div class="row"><label>反射 reflection <span class="val" id="vRefl">0.68</span></label><input type="range" id="sRefl" min="0" max="1.5" step="0.01" value="0.68"></div>
 </div>
 
 <div id="hint">🖱 鼠标划过玻璃面板看折射效果 · 拖底部滑块调参数 · 这是独立测试页（端口 3081），不影响主插件</div>
@@ -99,19 +99,19 @@ const bind = (id, valId, key) => {
     if (glass) { glass.setMaterial({ [key]: Number(slider.value) }); }
   });
 };
-bind('sFrost','vFrost','frost');
 bind('sRefr','vRefr','refraction');
+bind('sFrost','vFrost','frost');
 bind('sTint','vTint','tint');
-bind('sH','vH','height');
 bind('sDisp','vDisp','dispersion');
 bind('sRim','vRim','rim');
+bind('sRefl','vRefl','reflection');
 
 function applyParams() {
   if (!glass) return;
   const g = (id) => Number(document.getElementById(id).value);
   glass.setMaterial({
-    frost: g('sFrost'), refraction: g('sRefr'), tint: g('sTint'),
-    height: g('sH'), dispersion: g('sDisp'), rim: g('sRim'),
+    refraction: g('sRefr'), frost: g('sFrost'), tint: g('sTint'),
+    dispersion: g('sDisp'), rim: g('sRim'), reflection: g('sRefl'),
   });
 }
 
@@ -180,7 +180,7 @@ document.getElementById('btnShape').addEventListener('click', () => {
 });
 
 document.getElementById('btnReset').addEventListener('click', () => {
-  const vals = { sFrost:0.35, sRefr:0.6, sTint:0.2, sH:0.5, sDisp:0.5, sRim:0.5 };
+  const vals = { sRefr:90, sFrost:0.18, sTint:0, sDisp:2, sRim:0.72, sRefl:0.68 };
   for (const [id,v] of Object.entries(vals)) {
     document.getElementById(id).value = v;
     document.getElementById('v'+id.slice(1)).textContent = v;
