@@ -6,7 +6,7 @@
 
 给 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) Web 界面（dsh web）添加背景壁纸的插件：**Wallpaper Engine `.mpkg` 解析、Steam 创意工坊原始目录、视频/网页/图片壁纸、时间变化壁纸的多时段切换、整屏虚化体系、主题色与玻璃外观、本地壁纸库、定时轮换、一键更新**。几乎每一个外观细节都可以调节。
 
-> **一句话版本**：视频/图片/网页壁纸直接播放；**时间变化壁纸（Time Variation）支持多时段自动切换 + 手动锁定时段**；**带设置项的部分网页壁纸（如 Live2D 立绘类，含分辨率/语言/音量）已接入插件设置页，可在「可调参数」折叠区直接修改**；场景（Scene）壁纸提供静态帧提取 + 图层合成两个折中方案。
+> **一句话版本**：视频/图片/网页壁纸直接播放；**时间变化壁纸（Time Variation）支持多时段自动切换 + 手动锁定时段**；**带设置项的部分网页壁纸（如 Live2D 立绘类，含分辨率/语言/音量）已接入插件设置页，可在「可调参数」折叠区直接修改**；**视频/网页壁纸支持一键暂停播放（调无关设置不重播）+ 省电三档（隐藏/失焦/电池）**；场景（Scene）壁纸提供静态帧提取 + 图层合成两个折中方案。
 
 ## 核心能力
 
@@ -33,7 +33,7 @@
 **🎨 主题色与玻璃外观（Aqua 实验模式，默认全关）**
 - **主题颜色（accent）**：取色盘 + 6 预置，驱动按钮/滑条/选中项/链接/发送键等品牌色（`--dsw-alias-brand-*` 系列 token）
 - **统一雾**（全屏遮罩统一雾色，强度独立滑条）、**面板匹配壁纸色**（自动取色 + 强度滑条 + 自定义取色盘）、**自适应文字色 + 蓝色清理**（品牌色统一，带自定义取色盘）、**深底文字可读增强**、**任务列表磨砂**
-- 外观 tab 里还有：悬浮卡片、时钟等
+- 外观 tab 里还有：悬浮卡片等（时钟为运行时兼容项——旧配置仍会显示，但设置页无开关）
 
 **🧩 dsh-better-sidebar 适配（检测到该插件后显示）**
 - 已安装 [dsh-better-sidebar](https://github.com/) 时，「外观 / 其他」tab 自动出现**适配分类**：总开关 + 子开关：
@@ -43,6 +43,20 @@
   - **底部面板避让**（bsBottomAvoid）：底部面板实时对齐 DSH 中心列（better-sidebar 自身 ResizeObserver 负责，无需手动偏移）
   - 字体跟随（bsFont）等其余子开关
 - 主机端 `/ping` 自动探测 better-sidebar 是否安装；未安装时该分类隐藏
+
+**⏯️ 播放控制与省电**
+- **暂停 / 播放按钮**：当前壁纸为视频/网页类时，设置页「壁纸设置」下方出现**暂停/播放**按钮（点击停住画面，再点恢复）。暂停状态**实时同步**（按钮反映视频实际播放状态）；**调整无关设置（静音/亮度/模糊等）不会触发重播**——已修复「video.src 用绝对 URL 判等恒不等 → 每次应用设置都重载媒体源」的根因。
+- **省电（遮挡暂停三档）**：「其他」tab 提供三档独立开关：
+  - **页面隐藏时暂停**（`visibilitychange`）
+  - **窗口失焦时暂停**（`blur/focus`）
+  - **电池供电时暂停**（`getBattery`，API 不存在则静默跳过）
+  - 任一档触发即暂停壁纸、全部恢复才继续；省电暂停与用户手动暂停互不干扰（都尊重同一套门控）
+
+**🧊 液态玻璃（CSS 实验，第 8 个 tab，默认全关）**
+- 基于 CSS `backdrop-filter` 的半透明 + 模糊 + 边缘高光（**不再是 WebGL 折射版**——WebGL 液态玻璃已在 v3.6.0 移除，见下）。分四个开关：
+  - **lgTest（测试模式）**：只保留壁纸 + 悬浮 + 布局，不覆盖任何 DSH token（否则背景读半透明会让聊天框透明无模糊）
+  - **lgComposer / lgSidebar / lgHeader**：分别给聊天气泡区、侧边栏、标题栏加液态玻璃叠加层（侧边栏因设置弹窗渲染层级限制，只能做半透明 + 边缘高光，**不能加 backdrop-filter**，否则会把设置弹窗压缩进侧边栏——历史踩坑）
+- **历史说明**：早期版本用的是 WebGL 真折射（`lib/liquid-glass/` 库 + `liquid-glass-bundle.js` 107KB）；因不稳定且体积大，v3.6.0 已删掉 WebGL 运行时，改用纯 CSS 版。`lib/liquid-glass/*.js`、`liquid-glass-bundle.js`、`tools/liquid-demo/` 等**仍留在包里但无运行时引用**，属遗留死文件（后续可清）。
 
 **🎬 镜头与画面**
 - 镜头缩放（10–2000%）与平移、画面亮度（50–150%）、轻度锐化、Deep diving 背景框
@@ -54,7 +68,8 @@
 - mpkg 流式上传到 DSH 宿主 → 磁盘存储 → HTTP Range 流式播放，**>600MB 大文件也支持**，内存占用极低
 
 **🖼️ 本地壁纸库**
-- **Steam 自动发现** + **自定义目录**（任意文件夹 + 跨平台目录选择器；mpkg 文件与 workshop 文件夹混合放置都能识别）
+- **Steam 自动发现** + **自定义目录**（任意文件夹 + 跨平台目录选择器；mpkg 文件与 workshop 文件夹混合放置都能识别；图片/视频/`scene.pkg`/`.mov` 均可）
+- **WE 原生播放列表导入**：Steam 扫描时自动解析 Wallpaper Engine 的 `config.json`（`general.playlists`）为**轮播列表**，项映射到本插件的 `steam|`/`custom|` key
 - **壁纸切换与轮换**：上一个/下一个一键切换、定时自动轮换（间隔可调）；轮换列表勾选后滚动保持不跳顶，未命名列表自动加序号（`未命名列表 N`）不重名
 
 **🛡️ 安全与共存**
@@ -77,6 +92,16 @@
 - **监听/定时器只注册一次**：storage 监听、60s 时段检查、内联样式 watcher 等均去重，反复 apply/RTC 重连不累积
 - **懒加载防 OOM**：时间变化壁纸只提取当前时段；hybrid 大文件流式播放内存占用极低
 - **弱设备降级**：对高负载合成（全屏 backdrop-filter + 流媒体视频叠加）做了整体节流优化；不同 WebView 的极端组合问题仍建议用 Edge / 桌面浏览器获得最佳体验
+
+**🌐 浏览器兼容性（实测参考）**
+| 浏览器 | 推荐度 | 表现与注意 |
+|---|---|---|
+| Chrome / Chromium（桌面） | ⭐⭐⭐ 强 | 功能最完整：`backdrop-filter` 与 `color-mix` 实现最佳、`iframe.muted` 生效、muted 自动播放放行 |
+| Edge（桌面） | ⭐⭐⭐ 强 | 视频壁纸走**独立 canvas 渲染路径**（规避 Edge 悬浮工具栏）；暂停/恢复/重播均已修复（CSS 首帧 + src 判等）。个别版本仅有首帧静态（非空白/崩溃） |
+| Firefox | ⭐⭐ 中 | 功能全支持（backdrop-filter 103+、编码不支持自动转码兜底）；三点减分：backdrop-filter 性能弱于 Chromium（多模糊同开低端机掉帧）、`iframe.muted` 不支持（**有声 web 壁纸首次可能被自动播放策略拦截停首帧**，错误被 iframe 隔离不影响主界面）、`color-mix` 需 113+（旧版仅外观回退） |
+| Android WebView / 移动端 | ⭐⭐ 中偏弱 | autoplay 政策取决于宿主 App 的 WebView 配置（muted 通常放行但 Firefox 系/部分 WebView 会拦截，此时视频停首帧）；`getBattery` 可能缺失（有守卫跳过）；极端组合建议用静态图/GIF 或关 blur |
+
+> 注：源码已为各浏览器做了降级（无 `requestVideoFrameCallback` 时回退 rAF、`ResizeObserver`/`getBattery` 有守卫、全部 `play()` 带 `.catch`、`backdrop-filter` 用 `CSS.supports` 检测并降级为不透明）。**未发现会导致整页白屏/卡死/崩溃的浏览器高濒点**。Firefox 的「有声 web 壁纸自动播放被拦截」是唯一待实测的中等项，建议首选 Chrome/Edge 获得完整体验。
 
 ## 支持类型与现状
 
@@ -126,7 +151,7 @@
   - **🌐外网**：依赖外网 SDK/CDN（如米哈游事件页），加载可能失败
 - 实测：webm 视频类网页壁纸（轻量）正常；Spine 骨骼动画类视设备性能而定；**带 `loadJson.json` 设置项的 Live2D 立绘类已接入插件可改**（见上文）
 
-## 设置分组（顶部 Tab）
+## 设置分组（顶部 Tab，共 8 个）
 
 - **背景来源**：总开关、hybrid、mpkg 文件、图片/视频文件、自定义目录（可指 workshop 主目录）、本地壁纸库（Steam 扫描）、壁纸切换/轮换、**时间变化壁纸的时段锁定**
 - **壁纸设置**：静音、镜像翻转（水平/垂直）、视频倍速、可调参数（mpkg 只读 / 网页壁纸可改）、解码帧率上限、分辨率上限、ffmpeg 状态
@@ -134,7 +159,8 @@
 - **统一虚化**：整屏虚化 + 侧边栏/标题栏白雾、聊天区跟随、新会话跟随
 - **界面虚化**：对话框/设置面板/弹窗/弹层/遮罩/侧边栏磨砂各自独立
 - **Aqua**：统一雾/面板取色/自适应文字等实验开关
-- **其他**：时钟、更新检查/热更新、**备份与恢复**、恢复所有默认设置；安装 better-sidebar 时此处出现**适配分类**
+- **液态玻璃**：lgTest / lgComposer / lgSidebar / lgHeader（CSS 版；附独立演示页，见上方「液态玻璃」小节）
+- **其他**：省电三档（隐藏/失焦/电池）、新样式/锐化/圆角兼容、更新检查/热更新、**备份与恢复**、恢复所有默认设置、前往反馈；安装 better-sidebar 时此处出现**适配分类**（时钟为运行时兼容项，无设置开关）
 
 ## 安装
 
@@ -202,7 +228,7 @@ git clone https://github.com/XHR666/dsh-mpkg-wallpaper.git $DSH_HOME/profiles/no
 
 ## 安全说明
 
-- **无对外网络请求**：插件不访问任何外部网络；唯一网络行为是用户手动输入的图片 URL、网页壁纸自身加载的资源与**本机 DSH 宿主**（127.0.0.1）的 HTTP 通信
+- **默认无被动对外网络请求**：插件后台**不主动**访问任何外部网络；日常壁纸播放仅与**本机 DSH 宿主**（127.0.0.1）HTTP 通信。唯一的例外是**用户显式触发的功能**：检查更新 / 一键更新访问 GitHub（`raw.githubusercontent.com`、`api.github.com`）、下载 ffmpeg 访问 GitHub Releases / npm 二进制镜像（`registry.npmmirror.com`）——均在用户点按后发起，不自动发生。此外用户手动输入的网络图片 URL、网页壁纸自身加载的资源也属外部访问。
 - **无敏感内容**：源码不含路径、密钥、令牌、个人信息
 - **开源依赖**：仅 DSH 自带 react + 官方 slots/locale 接口；scene.pkg 提取器采用 [elysia395/dsh-wallpaper-engine](https://github.com/elysia395/dsh-wallpaper-engine)（MIT，文件头已署名）
 - 参考项目：[dsh-bg-image](https://github.com/lyh9712/dsh-bg-image)（MIT，模板）、[unmpkg](https://github.com/aqnya/unmpkg)（GPL-3.0，仅参考 mpkg 二进制格式）、[repkg](https://github.com/notscuffed/repkg)（GPL，仅研究 .tex 格式）
@@ -214,14 +240,19 @@ git clone https://github.com/XHR666/dsh-mpkg-wallpaper.git $DSH_HOME/profiles/no
 dsh-mpkg-wallpaper/
 ├── package.json      # dsh.bundle + dsh.client 声明
 ├── cordis.patch.yml  # 插件安装声明（dsh plugin add 使用）
+├── LICENSE           # MIT 许可证
 ├── lib/
 │   ├── index.js      # 宿主端：上传/流式播放 + Steam 发现 + 自定义目录 + 场景提取路由 + 设置持久化
-│   ├── client.js     # 浏览器端：mpkg 解析 + 设置页 + 背景 DOM + 虚化体系 + 壁纸库 + 时间变化/网页设置
-│   └── pkg-extract.js# scene.pkg 静态帧/图层提取（PKG+LZ4+TEX，MIT，来自 elysia395）
-├── tools/            # mpkg/tex/mdl 逆向解析工具（供开发者参考）
+│   ├── client.js     # 浏览器端：mpkg 解析 + 设置页 + 背景 DOM + 虚化体系 + 壁纸库 + 时间变化/网页设置 + 播放控制/省电
+│   ├── pkg-extract.js# scene.pkg 静态帧/图层提取（PKG+LZ4+TEX，MIT，来自 elysia395）
+│   ├── liquid-glass/ # 液态玻璃 WebGL 库（**遗留，无运行时引用**，v3.6.0 已改 CSS 版）
+│   └── liquid-glass-bundle.js # 液态玻璃打包产物（107KB，**无引用死文件**，随包冗余）
+├── tools/            # mpkg/tex/mdl 逆向解析 + lg 构建/内联脚本 + liquid-demo 演示页（供开发者）
+├── screenshots/      # 效果截图
 ├── README.md         # 本文件（中文）
 └── README.en.md      # 英文说明
 ```
+> 注：`lib/liquid-glass/`、`lib/liquid-glass-bundle.js` 因 `files: ["lib"]` 仍会打进 npm 包，但**客户端不再引用**（WebGL 已在 v3.6.0 移除，改用 CSS 版）。
 
 ## 致谢
 

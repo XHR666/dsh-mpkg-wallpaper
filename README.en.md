@@ -6,7 +6,7 @@
 
 A plugin for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) Web UI (dsh web) that adds background wallpapers: **Wallpaper Engine `.mpkg` parsing, Steam Workshop raw folders, video/web/image wallpapers, time-of-day switching, a full-screen frosted blur suite, theme-color & glass appearance, a local wallpaper library, timed rotation and one-click updates**. Nearly every visual detail is adjustable.
 
-> **One-liner**: video/image/web wallpapers play directly; **time-variation wallpapers support multi-slot auto-switching + manual slot lock**; **some web wallpapers with built-in options (e.g. Live2D portraits — resolution/language/volume) are wired into the plugin settings page and can be edited in the collapsible "Adjustable options" area**; Scene wallpapers get static-frame extraction + layer compositing as partial solutions.
+> **One-liner**: video/image/web wallpapers play directly; **time-variation wallpapers support multi-slot auto-switching + manual slot lock**; **some web wallpapers with built-in options (e.g. Live2D portraits — resolution/language/volume) are wired into the plugin settings page and can be edited in the collapsible "Adjustable options" area**; **video/web wallpapers support one-click pause/play (no replay when unrelated settings change) + 3-tier power saving (hidden/blurred/battery)**; Scene wallpapers get static-frame extraction + layer compositing as partial solutions.
 
 ## Core Features
 
@@ -33,7 +33,7 @@ A plugin for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harn
 **🎨 Theme color & glass appearance (Aqua experiment, off by default)**
 - **Theme color (accent)**: color picker + 6 presets driving brand buttons/sliders/selected items/links/send button (`--dsw-alias-brand-*` tokens)
 - **Unified fog** (full-screen mask with one fog color, strength slider), **panel wallpaper-matching color** (auto sample + strength slider + custom picker), **adaptive text + blue cleanup** (brand unified, custom picker), **dark-background text readability**, **todo-list frost**
-- Appearance tab also has: floating cards, clock, etc.
+- Appearance tab also has: floating cards, etc. (the clock is a runtime-compat item — old configs still show it, but there is no settings toggle)
 
 **🧩 dsh-better-sidebar adaptation (shown when that plugin is detected)**
 - When [dsh-better-sidebar](https://github.com/) is installed, an **adaptation section** appears in the "Appearance / Other" tabs with a master toggle + sub-toggles:
@@ -43,6 +43,20 @@ A plugin for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harn
   - **Bottom panel avoidance** (bsBottomAvoid): the bottom panel stays aligned with the DSH center column (handled by better-sidebar's own ResizeObserver — no manual offset)
   - Font follow (bsFont) and other sub-toggles
 - The host `/ping` endpoint auto-detects whether better-sidebar is installed; the section is hidden when it is not
+
+**⏯️ Playback control & power saving**
+- **Pause / Play button**: when the current wallpaper is a video/web type, the settings page shows a **Pause/Play** button (click to freeze the image, click again to resume). The paused state is **synced in real-time** (the button follows the actual video state); **adjusting unrelated settings (mute/brightness/blur etc.) does NOT trigger a replay** — the root cause ("video.src" compared as an absolute URL to a relative one → every settings apply reloaded the media source) has been fixed.
+- **Power saving (3-tier pause)**: the "Other" tab has three independent toggles:
+  - **Pause when the page is hidden** (`visibilitychange`)
+  - **Pause when the window loses focus** (`blur/focus`)
+  - **Pause on battery power** (`getBattery`; silently skipped if the API is absent)
+  - Any tier triggers a pause; only when all are released does it resume; power-saving pause and manual pause don't interfere (both respect the same gate)
+
+**🧊 Liquid glass (CSS experiment, 8th tab, off by default)**
+- Based on CSS `backdrop-filter`: semi-transparent + blur + edge highlight (**no longer the WebGL refraction version** — WebGL was removed in v3.6.0, see below). Four toggles:
+  - **lgTest (test mode)**: keeps only wallpaper + floating + layout, and overrides no DSH token (otherwise a translucent base makes the chat box transparent without blur)
+  - **lgComposer / lgSidebar / lgHeader**: add a liquid-glass overlay to the message-bubble area / sidebar / title bar respectively (the sidebar can only be semi-transparent + edge highlight because of the settings dialog's render hierarchy — it **cannot** use backdrop-filter, or it would squash the settings dialog into the sidebar — historical pitfall)
+- **History**: early versions used real WebGL refraction (`lib/liquid-glass/` library + `liquid-glass-bundle.js` 107KB); v3.6.0 removed the WebGL runtime (unstable + large) in favor of pure CSS. `lib/liquid-glass/*.js`, `liquid-glass-bundle.js`, `tools/liquid-demo/` **remain in the package but are no longer referenced at runtime** (leftover dead files, can be cleaned later).
 
 **🎬 Lens & picture**
 - Lens zoom (10–2000%) & pan, brightness (50–150%), light sharpen, Deep diving background box
@@ -54,7 +68,8 @@ A plugin for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harn
 - mpkg streams to the DSH host → disk storage → HTTP Range streaming, **>600MB files supported**, low memory usage
 
 **🖼️ Local wallpaper library**
-- **Steam auto-discovery** + **custom folder** (any directory + cross-platform folder picker; .mpkg files and workshop folders can be mixed freely)
+- **Steam auto-discovery** + **custom folder** (any directory + cross-platform folder picker; .mpkg files and workshop folders can be mixed freely; images/videos/`scene.pkg`/`.mov` accepted)
+- **Native WE playlist import**: the Steam scan also parses Wallpaper Engine's `config.json` (`general.playlists`) into **rotation lists**, mapping items to this plugin's `steam|`/`custom|` keys
 - **Switching & rotation**: prev/next one-click, timed auto-rotation (interval adjustable); rotation-list checkboxes keep scroll position (no jump-to-top), and unnamed lists get auto-numbered (`Unnamed list N`) so they never collide
 
 **🛡️ Safety & coexistence**
@@ -77,6 +92,16 @@ A plugin for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harn
 - **Listeners/timers register once**: storage listener, 60s slot check, inline-style watcher, etc. are de-duplicated — repeated apply/RTC reconnects never accumulate
 - **Lazy loading prevents OOM**: time-variation wallpapers extract only the current slot; hybrid streams large files with minimal memory
 - **Weak-device throttling**: heavy compositing (full-screen backdrop-filter over streaming video) is globally throttled; for extreme WebView combos, Edge / desktop browsers still give the best experience
+
+**🌐 Browser compatibility (tested reference)**
+| Browser | Rating | Behavior & notes |
+|---|---|---|
+| Chrome / Chromium (desktop) | ⭐⭐⭐ Strong | Most complete: best `backdrop-filter` & `color-mix`, `iframe.muted` works, muted autoplay allowed |
+| Edge (desktop) | ⭐⭐⭐ Strong | Video wallpapers use a **dedicated canvas render path** (avoids the Edge hover toolbar); pause/resume/replay all fixed (CSS first-frame + src equality). Some versions show only a static first frame (not blank/crash) |
+| Firefox | ⭐⭐ Medium | Full feature support (backdrop-filter 103+, auto-transcode fallback for unsupported codecs); three deductions: backdrop-filter is slower than Chromium (low-end drops frames when many blurs are on), `iframe.muted` unsupported (**audio web wallpapers may be blocked from autoplay on first load — the error is iframe-isolated so the main UI is unaffected**), `color-mix` needs 113+ (older versions only lose appearance) |
+| Android WebView / mobile | ⭐⭐ Medium-weak | autoplay policy depends on the host app's WebView config (muted is usually allowed but Firefox-based / some WebViews block, leaving the video on its first frame); `getBattery` may be missing (guarded); for extreme combos prefer static image/GIF or blur off |
+
+> Note: the source degrades gracefully for each browser (rAF fallback without `requestVideoFrameCallback`, guards around `ResizeObserver`/`getBattery`, all `play()` calls have `.catch`, `backdrop-filter` detected with `CSS.supports` and falls back to opaque). **No browser-specific high-risk point that would cause a blank page / freeze / crash was found.** The only medium item still to be tested is Firefox's "audio web wallpaper autoplay blocked"; Chrome/Edge are recommended for the fullest experience.
 
 ## Supported Types & Status
 
@@ -126,7 +151,7 @@ The plugin offers these partial solutions (chosen automatically by scene content
   - **🌐external**: depends on external SDK/CDN (e.g. miHoYo event pages) — may fail to load
 - Tested: webm-video-based web wallpapers (light) work; Spine skeletal ones depend on device performance; **Live2D portraits with a `loadJson.json` are wired into the plugin options** (above)
 
-## Settings Tabs
+## Settings Tabs (8 total)
 
 - **Source**: master switch, hybrid, mpkg file, image/video files, custom folder (can point at the workshop root), local library (Steam scan), switching/rotation, **time-variation slot lock**
 - **Wallpaper**: mute, mirror flip (horizontal/vertical), video playback speed, adjustable options (mpkg read-only / web wallpapers editable), decode fps cap, resolution cap, ffmpeg status
@@ -134,7 +159,8 @@ The plugin offers these partial solutions (chosen automatically by scene content
 - **Unified blur**: full-screen blur + sidebar/title-bar fog, chat follow, new-chat follow
 - **UI blur**: dialog/settings/popup/popover/mask/sidebar frost each independent
 - **Aqua**: unified fog / panel tint / adaptive text experiment toggles
-- **Other**: clock, update check/apply, **backup & restore**, restore all defaults; the better-sidebar **adaptation section** appears here when that plugin is installed
+- **Liquid glass**: lgTest / lgComposer / lgSidebar / lgHeader (CSS version; with a separate demo page, see the "Liquid glass" section above)
+- **Other**: power-saving 3-tier (hidden/blur/battery), new style/sharpen/round-compat, update check/apply, **backup & restore**, restore all defaults, submit feedback; the better-sidebar **adaptation section** appears here when that plugin is installed (clock is a runtime-compat item, no settings toggle)
 
 ## Installation
 
@@ -202,7 +228,7 @@ Please include:
 
 ## Security
 
-- **No outbound network requests**: the plugin never contacts external networks; the only network activity is user-entered image URLs, resources loaded by web wallpapers themselves, and HTTP to the **local DSH host** (127.0.0.1)
+- **No passive outbound network requests by default**: the plugin never **actively** contacts external networks; everyday wallpaper playback only talks to the **local DSH host** (127.0.0.1). The only exceptions are **user-initiated** actions: Check update / Apply update accesses GitHub (`raw.githubusercontent.com`, `api.github.com`); downloading ffmpeg accesses GitHub Releases / the npm binary mirror (`registry.npmmirror.com`) — both fire only after the user clicks, never automatically. User-entered network image URLs and resources loaded by web wallpapers themselves are also external access.
 - **No secrets**: no paths, keys, tokens or personal info in the source
 - **Open-source deps only**: DSH's own react + official slots/locale APIs; the scene.pkg extractor is adopted from [elysia395/dsh-wallpaper-engine](https://github.com/elysia395/dsh-wallpaper-engine) (MIT, credited in the file header)
 - References: [dsh-bg-image](https://github.com/lyh9712/dsh-bg-image) (MIT, template), [unmpkg](https://github.com/aqnya/unmpkg) (GPL-3.0, mpkg format reference), [repkg](https://github.com/notscuffed/repkg) (GPL, .tex format research)
@@ -214,14 +240,19 @@ Please include:
 dsh-mpkg-wallpaper/
 ├── package.json      # dsh.bundle + dsh.client declarations
 ├── cordis.patch.yml  # plugin install declaration
+├── LICENSE           # MIT license
 ├── lib/
 │   ├── index.js      # host: upload/streaming + Steam discovery + custom folders + scene routes + settings persistence
-│   ├── client.js     # browser: mpkg parsing + settings page + bg DOM + blur suite + library + time-variation/web options
-│   └── pkg-extract.js# scene.pkg static-frame/layer extraction (PKG+LZ4+TEX, MIT, from elysia395)
-├── tools/            # mpkg/tex/mdl reverse-engineering tools (for developers)
+│   ├── client.js     # browser: mpkg parsing + settings page + bg DOM + blur suite + library + time-variation/web options + playback control/power saving
+│   ├── pkg-extract.js# scene.pkg static-frame/layer extraction (PKG+LZ4+TEX, MIT, from elysia395)
+│   ├── liquid-glass/ # WebGL liquid-glass library (**leftover, no runtime ref**; CSS version since v3.6.0)
+│   └── liquid-glass-bundle.js # liquid-glass bundle (107KB, **unused dead file**, ships by redundancy)
+├── tools/            # mpkg/tex/mdl reverse-engineering + lg build/inline scripts + liquid-demo page (for developers)
+├── screenshots/      # effect screenshots
 ├── README.md         # Chinese
 └── README.en.md      # English
 ```
+> Note: `lib/liquid-glass/` and `lib/liquid-glass-bundle.js` still ship in the npm package because of `files: ["lib"]`, but the **client no longer references them** (WebGL was removed in v3.6.0 in favor of the CSS version).
 
 ## Acknowledgements
 
