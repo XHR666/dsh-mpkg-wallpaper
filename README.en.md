@@ -52,7 +52,8 @@ A plugin for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harn
   - **Pause on battery power** (`getBattery`; silently skipped if the API is absent)
   - Any tier triggers a pause; only when all are released does it resume; power-saving pause and manual pause don't interfere (both respect the same gate)
 
-**🧊 Liquid glass (CSS experiment, 8th tab, off by default)**
+**🧊 Liquid glass (⚠️ experimental, off by default, not recommended for regular use)**
+> ⚠️ **Note**: liquid glass is currently **experimental** — the effect is not final and may have layout/performance side effects. **Not recommended for daily use**; it is off by default. If you try it, back up your settings first; if anything breaks, restore all defaults from the "Other" tab.
 - Based on CSS `backdrop-filter`: semi-transparent + blur + edge highlight (**no longer the WebGL refraction version** — WebGL was removed in v3.6.0, see below). Four toggles:
   - **lgTest (test mode)**: keeps only wallpaper + floating + layout, and overrides no DSH token (otherwise a translucent base makes the chat box transparent without blur)
   - **lgComposer / lgSidebar / lgHeader**: add a liquid-glass overlay to the message-bubble area / sidebar / title bar respectively (the sidebar can only be semi-transparent + edge highlight because of the settings dialog's render hierarchy — it **cannot** use backdrop-filter, or it would squash the settings dialog into the sidebar — historical pitfall)
@@ -159,7 +160,7 @@ The plugin offers these partial solutions (chosen automatically by scene content
 - **Unified blur**: full-screen blur + sidebar/title-bar fog, chat follow, new-chat follow
 - **UI blur**: dialog/settings/popup/popover/mask/sidebar frost each independent
 - **Aqua**: unified fog / panel tint / adaptive text experiment toggles
-- **Liquid glass**: lgTest / lgComposer / lgSidebar / lgHeader (CSS version; with a separate demo page, see the "Liquid glass" section above)
+- **Liquid glass**: lgTest / lgComposer / lgSidebar / lgHeader (CSS version, **experimental, not recommended**; with a separate demo page, see the "Liquid glass" section above)
 - **Other**: power-saving 3-tier (hidden/blur/battery), new style/sharpen/round-compat, update check/apply, **backup & restore**, restore all defaults, submit feedback; the better-sidebar **adaptation section** appears here when that plugin is installed (clock is a runtime-compat item, no settings toggle)
 
 ## Installation
