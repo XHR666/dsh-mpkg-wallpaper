@@ -92,6 +92,9 @@ A plugin for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harn
 - **Scene cache is byte-bounded**: layer cache has a 128MB byte budget + count cap double-guard; scene.pkg is only read in full on a cache miss (stat-first)
 - **Listeners/timers register once**: storage listener, 60s slot check, inline-style watcher, etc. are de-duplicated — repeated apply/RTC reconnects never accumulate
 - **Lazy loading prevents OOM**: time-variation wallpapers extract only the current slot; hybrid streams large files with minimal memory
+- **The audio list no longer waits for the whole package (2026-09-15, user report #1)**: a `scene.pkg` keeps its **directory table at the start of the file**, so "which audio tracks does this package have" needs only that table plus a 16-byte magic sniff per candidate entry (track bytes never enter memory). Two new entry points: `/custom-scene-audio?folder=` and `/library-scene-audio?ltoken=`, returning `{count,tracks:[{path,size,mime,refs}],stats}` (measured on the 22.5MB hina package: **2.3ms / 107KB read**; 0.5ms on a cache hit), and `/raw` now supports **Range/206** (it always returned 200 + the whole body before, so a renderer could not even fetch just the index). Measured with `tools/audio-scan-bench.mjs` (11 real packages, median of 3): whole-package read 1.7–379ms ⇒ index read 1.3–6.9ms cold / 0.4–0.9ms warm, with the track list **item-for-item identical** to this repository's own spec `docs/AUDIO-TRACK-SPEC.md` (11/11 packages, including FLAC/OggS/ID3/ftyp and scene.json layer refs). The track-detection/collection section was clean-room rewritten against that spec on 2026-09-16 (provenance: `THIRD-PARTY.md`).
+- **Scene video probing is now "index-first" (2026-09-15, user report #1 ⑥c)**: `ensureSceneVideo` used to sit on the **critical path of applying a wallpaper** — `readFileSync` of the whole package plus full mipmap decompression of every `.tex` (the client even sets a 4s timeout for this step). It now reads only the **directory table** plus a **prefix** of each candidate entry (`.tex`: walk the header + first mipmap record and read the first 12 payload bytes to test `ftyp`; when mip0 is LZ4 only the first sequence is decompressed; standalone video entries win and are the only ones read; it stops after confirming 2 embedded videos), falling back to a full read whenever anything is uncertain. **The selection result, the on-disk cache file name (same hash formula) and its content sha256 are item-for-item identical to before.** Measured across 11 real packages: **2894ms → 532ms cold / 7ms warm**; the 7 no-video packages **1772ms → 18ms**; the 69.5MB Kel'thuzad-class package 771ms → 4ms; all 213 corpus `.tex` prefix decisions are correct. Bench `tools/scene-video-bench.mjs`, gate `tools/scene-video-test.mjs` (26 assertions).
+  ⚠ **Which path**: this changes the **DSH plugin host** path (`/custom-scene-video-check`). The `:8899` renderer's 🔊 audio panel does **not** go through the plugin — its perceived improvement comes from renderer-side scheduling (see `docs/AUDIO-SCAN-FAST.md` §0).
 - **Weak-device throttling**: heavy compositing (full-screen backdrop-filter over streaming video) is globally throttled; for extreme WebView combos, Edge / desktop browsers still give the best experience
 
 **🌐 Browser compatibility (tested reference)**
@@ -163,6 +166,19 @@ The plugin offers these partial solutions (chosen automatically by scene content
 - **Liquid glass**: lgTest / lgComposer / lgSidebar / lgHeader (CSS version, **experimental, not recommended**; with a separate demo page, see the "Liquid glass" section above)
 - **Other**: power-saving 3-tier (hidden/blur/battery), new style/sharpen/round-compat, update check/apply, **backup & restore**, restore all defaults, submit feedback; the better-sidebar **adaptation section** appears here when that plugin is installed (clock is a runtime-compat item, no settings toggle)
 
+## P-66 panel robustness fixes (2026-09-15)
+
+> Context: the 9 UI issues reported in that round were confirmed to belong to the **webwallgl test bench (:8901)**,
+> not to the DSH plugin panel. Under that scope this round keeps **only two genuine plugin bugs that are independent
+> of that UI and independently reproducible**; every other interface change was reverted (after the revert
+> `lib/client.js` is byte-identical to the synced copy). Regression: `node tools/panel-fixes-test.mjs`
+> (wired into step 2 of `tools/check.sh`).
+
+| Real bug | Root cause | Fix | Repro / assertion |
+| --- | --- | --- | --- |
+| **The render error boundary itself is broken, swallowing the real cause** | The outer `catch (err)` of `MpkgSectionImpl` called `h(...)`, but `h` is a `const` declared **inside the outer `try` block** (block scope is not visible in `catch`) → the boundary throws `h is not defined`, so the user sees "壁纸引擎设置区渲染异常：h is not defined" and the **real error is lost** | That catch now uses `react.createElement` | `node tools/panel-fixes-test.mjs --client <pre-fix copy>` → red (shows `h is not defined`); against the current code → green (shows the real error `boom-body`) |
+| **zh/en dictionaries had different key sets** | `en` was missing 18 keys (`glass.title/desc`, `glassWindow*`, `glass.accent*`, `glass.color*`, `glass.alpha`, `glass.reset`, `flipX/Y*`, `themeColor*`, `rightSidebarBlur.overridden`) → the English UI printed raw keys; the 10 `clock.*` keys existed only in `en` → the Chinese UI showed English; plus two hardcoded Chinese strings (`"当前状态: "`, `"（已重挂）"`) | Both dictionaries now carry **444 identical keys** (additions only); the two hardcoded strings go through `t()` (visible Chinese text unchanged) | Same test: identical key sets / all 377 static `t("k")` keys present in both / zero Chinese in the English render / zero raw keys in the Chinese render |
+
 ## Installation
 
 Published on npm (`dsh-mpkg-wallpaper`). Pick one:
@@ -205,15 +221,15 @@ Uninstall: `dsh plugin --profile web remove dsh-mpkg-wallpaper`.
 
 <!-- ## Screenshots
 
-<!-- ![Sidebar collapsed · new session](screenshots/dhsw1.jpg) -->
+<!-- screenshot reference removed -->
 
 <!-- *The dynamic wallpaper fills the whole UI. Sidebar collapsed, chat box centered with frosted blur; the sidebar is fully transparent so the wallpaper shows through cleanly.* -->
 
-<!-- ![Sidebar expanded](screenshots/dshw2.jpg) -->
+<!-- screenshot reference removed -->
 
 <!-- *After adjusting panel opacity and unified blur: most UI areas are opacity-adjustable, the sidebar is semi-transparent with the wallpaper faintly visible behind.* -->
 
-<!-- ![Settings page](screenshots/dshw3.jpg) -->
+<!-- screenshot reference removed -->
 
 <!-- *The wallpaper settings page. Beyond the screenshot, nearly everything is adjustable: unified blur, UI blur (dialogs/panels/popups/popovers/mask/sidebar frost), lens zoom & pan, wallpaper flip, theme color, sidebar/title-bar visibility, sharpen, and scene layer compositing with time-frame switching.* -->
 
@@ -248,8 +264,12 @@ dsh-mpkg-wallpaper/
 │   ├── pkg-extract.js# scene.pkg static-frame/layer extraction (PKG+LZ4+TEX, MIT, from elysia395)
 │   ├── liquid-glass/ # WebGL liquid-glass library (**leftover, no runtime ref**; CSS version since v3.6.0)
 │   └── liquid-glass-bundle.js # liquid-glass bundle (107KB, **unused dead file**, ships by redundancy)
-├── tools/            # mpkg/tex/mdl reverse-engineering + lg build/inline scripts + liquid-demo page (for developers)
-├── screenshots/      # effect screenshots
+├── tools/            # gates/tests/benches + lg build/inline scripts + liquid-demo page (for developers)
+│                     # audio scan: audio-scan-bench.mjs (timing table) / audio-scan-test.mjs (spec assertions · no full inflate · cache)
+│                     #             scene-audio-route-test.mjs (/raw Range + probe route + security)
+│                     # note: the research-era Python tools (unmpkg/tex2png/mdl_explorer/xref) were
+│                     #       **deleted (GPL lineage unresolved, 2026-09-16)** — see `../docs/COPYING-RULES.md` §6
+├── screenshots/      # (moved out of the repo)
 ├── README.md         # Chinese
 └── README.en.md      # English
 ```
@@ -266,3 +286,5 @@ dsh-mpkg-wallpaper/
 - Full scenes (incl. Live2D puppets) can only be rendered by the proprietary engine: the WE app's native library (embedded Chromium + proprietary puppet renderer); the open-source [we-layerd](https://github.com/Aromatic05/we-layerd) (Rust) bundles the official renderer but is **Linux Wayland only**
 - There is no mature WE scene renderer for browsers (pixeltris/wallpaper-engine-web is gone) — **independent of OS, no browser can render Live2D scenes directly**; the official renderer .so is closed-source, so it cannot be compiled to WASM
 - This plugin's path: **static-frame extraction + layer compositing + (time-variation) mpkg-way slot switching** (see [Scene wallpaper adaptation](#scene-wallpaper-adaptation)); for full dynamics use "render externally to video → video wallpaper"
+
+> Screenshots were moved out of the repository (they contain personal UI content): `../Delete/plugin-screenshots/`. Re-add sanitized copies under `docs/media/` if you want them shown.

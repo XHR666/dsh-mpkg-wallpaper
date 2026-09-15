@@ -92,6 +92,23 @@
 - **场景缓存按体积限流**：图层缓存 128MB 字节预算 + 条数上限双兜底；场景 pkg 只在缓存未命中时读整文件（stat 优先）
 - **监听/定时器只注册一次**：storage 监听、60s 时段检查、内联样式 watcher 等均去重，反复 apply/RTC 重连不累积
 - **懒加载防 OOM**：时间变化壁纸只提取当前时段；hybrid 大文件流式播放内存占用极低
+- **音频清单不必等整包（2026-09-15，用户第 1 条反馈）**：`scene.pkg` 的**目录表在文件开头**，
+  所以"这个包里有哪几条音频"只读目录表 + 仅候选条目各 16 字节魔数就够（整条音轨字节永不进内存）。
+  两个新入口：`/custom-scene-audio?folder=` / `/library-scene-audio?ltoken=` 直接返回
+  `{count,tracks:[{path,size,mime,refs}],stats}`（hina 22.5MB 包实测 **2.3ms / 读 107KB**；缓存命中 0.5ms），
+  以及 `/raw` 现在支持 **Range/206**（此前永远 200 + 整包 → 渲染器想只取目录表也拿不到）。
+  实测（`tools/audio-scan-bench.mjs`，11 个真包 / 每个 3 次取中位数）：整包读 1.7–379ms ⇒ 索引读 1.3–6.9ms（冷）/0.4–0.9ms（热），
+  清单与**本仓库规格** `docs/AUDIO-TRACK-SPEC.md` 的参考实现**逐项一致**（11/11 包，含 FLAC/OggS/ID3/ftyp 与 scene.json 层引用）。
+  音轨判定/收集段于 2026-09-16 按该规格洁净室重写（来历与处置见 `THIRD-PARTY.md`）。
+- **场景内嵌视频探测改成"索引先行"（2026-09-15，用户第 1 条反馈 ⑥c）**：`ensureSceneVideo` 原先在**"使用壁纸"的关键路径**上
+  `readFileSync` 整包、再把每个 `.tex` 的 mipmap 全部解压（客户端为此给这一步挂了 4s 超时）。现在只读**目录表** +
+  仅候选条目的**前缀**（`.tex` 只走头部与首 mipmap 记录、再读载荷前 12 字节判 `ftyp`，mip0 为 LZ4 时只解压第一个 sequence；
+  独立视频条目优先且只读那几条；已确认 2 条内嵌即停），任何不确定一律回退整条读。**选择结果、落盘缓存文件名（hash 公式）
+  与文件内容 sha256 与改前逐项一致**。实测 11 个真包合计 **2894ms → 532ms（冷）/ 7ms（热）**；"无内嵌视频"的 7 个包
+  **1772ms → 18ms**、凯尔希 771ms → 4ms；语料 213 个 `.tex` 的前缀判定零误判。计时台 `tools/scene-video-bench.mjs`，
+  门禁 `tools/scene-video-test.mjs`（26 断言）。
+  ⚠ **路径归属**：这条改的是 **DSH 插件宿主**路径（`/custom-scene-video-check`）；`:8899` 渲染器顶栏 🔊 音频面板
+  **不经过插件**，它的体感改善来自渲染器自身排期（详见 `docs/AUDIO-SCAN-FAST.md` §0）。
 - **弱设备降级**：对高负载合成（全屏 backdrop-filter + 流媒体视频叠加）做了整体节流优化；不同 WebView 的极端组合问题仍建议用 Edge / 桌面浏览器获得最佳体验
 
 **🌐 浏览器兼容性（实测参考）**
@@ -163,6 +180,17 @@
 - **液态玻璃**：lgTest / lgComposer / lgSidebar / lgHeader（CSS 版，**实验中，建议不启用**；附独立演示页，见上方「液态玻璃」小节）
 - **其他**：省电三档（隐藏/失焦/电池）、新样式/锐化/圆角兼容、更新检查/热更新、**备份与恢复**、恢复所有默认设置、前往反馈；安装 better-sidebar 时此处出现**适配分类**（时钟为运行时兼容项，无设置开关）
 
+## P-66 面板健壮性修复（2026-09-15）
+
+> 背景：用户当次报的 9 条界面问题经确认属于 **webwallgl 测试台（:8901）**，与 DSH 插件面板无关；
+> 按此口径，本轮**只保留两个与那个界面无关、可独立复现的插件真 bug 修复**，其余界面改动已全部回退
+> （回退后 `lib/client.js` 与同步副本逐字节一致）。回归：`node tools/panel-fixes-test.mjs`（已并入 `tools/check.sh` 第 2 步）。
+
+| 真 bug | 根因 | 修法 | 复现/断言 |
+| --- | --- | --- | --- |
+| **渲染错误边界失效，真因被吞** | `MpkgSectionImpl` 的外层 `catch (err)` 里用 `h(...)`，而 `h` 是**外层 `try` 块内的 `const`**（块作用域不可见）→ 边界自身抛 `h is not defined`，用户看到的是「壁纸引擎设置区渲染异常：h is not defined」，**真实错误信息丢失**（诊断被误导） | 该 catch 内改用 `react.createElement` | `node tools/panel-fixes-test.mjs --client <修复前副本>` → 红（显示 `h is not defined`）；对当前代码 → 绿（显示真实错误 `boom-body`） |
+| **zh/en 字典键集合不一致** | `en` 缺 18 个键（`glass.title/desc`、`glassWindow*`、`glass.accent*`、`glass.color*`、`glass.alpha`、`glass.reset`、`flipX/Y*`、`themeColor*`、`rightSidebarBlur.overridden`）→ 英文界面直接显示 **key 原文**；`clock.*` 10 个键只存在于 `en` → 中文界面反而显示英文；另有两处硬编码中文（`"当前状态: "`、`"（已重挂）"`） | 只增不删地把两套字典补到 **444 == 444 键**；两处硬编码中文改走 `t()`（中文可见文案保持不变） | 同一测试：键集合一致 / 377 个静态 `t("k")` 键两套齐全 / 英文渲染零中文 / 中文渲染零键名残留 |
+
 ## 安装
 
 插件已发布到 npm（`dsh-mpkg-wallpaper`）。任选一种：
@@ -205,15 +233,15 @@ git clone https://github.com/XHR666/dsh-mpkg-wallpaper.git $DSH_HOME/profiles/no
 
 <!-- ## 截图演示
 
-<!-- ![侧边栏收起 · 新会话界面](screenshots/dhsw1.jpg) -->
+<!-- 截图引用已移除（见下方说明） -->
 
 <!-- *动态壁纸铺满整个界面。此状态下侧边栏收起，聊天框位于屏幕中央并带有磨砂模糊效果；侧边栏呈全透明状态，壁纸完整透出，画面干净通透。* -->
 
-<!-- ![侧边栏展开](screenshots/dshw2.jpg) -->
+<!-- 截图引用已移除（见下方说明） -->
 
 <!-- *通过「面板不透明度」与「统一虚化」滑条调节后的效果（图为调节后）：大部分界面区域的不透明度均可调节，侧边栏半透明，壁纸在后方隐约透出。* -->
 
-<!-- ![设置页](screenshots/dshw3.jpg) -->
+<!-- 截图引用已移除（见下方说明） -->
 
 <!-- *壁纸引擎背景的设置界面。截图之外，外观几乎全部可调：统一虚化（独立分组）、界面虚化（对话框/设置面板/弹窗/弹层/遮罩/侧边栏磨砂）、镜头缩放与平移、壁纸翻转、主题颜色、侧边栏/标题栏透出壁纸、标题栏磨砂程度、轻度锐化，以及场景壁纸的图层合成与时间帧切换。* -->
 
@@ -248,8 +276,12 @@ dsh-mpkg-wallpaper/
 │   ├── pkg-extract.js# scene.pkg 静态帧/图层提取（PKG+LZ4+TEX，MIT，来自 elysia395）
 │   ├── liquid-glass/ # 液态玻璃 WebGL 库（**遗留，无运行时引用**，v3.6.0 已改 CSS 版）
 │   └── liquid-glass-bundle.js # 液态玻璃打包产物（107KB，**无引用死文件**，随包冗余）
-├── tools/            # mpkg/tex/mdl 逆向解析 + lg 构建/内联脚本 + liquid-demo 演示页（供开发者）
-├── screenshots/      # 效果截图
+├── tools/            # 门禁/测试/基准脚本 + lg 构建/内联脚本 + liquid-demo 演示页（供开发者）
+│                     # 音频扫描：audio-scan-bench.mjs（耗时表）/ audio-scan-test.mjs（规格断言 · 不整包解压 · 缓存）
+│                     #           scene-audio-route-test.mjs（/raw Range + 探测路由 + 安全）
+│                     # 注：研究期的 Python 工具（unmpkg/tex2png/mdl_explorer/xref）
+│                     #     **已删除（GPL 血缘存疑，2026-09-16）**，见 `../docs/COPYING-RULES.md` §6
+├── screenshots/      # （已移出仓库，见文末说明）
 ├── README.md         # 本文件（中文）
 └── README.en.md      # 英文说明
 ```
@@ -266,3 +298,5 @@ dsh-mpkg-wallpaper/
 - 完整场景（含 Live2D 木偶）只能由专有渲染器完成：壁纸引擎 App 的原生库（内嵌 Chromium + 专有 puppet 渲染）；开源方案 [we-layerd](https://github.com/Aromatic05/we-layerd)（Rust）打包了官方渲染器，但**仅限 Linux Wayland** 桌面
 - 浏览器端没有成熟的 WE 场景渲染器（pixeltris/wallpaper-engine-web 已消失）——**与操作系统无关，任何浏览器都无法直接渲染 Live2D 场景**；官方渲染器 .so 为闭源二进制，无源码无法编译成 WASM
 - 本插件的可行路径：**静态帧提取 + 图层合成 + （时间变化的）mpkg 方式时段切换**（见[场景壁纸适配现状](#场景壁纸scene适配现状)）；需要完整动态时用「外部渲染成视频 → 视频壁纸」方案
+
+> 实机截图已移出仓库（含个人界面内容，发布前不外发）：`../Delete/plugin-screenshots/`。需要展示时可自行脱敏后放到 `docs/media/`。

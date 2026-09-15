@@ -4,8 +4,10 @@
   "description": "DSH Web 壁纸引擎 Wallpaper Engine mpkg 背景插件：浏览器内直接解析 .mpkg（preview.gif 动态背景/内嵌 mp4 视频/多时段切换），整屏统一虚化/对话框/弹层/遮罩独立虚化、镜头缩放平移、时钟、冲突检测。",
   "private": false,
   "type": "module",
+  "icon": "icon.svg",
   "files": [
     "lib",
+    "icon.svg",
     "cordis.patch.yml",
     "README.md",
     "README.en.md",
@@ -17,6 +19,7 @@
     "./package.json": "./package.json"
   },
   "dsh": {
+    "icon": "icon.svg",
     "bundle": {
       "patch": "./cordis.patch.yml"
     },
