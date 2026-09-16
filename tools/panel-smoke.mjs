@@ -355,7 +355,11 @@ try {
     } catch (e) { problems.push('MPW_DIAG_FLAGS_FALLBACK 解析失败: ' + e.message) }
   } else problems.push('client.js 缺 MPW_DIAG_FLAGS_FALLBACK 常量')
   // 脚本生成的 JSON（渲染器在线数据源）
-  const jsonPath = path.join(here, '..', '..', 'we-scene-demo', 'diag-flags.json')
+  // ①(P-101 2026-09-16 渲染器仓库目录再整理) 该 JSON 随站点外壳进了 `web/`；这里两个落点都认，
+  //   免得插件侧被渲染器仓库的内部布局绑死（旧检出/新检出都能跑）。
+  const jsonPath = [path.join(here, '..', '..', 'we-scene-demo', 'web', 'diag-flags.json'),
+    path.join(here, '..', '..', 'we-scene-demo', 'diag-flags.json')].find((p) => fs.existsSync(p))
+    || path.join(here, '..', '..', 'we-scene-demo', 'web', 'diag-flags.json')
   let jsonNames = []
   try {
     const dj = JSON.parse(fs.readFileSync(jsonPath, 'utf8'))

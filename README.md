@@ -36,7 +36,7 @@
 - 外观 tab 里还有：悬浮卡片等（时钟为运行时兼容项——旧配置仍会显示，但设置页无开关）
 
 **🧩 dsh-better-sidebar 适配（检测到该插件后显示）**
-- 已安装 [dsh-better-sidebar](https://github.com/) 时，「外观 / 其他」tab 自动出现**适配分类**：总开关 + 子开关：
+- 已安装 dsh-better-sidebar 时，「其他」tab 自动出现**适配分类**（**只挂在「其他」tab，不在「外观」**）：总开关 + 子开关：
   - **悬浮双层修复**（bsFloat）：让悬浮侧边栏的 `_panel` 内层 `pane/tabBar` 背景透明，避免悬浮时出现双重实色矩形
   - **透出程度**（bsReveal + bsRevealAlpha 滑条）：better-sidebar 表面透出壁纸的浓度可调（越高越透）
   - **跟随主题 / Aqua**（bsAlpha / bsAqua）：better-sidebar 面板跟随主题底色 / 跟随统一雾取色
@@ -57,7 +57,7 @@
 - 基于 CSS `backdrop-filter` 的半透明 + 模糊 + 边缘高光（**不再是 WebGL 折射版**——WebGL 液态玻璃已在 v3.6.0 移除，见下）。分四个开关：
   - **lgTest（测试模式）**：只保留壁纸 + 悬浮 + 布局，不覆盖任何 DSH token（否则背景读半透明会让聊天框透明无模糊）
   - **lgComposer / lgSidebar / lgHeader**：分别给聊天气泡区、侧边栏、标题栏加液态玻璃叠加层（侧边栏因设置弹窗渲染层级限制，只能做半透明 + 边缘高光，**不能加 backdrop-filter**，否则会把设置弹窗压缩进侧边栏——历史踩坑）
-- **历史说明**：早期版本用的是 WebGL 真折射（`lib/liquid-glass/` 库 + `liquid-glass-bundle.js` 107KB）；因不稳定且体积大，v3.6.0 已删掉 WebGL 运行时，改用纯 CSS 版。`lib/liquid-glass/*.js`、`liquid-glass-bundle.js`、`tools/liquid-demo/` 等**仍留在包里但无运行时引用**，属遗留死文件（后续可清）。
+- **历史说明**：早期版本用的是 WebGL 真折射（`lib/liquid-glass/` 库 + `liquid-glass-bundle.js` 107KB）；因不稳定且体积大，v3.6.0 已删掉 WebGL 运行时，改用纯 CSS 版。`lib/liquid-glass/*.js`、`liquid-glass-bundle.js` 仍在仓库并**随包发布**（`files: ["lib"]`），但**客户端已无任何引用**；宿主端仍保留 `/api/mpkg-wallpaper/lg` 静态托管路由（当前无调用方）。`tools/liquid-demo/` 只留在仓库、**不进发布包**（`files` 白名单不含 `tools/`）。以上均属遗留死文件（后续可清）。
 
 **🎬 镜头与画面**
 - 镜头缩放（10–2000%）与平移、画面亮度（50–150%）、轻度锐化、Deep diving 背景框
@@ -129,7 +129,7 @@
 | **mpkg（场景类）** | 🟡 折中 | 静态帧提取 / 图层合成 / 预览动图（见下）；**含视频纹理时段的可自动切换** |
 | **时间变化壁纸** | ✅ 完整 | 多时段自动切换 + 手动锁定，懒加载防 OOM |
 | **视频（mp4/webm）** | ✅ 完整 | 直接播放 |
-| **网页（HTML）** | 🟡 实验性 | iframe 沙箱加载；**带设置项的部分网页壁纸已接入插件可改（下）**；**带可交互功能的暂未适配** |
+| **网页（HTML）** | 🟡 实验性 | **沙箱 iframe + 在作者脚本之前注入 WE API shim**（属性/音频/媒体/slideshow 回调可用）；**带设置项的部分网页壁纸已接入插件可改（下）**；**带可交互功能的暂未适配** |
 | **场景原始目录（scene.pkg）** | 🟡 折中 | 同 mpkg 场景类 |
 | **Application（exe）** | ❌ 排除 | 安全考虑，绝不读取/执行 |
 
@@ -163,21 +163,50 @@
 
 ## 网页壁纸（Web，实验性）
 
-- HTML 壁纸在**沙箱 iframe** 中全屏加载（`allow-scripts` 隔离；有静音开关，默认开）；**webUrl 持久化**——刷新 / 路由切换 / RTC 重连后自动恢复，不会丢配置（卡住时手动刷新页面即可恢复）
+- HTML 壁纸在**沙箱 iframe** 中全屏加载；**webUrl 持久化**——刷新 / 路由切换 / RTC 重连后自动恢复，不会丢配置（卡住时手动刷新页面即可恢复）
+- **两条加载模式**（确认弹窗里选，模式记在 webUrl 里，刷新后照旧）：
+  - **沙箱模式（默认，推荐）**：宿主在入口 HTML 的 `<head>` 最前注入 **WE API shim**（`window.wallpaperPropertyListener`、
+    `wallpaperRegisterAudioListener`、`wallpaperRegisterMedia*Listener`、`wallpaperRequestRandomFileForProperty`…），
+    因此依赖 WE API 的网页壁纸能真正跑起来；iframe 的 `sandbox` **只要 `allow-scripts`**（不透明源）
+    ⇒ 壁纸脚本**无法访问 DSH 界面与本地存储**。代价：父页也读不到帧内 DOM，静音/倍速/暂停改由 shim 在帧内执行。
+  - **兼容模式（同源）**：等价于改动前的裸 iframe（`allow-scripts allow-same-origin allow-pointer-lock`）。
+    Live2D 类壁纸的「网页壁纸选项」（分辨率/语言/音量，写 iframe 同源 `localStorage`）需要它。
+- **属性/媒体接线**：挂载时把壁纸 `project.json` 的 `general.properties` 全量默认值（叠加你在插件里改过的
+  `propEdits`）下发给 shim；目录里的媒体文件作为 slideshow 的文件池（`__mpw-list.json`）。
+  静音/倍速/暂停经 postMessage 下达到帧内。
+- **类型判定按内容，不只看声明**：`project.json` 的 `general.type` 只是线索——
+  谎报 `web` 但目录里是 `scene.pkg` 的包按**场景**处理，谎报 `scene`/`video` 但只有 `index.html` 的按**网页**处理
+  （四态：web / scene / video / unknown，`application/exe` 一律排除）。
 - **风险预检**：扫描时自动分类，列表与确认框标注：
-  - **⚠重动画**：Spine/L2D 骨骼动画壁纸，低性能设备可能卡住界面
+  - **⚠重动画**：Spine/L2D 骨骼动画壁纸，低性能设备可能卡住界面（这类建议用「兼容模式」）
   - **🌐外网**：依赖外网 SDK/CDN（如米哈游事件页），加载可能失败
+- **作者脚本报错不会拖垮插件**：帧内 shim 兜住 listener 异常 / 全局 `error` / 未捕获 Promise，
+  限流上报父页（`console.warn` + `/diag`），不影响界面与其它功能
+- **交互操作（鼠标 / 滚轮 / 键盘）**：壁纸层是背景层（不吃指针），所以交互走**交互模式**——
+  点右下角「交互」小按钮（或 URL 加 `?mpwinteract=1`，`full` 档含键盘）后，指针/滚轮/键盘会被送进壁纸内的作者脚本：
+  - **两档**：`pointer`（缺省：鼠标移动/点击/滚轮，**不注入键盘**）与 `full`（+ 键盘与文本输入）；
+    存储字段 `webInteraction`（`off|pointer|full`；**设置页当前没有对应控件**、也不在导入白名单里，只能用 URL 参数或手工写存档）+ URL `?mpwinteract=off|pointer|full|1` 都认。
+  - **一定会退出**：60 秒无操作 / 180 秒总时长 / `Esc` / 右上角「退出交互」/ 切换壁纸 / 窗口失焦，
+    六条路径任意一条都会关掉——不会出现"界面被壁纸吃掉、点不动"的情况。
+  - **不改沙箱**：交互**不**放宽 `sandbox`（仍只要 `allow-scripts`，不透明源），也不读帧内 DOM；
+    键盘注入下 `Ctrl/Cmd+R/W/T/N/Q/L/P`、`F5/F11/F12`、`Backspace`、`Tab` 会被拦下（不会刷掉你的 DSH 页面），
+    其余按键一律放行。**CSS `:hover`/`:active` 不会被合成事件点亮**（浏览器 hit-test 机制所限，非 bug）。
+  - 细节与安全边界逐条：`docs/WEB-WALLPAPER.md` §11；回归：`node tools/web-interaction-test.mjs`。
 - 实测：webm 视频类网页壁纸（轻量）正常；Spine 骨骼动画类视设备性能而定；**带 `loadJson.json` 设置项的 Live2D 立绘类已接入插件可改**（见上文）
 
-## 设置分组（顶部 Tab，共 8 个）
+> 细节（类型判定表、sandbox 逐项理由、shim API 表与控制协议、交互注入方案与安全边界、文件 URL 改写、
+> 错误边界、已知限制、与参考实现的差异清单）：[`docs/WEB-WALLPAPER.md`](docs/WEB-WALLPAPER.md)。
+> 回归：`node tools/web-wallpaper-test.mjs` + `node tools/web-interaction-test.mjs`
+> （都已并入 `bash tools/check.sh` 第 5 步，全部断言绿）。
+
+## 设置分组（顶部 Tab，共 7 个）
 
 - **背景来源**：总开关、hybrid、mpkg 文件、图片/视频文件、自定义目录（可指 workshop 主目录）、本地壁纸库（Steam 扫描）、壁纸切换/轮换、**时间变化壁纸的时段锁定**
 - **壁纸设置**：静音、镜像翻转（水平/垂直）、视频倍速、可调参数（mpkg 只读 / 网页壁纸可改）、解码帧率上限、分辨率上限、ffmpeg 状态
 - **外观**：主题颜色、悬浮、磨砂模糊、镜头缩放/位置、亮度、**透出壁纸**（侧边栏/标题栏透出、标题栏磨砂程度、锐化）
 - **统一虚化**：整屏虚化 + 侧边栏/标题栏白雾、聊天区跟随、新会话跟随
 - **界面虚化**：对话框/设置面板/弹窗/弹层/遮罩/侧边栏磨砂各自独立
-- **Aqua**：统一雾/面板取色/自适应文字等实验开关
-- **液态玻璃**：lgTest / lgComposer / lgSidebar / lgHeader（CSS 版，**实验中，建议不启用**；附独立演示页，见上方「液态玻璃」小节）
+- **液态玻璃**：lgTest / lgComposer / lgSidebar / lgHeader（CSS 版，**实验中，建议不启用**；附独立演示页，见上方「液态玻璃」小节）；同 tab 内还有 **Aqua 实验小节**（统一雾/面板取色/自适应文字等）
 - **其他**：省电三档（隐藏/失焦/电池）、新样式/锐化/圆角兼容、更新检查/热更新、**备份与恢复**、恢复所有默认设置、前往反馈；安装 better-sidebar 时此处出现**适配分类**（时钟为运行时兼容项，无设置开关）
 
 ## P-66 面板健壮性修复（2026-09-15）
@@ -189,7 +218,87 @@
 | 真 bug | 根因 | 修法 | 复现/断言 |
 | --- | --- | --- | --- |
 | **渲染错误边界失效，真因被吞** | `MpkgSectionImpl` 的外层 `catch (err)` 里用 `h(...)`，而 `h` 是**外层 `try` 块内的 `const`**（块作用域不可见）→ 边界自身抛 `h is not defined`，用户看到的是「壁纸引擎设置区渲染异常：h is not defined」，**真实错误信息丢失**（诊断被误导） | 该 catch 内改用 `react.createElement` | `node tools/panel-fixes-test.mjs --client <修复前副本>` → 红（显示 `h is not defined`）；对当前代码 → 绿（显示真实错误 `boom-body`） |
-| **zh/en 字典键集合不一致** | `en` 缺 18 个键（`glass.title/desc`、`glassWindow*`、`glass.accent*`、`glass.color*`、`glass.alpha`、`glass.reset`、`flipX/Y*`、`themeColor*`、`rightSidebarBlur.overridden`）→ 英文界面直接显示 **key 原文**；`clock.*` 10 个键只存在于 `en` → 中文界面反而显示英文；另有两处硬编码中文（`"当前状态: "`、`"（已重挂）"`） | 只增不删地把两套字典补到 **444 == 444 键**；两处硬编码中文改走 `t()`（中文可见文案保持不变） | 同一测试：键集合一致 / 377 个静态 `t("k")` 键两套齐全 / 英文渲染零中文 / 中文渲染零键名残留 |
+| **zh/en 字典键集合不一致** | `en` 缺 18 个键（`glass.title/desc`、`glassWindow*`、`glass.accent*`、`glass.color*`、`glass.alpha`、`glass.reset`、`flipX/Y*`、`themeColor*`、`rightSidebarBlur.overridden`）→ 英文界面直接显示 **key 原文**；`clock.*` 10 个键只存在于 `en` → 中文界面反而显示英文；另有两处硬编码中文（`"当前状态: "`、`"（已重挂）"`） | 只增不删地把两套字典补到**键集合完全一致**（条数以 `node tools/panel-fixes-test.mjs` 的实跑输出为准，避免每加一个键就过时）；两处硬编码中文改走 `t()`（中文可见文案保持不变） | 同一测试：键集合一致 / 静态 `t("k")` 键两套齐全 / 英文渲染零中文 / 中文渲染零键名残留 |
+
+## 2026-09-16 两个真机 bug 根治（标题栏磨砂 / 右侧时间线条）
+
+| bug | 根因（判据） | 修法 | 回退开关 | 回归 |
+| --- | --- | --- | --- | --- |
+| **标题栏磨砂"一直没有"** | `syncHeaderFrost()` 第一行调用 `normalizeSection(...)`，而该函数当时定义在**另一个函数的函数体内** ⇒ 每次调用抛 `ReferenceError`，又被函数自己的 `catch {}` 吞掉 ⇒ 磨砂层从未注入、诊断 `reason` 恒为空（真机 diag 实锤 `injected:false` / `reason:""`） | 归一化函数**提升到模块作用域**；异常改为写进 `hdrFrostState.reason`（不再静默）；"真实磨砂元素 + header 半透明底"成对出现，半透明底色走我们自己的 `--mpw-hdr-frost-bg`；`wanted=false` 时**清理**而不是留一个空层（空层会抑制伪元素兜底，反而彻底没磨砂） | `?hdrfrost=legacy`（旧门控）、`?hdrfrost=off`（彻底关）、`?hdrblur=pseudo\|element`（对照） | `node tools/frost-rail-test.mjs` |
+| **壁纸模式下右侧时间线（轮次导航条）变透明** | DSH 的 `TurnNavigator rail` 条 = `.eGxaPq_mark::before`，颜色 token 是 `--dsw-alias-border-l4`（`#00000029`/`#fff3`，16%/20% alpha）与 `--dsw-alias-label-*`。插件 ①用 `var(--mpw-aqua-ink, inherit)` 与自引用 fallback 覆盖 `--dsw-alias-label-*`（DSH 把它们定义在 `body`、html 上没有）⇒ body 上成为 **guaranteed-invalid** ⇒ 激活/preview 条 `background` 变 unset = 透明；②裸 `html body { --dsw-specific-sidebar-fill: transparent }` **全局**改宿主 token，并把聊天区表面透明化 ⇒ 16% 淡条画在壁纸上 = 看不见 | token 覆盖**收窄**到白名单容器；aqua/文字色覆盖加 `data-mpw-*` 门控并**去掉 inherit/自引用**；给条补一个按主题计算的、**我们命名空间**的对比色（只作用于白名单 `.eGxaPq_*` 节点，不碰宿主 token、不用 `!important`） | `?railink=off`（关对比补偿）、`?sbfill=wide`（恢复旧的全局侧栏底色覆盖） | `node tools/frost-rail-test.mjs` |
+
+> 细节与诊断字段表：[`docs/HEADER-FROST.md`](docs/HEADER-FROST.md)、[`docs/TIMELINE-RAIL-TOKEN.md`](docs/TIMELINE-RAIL-TOKEN.md)。
+
+## 视频壁纸转码：判定是"误判" + 资源上限（2026-09-17，第 1 条）
+
+> 用户原话：「我现在并没有使用视频转码，我用的是 **video 类的 mpkg**，然后**解码帧率无上限**，
+> **分辨率也是原始分辨率**，什么都没调。你看一下这是不是 bug.」
+> 实测：`ffmpeg -threads 1 -filter_threads 1 … -i ~/.dsh-mpkg-wallpaper/transcodes/src_1789….bin`
+> **常驻、RSS ≈ 690MB** —— 插件在后台转用户**正在播放**的壁纸。
+
+**判定：这次转码是误判（bug）**。判据：那条 `src_*.bin` 是 `h264 High L5.2 + aac / MP4`
+（`ffprobe` 实读，浏览器必可直读），而 `settings.json` 里 `fpsCap=0 / resMax=0`
+（用户没开转码）⇒ 触发者是客户端 `video.error`（`code 3/4`）后的**自动降级**
+`/transcode?fps=24`——`code 3/4` 只表示"这一帧解不出来"，**不等于"浏览器不支持该编码"**。
+
+**修法**：新增**可播性闸门**（`/probe` 只读元数据、不起 ffmpeg；判据表 = 编码/容器白名单 +
+MP4 里 h264+opus、HEVC Main10 这类确定性缺口；探测不出来一律不改行为）——
+可直读就**直读原片**，只有真吃不下才转码。顺带修掉三个真 bug：旧 `direct-spec` 直读判据
+**不看编码**（HEVC 会被直读→黑屏）、字节上限淘汰**从最新开始删**（刚转好的产物被自己删掉
+⇒ 缓存永久 miss）、**取消后仍换编码器重试**（切壁纸时又拉起新 ffmpeg）。
+资源上限集中一处：产物 12 个 / **512MB**、并发 **1**、排队 30s、单任务 15min、
+**转码默认降采样到 1920 宽**（实测 4K 656MB → 1080p 275MB）、**内存准入 1024MB**
+（可用内存不足就拒绝转码而非把整机拖进 swap）、启动清理一次并打日志；
+三种状态（直读/转码中/已缓存）写进日志与 `window.__mpwWallpaperState`，不再静默占内存。
+
+> 细节、判据表、内存实测与"实测排除的做法"：[`docs/TRANSCODE-RESOURCE.md`](docs/TRANSCODE-RESOURCE.md)；
+> 回退开关 `?mpwtranscode=legacy`（回到旧行为）/ `aggressive`（连用户设的上限也先探测）；
+> 回归：`node tools/transcode-limit-test.mjs`（43 断言，已接入 `tools/check.sh` 第 5/9 步）。
+
+## 选择文件夹 / 选择文件：行为契约与快捷键（2026-09-17，第13条）
+
+> 用户原话：「在选择文件夹的这个功能里面，鼠标上下滑动的时候，画面有时候会自动弹跳到最顶上，
+> 包括有时候会自动锁定到最顶上……这个 bug 你一直没有修好。」
+
+**根因（判据式，详见 [`docs/DIR-PICKER-SCROLL.md`](docs/DIR-PICKER-SCROLL.md)）**：
+旧实现里那段"事后补偿滚动位置"的代码是**死代码**——`dirScrollRef.current` 只被写成
+`{anchorIdx, anchorOff}` 而**从不写 `ratio`**，于是 `if (ratio === void 0 || ratio === null) return;`
+恒真早退，其后的锚点补偿与按比例恢复**一行都没执行过**；同时容器没有 `overscroll-behavior: contain`
+（滚轮到边界会串联给宿主设置面板），且没有任何机制在 React 重建列表节点后把用户的 `scrollTop` 补回来
+（新节点天然 `scrollTop = 0`）。三者叠加 = 用户看到的"自动弹跳 / 锁定在最顶"。
+
+**修法（无新增第三方依赖）**：选择器改为**自己持有滚动主权**——容器按路径记忆用户的 `scrollTop`
+（滚动事件只写 ref、不 setState），在 `useLayoutEffect` 里**绘制前同步写回**（幂等，永远不与用户滚动打架，
+时间窗 hack 全部删除）；滚动容器统一带 `overscroll-behavior: contain` + `overflow-anchor: none`；
+行 key 改为"完整路径 + 目录名"（增量更新而非整表重建）；弹窗元素加稳定 key；
+**全程没有任何 `focus()`/`autoFocus`**。
+
+| 行为契约 | 说明 |
+|---|---|
+| **滚动位置保持** | 刷新 / 过滤 / 条目变少 / 500 项大目录 / 宿主重渲染 / **容器节点被重建**后，滚动位置都在原位（不会出现"跳回顶"的一帧） |
+| **不抢焦点** | 打开弹窗只把焦点给**列表容器自己**且带 `focus({preventScroll:true})`（不会把容器滚进视野 ⇒ 不产生跳顶）；行一律 `tabindex="-1"` + `mousedown` 阻止默认聚焦 ⇒ **任何行都不会成为 `document.activeElement`**（活动行只改高亮与 `aria-activedescendant`）；重渲染不再抢焦点 |
+| **每个目录各自记位置** | A 目录滚到 60、B 目录滚到 20，来回切换互不串位 |
+| **滚轮不串联** | 列表滑到边界后不会带着背后的设置面板一起滚 |
+| **行级增量更新** | 目录刷新只增删差集（行 key = 完整路径，测试断言行节点 uid 不变），**不做全量重建** |
+| **锚点缺失不回 0** | 记住的位置若超出新列表范围 ⇒ **夹到新范围**（绝不回 0）；记忆值缺失/非法（`null`/`""`/`NaN`）一律当"无锚点"⇒ 认领当前位置 |
+
+**快捷键**（弹窗内有可见提示；打开弹窗后列表容器已就绪，**直接按即可**）：
+
+| 按键 | 行为 |
+|---|---|
+| `↑` / `↓` | 上下移动活动行（不会抢焦点、只在按键时做最小位移 `block:"nearest"`） |
+| `Home` / `End` | 跳到第一个 / 最后一个目录 |
+| `Enter` | 进入活动行对应目录；**未选中任何行时 = 「选择此文件夹」** |
+| `Backspace` / `Alt`+`↑` | 上一级目录 |
+| `Esc` | 关闭弹窗 |
+
+**回归门禁**：`node tools/dir-picker-test.mjs`（**57 断言**；A 组 10 条源码级断言对 `git show HEAD:lib/client.js`
+旧实现会**变红 9 条**，证明用例有分辨力；B 组用假 DOM + 迷你 React **跑生产实现的切片**）。
+行为契约与测试台（8901/8902）逐条对齐：`docs/DIR-PICKER-SCROLL.md` §5 ↔ `vendor-ref/ww-pages/PATCH-NOTES.md` §10.5。
+
+> 排查用开关（URL 参数，刷新即生效，不改设置）：`?hdrfrost=legacy|off`、`?hdrblur=pseudo|element`、`?railink=off`、`?sbfill=wide`。
+> 修完请刷新一次页面，并按一次「诊断/上报」——`diag-*.json` 的 `headerFrost` 段能直接看出磨砂卡在哪一环
+> （`hostHasHeader` / `injected` / `px` / `computed.headerBg` / `computed.frostElBackdrop` / `reason`）。
 
 ## 安装
 
@@ -212,7 +321,7 @@ pnpm --dir $DSH_HOME/profiles/<profile> add dsh-mpkg-wallpaper
 ### 方式三：GitHub 克隆（开发者 / 离线）
 
 ```bash
-git clone https://github.com/XHR666/dsh-mpkg-wallpaper.git $DSH_HOME/profiles/node_modules/dsh-mpkg-wallpaper
+git clone https://github.com/XHR666/dsh-mpkg-wallpaper.git $DSH_HOME/profiles/<profile>/node_modules/dsh-mpkg-wallpaper
 # 然后在 profile 的 cordis.patch.yml 注册：
 #   - insert:
 #       - id: dsh-mpkg-wallpaper
@@ -227,7 +336,9 @@ git clone https://github.com/XHR666/dsh-mpkg-wallpaper.git $DSH_HOME/profiles/no
 ## 限制
 
 - **场景壁纸无法完整动态还原**（见[场景壁纸适配现状](#场景壁纸scene适配现状)）；mpkg 可调参数为只读展示，修改需在壁纸引擎 App 中生效
-- **网页壁纸为实验性**：重动画/外网依赖可能卡顿或加载失败（有预检标注与刷新恢复机制）；**自带设置项的部分网页壁纸已接入插件可改，带可交互功能的壁纸暂未适配**
+- **网页壁纸为实验性**：重动画/外网依赖可能卡顿或加载失败（有预检标注与刷新恢复机制）；
+  沙箱模式（默认）下壁纸脚本**无法访问 DSH 界面与本地存储**，但 Live2D 类的「网页壁纸选项」需改用兼容模式；
+  音频频谱通道已打通但插件暂无频谱数据源；**可交互壁纸需先开「交互模式」**（见上文；默认不接管你的鼠标/键盘）
 - **超大素材**（纯浏览器模式）：独立视频 >600MB、视频纹理 >250MB、图片 >200MB 无法处理；**hybrid 模式**无此限制
 - 场景静态帧/图层合成的**首次提取耗时**（几秒，8K 纹理更久）；之后走缓存秒开
 
@@ -257,10 +368,18 @@ git clone https://github.com/XHR666/dsh-mpkg-wallpaper.git $DSH_HOME/profiles/no
 
 ## 安全说明
 
-- **默认无被动对外网络请求**：插件后台**不主动**访问任何外部网络；日常壁纸播放仅与**本机 DSH 宿主**（127.0.0.1）HTTP 通信。唯一的例外是**用户显式触发的功能**：检查更新 / 一键更新访问 GitHub（`raw.githubusercontent.com`、`api.github.com`）、下载 ffmpeg 访问 GitHub Releases / npm 二进制镜像（`registry.npmmirror.com`）——均在用户点按后发起，不自动发生。此外用户手动输入的网络图片 URL、网页壁纸自身加载的资源也属外部访问。
+- **默认无被动对外网络请求**：插件后台**不主动**访问任何外部网络；日常壁纸播放仅与**本机 DSH 宿主**（127.0.0.1）HTTP 通信。唯一的例外是**用户显式触发的功能**：检查更新 / 一键更新访问 GitHub（`raw.githubusercontent.com`、`api.github.com`）、下载 ffmpeg 访问 GitHub Releases / npm 二进制镜像（`registry.npmmirror.com`）——「一键更新」「下载 ffmpeg」都由用户点按发起；**打开设置面板后 0.8s 会自动静默检查一次版本**（只点亮「有新版本」徽标，不弹窗、不下载、不上传任何本地信息）。此外用户手动输入的网络图片 URL、网页壁纸自身加载的资源也属外部访问。
 - **无敏感内容**：源码不含路径、密钥、令牌、个人信息
 - **开源依赖**：仅 DSH 自带 react + 官方 slots/locale 接口；scene.pkg 提取器采用 [elysia395/dsh-wallpaper-engine](https://github.com/elysia395/dsh-wallpaper-engine)（MIT，文件头已署名）
-- 参考项目：[dsh-bg-image](https://github.com/lyh9712/dsh-bg-image)（MIT，模板）、[unmpkg](https://github.com/aqnya/unmpkg)（GPL-3.0，仅参考 mpkg 二进制格式）、[repkg](https://github.com/notscuffed/repkg)（GPL，仅研究 .tex 格式）
+- **网页壁纸沙箱**：默认模式下壁纸 iframe 是**不透明源**（`sandbox="allow-scripts"`，无 `allow-same-origin`），
+  作者脚本**读不到宿主 DOM / `localStorage` / cookie**，也摘不掉自己的 sandbox；帧与父页只走 `postMessage`
+  （op 白名单 + 只认父窗口来源）。壁纸资源的跨源读取**只对 `Origin: null`（沙箱帧）**放行；普通网站拿不到 CORS 头。
+  作者脚本抛错在帧内兜住并限流上报（`console.warn` + `/diag`），不影响插件。
+- **网页壁纸交互模式**：交互事件只从插件建的**交互舞台**发出（舞台默认 `display:none`，未开交互时一个事件都不注入），
+  且开启才给宿主页面打 `data-mpw-interact="on"`（此时宿主界面整体让位，右上角常驻退出按钮）；
+  60s 无操作 / 180s 总时长 / `Esc` / 切壁纸都会自动退出。交互**不放宽沙箱**（不加 `allow-same-origin`、不加
+  `allow-pointer-lock`），也**不读帧内 DOM**（父页实现块里不出现 `contentDocument`）。
+- 参考项目：[dsh-bg-image](https://github.com/lyh9712/dsh-bg-image)（MIT，模板）、[unmpkg](https://github.com/aqnya/unmpkg)（GPL-3.0，仅参考 mpkg 二进制格式）、[repkg](https://github.com/notscuffed/repkg)（**MIT**，仅研究 .tex 格式；早前此处误记为 GPL，已于 2026-09-17 更正 —— 依据 = 上游 `LICENSE` 原文 + 项目所有者确认，见 `../docs/COPYING-RULES.md` §6/§9.10）
 - 数据边界：所有解析在本机完成；localStorage 只存背景与参数；设置另存宿主端 `~/.dsh-mpkg-wallpaper/settings.json`
 
 ## 文件结构
@@ -272,25 +391,32 @@ dsh-mpkg-wallpaper/
 ├── LICENSE           # MIT 许可证
 ├── lib/
 │   ├── index.js      # 宿主端：上传/流式播放 + Steam 发现 + 自定义目录 + 场景提取路由 + 设置持久化
+│   ├── web-wallpaper.js # 网页壁纸：内容优先类型判定 + WE API shim 源码 + 入口 HTML 注入 + 跨源策略 + 帧内交互合成（MIT，自写）
+│   ├── web-interaction.js # 网页壁纸交互（第 11 条）：坐标换算/事件整形/交互模式状态机/舞台契约（MIT，自写；语义参照 webwallgl）
 │   ├── client.js     # 浏览器端：mpkg 解析 + 设置页 + 背景 DOM + 虚化体系 + 壁纸库 + 时间变化/网页设置 + 播放控制/省电
 │   ├── pkg-extract.js# scene.pkg 静态帧/图层提取（PKG+LZ4+TEX，MIT，来自 elysia395）
-│   ├── liquid-glass/ # 液态玻璃 WebGL 库（**遗留，无运行时引用**，v3.6.0 已改 CSS 版）
-│   └── liquid-glass-bundle.js # 液态玻璃打包产物（107KB，**无引用死文件**，随包冗余）
+│   ├── liquid-glass/ # 液态玻璃 WebGL 库（**遗留**：客户端无引用，宿主仍托管 `/lg` 路由，v3.6.0 已改 CSS 版）
+│   ├── liquid-glass-bundle.js # 液态玻璃打包产物（107KB，**客户端无引用**，随包冗余）
+│   └── THIRD-PARTY.md # 第三方来历/洁净室记录与许可归属（**随包发布**，MIT 侧署名）
 ├── tools/            # 门禁/测试/基准脚本 + lg 构建/内联脚本 + liquid-demo 演示页（供开发者）
 │                     # 音频扫描：audio-scan-bench.mjs（耗时表）/ audio-scan-test.mjs（规格断言 · 不整包解压 · 缓存）
 │                     #           scene-audio-route-test.mjs（/raw Range + 探测路由 + 安全）
+│                     # 网页壁纸：web-wallpaper-test.mjs（类型判定/sandbox/注入顺序/shim API 差异/抛错兜底/无 GPL/帧内交互 E13）
+│                     #           web-interaction-test.mjs（坐标/事件整形/开关状态机/沙箱边界/舞台契约/两侧源码对拍）
 │                     # 注：研究期的 Python 工具（unmpkg/tex2png/mdl_explorer/xref）
 │                     #     **已删除（GPL 血缘存疑，2026-09-16）**，见 `../docs/COPYING-RULES.md` §6
+├── docs/             # 研发笔记（不进发布包）：WEB-WALLPAPER.md（网页壁纸规格/沙箱/API 表/限制）等
 ├── screenshots/      # （已移出仓库，见文末说明）
 ├── README.md         # 本文件（中文）
 └── README.en.md      # 英文说明
 ```
-> 注：`lib/liquid-glass/`、`lib/liquid-glass-bundle.js` 因 `files: ["lib"]` 仍会打进 npm 包，但**客户端不再引用**（WebGL 已在 v3.6.0 移除，改用 CSS 版）。
+> 注：`lib/liquid-glass/`、`lib/liquid-glass-bundle.js` 因 `files: ["lib"]` 仍会打进 npm 包，但**客户端不再引用**（WebGL 已在 v3.6.0 移除，改用 CSS 版）；宿主仍保留 `/api/mpkg-wallpaper/lg` 托管路由（无调用方）。本地备份 `lib/client.js.bak-*` 已被 `files` 负向模式（`!lib/**/*.bak*`）排除，**不进发布包**，由 `tools/integrity-check.mjs` 第 ⑨ 节机器断言把关。
 
 ## 致谢
 
 - [Bil812](https://github.com/Bil812) — 在 [PR #2](https://github.com/XHR666/dsh-mpkg-wallpaper/pull/2) 提出壁纸取色、自适应文字色、全屏统一遮罩等方案并维护 fork；其中思路已吸收为「Aqua 实验」模式（可开关，默认关）
 - [elysia395/dsh-wallpaper-engine](https://github.com/elysia395/dsh-wallpaper-engine) — scene.pkg 静态帧提取器（MIT），本插件 `lib/pkg-extract.js` 采用自该项目；其「设置持久化到宿主端文件」「Edge canvas 兼容渲染」思路也已借鉴
+- [oneincase/webwallgl](https://github.com/oneincase/webwallgl) — 网页壁纸的 sandbox iframe + WE API shim 方案（MIT）：本插件 `lib/web-wallpaper.js` 的 **API 名单与语义参考**了该项目（**未复制代码**，差异清单见 `docs/WEB-WALLPAPER.md` §10；台账见 `../docs/COPYING-RULES.md` §4）
 - [awesome-dsh-plugin](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin) 社区 — 收录与推广
 
 ## 渲染可行性研究

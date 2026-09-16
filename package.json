@@ -7,10 +7,14 @@
   "icon": "icon.svg",
   "files": [
     "lib",
+    "!lib/**/*.bak*",
+    "!lib/**/*.tmp*",
+    "!lib/**/*.orig",
     "icon.svg",
     "cordis.patch.yml",
     "README.md",
     "README.en.md",
+    "THIRD-PARTY.md",
     "LICENSE"
   ],
   "exports": {

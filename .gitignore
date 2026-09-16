@@ -6,3 +6,8 @@ dsh-mpkg-wallpaper-3.5.0.tgz
 *.bak-*
 *.key
 *token*.txt
+
+# ⓪(2026-09-17 对抗性审查) 探针证据目录：tools/*.mjs 生成的截图/JSON（每次跑 A/B 都会重写，属草稿，不入库）
+tools/probe-out/
+# 误重定向产生的垃圾（如 `ffmpeg -version > -version`）
+-version
