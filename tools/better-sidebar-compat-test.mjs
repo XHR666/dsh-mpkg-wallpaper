@@ -35,8 +35,13 @@ const bad = (n, d) => { fail++; console.error('  ✗ ' + n + (d ? ' → ' + d : 
 const sk = (n, d) => { skip++; console.log('  ⤼ SKIP ' + n + (d ? '  [' + d + ']' : '')); };
 
 /* ---------- 夹具：一份"装了 better-sidebar 的 DSH_HOME" ---------- */
+// ①(2026-09-17 卫生纪律) 临时目录**无论用例成功/失败/抛异常都必须清掉**（09-17 那次磁盘被
+//   测试夹具塞满的教训）：注册 exit 兜底 + 每个目录建时就登记，断言中途 throw 也不留残留。
+const TMP_DIRS = [];
+const mkTmp = (prefix) => { const d = fs.mkdtempSync(path.join(os.tmpdir(), prefix)); TMP_DIRS.push(d); return d; };
+process.on('exit', () => { for (const d of TMP_DIRS) { try { fs.rmSync(d, { recursive: true, force: true }); } catch {} } });
 const FAKE_VER = '0.19.1';
-const home = fs.mkdtempSync(path.join(os.tmpdir(), 'mpw-bs-'));
+const home = mkTmp('mpw-bs-');
 const mkProfile = (name, ver) => {
   const dir = path.join(home, 'profiles', name, 'node_modules', 'dsh-better-sidebar');
   fs.mkdirSync(dir, { recursive: true });
@@ -90,7 +95,7 @@ console.log('\n== A. host /ping 的 betterSidebarVersion（DSH_HOME=' + home + '
     !!(p.json && typeof p.json.betterSidebarVersion === 'string' && /^\d+\.\d+\.\d+/.test(p.json.betterSidebarVersion)),
     JSON.stringify(p.json && p.json.betterSidebarVersion));
   // 未装 better-sidebar 的 DSH_HOME：不得误报版本
-  process.env.DSH_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'mpw-bs-none-'));
+  process.env.DSH_HOME = mkTmp('mpw-bs-none-');
   const p2 = await ping(routes);
   ok('没有装 better-sidebar 的 DSH_HOME ⇒ null（不臆造版本）', p2.json && p2.json.betterSidebarVersion === null, JSON.stringify(p2.json && p2.json.betterSidebarVersion));
   process.env.DSH_HOME = home;
@@ -98,7 +103,7 @@ console.log('\n== A. host /ping 的 betterSidebarVersion（DSH_HOME=' + home + '
 
 console.log('\n== B. 变异用例：把函数名改回与局部变量同名（复现真因）⇒ 必须变红 ==');
 {
-  const mut = fs.mkdtempSync(path.join(os.tmpdir(), 'mpw-bs-mut-'));
+  const mut = mkTmp('mpw-bs-mut-');
   // 只复制 index.js 与它的两个相对依赖（lib/liquid-glass/ 是目录，本机 cpSync 会 EINVAL；
   // 且变异只发生在 index.js，复制整个 lib 没有必要）。
   fs.mkdirSync(path.join(mut, 'lib'), { recursive: true });
