@@ -258,7 +258,7 @@
   裸元素选择器（`button{…}`）、裸 `*`、`:root` 上覆盖宿主 token、宿主 token 被设成 transparent/inherit、
   未登记 token 的 `!important`、未门控碰宿主轮次导航条、`[data-dsh-panel-host]`、顶栏描边透明化 ⇒ **判红**。
 * **自证有分辨力**：`node tools/style-scope-guard.mjs --selftest` 把 `lib/client.js` 复制到临时目录注入
-  13 条变异（含一条"我们自己的标记必须仍然放行"的阴性对照），逐条断言必须 RED/REVIEW/PASS。
+  15 条变异（含一条"我们自己的标记必须仍然放行"的阴性对照），逐条断言必须 RED/REVIEW/PASS。
 * 判据、允许清单账本与"怎么加一条登记项"：[`docs/STYLE-SCOPE-GUARD.md`](docs/STYLE-SCOPE-GUARD.md)。
 
 ## 表面 token 命名空间：顶栏 / 侧栏 / 面板 / 时间线条 读同一套 `--mpw-*`（2026-09-18，MASTER-TODO §5 第 1 项 / P0-3）
@@ -279,6 +279,24 @@
   **生效值**（极小层叠模型 + `var()` 递归代换）⇒ 25 428 个键逐键相等 —— 这是重构，不是重设计。
 * 清单（哪枚 token 归哪个表面 / 哪枚宿主 token 被消费 / 登记表与理由 / 已知偏差 / 怎么加新 token）：
   [`docs/TOKEN-NAMESPACE.md`](docs/TOKEN-NAMESPACE.md)。
+
+## 开关接线审计：不许再有"开关能点、没有效果"（2026-09-18）
+
+**真事故**：「配色」(accent) 与「深底文字可读增强」(aquaTextEnhance) 两段 CSS 被一起包在
+`if (aquaOn(section))` 里 ⇒ **只开这两个开关时规则根本不生成**：界面上能点、没有任何效果、控制台也不报错
+（两段自己的注释都写着"不依赖 Aqua"，与实现矛盾 —— 靠读代码很难发现）。已修，并加了通用判据
+`node tools/switch-wiring-test.mjs`（门禁第 2 步）：
+
+* 每个布尔开关都必须在"默认档 / 富上下文 / 其它全开"三个上下文之一里**改变 `buildCss` 产物**；
+  只影响运行时的开关必须逐条登记 `reason`（如 `mute`/`rotate`/省电三档/时钟文案…）。
+* 非布尔功能（`accent`/`aquaTextEnhance` 设值必须改变产物）；`themeColor` 属"CSS 常驻 + 运行时属性门控"，
+  判据改为断言门控规则确实在产物里。
+* **已证实失效但未修**的开关进 `KNOWN_DEAD` 并在每次运行时显式列出（双向断言：修好了必须从表里删）——
+  本轮顺手查出三条同类问题（`lgCss` 整块因 TDZ `ReferenceError` 被 catch 吞掉、从未执行；
+  `sessionFollow` 有开关但全仓无人读取；`glassWindow` 只有文案没有实现），
+  详见 [`docs/TOKEN-NAMESPACE.md`](docs/TOKEN-NAMESPACE.md) §3b。**这三条没有默默改掉**——改动会启用
+  从未运行过的整块视觉特性，需要单独一轮 + 真机验证。
+* 分辨力自证：把 `accent` / `aquaTextEnhance` 的门控改回被 `aquaOn` 包住 ⇒ 必须变红（两条变异）。
 
 ## 视频壁纸转码：判定是"误判" + 资源上限（2026-09-17，第 1 条）
 

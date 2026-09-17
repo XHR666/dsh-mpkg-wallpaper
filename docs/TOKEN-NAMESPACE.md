@@ -98,15 +98,42 @@ DSH 把设计 token 定义在 **`body`** 上，不是 `:root`：
 **永不碰** rail 家族（`--dsw-alias-border-l4` / `--dsw-alias-label-primary` 在
 `TOKEN_POLICY.railTokens`）；未登记的 `--dsw-*` 覆盖一律判红。
 
-### 已知偏差（登记为现状，本轮不修）
+### 已知偏差
 
-1. `ovr:accent-brand` / `ovr:text-ink-adaptive` 目前与 Aqua 段**同一处输出**（`if (aquaOn(section))`）：
-   只开「配色」或只开「深底文字可读增强」时，这两段 CSS 不会生成 ⇒ 功能看起来无效
-   （`lib/client.js` 里 `aquaOn()` 的定义处注释与这两段的注释都写着"不依赖 Aqua"，实际输出仍被它包着）。
-   本轮的登记项按**实际**生效条件登记（因此判据是绿的且不会说谎），偏差记在这里，供后续单独一轮修。
+1. ~~`ovr:accent-brand` / `ovr:text-ink-adaptive` 与 Aqua 段同一处输出 ⇒ 只开「配色」/「深底文字
+   可读增强」时规则不生成（功能静默无效）。~~ ✅ **已修（2026-09-18）**：两段各按自己的开关生成
+   （`accentConfigured` / `textEnhanceOn`，分段顺序逐字节保留，因为发送键在 accent 与 aqua 下有
+   两条同特异度 `!important` 规则）；登记表的生效条件同步改成真实条件。判据是**双向**的：
+   `token:override-leaked`（不许漏进关闭档）+ `token:override-missing[-cases]`（条件为真的组合里
+   必须真的出现 —— 就是这条抓住了"整段被别的开关包住"）；变异自证见下方。
 2. 原始需求里提到的 `color-mix(in srgb, var(--dsw-alias-bg-layer-1) 62%, transparent)` 只是**写法示例**：
    本插件实际用的是 `--dsw-static-neutral-bluish-*` 静态色（理由写在 `lib/client.js` 的
    表面 token 注释里：静态色不受 aquaTint 的 token 覆盖影响）。
+
+### 3b. 同一轮审计**新发现**、登记为「未修」的失效开关
+
+`tools/switch-wiring-test.mjs`（门禁第 2 步）会枚举每个开关并要求它真的改变产物，因此顺手查出
+同类的"开关没接线"。这三条**没有修**（改动会启用从未运行过的整块视觉特性，需要单独一轮 + 真机验证），
+审计每次运行都会显式列出，且**双向断言**（修好了就必须从 `KNOWN_DEAD` 删掉）：
+
+| 开关 | 现象 | 证据 |
+| --- | --- | --- |
+| `lgCss`（纯 CSS/SVG 液态玻璃） | **整块从未执行**：块内第 6079 行引用 `bdSupported`，而该 const 在 6304 行才声明 ⇒ 同一函数作用域 TDZ `ReferenceError`，被外层 `catch { /* 液态玻璃失败不得影响其它样式 */ }` 吞掉。默认关+有壁纸+支持 backdrop-filter 也不产出任何规则 | 产物里永远没有 `url(#mpw-lg-warp)`；`lgCss:true` 与 `lgCss:false` 逐字节相同（`tools/switch-wiring-test.mjs` A2 段每次打印） |
+| `sessionFollow`（新会话按钮跟随） | 设置页有开关（`lib/client.js:11227 toggleRow`）与文案，但**全仓没有任何地方读 `section.sessionFollow`** ⇒ 点了没效果（6989 行注释声称"随 sessionFollow"，实际无条件用 `U(panel)`） | `grep -n "section\.sessionFollow" lib/client.js` ⇒ 无匹配 |
+| `glassWindow`（设置窗口液态玻璃） | 只有 i18n 文案 + 导入净化名单，**既无开关也无读取点** ⇒ 功能未接线 | `grep -n "glassWindow" lib/client.js` ⇒ 仅 i18n 与 `boolFields` 名单 |
+
+修 `accent` / `aquaTextEnhance` 那两条时的**变异自证**（`node tools/switch-wiring-test.mjs`）：
+
+```
+== C. 分辨力自证：把门控改回"被 aquaOn 包住"必须变红 ==
+  ✓ 变异 accent-gate-reverted：期望变红，实际 RED   [exit=1]
+  ✓ 变异 text-enhance-gate-reverted：期望变红，实际 RED   [exit=1]
+```
+护栏侧另有对称判据的变异证据（`node tools/style-scope-guard.mjs --client /tmp/mut-accent-revert.js`）：
+```
+↳ token:override-missing-cases：登记项 ovr:accent-brand 的生效条件在这些组合里为真，
+  但产物里没有对应的 --dsw-alias-brand-primary 声明：单开:accent / accent+文字增强
+```
 
 ## 4. 判据与自证（怎么跑、看到什么算过）
 

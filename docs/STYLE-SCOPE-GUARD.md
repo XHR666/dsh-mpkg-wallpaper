@@ -157,6 +157,10 @@ bash tools/check.sh                           # 门禁第 11 步就是全量模�
 | `body{--dsw-alias-bg-base:red}` | RED | ★同上，`body` 上覆盖宿主 token 必须仍判红 |
 | `.mpw-guardProbeHost{--mpw-surface-panel:#123456}` | RED | ★共享表面 token 在 SSOT 之外被二次定义（会退化成"四处各写一套"） |
 
+（共 **15 条**变异；上面的 token 命名空间相关条目里，"登记项必须真的生成"这条由
+`--selftest` 之外的单点验证给出：把 `accent` 的门控改回 `aquaOn` 后 `--client <副本> --quick`
+报 `token:override-missing-cases`，见 `docs/TOKEN-NAMESPACE.md` §3b。）
+
 ---
 
 ## 6b. token 命名空间（2026-09-18 增补，MASTER-TODO §5 第 1 项 / P0-3）
@@ -169,6 +173,10 @@ bash tools/check.sh                           # 门禁第 11 步就是全量模�
    当前实测：**39 处声明，39 处命中**。
 2. **登记项不许漏进默认档**：`feature(effectivePatch(patch))` 为假的**所有组合**里，该声明必须一次都不出现，
    否则 RED（`token:override-leaked`）。`effectivePatch()` 与 `lib/client.js` 的 lgTest 归一化逐项对齐。
+2b. **对称判据（2026-09-18 增补）**：生效条件为真的组合里，该声明**必须真的出现**，否则 RED
+   （`token:override-missing` / `token:override-missing-cases`）。只判"漏进默认档"是不够的——
+   「整段被别的开关包住 ⇒ 开关能点、没效果、不报错」正是漏检的另一半，`accent` 与
+   `aquaTextEnhance` 被 `aquaOn` 吞掉就是这么漏过去的（现已修，见 `docs/TOKEN-NAMESPACE.md` §3）。
 3. **四个表面只读共享 `--mpw-*`**（`SURFACES`，见 `docs/TOKEN-NAMESPACE.md` §2）：
    表面**容器本身**的 `background*` / `backdrop-filter` 声明里出现 `var(--dsw-*)` ⇒ RED
    （`token:surface-reads-host`）。口径写明：交互态（`:hover` 等）与容器内的具体控件

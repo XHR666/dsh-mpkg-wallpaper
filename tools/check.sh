@@ -27,6 +27,13 @@ node tools/panel-smoke.mjs || fail=1
 node tools/dir-picker-test.mjs || fail=1
 # P-66（2026-09-15）：①渲染错误边界（catch 里引用 try 块内 const h → 真因被吞）②zh/en 字典键对齐
 node tools/panel-fixes-test.mjs || fail=1
+# ①(2026-09-18) 「开关必须真的接线」审计（功能静默无效这一类的通用判据）：
+#   来历是真事故：「配色」(accent) 与「深底文字可读增强」(aquaTextEnhance) 两段 CSS 被一起
+#   包在 `if (aquaOn(section))` 里 ⇒ 只开这两个开关时规则根本不生成（开关能点、没效果、不报错）。
+#   判据：每个布尔开关都必须在"默认档/富上下文/其它全开"三个上下文之一里改变 buildCss 产物；
+#   只影响运行时的开关必须登记 reason；**已证实失效未修的**（lgCss/sessionFollow/glassWindow）
+#   进 KNOWN_DEAD 并在每次运行时显式列出（修好则必须从表里删，双向断言防"遮羞布"）。
+node tools/switch-wiring-test.mjs || fail=1
 # ⓪(2026-09-16 两个真机 bug 的回归门禁)：
 #   bug① 右侧「轮次导航条」(.eGxaPq_*/--dsw-alias-border-l4) 不被我们的样式/token 覆盖弄透明；
 #   bug② 标题栏磨砂注入链（假 DOM：注入 + 内联样式 + 半透明底 + 宿主标记 + 诊断 reason + 回退开关）。

@@ -241,7 +241,7 @@ without anyone noticing locally. Gate step 12 turns that into a machine-checkabl
   unregistered `!important` token overrides, touching the host turn-navigation rail without our own gate,
   `[data-dsh-panel-host]`, or making the header border transparent ⇒ **red**.
 * **It proves it can discriminate**: `node tools/style-scope-guard.mjs --selftest` copies `lib/client.js` into a
-  temp dir and injects 13 mutations (plus a negative control that must still pass), asserting RED/REVIEW/PASS for each.
+  temp dir and injects 15 mutations (plus a negative control that must still pass), asserting RED/REVIEW/PASS for each.
 * Criteria, the allow-list ledger and "how to register a new entry":
   [`docs/STYLE-SCOPE-GUARD.md`](docs/STYLE-SCOPE-GUARD.md).
 
@@ -269,6 +269,26 @@ feature." Gate step 12's second check makes that mechanical (`node tools/token-n
   model + recursive `var()` substitution) ⇒ 25,428 keys match exactly. This is a refactor, not a redesign.
 * Inventory (which token belongs to which surface / which host token is consumed / the registry with reasons /
   known deviations / how to add a token): [`docs/TOKEN-NAMESPACE.md`](docs/TOKEN-NAMESPACE.md).
+
+## Switch-wiring audit: no more "the toggle clicks but nothing happens" (2026-09-18)
+
+**Real incident**: the CSS for "Accent colour" and "Dark-background text readability" (aquaTextEnhance) was
+wrapped together inside `if (aquaOn(section))`, so **turning on only those two switches generated no rules at
+all** — the toggle was clickable, had no effect, and logged nothing (both blocks' own comments claimed they did
+not depend on Aqua, contradicting the implementation — very hard to spot by reading). Fixed, plus a general
+check: `node tools/switch-wiring-test.mjs` (gate step 2):
+
+* every boolean switch must **change the `buildCss` output** in at least one of three contexts
+  (default / rich / all-others-on); runtime-only switches must be registered with a `reason`;
+* non-boolean features (`accent` / `aquaTextEnhance` must change the output); `themeColor` is
+  "always-emitted CSS + runtime attribute gate", so the check asserts the gate rules exist instead;
+* switches **proven dead but not fixed** go into `KNOWN_DEAD` and are listed on every run (two-way assertion:
+  fixing one requires deleting its entry). The audit surfaced three more of the same class (`lgCss` never ran at
+  all — a TDZ `ReferenceError` swallowed by a `catch`; `sessionFollow` has a toggle but nothing reads it;
+  `glassWindow` is copy without implementation). See [`docs/TOKEN-NAMESPACE.md`](docs/TOKEN-NAMESPACE.md) §3b.
+  These three were **not silently changed** — enabling a never-executed visual feature deserves its own round
+  plus real-device verification.
+* discrimination proof: reverting either gate back under `aquaOn` must turn the audit red.
 
 ## Video-wallpaper transcoding: a **misjudgement** + resource caps (2026-09-17, item 1)
 

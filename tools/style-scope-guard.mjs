@@ -196,7 +196,7 @@ const HOST_OVERRIDE_REGISTRY = [
     props: ['--dsw-specific-sidebar-fill'],
     valueRe: /^transparent$/i,
     selectorRe: /^html body( \.pI_x6G_sidebarCol| \[class\*="sidebarCol"\]| \.hHd-Xa_root| \[data-slot="sidebar"\])/,
-    feature: (p) => p.sidebar !== false,
+    feature: (p) => p.sidebar !== false && hasWall(p),
     reason: '侧栏透出壁纸**开**：宿主 --dsw-specific-sidebar-fill 置 transparent，只打侧栏白名单容器（?sbfill=wide 才回退全局）；关档走 opaque 那条',
     doc: 'docs/TOKEN-NAMESPACE.md:90',
   },
@@ -205,7 +205,7 @@ const HOST_OVERRIDE_REGISTRY = [
     props: ['--dsw-specific-sidebar-fill'],
     valueRe: /^var\(--mpw-surface-opaque-side/,
     selectorRe: /^html body( \.pI_x6G_sidebarCol| \[class\*="sidebarCol"\]| \.hHd-Xa_root| \[data-slot="sidebar"\])|^html body\[data-ds-dark-theme\]/,
-    feature: (p) => p.sidebar === false,
+    feature: (p) => p.sidebar === false && hasWall(p),
     reason: '侧栏透出壁纸**关**：同一个宿主 token 回到主题静态不透明色（亮=白/暗=深色），选择器同一份白名单',
     doc: 'docs/TOKEN-NAMESPACE.md:91',
   },
@@ -228,7 +228,7 @@ const HOST_OVERRIDE_REGISTRY = [
       '--dsw-alias-label-dimmed', '--dsw-alias-brand-primary', '--dsw-alias-brand-text', '--dsw-alias-state-business-primary'],
     valueRe: /^var\(--mpw-(aqua-ink|accent-color)/,
     selectorRe: /^body\[data-mpw-aqua\]\[data-mpw-aqua-ink\]$/,
-    feature: (p) => !!(p.aquaMask || p.aquaTint || p.aquaInk),
+    feature: (p) => hasWall(p) && !!(p.aquaMask || p.aquaTint || p.aquaInk),
     reason: 'Aqua 实验模式：文字/品牌色改读我们命名空间的 --mpw-aqua-ink*；门控 = body[data-mpw-aqua][data-mpw-aqua-ink]（JS 真写入 ink 才打）',
     doc: 'docs/TOKEN-NAMESPACE.md:93',
   },
@@ -238,8 +238,8 @@ const HOST_OVERRIDE_REGISTRY = [
       '--dsw-alias-button-info-fill', '--dsw-alias-button-info-hover'],
     valueRe: /^var\(--mpw-accent-color\)$/,
     selectorRe: /^body\[data-mpw-accent\]$/,
-    feature: (p) => !!(p.aquaMask || p.aquaTint || p.aquaInk),
-    reason: '「配色」(accent)：品牌交互色/发送键读 --mpw-accent-color；门控 = body[data-mpw-accent]（运行时属性，选了色才打）。注：该块目前与 Aqua 同段输出（aquaOn 为假时不输出）—— 已登记为现状，见 docs/TOKEN-NAMESPACE.md「已知偏差」',
+    feature: (p) => hasWall(p) && accentConfigured(p),
+    reason: '「配色」(accent)：品牌交互色/发送键读 --mpw-accent-color；门控 = body[data-mpw-accent]（运行时属性，选了色才打）。①(2026-09-18) 已与 aquaOn 解耦（原来被 aquaOn 包着 ⇒ 只开 accent 时规则不生成 = 功能静默无效）',
     doc: 'docs/TOKEN-NAMESPACE.md:94',
   },
   {
@@ -248,8 +248,8 @@ const HOST_OVERRIDE_REGISTRY = [
       '--dsw-alias-label-primary', '--dsw-alias-label-secondary', '--dsw-alias-label-tertiary'],
     valueRe: /^var\(--mpw-text-ink/,
     selectorRe: /^body\[data-mpw-aqua-text\]\[data-mpw-text-ink\]$/,
-    feature: (p) => !!(p.aquaMask || p.aquaTint || p.aquaInk),
-    reason: '亮度自适应文字色：文字 token 改读 --mpw-text-ink*；门控 = body[data-mpw-aqua-text][data-mpw-text-ink]（>2 个属性同时存在才成立）',
+    feature: (p) => hasWall(p) && textEnhanceOn(p),
+    reason: '亮度自适应文字色：文字 token 改读 --mpw-text-ink*；门控 = body[data-mpw-aqua-text][data-mpw-text-ink]（描边部分只需前者；token 覆盖需 JS 真写入 ink）。①(2026-09-18) 已与 aquaOn 解耦',
     doc: 'docs/TOKEN-NAMESPACE.md:95',
   },
 ]
@@ -534,6 +534,10 @@ function classifyRule(rule) {
 
 /** lgTest 会把一批开关强制关掉（lib/client.js 的 `if (section.lgTest …) section = Object.assign({}, section, {…})`）。
  *  这里逐项对齐，保证登记表的 feature() 判的是**有效**档位而不是原始 patch。 */
+const hasWall = (p) => !!(p && (p.image || p.webUrl))
+const accentConfigured = (p) => !!(p && p.accent && /^#[0-9a-fA-F]{6}$/.test(String(p.accent)))
+const textEnhanceOn = (p) => !!(p && (p.aquaTextEnhance !== void 0 ? p.aquaTextEnhance : false))
+
 function effectivePatch(p) {
   const q = { ...(p || {}) }
   if (q.lgTest) Object.assign(q, {
@@ -591,6 +595,37 @@ function tokenNamespaceCheck({ casePatches, ruleStats }) {
     }
     registered.push({ id: e.id, prop: d.prop, value: d.value, selector: d.selector, caseCount: d.cases.length })
   }
+  // ②b 对称判据（①2026-09-18）：**声明了生效条件就必须真的生成**
+  //     只有"漏进默认档"的判据是不够的 —— "整段被别的开关包住 ⇒ 功能静默无效"正是
+  //     漏检的另一半（accent / aquaTextEnhance 被 aquaOn 吞掉就是这么漏过去的）。
+  for (const e of HOST_OVERRIDE_REGISTRY) {
+    const hits = decls.filter((d) => matchEntry(d) === e)
+    const trueCases = [...casePatches].filter(([, p]) => e.feature(effectivePatch(p))).map(([n]) => n)
+    if (!hits.length) {
+      pushV({
+        verdict: 'RED', selector: '(登记项 ' + e.id + ')', cases: trueCases.slice(0, 3), caseCount: trueCases.length,
+        reasons: [{
+          level: 'RED', id: 'token:override-missing',
+          reason: `登记项 ${e.id} 声明了生效条件（在 ${trueCases.length} 组设置里为真），但产物里**一次都没出现**：门控写错，或整段被别的开关包住 ⇒ 功能静默无效（开关注解了、没效果、不报错）`,
+          doc: e.doc,
+        }],
+      })
+      continue
+    }
+    const present = new Set(hits.flatMap((h) => h.cases))
+    const missing = trueCases.filter((n) => !present.has(n))
+    if (missing.length) {
+      pushV({
+        verdict: 'RED', selector: hits[0].selector, cases: missing.slice(0, 3), caseCount: missing.length,
+        reasons: [{
+          level: 'RED', id: 'token:override-missing-cases',
+          reason: `登记项 ${e.id} 的生效条件在这些组合里为真，但产物里没有对应的 ${hits[0].prop} 声明：${missing.slice(0, 3).join(' / ')}`,
+          doc: e.doc,
+        }],
+      })
+    }
+  }
+
   // ③ 四个表面：底色/磨砂/模糊声明只准读 --mpw-*
   //    口径（写清楚"没断言什么"，避免这条判据被误读成"表面里一个 --dsw- 都不许有"）：
   //      · 只判**表面容器本身**（选择器最后一个复合步骤命中该表面）的 background*/backdrop-filter；
@@ -707,6 +742,11 @@ function buildCases(src) {
   cases.push({ name: '无壁纸源', patch: { image: false, webUrl: '', enabled: true } })
   cases.push({ name: '液态玻璃测试模式', patch: P({ lgTest: true }) })
   cases.push({ name: '灰字自定义色', patch: P({ fontColorGray: true, fontColorGrayColor: '#123456' }) })
+  // ①(2026-09-18 功能静默无效修复) 这两段原来被 aquaOn 包着 ⇒ 单独开时规则根本不生成。
+  //   枚举里必须有"只开它"的组合，登记表的"生效条件"才真的被判据压住。
+  cases.push({ name: '单开:accent', patch: P({ accent: '#ff0000' }) })
+  cases.push({ name: '单开:aquaTextEnhance', patch: P({ aquaTextEnhance: true }) })
+  cases.push({ name: 'accent+文字增强', patch: P({ accent: '#ff0000', aquaTextEnhance: true }) })
   for (const b of bools) cases.push({ name: '单开:' + b, patch: P({ [b]: true }) })
   const BS = ['bsFloat', 'bsReveal', 'bsAlpha', 'bsAqua', 'bsFont', 'bsBottomAvoid']
   for (const b of BS) cases.push({ name: 'bsCompat+' + b, patch: P({ bsCompat: true, [b]: true }) })
