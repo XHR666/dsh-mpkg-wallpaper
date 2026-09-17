@@ -144,8 +144,18 @@ node tools/bundle-equivalence-test.mjs || fail=1
 #   未门控碰宿主 rail 家族、[data-dsh-panel-host]、顶栏描边透明化 ⇒ 直接 RED。
 #   判据/账本/怎么加登记项：docs/STYLE-SCOPE-GUARD.md；机器可读产物：tools/probe-out/style-scope.json
 #   自证（变异必须有分辨力）：node tools/style-scope-guard.mjs --selftest（10 条变异 + 1 条阴性对照）
-step "12/12 样式作用域护栏（真实产物 613 组设置全枚举；裸元素/裸 */:root 覆盖/宿主 token/禁止锚点判红）"
+# ①(2026-09-18 §5 第1项 / P0-3「磨砂·主题一致性」) 表面 token 命名空间：
+#   · 宿主 token 覆盖登记表（产物里 39 处覆盖全部登记命中；未登记判红；登记项的"生效条件"
+#     在功能关闭的组合里必须一次都不出现 ⇒ 机器证明覆盖没漏进默认档）；
+#   · 四个表面（顶栏/侧栏/面板/时间线条）只读共享 --mpw-surface-*，表面规则里再出现 var(--dsw-*) 判红；
+#   · token-namespace-test：以 git HEAD 的 lib/client.js 为 before，606 组设置 × 亮/暗 × 默认/门控
+#     两态比对四表面**生效值**（极小层叠模型 + var() 递归代换）⇒ 重构前后逐键相等；
+#     SSOT 定义点必须唯一且是 body（宿主 --dsw-* 定义在 body，写 :root 会 guaranteed-invalid 继承）；
+#     变异自证：改 SSOT 取值 / 把 SSOT 挪回 :root / 表面换字面量 都必须变红。
+#   账本与清单：docs/TOKEN-NAMESPACE.md
+step "12/12 样式作用域护栏（真实产物 613 组设置全枚举；裸元素/裸 */:root 覆盖/宿主 token/禁止锚点判红）+ 表面 token 命名空间（宿主覆盖登记表 + 四表面共享 --mpw-* + 取值等价）"
 node tools/style-scope-guard.mjs || fail=1
+node tools/token-namespace-test.mjs || fail=1
 
 echo
 if [ "$fail" = 0 ]; then

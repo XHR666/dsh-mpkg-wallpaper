@@ -241,9 +241,34 @@ without anyone noticing locally. Gate step 12 turns that into a machine-checkabl
   unregistered `!important` token overrides, touching the host turn-navigation rail without our own gate,
   `[data-dsh-panel-host]`, or making the header border transparent ⇒ **red**.
 * **It proves it can discriminate**: `node tools/style-scope-guard.mjs --selftest` copies `lib/client.js` into a
-  temp dir and injects 10 mutations (plus a negative control that must still pass), asserting RED/REVIEW/PASS for each.
+  temp dir and injects 13 mutations (plus a negative control that must still pass), asserting RED/REVIEW/PASS for each.
 * Criteria, the allow-list ledger and "how to register a new entry":
   [`docs/STYLE-SCOPE-GUARD.md`](docs/STYLE-SCOPE-GUARD.md).
+
+## Surface token namespace: top bar / sidebar / panels / timeline rail read one `--mpw-*` set (2026-09-18, MASTER-TODO §5 item 1 / P0-3)
+
+The requirement reads: "the four surfaces must use **one token namespace** (`--mpw-*`) and
+**never override host tokens** ⇒ structurally eliminate the class of bugs where we break a new host
+feature." Gate step 12's second check makes that mechanical (`node tools/token-namespace-test.mjs`):
+
+* **One source**: host tokens are consumed into `--mpw-surface-*` only inside `emitSurfaceTokens()`; the single
+  `body{…}` block in the output is the definition point for every surface value, and the four surfaces'
+  rules **only** write `var(--mpw-surface-*)`.
+* **Why `body` and not `:root`**: DSH defines `--dsw-static-*` / `--dsw-alias-*` on **`body`** (not on `html`).
+  A `var()` inside a custom property is resolved **on the element where it is declared**, so declaring the
+  SSOT on `:root` makes it guaranteed-invalid and **inherit that invalidity to every descendant** (consumers
+  all fall back to `unset` = transparent). That is the very mechanism behind the historical "timeline rail went
+  transparent" bug; a dedicated assertion plus a mutation guard it.
+* **Only one host-token override left**: `buildSidebarFillCss()` (`--dsw-specific-sidebar-fill`, scoped to the
+  sidebar allow-list, only in the "sidebar translucent" feature's respective state). The registry
+  (`HOST_OVERRIDE_REGISTRY`) demands token + selector + value shape + **activation condition** per entry:
+  all 39 override declarations in the output must be registered, and **none may appear in combinations where
+  the feature is off**.
+* **Equivalence evidence**: using `git HEAD`'s `lib/client.js` as *before*, 606 setting combinations ×
+  light/dark × default/gated states are compared on the four surfaces' **effective values** (tiny cascade
+  model + recursive `var()` substitution) ⇒ 25,428 keys match exactly. This is a refactor, not a redesign.
+* Inventory (which token belongs to which surface / which host token is consumed / the registry with reasons /
+  known deviations / how to add a token): [`docs/TOKEN-NAMESPACE.md`](docs/TOKEN-NAMESPACE.md).
 
 ## Video-wallpaper transcoding: a **misjudgement** + resource caps (2026-09-17, item 1)
 

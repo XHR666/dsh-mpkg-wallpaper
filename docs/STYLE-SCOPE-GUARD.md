@@ -151,6 +151,41 @@ bash tools/check.sh                           # 门禁第 11 步就是全量模�
 | `.someOtherPlugin_root{opacity:.5}` | RED | 裸的、未登记的第三方作用域（连锚点都没有） |
 | `[data-dsh-better-sidebar] .someOtherPlugin_root{opacity:.5}` | REVIEW | 有锚点但含未登记原子 ⇒ 必须先登记 |
 | `.mpw-guardProbe{color:red}` | **PASS** | 阴性对照：我们自己的标记必须仍然放行（防"假红"） |
+| `.mpw-guardProbeHost{--dsw-alias-bg-base:#fff !important}` | RED | ★未登记的宿主 token 覆盖（§5 第1项："永不覆盖宿主 token"） |
+| `.mpw-bgWrap{}.wSkVaW_header{background-color:var(--dsw-static-neutral-bluish-950) !important}` | RED | ★顶栏表面直接消费宿主 token（四表面必须只读共享 `--mpw-*`） |
+| `body{padding:0}` | RED | ★登记了 `body` 上的 `--mpw-*` 例外之后，裸 body 的非自定义属性必须仍判红 |
+| `body{--dsw-alias-bg-base:red}` | RED | ★同上，`body` 上覆盖宿主 token 必须仍判红 |
+| `.mpw-guardProbeHost{--mpw-surface-panel:#123456}` | RED | ★共享表面 token 在 SSOT 之外被二次定义（会退化成"四处各写一套"） |
+
+---
+
+## 6b. token 命名空间（2026-09-18 增补，MASTER-TODO §5 第 1 项 / P0-3）
+
+除了"选择器作用域"，本护栏现在还判"**自定义属性作用域**"。四类判据 + 唯一的根作用域例外：
+
+1. **宿主 token 覆盖登记表**（`HOST_OVERRIDE_REGISTRY`，6 条）：产物里每一处把 `--dsw-*` 当**属性名**写的
+   声明，都必须命中一条登记项（token + 选择器 + 值形态 + `feature()` 生效条件 + reason + docs 指针，
+   指针运行时校验）。未命中 ⇒ RED（`token:unregistered-host-override`）。
+   当前实测：**39 处声明，39 处命中**。
+2. **登记项不许漏进默认档**：`feature(effectivePatch(patch))` 为假的**所有组合**里，该声明必须一次都不出现，
+   否则 RED（`token:override-leaked`）。`effectivePatch()` 与 `lib/client.js` 的 lgTest 归一化逐项对齐。
+3. **四个表面只读共享 `--mpw-*`**（`SURFACES`，见 `docs/TOKEN-NAMESPACE.md` §2）：
+   表面**容器本身**的 `background*` / `backdrop-filter` 声明里出现 `var(--dsw-*)` ⇒ RED
+   （`token:surface-reads-host`）。口径写明：交互态（`:hover` 等）与容器内的具体控件
+   （button/input/icon/badge…）不算"表面底色"——那些是宿主交互色消费。
+4. **共享 token 只有一个定义点**，且必须是 `body`（`token:multiple-defs` / `token:surface-not-wired`）。
+   四表面各自必须至少引用一枚共享 token（清单显式列出，防"接了线又被摘掉"）。
+
+**唯一的根作用域例外**（`ROOT_POLICY.registeredRootTokenRules`，1 条，id `root:surface-token-ssot`）：
+选择器**恰好是 `body`** 且声明**全部**是 `--mpw-*` 时才放行。为什么必须开这个口子：DSH 把
+`--dsw-static-*` / `--dsw-alias-*` 定义在 **`body`**（`html` 上没有），而自定义属性里的 `var()` 在
+**声明所在元素**上求值 ⇒ SSOT 写 `:root` 会 guaranteed-invalid 并继承给所有后代（消费者全部透明）。
+这不是放宽：裸 `body` 上的非自定义属性、`body` 上的 `--dsw-*` 覆盖都仍然判红（§6 表里两条变异盯着）。
+详见 [`docs/TOKEN-NAMESPACE.md`](TOKEN-NAMESPACE.md) §1。
+
+配套的第二个工具（第 12 步同时跑）：`node tools/token-namespace-test.mjs` —— 用 `git HEAD` 的
+`lib/client.js` 当 before，606 组设置 × 亮/暗 × 默认/门控两态比对四表面**生效值**（极小层叠模型 +
+`var()` 递归代换），并自带 3 条变异自证（改 SSOT 取值 / 把 SSOT 挪回 `:root` / 表面换字面量）。
 
 ---
 

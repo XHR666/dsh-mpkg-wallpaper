@@ -41,7 +41,10 @@ const IMG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg=='
 const NONE = /\.mpw-bgWrap\s*\{\s*display:\s*none/
 // `!hasImage` 分支**独有**的锚点（由 buildCss 源码 5214 行那段 `.pI_x6G_sidebarCol, .hHd-Xa_root`
 // 与 `.ydkMvW_root` 组成；有源分支不会生成这对规则）。用它把"无源语义"与"不透明语义"分开。
-const NO_SRC = /\.pI_x6G_sidebarCol,\s*\n\.hHd-Xa_root\s*\{\s*background-color:\s*var\(--dsw-specific-sidebar-fill\)[\s\S]{0,200}?\.ydkMvW_root/
+// ①(2026-09-18 §5 第1项 token 命名空间) 无源分支的**独有锚点**（分辨力所在：区分"不透明语义"）：
+//   侧栏底色改读我们命名空间的 --mpw-surface-host-side（= 原样读回宿主 --dsw-specific-sidebar-fill，
+//   无源档不覆盖宿主 token）。锚点仍是"只有无源分支才会输出"的那一段，不变的是判据、变的是取值来源。
+const NO_SRC = /\.pI_x6G_sidebarCol,\s*\n\.hHd-Xa_root\s*\{\s*background-color:\s*var\(--mpw-surface-host-side\)[\s\S]{0,200}?\.ydkMvW_root/
 
 console.log('== PART 1 行为断言：有源不得 display:none，两种 none 来源可判别 ==')
 const SRC_SETTINGS = { enabled: true, image: IMG, opacity: 82, converted: 'png' }

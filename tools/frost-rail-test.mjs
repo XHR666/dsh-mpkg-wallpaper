@@ -253,7 +253,11 @@ if (process.argv[2] !== '--child') {
   const keepCss = strip(build({ image: true, enabled: true, sidebar: true, sidebarBlur: true, unifyTint: true, unifyAmount: 30, rightSidebarBlur: true, popoverBlur: true, dialogBlur: true, maskBlur: true }))
   assert(/\.mpw-bgWrap\s*\{[^}]*position:\s*fixed/.test(keepCss), '壁纸层 .mpw-bgWrap 仍是 fixed 铺满（壁纸显示不受影响）')
   assert(/--mpw-bg-blur/.test(keepCss), '整屏虚化：壁纸层 --mpw-bg-blur（统一虚化程度）仍输出')
-  assert(/html body \.pI_x6G_sidebarCol[\s\S]{0,200}background-color:\s*color-mix/.test(keepCss), '侧栏半透明底规则仍在（侧栏"透出壁纸"开关未失效）')
+  // ①(2026-09-18 §5 第1项) 角色不变、取值来源改到 SSOT：规则只读 var(--mpw-surface-side)，
+  //   而该 token 在 SSOT(body{…}) 里必须是 color-mix(…%, transparent) 的半透明值 ⇒ 两条一起断言，
+  //   比原来"规则里直接写 color-mix"更严（否则"值被改成不透明"也会绿）。
+  assert(/html body \.pI_x6G_sidebarCol[\s\S]{0,200}background-color:\s*var\(--mpw-surface-side\)/.test(keepCss), '侧栏半透明底规则仍在（侧栏"透出壁纸"开关未失效）')
+  assert(/--mpw-surface-side:\s*color-mix\(in srgb,[^;]*transparent\)/.test(keepCss), '侧栏表面 token 在 SSOT 里是半透明色（不是被改成不透明）')
   assert(/data-mpw-rsblur|\[data-sidebar-right-panel\]/.test(keepCss), '右侧栏磨砂/透明度链路仍在')
   assert(/data-mpw-hdr-translucent/.test(keepCss), '标题栏半透明底规则仍在（新逻辑改的只是它用的 token）')
   assert(/\.mpw_dialog|\[role="dialog"\]/.test(keepCss), '对话框/弹窗虚化规则仍在')

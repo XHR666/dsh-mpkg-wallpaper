@@ -258,8 +258,27 @@
   裸元素选择器（`button{…}`）、裸 `*`、`:root` 上覆盖宿主 token、宿主 token 被设成 transparent/inherit、
   未登记 token 的 `!important`、未门控碰宿主轮次导航条、`[data-dsh-panel-host]`、顶栏描边透明化 ⇒ **判红**。
 * **自证有分辨力**：`node tools/style-scope-guard.mjs --selftest` 把 `lib/client.js` 复制到临时目录注入
-  10 条变异（含一条"我们自己的标记必须仍然放行"的阴性对照），逐条断言必须 RED/REVIEW/PASS。
+  13 条变异（含一条"我们自己的标记必须仍然放行"的阴性对照），逐条断言必须 RED/REVIEW/PASS。
 * 判据、允许清单账本与"怎么加一条登记项"：[`docs/STYLE-SCOPE-GUARD.md`](docs/STYLE-SCOPE-GUARD.md)。
+
+## 表面 token 命名空间：顶栏 / 侧栏 / 面板 / 时间线条 读同一套 `--mpw-*`（2026-09-18，MASTER-TODO §5 第 1 项 / P0-3）
+
+需求原文是「四处视觉一致性用**同一套 token 命名空间**（`--mpw-*`），**永不覆盖宿主 token**
+⇒ 从结构上消灭"我们弄坏宿主新功能"这类 bug」。第 12 步的第二个判据把它机器化
+（`node tools/token-namespace-test.mjs`）：
+
+* **一个来源**：宿主 token 只在 `emitSurfaceTokens()` 里被消费成 `--mpw-surface-*`，产物里唯一那一块
+  `body{…}` 是全部表面取值的定义点；四个表面的规则**只写** `var(--mpw-surface-*)`。
+* **为什么是 `body` 而不是 `:root`**：DSH 把 `--dsw-static-*` / `--dsw-alias-*` 定义在 **`body`**（`html` 上没有）。
+  自定义属性里的 `var()` 在**声明所在元素**上求值 ⇒ 写 `:root` 会变成 guaranteed-invalid 并**继承给所有后代**
+  （消费者全部 `unset`=透明）。这正是历史上"右侧时间线条变透明"的同一机制，判据里有专门一条断言 + 变异盯着。
+* **宿主 token 覆盖只剩一处**：`buildSidebarFillCss()`（`--dsw-specific-sidebar-fill`，只在侧栏白名单容器、
+  只在「侧栏透出」开关对应档位）。登记表（`HOST_OVERRIDE_REGISTRY`）逐条要求 token + 选择器 + 值形态 +
+  **生效条件**：产物里 39 处覆盖声明必须全部登记命中，且**功能关闭的组合里一次都不许出现**。
+* **等价性证据**：以 `git HEAD` 的 `lib/client.js` 为 before，606 组设置 × 亮/暗 × 默认/门控两态比对四表面
+  **生效值**（极小层叠模型 + `var()` 递归代换）⇒ 25 428 个键逐键相等 —— 这是重构，不是重设计。
+* 清单（哪枚 token 归哪个表面 / 哪枚宿主 token 被消费 / 登记表与理由 / 已知偏差 / 怎么加新 token）：
+  [`docs/TOKEN-NAMESPACE.md`](docs/TOKEN-NAMESPACE.md)。
 
 ## 视频壁纸转码：判定是"误判" + 资源上限（2026-09-17，第 1 条）
 

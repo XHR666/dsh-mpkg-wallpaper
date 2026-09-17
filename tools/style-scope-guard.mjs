@@ -159,8 +159,128 @@ const TOKEN_POLICY = {
 const ROOT_POLICY = {
   rootProps: /^--mpw-/,                       // :root 上只准定义我们自己的自定义属性
   htmlBodyProps: /^(background|background-color|background-image)$/,
+  /* ①(2026-09-18 §5 第1项 / P0-3) **已登记的根作用域自定义属性例外**（只此一条）：
+     表面 token SSOT 必须打在 `body` 上，不能打 `:root`——宿主把 --dsw-static-* / --dsw-alias-*
+     定义在 body（@deepseek-ai/dsh-client-ui-theme 的 `body{--dsw-static-neutral-bluish-00:#fff;…}`，
+     `html` 上没有）；自定义属性里的 var() 在**声明所在元素**上求值 ⇒ 写 :root 会 guaranteed-invalid
+     并继承给所有后代（本仓"rails 变透明"的同一机制）。这里放行的**只有**：选择器恰好是 `body`
+     且声明**全部**是 `--mpw-*`。裸 body 上的任何非自定义属性、任何 --dsw-* 覆盖仍然判红
+     （自证里有 body{padding:0} / body{--dsw-…} 两条变异盯着）。 */
+  registeredRootTokenRules: [
+    { id: 'root:surface-token-ssot', selector: /^body$/, props: /^--mpw-/, doc: 'docs/TOKEN-NAMESPACE.md:28' },
+  ],
   doc: 'docs/BGWRAP-VISIBILITY.md:20',
 }
+const registeredRootTokenRule = (selector) => {
+  const parts = splitTopLevel(String(selector), ',')
+  return parts.length > 0 && parts.every((pp) => ROOT_POLICY.registeredRootTokenRules.some((e) => e.selector.test(pp.trim())))
+}
+
+/* ══════════════════════ 二之二、token 命名空间（MASTER-TODO §5 第 1 项 / P0-3） ══════════════════════
+ * 需求原文：「顶栏、侧栏、面板、时间线四处视觉一致性用**同一套 token 命名空间**（`--mpw-*`），
+ *            永不覆盖宿主 token ⇒ 从结构上消灭"我们弄坏宿主新功能"这类 bug」。
+ * 这里把两件事变成会变红的判据（账本 / 清单 / 为什么这么做：docs/TOKEN-NAMESPACE.md）：
+ *   ① **宿主 token 覆盖登记表**（HOST_OVERRIDE_REGISTRY）：注入产物里**每一处**把 `--dsw-*`
+ *      当属性名写的声明都必须命中一条登记项（token + 选择器 + 值形态 + 生效条件）。
+ *      未命中 ⇒ RED（"no rule outside the documented list writes a host token"）。
+ *   ② **登记项必须只在它声明的那档功能开启时出现**：`feature(有效 patch)` 为假的**所有组合**里
+ *      该声明必须一次都不出现 ⇒ 机器证明"宿主 token 覆盖不会漏进默认档"。
+ *   ③ **四个表面只读共享的 `--mpw-*`**：表面容器上的底色/磨砂/模糊声明里出现 `var(--dsw-*)` ⇒ RED。
+ *   ④ 共享 token 只有**一个**定义点（SSOT 的 `:root` 块），且四个表面各自至少引用到。
+ * `feature` 拿到的 patch 已经过 `effectivePatch()` 归一（lgTest 会把一批开关强制关掉，
+ * 与 lib/client.js 的 lgTest 归一化逐项对齐，见那里的 Object.assign）。
+ */
+const HOST_OVERRIDE_REGISTRY = [
+  {
+    id: 'ovr:sidebar-fill-translucent',
+    props: ['--dsw-specific-sidebar-fill'],
+    valueRe: /^transparent$/i,
+    selectorRe: /^html body( \.pI_x6G_sidebarCol| \[class\*="sidebarCol"\]| \.hHd-Xa_root| \[data-slot="sidebar"\])/,
+    feature: (p) => p.sidebar !== false,
+    reason: '侧栏透出壁纸**开**：宿主 --dsw-specific-sidebar-fill 置 transparent，只打侧栏白名单容器（?sbfill=wide 才回退全局）；关档走 opaque 那条',
+    doc: 'docs/TOKEN-NAMESPACE.md:90',
+  },
+  {
+    id: 'ovr:sidebar-fill-opaque',
+    props: ['--dsw-specific-sidebar-fill'],
+    valueRe: /^var\(--mpw-surface-opaque-side/,
+    selectorRe: /^html body( \.pI_x6G_sidebarCol| \[class\*="sidebarCol"\]| \.hHd-Xa_root| \[data-slot="sidebar"\])|^html body\[data-ds-dark-theme\]/,
+    feature: (p) => p.sidebar === false,
+    reason: '侧栏透出壁纸**关**：同一个宿主 token 回到主题静态不透明色（亮=白/暗=深色），选择器同一份白名单',
+    doc: 'docs/TOKEN-NAMESPACE.md:91',
+  },
+  {
+    id: 'ovr:font-color-gray',
+    props: ['--dsw-alias-label-secondary', '--dsw-alias-label-tertiary', '--dsw-alias-label-caption', '--dsw-alias-label-dimmed',
+      '--dsw-alias-label-quaternary', '--dsw-alias-label-primary-bluish', '--dsw-alias-label-primary-dimmed',
+      '--dsw-alias-label-primary-foreground', '--dsw-alias-label-inverse', '--dsw-alias-label-primary-inverted',
+      '--dsw-alias-label-error', '--dsw-alias-line-secondary', '--dsw-alias-separator-primary',
+      '--dsw-alias-border-secondary', '--dsw-alias-border-l2', '--dsw-alias-border-l3', '--dsw-alias-state-warn-label'],
+    valueRe: /^#[0-9a-fA-F]{6}$/,
+    selectorRe: /^body$/,
+    feature: (p) => !!p.fontColorGray && /^#[0-9a-fA-F]{6}$/.test(String(p.fontColorGrayColor || '')),
+    reason: '「自定义灰字颜色」功能（17 枚 label/line/border token 打在 body 上）：用户显式选色才生效，未开/未选色时保持主题灰（= 关闭态）',
+    doc: 'docs/TOKEN-NAMESPACE.md:92',
+  },
+  {
+    id: 'ovr:aqua-ink-brand',
+    props: ['--dsw-alias-label-primary', '--dsw-alias-label-secondary', '--dsw-alias-label-tertiary', '--dsw-alias-label-caption',
+      '--dsw-alias-label-dimmed', '--dsw-alias-brand-primary', '--dsw-alias-brand-text', '--dsw-alias-state-business-primary'],
+    valueRe: /^var\(--mpw-(aqua-ink|accent-color)/,
+    selectorRe: /^body\[data-mpw-aqua\]\[data-mpw-aqua-ink\]$/,
+    feature: (p) => !!(p.aquaMask || p.aquaTint || p.aquaInk),
+    reason: 'Aqua 实验模式：文字/品牌色改读我们命名空间的 --mpw-aqua-ink*；门控 = body[data-mpw-aqua][data-mpw-aqua-ink]（JS 真写入 ink 才打）',
+    doc: 'docs/TOKEN-NAMESPACE.md:93',
+  },
+  {
+    id: 'ovr:accent-brand',
+    props: ['--dsw-alias-brand-primary', '--dsw-alias-brand-text', '--dsw-alias-state-business-primary',
+      '--dsw-alias-button-info-fill', '--dsw-alias-button-info-hover'],
+    valueRe: /^var\(--mpw-accent-color\)$/,
+    selectorRe: /^body\[data-mpw-accent\]$/,
+    feature: (p) => !!(p.aquaMask || p.aquaTint || p.aquaInk),
+    reason: '「配色」(accent)：品牌交互色/发送键读 --mpw-accent-color；门控 = body[data-mpw-accent]（运行时属性，选了色才打）。注：该块目前与 Aqua 同段输出（aquaOn 为假时不输出）—— 已登记为现状，见 docs/TOKEN-NAMESPACE.md「已知偏差」',
+    doc: 'docs/TOKEN-NAMESPACE.md:94',
+  },
+  {
+    id: 'ovr:text-ink-adaptive',
+    props: ['--dsw-alias-text-primary', '--dsw-alias-text-secondary', '--dsw-alias-text-tertiary',
+      '--dsw-alias-label-primary', '--dsw-alias-label-secondary', '--dsw-alias-label-tertiary'],
+    valueRe: /^var\(--mpw-text-ink/,
+    selectorRe: /^body\[data-mpw-aqua-text\]\[data-mpw-text-ink\]$/,
+    feature: (p) => !!(p.aquaMask || p.aquaTint || p.aquaInk),
+    reason: '亮度自适应文字色：文字 token 改读 --mpw-text-ink*；门控 = body[data-mpw-aqua-text][data-mpw-text-ink]（>2 个属性同时存在才成立）',
+    doc: 'docs/TOKEN-NAMESPACE.md:95',
+  },
+]
+
+/* 四个表面（需求点名的四处）+ 各自必须引用到的共享 token。
+ * scopeRe 只用来判"这条规则是不是打在某个表面上"，不参与作用域放行判定。 */
+const SURFACES = [
+  {
+    id: 'top', name: '顶栏', scopeRe: /\.wSkVaW_header|\[class\*="wSkVaW_header"\]|header\[class\*="_header_"\]/,
+    tokens: ['--mpw-surface-frost-top', '--mpw-surface-frost-top-light', '--mpw-surface-opaque-top', '--mpw-hdr-blur'],
+  },
+  {
+    id: 'side', name: '侧栏', scopeRe: /sidebarCol|\.hHd-Xa_root|\[data-slot="sidebar"\]|\[data-sidebar-right-panel\]|\[data-dockkit-(pane|strip|surface)\]/,
+    tokens: ['--mpw-surface-side', '--mpw-surface-side-frost', '--mpw-surface-rs-dock', '--mpw-chrome-blur', '--mpw-chrome-alpha'],
+  },
+  {
+    id: 'panel', name: '面板',
+    scopeRe: /\[role="(dialog|alertdialog|menu|listbox|tooltip)"\]|settingsArea|class\*="_overlay"|class\*="_menu"|class\*="_popover"|class\*="_denseList"|data-dsh-surface|\.mpw_dialog|\.mpw_glassHost|\[data-cordis-panel\]/,
+    tokens: ['--mpw-surface-panel', '--mpw-surface-panel-frost', '--mpw-surface-pop', '--mpw-surface-dialog-dark'],
+  },
+  {
+    id: 'rail', name: '时间线条', scopeRe: /\.eGxaPq_|\.Y0dWHa_|qBU-ya|_1p9O6q_|turn-rail/,
+    tokens: ['--mpw-rail-ink', '--mpw-rail-halo'],
+  },
+]
+/* 表面容器上「底色/磨砂/模糊」类声明：只准读我们命名空间的 token（--mpw- 家族） */
+const SURFACE_PROPS = /^(background|background-color|background-image|backdrop-filter|-webkit-backdrop-filter)$/
+const consumesHostToken = (value) => String(value).includes('var(--dsw-')
+const INTERACTION_PSEUDO = /:(hover|focus|focus-visible|focus-within|active|disabled|checked|target|placeholder)\b/
+/* 容器内的具体控件（不是"表面"本身）：button 的 hover 底色属于宿主交互色消费 */
+const NESTED_SUBJECT = /(button|input|select|textarea|svg|img|\[class\*="(button|Button|icon|Icon|badge|logo|mode|segmented|primary|status|Status|item|Item))/
 
 /* ══════════════════════ 三、CSS 解析（含 @media/@supports 嵌套） ══════════════════════ */
 const stripComments = (t) => t.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^[ \t]*\/\/[^\n]*/gm, ' ')
@@ -354,6 +474,9 @@ function classifyRule(rule) {
       }
       if (ROOT_POLICY.htmlBodyProps.test(d.prop)) continue
       if (d.prop.startsWith('--dsw-') && TOKEN_POLICY.registeredGlobalTokens.includes(d.prop)) continue
+      // ①(2026-09-18 §5 第1项) 已登记的根作用域自定义属性例外（SSOT：body 上的 --mpw-*）
+      if (d.prop.startsWith('--mpw-') && registeredRootTokenRule(rule.selector)
+        && ROOT_POLICY.registeredRootTokenRules.some((e) => e.props.test(d.prop))) continue
       if (d.prop.startsWith('--dsw-')) {
         push('RED', 'root:unregistered-host-token', `在裸 html/body 上覆盖未登记的宿主 token（${d.prop}）：全局 token 覆盖会连带改宿主组件（rail 变透明事故的机制）`, 'docs/TIMELINE-RAIL-TOKEN.md:185')
       } else {
@@ -407,6 +530,157 @@ function classifyRule(rule) {
     }
   }
   return { verdict, reasons, perPart, decls }
+}
+
+/** lgTest 会把一批开关强制关掉（lib/client.js 的 `if (section.lgTest …) section = Object.assign({}, section, {…})`）。
+ *  这里逐项对齐，保证登记表的 feature() 判的是**有效**档位而不是原始 patch。 */
+function effectivePatch(p) {
+  const q = { ...(p || {}) }
+  if (q.lgTest) Object.assign(q, {
+    sidebar: false, aquaMask: false, aquaTint: false, aquaInk: false, aquaTextEnhance: false,
+    headerBg: false, headerBlur: false, unifyTint: false, dialogBlur: false, settingsBlur: false,
+    confirmBlur: false, popoverBlur: false, maskBlur: false, sidebarBlur: false, themeColor: '', accent: '',
+  })
+  if (q.enabled === false) { q.image = ''; q.webUrl = '' }
+  return q
+}
+
+/** §5 第 1 项：宿主 token 覆盖登记表 + 四表面共享 token 的机器判定 */
+function tokenNamespaceCheck({ casePatches, ruleStats }) {
+  const violations = []
+  const pushV = (o) => violations.push(o)
+  const DOC = 'docs/TOKEN-NAMESPACE.md:80'   // §3 宿主 token 覆盖登记表
+  // ① 收集产物里所有「以 --dsw-* 为属性名」的声明（= 宿主 token 的定义/覆盖点）
+  const decls = []
+  for (const st of ruleStats.values()) {
+    for (const d of parseDeclarations(st.body)) {
+      if (!d.prop.startsWith('--dsw-')) continue
+      decls.push({ prop: d.prop, value: d.value, important: d.important, selector: st.selector, cases: [...st.cases] })
+    }
+  }
+  const matchEntry = (d) => HOST_OVERRIDE_REGISTRY.find((e) =>
+    e.props.includes(d.prop) && e.valueRe.test(d.value.trim()) && e.selectorRe.test(d.selector))
+  const registered = []
+  for (const d of decls) {
+    const e = matchEntry(d)
+    if (!e) {
+      pushV({
+        verdict: 'RED', selector: d.selector, cases: d.cases.slice(0, 3), caseCount: d.cases.length,
+        reasons: [{
+          level: 'RED', id: 'token:unregistered-host-override',
+          reason: `未登记的宿主 token 覆盖：${d.prop} = ${d.value}（§5 第1项要求"永不覆盖宿主 token"；确实需要时必须登记到 HOST_OVERRIDE_REGISTRY：token + 选择器 + 值形态 + 生效条件 + reason + docs 指针）`,
+          doc: DOC,
+        }],
+      })
+      continue
+    }
+    // ② 生效条件：feature 为假的所有组合里，这条声明必须一次都不出现
+    const badCases = d.cases.filter((n) => {
+      const p = casePatches.get(n)
+      return p ? !e.feature(effectivePatch(p)) : false
+    })
+    if (badCases.length) {
+      pushV({
+        verdict: 'RED', selector: d.selector, cases: badCases.slice(0, 3), caseCount: badCases.length,
+        reasons: [{
+          level: 'RED', id: 'token:override-leaked',
+          reason: `登记项 ${e.id} 声称"只在功能开启时生效"，但在功能**关闭**的组合里也出现了（${badCases.slice(0, 3).join(' / ')}）：${d.prop} = ${d.value}`,
+          doc: DOC,
+        }],
+      })
+    }
+    registered.push({ id: e.id, prop: d.prop, value: d.value, selector: d.selector, caseCount: d.cases.length })
+  }
+  // ③ 四个表面：底色/磨砂/模糊声明只准读 --mpw-*
+  //    口径（写清楚"没断言什么"，避免这条判据被误读成"表面里一个 --dsw- 都不许有"）：
+  //      · 只判**表面容器本身**（选择器最后一个复合步骤命中该表面）的 background*/backdrop-filter；
+  //      · 交互态（:hover/:focus/:active…）与容器内的具体控件（button/input/icon/badge…）不算
+  //        "表面底色"——那些是宿主交互色消费，不是表面磨砂取值；
+  //      · 文字色 / 描边 / 阴影不在判据内（本项只要求"四处磨砂·底色读同一套命名空间"）。
+  const surfaceHits = new Map()  // surfaceId → Set(token)
+  for (const st of ruleStats.values()) {
+    const declsHere = parseDeclarations(st.body)
+    for (const surf of SURFACES) {
+      if (!surf.scopeRe.test(st.selector)) continue
+      const isSurfaceSubject = splitTopLevel(st.selector, ',').some((part) => {
+        if (!surf.scopeRe.test(part) || INTERACTION_PSEUDO.test(part)) return false
+        const steps = stepsOf(part)
+        const last = steps[steps.length - 1] || ''
+        return surf.scopeRe.test(last) && !NESTED_SUBJECT.test(last)
+      })
+      for (const d of declsHere) {
+        if (isSurfaceSubject && SURFACE_PROPS.test(d.prop) && consumesHostToken(d.value)) {
+          pushV({
+            verdict: 'RED', selector: st.selector, cases: [...st.cases].slice(0, 3), caseCount: st.cases.size,
+            reasons: [{
+              level: 'RED', id: 'token:surface-reads-host',
+              reason: `「${surf.name}」表面的 ${d.prop} 直接消费宿主 token（${String(d.value).slice(0, 90)}）：四个表面必须只读共享的 --mpw-* 命名空间（值在 SSOT 的 :root 块里定义一次）`,
+              doc: DOC,
+            }],
+          })
+        }
+      }
+      const body = st.body + ' ' + st.selector
+      for (const t of surf.tokens) {
+        if (body.includes('var(' + t) || new RegExp('(^|[\\s;{])' + t + '\\s*:').test(body)) {
+          if (!surfaceHits.has(surf.id)) surfaceHits.set(surf.id, new Set())
+          surfaceHits.get(surf.id).add(t)
+        }
+      }
+    }
+  }
+  // ④ 共享 token 只能有一个定义点（:root）
+  const SHARED = /^--mpw-(surface-|chrome-|rs-|hdr-|rail-)/
+  const tokenDefSites = new Map()  // token → Set(selector)
+  for (const st of ruleStats.values()) {
+    for (const d of parseDeclarations(st.body)) {
+      if (!SHARED.test(d.prop)) continue
+      if (!tokenDefSites.has(d.prop)) tokenDefSites.set(d.prop, new Set())
+      tokenDefSites.get(d.prop).add(st.selector)
+    }
+  }
+  for (const [token, sels] of tokenDefSites) {
+    // 共享 token 的唯一合法定义点 = SSOT 那块（选择器恰好 body；为什么不是 :root 见 ROOT_POLICY 注释）
+    const nonRoot = [...sels].filter((s) => s !== 'body')
+    if (nonRoot.length) {
+      pushV({
+        verdict: 'RED', selector: nonRoot[0], cases: [], caseCount: 0,
+        reasons: [{
+          level: 'RED', id: 'token:multiple-defs',
+          reason: `共享 token ${token} 在 :root 之外也有定义点（${nonRoot.slice(0, 3).join(' , ')}）：值必须只在 SSOT 的 :root 块里定义一次，否则又会退化成"四处各写一套"`,
+          doc: DOC,
+        }],
+      })
+    }
+  }
+  const surfaceMissing = []
+  for (const surf of SURFACES) {
+    const got = surfaceHits.get(surf.id) || new Set()
+    if (got.size === 0) surfaceMissing.push(surf.name)
+  }
+  if (surfaceMissing.length) {
+    pushV({
+      verdict: 'RED', selector: '(四个表面共享 token 接线)', cases: [], caseCount: 0,
+      reasons: [{
+        level: 'RED', id: 'token:surface-not-wired',
+        reason: `这些表面没有引用任何共享 --mpw-* 表面 token（§5 第1项要求四处读同一套命名空间）：${surfaceMissing.join(' / ')}`,
+        doc: DOC,
+      }],
+    })
+  }
+  return {
+    violations,
+    stats: {
+      hostOverrideDecls: decls.length,
+      registeredDecls: registered.length,
+      registryEntries: HOST_OVERRIDE_REGISTRY.map((e) => ({
+        id: e.id, props: e.props.length, doc: e.doc,
+        hits: decls.filter((d) => matchEntry(d) === e).length,
+      })),
+      surfaceTokens: SURFACES.map((s) => ({ surface: s.name, referenced: [...(surfaceHits.get(s.id) || [])], declared: s.tokens })),
+      sharedTokenDefs: Object.fromEntries([...tokenDefSites].map(([k, v]) => [k, [...v]])),
+    },
+  }
 }
 
 /* ══════════════════════ 五、组合枚举（真实产物） ══════════════════════ */
@@ -498,10 +772,13 @@ function docPointerCheck() {
     const ln = Number(m[2])
     if (!(ln >= 1 && ln <= lines.length)) { problems.push(`${id}: 指针行越界 ${doc}`); return }
     if (!lines[ln - 1].trim()) { problems.push(`${id}: 指针行是空行 ${doc}`); return }
-    if (needIdInLine && m[1] === 'docs/STYLE-SCOPE-GUARD.md' && !lines[ln - 1].includes(id)) problems.push(`${id}: 账本行不含本条 id（指针漂了？）${doc}`)
+    if (needIdInLine && (m[1] === 'docs/STYLE-SCOPE-GUARD.md' || m[1] === 'docs/TOKEN-NAMESPACE.md') && !lines[ln - 1].includes(id)) problems.push(`${id}: 账本行不含本条 id（指针漂了？）${doc}`)
   }
   for (const e of ALLOWLIST) check(e.id, e.doc)
   check('TOKEN_POLICY.registeredGlobalDoc', TOKEN_POLICY.registeredGlobalDoc, false)
+  // ①(2026-09-18 §5 第1项) 宿主 token 覆盖登记表的指针也要运行时校验（文件在 / 行在 / 非空 / 行内含该 id）
+  for (const e of HOST_OVERRIDE_REGISTRY) check(e.id, e.doc)
+  for (const e of ROOT_POLICY.registeredRootTokenRules) check(e.id, e.doc)
   return problems
 }
 
@@ -572,6 +849,12 @@ function runGuard() {
     prev.caseCount += r.caseCount
     for (const c of r.cases) if (prev.cases.length < 5 && !prev.cases.includes(c)) prev.cases.push(c)
   }
+  // §5 第1项：宿主 token 覆盖登记表 + 四表面共享 token
+  const casePatches = new Map(cases.map((c) => [c.name, c.patch]))
+  const tokenNs = tokenNamespaceCheck({ casePatches, ruleStats })
+  for (const v of tokenNs.violations) {
+    badMap.set('RED\u0000' + v.selector + '\u0000' + v.reasons.map((x) => x.id).join(','), { ...v, line: null, unsanctioned: [] })
+  }
   const bad = [...badMap.values()].sort((a, b) => (a.verdict === b.verdict ? 0 : a.verdict === 'RED' ? -1 : 1))
   const ptrProblems = docPointerCheck()
   const durMs = Date.now() - t0
@@ -583,6 +866,7 @@ function runGuard() {
     caseCount: cases.length, cases: cases.map((c) => c.name),
     stats: { rules: ruleCount, uniqueSelectors: selSeen.size, uniqueRuleBodies: ruleStats.size, durationMs: durMs },
     counts, buildErrors, pointerProblems: ptrProblems,
+    tokenNamespace: tokenNs.stats,
     allowlist: ALLOWLIST.map((e) => ({ id: e.id, tier: e.tier, kind: e.kind, reason: e.reason, doc: e.doc, docKind: e.docKind, hits: entryHits.get(e.id) || 0 })),
     violations: bad.map((r) => ({
       verdict: r.verdict, selector: r.selector, line: r.line ? `${relFile}:${r.line}` : `${relFile}:?`,
@@ -618,6 +902,10 @@ function runGuard() {
     const e = allowById.get(id)
     P(`    ${String(n).padStart(4)}  ${id.padEnd(26)} ${e.doc.padEnd(38)} [${e.docKind}]`)
   }
+  P('')
+  P(`  §5 第1项 token 命名空间：产物里宿主 token 覆盖声明 ${tokenNs.stats.hostOverrideDecls} 处，登记命中 ${tokenNs.stats.registeredDecls} 处（登记表 ${HOST_OVERRIDE_REGISTRY.length} 条）`)
+  for (const r of tokenNs.stats.registryEntries) P(`    ${String(r.hits).padStart(4)} 处  ${r.id.padEnd(30)} ${r.props} 枚 token   ${r.doc}`)
+  for (const s2 of tokenNs.stats.surfaceTokens) P(`    表面引用  ${s2.surface.padEnd(5)} → ${s2.referenced.join(' ') || '(未引用!)'}`)
   if (buildErrors.length) { P(''); P('  ✗ buildCss 抛错：'); for (const b of buildErrors.slice(0, 5)) P('    ' + b) }
   if (ptrProblems.length) { P(''); P('  ✗ 账本指针校验失败：'); for (const p of ptrProblems.slice(0, 10)) P('    ' + p) }
   if (bad.length) {
@@ -653,6 +941,12 @@ const MUTATIONS = [
   { id: 'bare-unknown-scope', payload: '.someOtherPlugin_root{opacity:.5}', expect: 'RED', why: '裸的、未登记的第三方作用域（连锚点都没有）' },
   { id: 'unknown-atom-gated', payload: '[data-dsh-better-sidebar] .someOtherPlugin_root{opacity:.5}', expect: 'REVIEW', why: '有锚点但含未登记原子 ⇒ 必须先登记（reason + docs 指针）' },
   { id: 'control-ours', payload: '.mpw-guardProbe{color:red}', expect: 'PASS', why: '阴性对照：我们自己的标记必须仍然放行（防"假红"）' },
+  // ①(2026-09-18 §5 第1项) token 命名空间的两条新判据也要有分辨力
+  { id: 'host-override-unregistered', payload: '.mpw-guardProbeHost{--dsw-alias-bg-base:#fff !important}', expect: 'RED', why: '★未登记的宿主 token 覆盖（§5 第1项："永不覆盖宿主 token"；确实需要必须登记）' },
+  { id: 'surface-reads-host-token', payload: '.mpw-bgWrap{}.wSkVaW_header{background-color:var(--dsw-static-neutral-bluish-950) !important}', expect: 'RED', why: '★顶栏表面直接消费宿主 token（四表面必须只读共享的 --mpw-* 命名空间）' },
+  { id: 'root-body-non-custom-prop', payload: 'body{padding:0}', expect: 'RED', why: '★登记了 body 上的 --mpw-* 例外之后，裸 body 的非自定义属性必须仍然判红（防"例外开成大口子"）' },
+  { id: 'root-body-host-token', payload: 'body{--dsw-alias-bg-base:red}', expect: 'RED', why: '★登记了 body 上的 --mpw-* 例外之后，body 上覆盖宿主 token 必须仍然判红' },
+  { id: 'shared-token-second-def', payload: '.mpw-guardProbeHost{--mpw-surface-panel:#123456}', expect: 'RED', why: '★共享表面 token 在 SSOT（:root）之外被再次定义 ⇒ 又会退化成"四处各写一套"；我们自己的标记不触发作用域禁令，所以这条必须由 tokenNamespaceCheck 抓住' },
 ]
 
 function runSelftest() {
