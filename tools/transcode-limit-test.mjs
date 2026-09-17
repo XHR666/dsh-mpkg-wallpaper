@@ -143,7 +143,11 @@ process.env.STUB_CONC = STUB_CONC;
 const TEST_CAP_BYTES = 16 * 1024;
 process.env.DSH_WE_TRANSCODE_MAX_BYTES = String(TEST_CAP_BYTES);
 
-const { __mpwTest } = await import('../lib/index.js');
+// ①(2026-09-17 假绿修复轮) 被测模块可换：变异自证把 lib/ 拷到临时目录改坏一个关键判据，
+//   同一套断言必须变红。默认仍是真 lib/index.js。
+const MI = process.argv.indexOf('--module');
+const MODULE_PATH = (MI > 0 && process.argv[MI + 1]) ? process.argv[MI + 1] : (process.env.MPW_MODULE || '../lib/index.js');
+const { __mpwTest } = await import(MODULE_PATH);
 const L = __mpwTest.limits;
 
 const routes = [];
