@@ -291,11 +291,14 @@
   只影响运行时的开关必须逐条登记 `reason`（如 `mute`/`rotate`/省电三档/时钟文案…）。
 * 非布尔功能（`accent`/`aquaTextEnhance` 设值必须改变产物）；`themeColor` 属"CSS 常驻 + 运行时属性门控"，
   判据改为断言门控规则确实在产物里。
-* **已证实失效但未修**的开关进 `KNOWN_DEAD` 并在每次运行时显式列出（双向断言：修好了必须从表里删）——
-  本轮顺手查出三条同类问题（`lgCss` 整块因 TDZ `ReferenceError` 被 catch 吞掉、从未执行；
-  `sessionFollow` 有开关但全仓无人读取；`glassWindow` 只有文案没有实现），
-  详见 [`docs/TOKEN-NAMESPACE.md`](docs/TOKEN-NAMESPACE.md) §3b。**这三条没有默默改掉**——改动会启用
-  从未运行过的整块视觉特性，需要单独一轮 + 真机验证。
+* **已证实失效**的开关进 `KNOWN_DEAD` 并在每次运行时显式列出（双向断言：修好了必须从表里删）。
+  本轮据此修掉了第 1 条：**`lgCss`（纯 CSS/SVG 液态玻璃）整块从未执行** —— 块内引用 `bdSupported`，
+  而该 const 声明在它之后 ⇒ 同一函数作用域 TDZ `ReferenceError`，被外层
+  `catch { /* 液态玻璃失败不得影响其它样式 */ }` 吞掉（catch 原样保留，现在只在真的失败时才起作用）。
+  判据是**双向**的：`lgCss:true` 必须产出液态玻璃块（`mix-blend-mode: screen` + `url(#mpw-lg-warp)`）、
+  `lgCss:false` 必须没有、两档不许逐字节相同；变异（把声明挪回块后复现 TDZ）必须让这三条全红。
+  剩余两条仍登记未改：`sessionFollow`（有开关但全仓无人读取）、`glassWindow`（只有文案没有实现），
+  详见 [`docs/TOKEN-NAMESPACE.md`](docs/TOKEN-NAMESPACE.md) §3b。
 * 分辨力自证：把 `accent` / `aquaTextEnhance` 的门控改回被 `aquaOn` 包住 ⇒ 必须变红（两条变异）。
 
 ## 视频壁纸转码：判定是"误判" + 资源上限（2026-09-17，第 1 条）

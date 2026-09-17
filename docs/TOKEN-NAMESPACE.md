@@ -114,11 +114,13 @@ DSH 把设计 token 定义在 **`body`** 上，不是 `:root`：
 
 `tools/switch-wiring-test.mjs`（门禁第 2 步）会枚举每个开关并要求它真的改变产物，因此顺手查出
 同类的"开关没接线"。这三条**没有修**（改动会启用从未运行过的整块视觉特性，需要单独一轮 + 真机验证），
-审计每次运行都会显式列出，且**双向断言**（修好了就必须从 `KNOWN_DEAD` 删掉）：
+审计每次运行都会显式列出，且**双向断言**（修好了就必须从 `KNOWN_DEAD` 删掉）。`lgCss` 已于同一轮修好并**从表里删除**
+（现表内只剩下面两条）；它的液态玻璃判据是**双向**的（true 必须产出标记、false 必须没有、两档不许逐字节相同），
+变异自证：把声明挪回块后（复现 TDZ）⇒ A3 段三条断言全红。剩余两条：
 
 | 开关 | 现象 | 证据 |
 | --- | --- | --- |
-| `lgCss`（纯 CSS/SVG 液态玻璃） | **整块从未执行**：块内第 6079 行引用 `bdSupported`，而该 const 在 6304 行才声明 ⇒ 同一函数作用域 TDZ `ReferenceError`，被外层 `catch { /* 液态玻璃失败不得影响其它样式 */ }` 吞掉。默认关+有壁纸+支持 backdrop-filter 也不产出任何规则 | 产物里永远没有 `url(#mpw-lg-warp)`；`lgCss:true` 与 `lgCss:false` 逐字节相同（`tools/switch-wiring-test.mjs` A2 段每次打印） |
+| ~~`lgCss`（纯 CSS/SVG 液态玻璃）~~ ✅ **已修（2026-09-18）** | 真因同左：块内引用 `bdSupported`，而该 const 声明在它之后 ⇒ 同一函数作用域 TDZ `ReferenceError`，被外层 `catch { /* 液态玻璃失败不得影响其它样式 */ }` 吞掉，整块从未执行。修法 = **把声明提到使用之前**（catch 原样保留，它现在只在真的失败时才起作用） | 修后实测：`lgCss:true` 产物 **56 678 B（去注释后）含 `mix-blend-mode: screen` 与 `url(#mpw-lg-warp)` ×2**，`lgCss:false` **56 008 B、两者都没有**，两档不再逐字节相同（`tools/switch-wiring-test.mjs` A3 段每次打印） |
 | `sessionFollow`（新会话按钮跟随） | 设置页有开关（`lib/client.js:11227 toggleRow`）与文案，但**全仓没有任何地方读 `section.sessionFollow`** ⇒ 点了没效果（6989 行注释声称"随 sessionFollow"，实际无条件用 `U(panel)`） | `grep -n "section\.sessionFollow" lib/client.js` ⇒ 无匹配 |
 | `glassWindow`（设置窗口液态玻璃） | 只有 i18n 文案 + 导入净化名单，**既无开关也无读取点** ⇒ 功能未接线 | `grep -n "glassWindow" lib/client.js` ⇒ 仅 i18n 与 `boolFields` 名单 |
 

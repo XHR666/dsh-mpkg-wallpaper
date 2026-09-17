@@ -282,12 +282,15 @@ check: `node tools/switch-wiring-test.mjs` (gate step 2):
   (default / rich / all-others-on); runtime-only switches must be registered with a `reason`;
 * non-boolean features (`accent` / `aquaTextEnhance` must change the output); `themeColor` is
   "always-emitted CSS + runtime attribute gate", so the check asserts the gate rules exist instead;
-* switches **proven dead but not fixed** go into `KNOWN_DEAD` and are listed on every run (two-way assertion:
-  fixing one requires deleting its entry). The audit surfaced three more of the same class (`lgCss` never ran at
-  all — a TDZ `ReferenceError` swallowed by a `catch`; `sessionFollow` has a toggle but nothing reads it;
-  `glassWindow` is copy without implementation). See [`docs/TOKEN-NAMESPACE.md`](docs/TOKEN-NAMESPACE.md) §3b.
-  These three were **not silently changed** — enabling a never-executed visual feature deserves its own round
-  plus real-device verification.
+* switches **proven dead** go into `KNOWN_DEAD` and are listed on every run (two-way assertion: fixing one
+  requires deleting its entry). That list drove the first fix: **`lgCss` (pure CSS/SVG liquid glass) never ran at
+  all** — the block referenced `bdSupported` while the `const` was declared after it, i.e. a same-scope TDZ
+  `ReferenceError` swallowed by the outer `catch { /* liquid glass failure must not affect other styles */ }`
+  (the catch is kept; it now only fires on real failures). The criteria are two-way: `lgCss:true` must emit the
+  glass block (`mix-blend-mode: screen` + `url(#mpw-lg-warp)`), `lgCss:false` must not, and the two must not be
+  byte-identical; a mutation restoring the TDZ order must turn all three red. Two entries remain registered and
+  unchanged: `sessionFollow` (toggle exists, nothing reads it) and `glassWindow` (copy without implementation) —
+  see [`docs/TOKEN-NAMESPACE.md`](docs/TOKEN-NAMESPACE.md) §3b.
 * discrimination proof: reverting either gate back under `aquaOn` must turn the audit red.
 
 ## Video-wallpaper transcoding: a **misjudgement** + resource caps (2026-09-17, item 1)

@@ -69,10 +69,6 @@ const NON_BOOL_PROBES = [
 /* ── B. 已证实失效 / 未接线（**未修**，需决策）：审计会每次把它们显式列出来 ──
  * 为什么要双向断言：条目一旦被修好，本表必须删掉（否则"已知失效"会变成永久遮羞布）。 */
 const KNOWN_DEAD = {
-  lgCss: {
-    reason: '★整块**从未执行**：lib/client.js 的液态玻璃块在 :6079 引用 `bdSupported`，而该 const 在 :6304 才声明 ⇒ 同一个函数作用域内 TDZ ReferenceError，被外层 `catch { /* 液态玻璃失败不得影响其它样式 */ }` 吞掉（默认关 + 有壁纸 + 支持 backdrop-filter 也不产出任何规则；产物里永远找不到 url(#mpw-lg-warp)）',
-    evidence: 'node -e "…__mpwBuildCss({lgCss:true})…" ⇒ 无 url(#mpw-lg-warp) / 与 lgCss:false 逐字节相同',
-  },
   sessionFollow: {
     reason: '★设置页有开关（lib/client.js:11227 toggleRow）与文案，但**全仓没有任何地方读 section.sessionFollow** ⇒ 开关点了没效果（:6989 的注释声称"随 sessionFollow"，实际无条件用 U(panel)）',
     evidence: 'grep -n "section\.sessionFollow" lib/client.js ⇒ 无匹配',
@@ -144,6 +140,21 @@ if (!ONLY_JSON) {
       : `${wired.length} 个有 CSS 影响 / ${bools.filter((f) => NON_CSS[f]).length} 个已登记为"仅运行时" / ${bools.filter((f) => KNOWN_DEAD[f]).length} 个已知失效（下表）`)
 }
 
+/* ── 1a. 液态玻璃（lgCss）双向判据 ──
+ * 来历：`bdSupported` 在块内先使用后声明 ⇒ TDZ ReferenceError 被模块级 catch 吞掉，整块**从未执行**
+ * （2026-09-18 修复：把声明提到使用之前，catch 保留）。判据必须双向，否则"两档都不产出"也会绿。 */
+const LG_MARK_BLOCK = /mix-blend-mode:\s*screen/            // 液态玻璃块独有（玻璃高光层），与 SVG 支持无关
+const LG_MARK_SVG = /url\(#mpw-lg-warp\)/                    // 只在环境支持 backdrop-filter:url() 时出现
+const LG_SUPPORTED = (() => { try { return !!(globalThis.CSS && CSS.supports && CSS.supports("backdrop-filter", "url(#mpw-lg-warp)")) } catch { return false } })()
+const lgOn = build({ lgCss: true })
+const lgOff = build({ lgCss: false })
+const lgCase = []
+lgCase.push(['★ lgCss:true 的产物里出现液态玻璃块（它真的生成了）', LG_MARK_BLOCK.test(lgOn), `marker=${LG_MARK_BLOCK} / len=${lgOn.length}`])
+lgCase.push(['★ lgCss:false 的产物里**没有**液态玻璃块', !LG_MARK_BLOCK.test(lgOff) && !LG_MARK_SVG.test(lgOff), `len=${lgOff.length}`])
+lgCase.push(['★ 两档产物**不再逐字节相同**', lgOn !== lgOff, `true=${lgOn.length} B / false=${lgOff.length} B`])
+lgCase.push([`★ 环境支持 backdrop-filter:url() 时必须有 url(#mpw-lg-warp)（本环境 CSS.supports=${LG_SUPPORTED}）`,
+  LG_SUPPORTED ? LG_MARK_SVG.test(lgOn) : true, LG_SUPPORTED ? `count=${(lgOn.match(/url\(#mpw-lg-warp\)/g) || []).length}` : '本环境不支持 ⇒ 按"自动回退纯模糊"豁免（已断言块仍在）'])
+
 /* ── 1b. 已知失效清单：必须**仍然失效**（修好了就要从表里删掉，否则这张表会变成遮羞布） ── */
 if (!ONLY_JSON) {
   console.log('\n== A2. ⚠ 已知失效/未接线开关（未修，需决策）==')
@@ -154,6 +165,11 @@ if (!ONLY_JSON) {
     if (!stillDead) console.error(`      ↑ 它已经被接线了 ⇒ 请从 tools/switch-wiring-test.mjs 的 KNOWN_DEAD 删除该条`)
     console.log(`      证据：${info.evidence}`)
   }
+}
+
+if (!ONLY_JSON) {
+  console.log('\n== A3. 液态玻璃（lgCss）双向判据（防"两档都不产出也算绿"）==')
+  for (const [name, cond, detail] of lgCase) ok(name, cond, detail)
 }
 
 /* ── 2. 非布尔功能 ── */
@@ -172,27 +188,40 @@ for (const r of RUNTIME_GATED) {
 const MUTS = [
   {
     id: 'accent-gate-reverted',
-    from: 'if (accentConfigured) aquaCssParts.push(',
-    to: 'if (aquaOn(section)) aquaCssParts.push(',
+    mut: (s) => s.replace('if (accentConfigured) aquaCssParts.push(', 'if (aquaOn(section)) aquaCssParts.push('),
+    expect: 'A',
     why: '把「配色」的门控改回被 aquaOn 包住（2026-09-18 修复前的写法）',
   },
   {
+    id: 'lgcss-tdz-restored',
+    why: '把 `bdSupported` 的声明挪回液态玻璃块**之后**（复现原来的 TDZ ReferenceError ⇒ 整块被 catch 吞掉）',
+    mut: (s) => s
+      .replace("\t\t\tconst bdSupported = window.__mpwBackdropRendered !== false;\n\t\t\t// ①(新 2026-09-13 第15项) 纯 CSS/SVG 液态玻璃", "\t\t\t// ①(新 2026-09-13 第15项) 纯 CSS/SVG 液态玻璃")
+      .replace("\t\t\t// 磨砂玻璃 = 半透明背景 + backdrop blur，两者缺一不可（原理见下方 CSS 注释）。", "\t\t\tconst bdSupported = window.__mpwBackdropRendered !== false;\n\t\t\t// 磨砂玻璃 = 半透明背景 + backdrop blur，两者缺一不可（原理见下方 CSS 注释）。"),
+    expect: 'A3',
+  },
+  {
     id: 'text-enhance-gate-reverted',
-    from: 'if (textEnhanceOn) aquaCssParts.push(',
-    to: 'if (aquaOn(section)) aquaCssParts.push(',
+    mut: (s) => s.replace('if (textEnhanceOn) aquaCssParts.push(', 'if (aquaOn(section)) aquaCssParts.push('),
+    expect: 'A',
     why: '把「深底文字可读增强」的门控改回被 aquaOn 包住',
   },
 ]
 if (!ONLY_JSON) console.log('\n== C. 分辨力自证：把门控改回"被 aquaOn 包住"必须变红 ==')
 for (const m of MUTS) {
-  const mutated = src.replace(m.from, m.to)
+  const mutated = m.mut(src)
   if (mutated === src) { ok(`变异 ${m.id} 注入成功`, false, '注入点没匹配上（源码改了？）'); continue }
   const copy = path.join(tmpRoot, 'mut-' + m.id + '.js')
   fs.writeFileSync(copy, mutated)
   const r = spawnSync(process.execPath, [fileURLToPath(import.meta.url), '--client', copy], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
   const out = (r.stdout || '') + (r.stderr || '')
-  const caught = /✗ ★ (accent|themeColor|aquaTextEnhance)/.test(out)
-  ok(`变异 ${m.id}：期望变红，实际 ${caught ? 'RED' : (r.status === 0 ? 'PASS' : 'FAIL(其它)')}`, caught, `${m.why}  [exit=${r.status}]`)
+  // 变红判定：期望的那组断言必须真的报红（A3=液态玻璃双向判据；A=accent/aquaTextEnhance 必须改变产物）
+  const caughtA3 = /✗ ★ (lgCss|两档产物)/.test(out)
+  const caughtA = caughtA3 || /✗ ★ (accent|themeColor|aquaTextEnhance)/.test(out)
+  const got = m.expect === 'A3' ? (caughtA3 ? 'A3' : (r.status === 0 ? 'PASS' : 'FAIL(其它)'))
+    : (caughtA ? 'A' : (r.status === 0 ? 'PASS' : 'FAIL(其它)'))
+  ok(`变异 ${m.id}：期望 ${m.expect} 变红，实际 ${got}`, got === m.expect, `${m.why}  [exit=${r.status}]`)
+  if (m.expect === 'A3' && !caughtA3) console.error('      ↑ 原始输出片段：' + out.split('\n').filter((l) => l.indexOf('✗') === 0 || l.indexOf('  ✗') === 0).slice(0, 3).join(' | '))
 }
 
 cleanup()
