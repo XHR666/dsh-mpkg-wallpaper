@@ -104,6 +104,11 @@ class Res extends Writable {
   setHeader(k, v) { this.headers[String(k).toLowerCase()] = v; return this; }
   get body() { return Buffer.concat(this.chunks); }
 }
+// ①(2026-09-17) /raw 整包是 **235MB 级**流式读：原来 `Promise.race([...], 2000ms)` 只给 2 秒，
+//   机器忙（别的代理在跑语料密集测试/页缓存压力大）时会截断 ⇒ 偶发一条 "整包字节数" 变红
+//   （本轮实测遇到 1 次，随后 3 次加压复跑未复现）。这个 race 只是防"handler 卡死"的保险，
+//   不该当性能判据 ⇒ 提到 30s，可用 MPW_TEST_CALL_TIMEOUT_MS 覆盖。
+const CALL_TIMEOUT_MS = Number(process.env.MPW_TEST_CALL_TIMEOUT_MS || 30000);
 async function call(target, { method = 'GET', url = target, headers = {} } = {}) {
   const bare = target.split('?')[0];
   const r = routes.find((x) => x.kind === 'exact' && x.path === bare);
@@ -111,7 +116,7 @@ async function call(target, { method = 'GET', url = target, headers = {} } = {})
   const res = new Res();
   const done = new Promise((resolve) => res.on('finish', resolve));
   await r.handler({ method, url, headers }, res);
-  await Promise.race([done, new Promise((r2) => setTimeout(r2, 2000))]);
+  await Promise.race([done, new Promise((r2) => setTimeout(r2, CALL_TIMEOUT_MS))]);
   return { status: res.status, headers: res.headers, body: res.body };
 }
 
