@@ -288,9 +288,14 @@ check: `node tools/switch-wiring-test.mjs` (gate step 2):
   `ReferenceError` swallowed by the outer `catch { /* liquid glass failure must not affect other styles */ }`
   (the catch is kept; it now only fires on real failures). The criteria are two-way: `lgCss:true` must emit the
   glass block (`mix-blend-mode: screen` + `url(#mpw-lg-warp)`), `lgCss:false` must not, and the two must not be
-  byte-identical; a mutation restoring the TDZ order must turn all three red. Two entries remain registered and
-  unchanged: `sessionFollow` (toggle exists, nothing reads it) and `glassWindow` (copy without implementation) —
-  see [`docs/TOKEN-NAMESPACE.md`](docs/TOKEN-NAMESPACE.md) §3b.
+  byte-identical; a mutation restoring the TDZ order must turn all three red. The second entry is fixed too: **`sessionFollow` (new-chat button follows panel opacity)** — the setting page had a
+  toggle and copy but nothing read `section.sessionFollow`; implemented per the **user-visible copy** (on = follow
+  that opacity, off = **back to the host's original colour**), default unchanged, asserted in
+  `tools/switch-wiring-test.mjs` section A4 (three two-way assertions in both default and unified-blur contexts;
+  the "remove the read" mutation must go red). The third, `glassWindow`, stays registered and unchanged (copy
+  without implementation) — see [`docs/TOKEN-NAMESPACE.md`](docs/TOKEN-NAMESPACE.md) §3b. Liquid glass also gained a
+  **`?lgcss=off` kill switch** now that it actually runs (registered in the renderer repo's diagnostics table;
+  `node tests/diag-flag-check.mjs` reports 149==149).
 * discrimination proof: reverting either gate back under `aquaOn` must turn the audit red.
 
 ## Video-wallpaper transcoding: a **misjudgement** + resource caps (2026-09-17, item 1)

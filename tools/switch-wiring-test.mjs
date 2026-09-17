@@ -29,6 +29,9 @@ const repoRoot = path.join(here, '..')
 const argOf = (n, d) => { const i = process.argv.indexOf(n); return i > 0 ? process.argv[i + 1] : d }
 const clientPath = path.resolve(argOf('--client', path.join(repoRoot, 'lib', 'client.js')))
 const ONLY_JSON = process.argv.includes('--json-only')
+/* 变异子进程**不许再跑变异段**（否则子进程又生孙进程 = fork 炸弹，实测挂到超时）。
+   父进程 spawn 时显式带 --no-mutations。 */
+const NO_MUT = process.argv.includes('--no-mutations')
 
 /* 真实断言助手（本仓教训：ok(name, detail) 恒真 = 假绿） */
 let pass = 0, fail = 0
@@ -66,13 +69,10 @@ const NON_BOOL_PROBES = [
   { name: 'aquaTextEnhance', patch: { aquaTextEnhance: true }, why: '「深底文字可读增强」：文字描边 + 文字 token（同上，2026-09-18 修复）' },
 ]
 
-/* ── B. 已证实失效 / 未接线（**未修**，需决策）：审计会每次把它们显式列出来 ──
+/* ── B. 已证实失效 / 未接线（尚未修）：审计会每次把它们显式列出来 ──
+ * 已修并从本表删除：lgCss（TDZ，2026-09-18）、sessionFollow（无人读，2026-09-18 按用户裁定接线）。
  * 为什么要双向断言：条目一旦被修好，本表必须删掉（否则"已知失效"会变成永久遮羞布）。 */
 const KNOWN_DEAD = {
-  sessionFollow: {
-    reason: '★设置页有开关（lib/client.js:11227 toggleRow）与文案，但**全仓没有任何地方读 section.sessionFollow** ⇒ 开关点了没效果（:6989 的注释声称"随 sessionFollow"，实际无条件用 U(panel)）',
-    evidence: 'grep -n "section\.sessionFollow" lib/client.js ⇒ 无匹配',
-  },
   glassWindow: {
     reason: '「设置窗口液态玻璃」只有 i18n 文案与导入净化名单，**既无设置页开关也无读取点** ⇒ 功能未接线（旧配置字段）',
     evidence: 'grep -n "glassWindow" lib/client.js ⇒ 只有 i18n + boolFields 净化名单，无 toggleRow、无 section.glassWindow 读取',
@@ -140,6 +140,26 @@ if (!ONLY_JSON) {
       : `${wired.length} 个有 CSS 影响 / ${bools.filter((f) => NON_CSS[f]).length} 个已登记为"仅运行时" / ${bools.filter((f) => KNOWN_DEAD[f]).length} 个已知失效（下表）`)
 }
 
+/* ── 1a0. sessionFollow（新会话按钮跟随面板不透明度）双向判据 ──
+ * 来历：设置页有开关 + 文案 + DEFAULT_SESSION_FOLLOW，但**全仓没有任何地方读 section.sessionFollow**
+ * （开关点了没效果）。用户裁定按**用户可见文案**实现：开 = 跟随那条透明度（U(panel) 现状公式）；
+ * 关 = 回到宿主原色 var(--dsw-alias-button-elevated-fill)（不混 transparent）。 */
+const NEW_SESSION_BG = /background-color:\s*(color-mix\(in srgb, var\(--dsw-alias-button-elevated-fill\)[^;]*|var\(--dsw-alias-button-elevated-fill\)) !important;/g
+const sessionCases = []
+for (const ctx of [{ name: '默认档', patch: {} }, { name: '统一虚化档', patch: { unifyTint: true } }]) {
+  const on = build({ ...ctx.patch, sessionFollow: true })
+  const off = build({ ...ctx.patch, sessionFollow: false })
+  const onVals = [...on.matchAll(NEW_SESSION_BG)].map((x) => x[1])
+  const offVals = [...off.matchAll(NEW_SESSION_BG)].map((x) => x[1])
+  sessionCases.push([`★ sessionFollow:开档 [${ctx.name}] 新会话按钮跟随那条透明度（color-mix + U(panel)）`,
+    onVals.length >= 2 && onVals.every((v) => /^color-mix\(in srgb, var\(--dsw-alias-button-elevated-fill\) \d+%, transparent\)$/.test(v)),
+    `命中 ${onVals.length} 条：${JSON.stringify(onVals)}`])
+  sessionCases.push([`★ sessionFollow:关档 [${ctx.name}] 新会话按钮回**宿主原色**且不再有 color-mix 混透明`,
+    offVals.length >= 2 && offVals.every((v) => v === 'var(--dsw-alias-button-elevated-fill)'),
+    `命中 ${offVals.length} 条：${JSON.stringify(offVals)}`])
+  sessionCases.push([`★ sessionFollow:开/关两档产物必须不同 [${ctx.name}]`, on !== off, `${on.length} B vs ${off.length} B`])
+}
+
 /* ── 1a. 液态玻璃（lgCss）双向判据 ──
  * 来历：`bdSupported` 在块内先使用后声明 ⇒ TDZ ReferenceError 被模块级 catch 吞掉，整块**从未执行**
  * （2026-09-18 修复：把声明提到使用之前，catch 保留）。判据必须双向，否则"两档都不产出"也会绿。 */
@@ -154,6 +174,23 @@ lgCase.push(['★ lgCss:false 的产物里**没有**液态玻璃块', !LG_MARK_B
 lgCase.push(['★ 两档产物**不再逐字节相同**', lgOn !== lgOff, `true=${lgOn.length} B / false=${lgOff.length} B`])
 lgCase.push([`★ 环境支持 backdrop-filter:url() 时必须有 url(#mpw-lg-warp)（本环境 CSS.supports=${LG_SUPPORTED}）`,
   LG_SUPPORTED ? LG_MARK_SVG.test(lgOn) : true, LG_SUPPORTED ? `count=${(lgOn.match(/url\(#mpw-lg-warp\)/g) || []).length}` : '本环境不支持 ⇒ 按"自动回退纯模糊"豁免（已断言块仍在）'])
+/* ?lgcss=off 一键回退（修好后首次真正启用 ⇒ 必须能整体关掉；与 ?sbfill/?railink 同款） */
+const lgOffFlag = (() => {
+  try {
+    const keep = globalThis.location.search
+    globalThis.location.search = '?lgcss=off'
+    const v = build({ lgCss: true })
+    globalThis.location.search = keep
+    return v
+  } catch (e) { return '' }
+})()
+lgCase.push(['★ ?lgcss=off 时产物里**没有**液态玻璃块（一键回退有效）', !LG_MARK_BLOCK.test(lgOffFlag) && !LG_MARK_SVG.test(lgOffFlag), `len=${lgOffFlag.length}`])
+lgCase.push(['★ 不写 ?lgcss=off 时必须出现液态玻璃块（回退口没把功能关死）', LG_MARK_BLOCK.test(lgOn), `len=${lgOn.length}`])
+
+if (!ONLY_JSON) {
+  console.log('\n== A4. sessionFollow（新会话按钮跟随面板不透明度）双向判据 ==')
+  for (const [name, cond, detail] of sessionCases) ok(name, cond, detail)
+}
 
 /* ── 1b. 已知失效清单：必须**仍然失效**（修好了就要从表里删掉，否则这张表会变成遮羞布） ── */
 if (!ONLY_JSON) {
@@ -193,6 +230,18 @@ const MUTS = [
     why: '把「配色」的门控改回被 aquaOn 包住（2026-09-18 修复前的写法）',
   },
   {
+    id: 'sessionfollow-unread-again',
+    mut: (s) => s.replace('const sessionFollowOn = section.sessionFollow !== void 0 ? !!section.sessionFollow : DEFAULT_SESSION_FOLLOW;', 'const sessionFollowOn = true;'),
+    expect: 'A4',
+    why: '把 `section.sessionFollow` 的读取删掉（= 复现"开关存在但全仓无人读"的原 bug）',
+  },
+  {
+    id: 'lgcss-off-guard-removed',
+    mut: (s) => s.replace('if (lgCssOn && !lgCssOff && hasImage && bdSupported) {', 'if (lgCssOn && hasImage && bdSupported) {'),
+    expect: 'A5',
+    why: '去掉 `?lgcss=off` 的守卫（回退口失效 ⇒ 用户没法一键关掉首次启用的液态玻璃）',
+  },
+  {
     id: 'lgcss-tdz-restored',
     why: '把 `bdSupported` 的声明挪回液态玻璃块**之后**（复现原来的 TDZ ReferenceError ⇒ 整块被 catch 吞掉）',
     mut: (s) => s
@@ -207,21 +256,26 @@ const MUTS = [
     why: '把「深底文字可读增强」的门控改回被 aquaOn 包住',
   },
 ]
-if (!ONLY_JSON) console.log('\n== C. 分辨力自证：把门控改回"被 aquaOn 包住"必须变红 ==')
-for (const m of MUTS) {
+if (!NO_MUT && !ONLY_JSON) console.log('\n== C. 分辨力自证：把门控改回"被 aquaOn 包住"必须变红 ==')
+for (const m of (NO_MUT ? [] : MUTS)) {
   const mutated = m.mut(src)
   if (mutated === src) { ok(`变异 ${m.id} 注入成功`, false, '注入点没匹配上（源码改了？）'); continue }
   const copy = path.join(tmpRoot, 'mut-' + m.id + '.js')
   fs.writeFileSync(copy, mutated)
-  const r = spawnSync(process.execPath, [fileURLToPath(import.meta.url), '--client', copy], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
+  const r = spawnSync(process.execPath, [fileURLToPath(import.meta.url), '--client', copy, '--no-mutations'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, timeout: 30000 })
   const out = (r.stdout || '') + (r.stderr || '')
-  // 变红判定：期望的那组断言必须真的报红（A3=液态玻璃双向判据；A=accent/aquaTextEnhance 必须改变产物）
-  const caughtA3 = /✗ ★ (lgCss|两档产物)/.test(out)
-  const caughtA = caughtA3 || /✗ ★ (accent|themeColor|aquaTextEnhance)/.test(out)
-  const got = m.expect === 'A3' ? (caughtA3 ? 'A3' : (r.status === 0 ? 'PASS' : 'FAIL(其它)'))
-    : (caughtA ? 'A' : (r.status === 0 ? 'PASS' : 'FAIL(其它)'))
+  // 变红判定：**期望的那一组**断言必须真的报红（分组名 = 断言名前缀，避免"别的组红了也算过"）
+  const GROUPS = {
+    A3: /✗ ★ (lgCss:true|lgCss:false|两档产物|环境支持|\?lgcss=off 时)/,
+    A4: /✗ ★ sessionFollow/,
+    A5: /✗ ★ (\?lgcss=off 时|不写 \?lgcss=off 时)/,
+    A: /✗ ★ (accent|themeColor|aquaTextEnhance)/,
+  }
+  const caughtGroups = Object.keys(GROUPS).filter((g) => GROUPS[g].test(out))
+  const got = caughtGroups.includes(m.expect) ? m.expect : (r.status === 0 ? 'PASS' : 'FAIL(其它)')
   ok(`变异 ${m.id}：期望 ${m.expect} 变红，实际 ${got}`, got === m.expect, `${m.why}  [exit=${r.status}]`)
-  if (m.expect === 'A3' && !caughtA3) console.error('      ↑ 原始输出片段：' + out.split('\n').filter((l) => l.indexOf('✗') === 0 || l.indexOf('  ✗') === 0).slice(0, 3).join(' | '))
+  if (got !== m.expect) console.error('      ↑ 实际报红分组：[' + caughtGroups.join(',') + ']；RED 行：'
+    + out.split('\n').filter((l) => /^\s*✗/.test(l)).slice(0, 3).join(' | '))
 }
 
 cleanup()

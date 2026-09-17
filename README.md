@@ -297,8 +297,13 @@
   `catch { /* 液态玻璃失败不得影响其它样式 */ }` 吞掉（catch 原样保留，现在只在真的失败时才起作用）。
   判据是**双向**的：`lgCss:true` 必须产出液态玻璃块（`mix-blend-mode: screen` + `url(#mpw-lg-warp)`）、
   `lgCss:false` 必须没有、两档不许逐字节相同；变异（把声明挪回块后复现 TDZ）必须让这三条全红。
-  剩余两条仍登记未改：`sessionFollow`（有开关但全仓无人读取）、`glassWindow`（只有文案没有实现），
-  详见 [`docs/TOKEN-NAMESPACE.md`](docs/TOKEN-NAMESPACE.md) §3b。
+  第 2 条也修了：**`sessionFollow`（新会话按钮跟随面板不透明度）**——设置页有开关 + 文案，但全仓无人读
+  `section.sessionFollow`；按**用户可见文案**实现（开 = 跟随那条透明度，关 = **回到宿主原色**），默认档不变，
+  判据在 `tools/switch-wiring-test.mjs` 的 A4 段（默认档 + 统一虚化档各 3 条双向断言；变异「把读取删掉」必红）。
+  第 3 条 `glassWindow` 仍登记未改（只有文案没有实现），详见
+  [`docs/TOKEN-NAMESPACE.md`](docs/TOKEN-NAMESPACE.md) §3b。
+  另外：液态玻璃首次真正启用后加了 **`?lgcss=off` 一键回退**（已登记进渲染器仓诊断主表，
+  `node tests/diag-flag-check.mjs` 报 149==149）。
 * 分辨力自证：把 `accent` / `aquaTextEnhance` 的门控改回被 `aquaOn` 包住 ⇒ 必须变红（两条变异）。
 
 ## 视频壁纸转码：判定是"误判" + 资源上限（2026-09-17，第 1 条）
