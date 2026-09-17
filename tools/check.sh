@@ -34,6 +34,13 @@ node tools/panel-fixes-test.mjs || fail=1
 #   只影响运行时的开关必须登记 reason；**已证实失效未修的**（lgCss/sessionFollow/glassWindow）
 #   进 KNOWN_DEAD 并在每次运行时显式列出（修好则必须从表里删，双向断言防"遮羞布"）。
 node tools/switch-wiring-test.mjs || fail=1
+# ①(2026-09-18 §5 第3项)「诊断自证闭环」：payload 补齐关键子系统（磨砂/侧栏/时间线是否被影响、
+#   壁纸类型与路径、shim 是否注入、视频解码、表面 token、场景健康），**每个字段带来源（provenance）**，
+#   读不到 ⇒ 字段仍在 + value:null + degraded.reason（部分子来源缺 ⇒ degraded.partial）——绝不静默省略；
+#   一键发送 POST /diag 拿宿主落点，宿主不可用 ⇒ 下载 JSON（离线可用）；
+#   客户端单份字节上限 + 宿主 diag 目录"数量 + 合计字节"双上限、最旧先删（都直接调真实现断言）。
+#   字段表/怎么发/落在哪/上限：docs/DIAGNOSTICS.md
+node tools/diag-subsystem-test.mjs || fail=1
 # ⓪(2026-09-16 两个真机 bug 的回归门禁)：
 #   bug① 右侧「轮次导航条」(.eGxaPq_*/--dsw-alias-border-l4) 不被我们的样式/token 覆盖弄透明；
 #   bug② 标题栏磨砂注入链（假 DOM：注入 + 内联样式 + 半透明底 + 宿主标记 + 诊断 reason + 回退开关）。
