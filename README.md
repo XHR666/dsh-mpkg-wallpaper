@@ -238,6 +238,24 @@
 
 > 细节与诊断字段表：[`docs/HEADER-FROST.md`](docs/HEADER-FROST.md)、[`docs/TIMELINE-RAIL-TOKEN.md`](docs/TIMELINE-RAIL-TOKEN.md)。
 
+## 样式作用域护栏：为什么"这类 bug 不会再复发"（2026-09-17，MASTER-TODO §5 第 2 项）
+
+上面两个 bug 的共同机制是**选择器作用域没人管**：改样式的人在本地看不出"这条规则会命中宿主界面"。
+门禁第 12 步把它变成会变红的机器判据（`node tools/style-scope-guard.mjs`）：
+
+* **拿真实产物**：不重写 `buildCss`，用 `tools/_stub.mjs` 在 Node 里跑 `lib/client.js`，调用插件自己暴露的
+  `__mpwBuildCss(patch)`，按源码里的 `boolFields`/`numFields` 自动枚举 **600+ 组设置**（当前 613：默认段 /
+  每个布尔开关单独开 / 核心 9 开关全 512 组合 / bsCompat 家族 / 数值 0 与 100 / 无壁纸 / lgTest），
+  再对生成出来的 CSS 逐条解析（含 `@media`/`@supports`）。
+* **判据**：每条规则的选择器必须命中我们自己的标记（`.mpw*` / `[data-mpw*]` / `#mpw-*`），或命中**已登记**的
+  宿主/第三方作用域——`bsCompat` 那句故意打第三方 DOM 的 `[data-dsh-better-sidebar] …` 也在其列，
+  **必须登记 reason + `docs/*.md:行号` 指针**（指针运行时校验，漂了直接红），不是"默默容忍"。
+  裸元素选择器（`button{…}`）、裸 `*`、`:root` 上覆盖宿主 token、宿主 token 被设成 transparent/inherit、
+  未登记 token 的 `!important`、未门控碰宿主轮次导航条、`[data-dsh-panel-host]`、顶栏描边透明化 ⇒ **判红**。
+* **自证有分辨力**：`node tools/style-scope-guard.mjs --selftest` 把 `lib/client.js` 复制到临时目录注入
+  10 条变异（含一条"我们自己的标记必须仍然放行"的阴性对照），逐条断言必须 RED/REVIEW/PASS。
+* 判据、允许清单账本与"怎么加一条登记项"：[`docs/STYLE-SCOPE-GUARD.md`](docs/STYLE-SCOPE-GUARD.md)。
+
 ## 视频壁纸转码：判定是"误判" + 资源上限（2026-09-17，第 1 条）
 
 > 用户原话：「我现在并没有使用视频转码，我用的是 **video 类的 mpkg**，然后**解码帧率无上限**，
@@ -262,7 +280,7 @@ MP4 里 h264+opus、HEVC Main10 这类确定性缺口；探测不出来一律不
 
 > 细节、判据表、内存实测与"实测排除的做法"：[`docs/TRANSCODE-RESOURCE.md`](docs/TRANSCODE-RESOURCE.md)；
 > 回退开关 `?mpwtranscode=legacy`（回到旧行为）/ `aggressive`（连用户设的上限也先探测）；
-> 回归：`node tools/transcode-limit-test.mjs`（43 断言，已接入 `tools/check.sh` 第 5/11 步）。
+> 回归：`node tools/transcode-limit-test.mjs`（43 断言，已接入 `tools/check.sh` 第 5/12 步）。
 
 ## 选择文件夹 / 选择文件：行为契约与快捷键（2026-09-17，第13条）
 
@@ -474,10 +492,13 @@ dsh-mpkg-wallpaper/
 │                     #           web-interaction-test.mjs（坐标/事件整形/开关状态机/沙箱边界/舞台契约/两侧源码对拍）
 │                     # 单文件装载：build-bundle.mjs（把 lib/index.js + 相对依赖内联成一个 ESM；`--check` 与源码对拍）
 │                     #           bundle-equivalence-test.mjs（门禁第 11 步：同一套路由断言打源码与 bundle + 变异对照）
+│                     # 样式作用域：style-scope-guard.mjs（门禁第 12 步：注入的每条 CSS 规则都必须命中 .mpw*/[data-mpw*]，
+│                     #           宿主/第三方作用域必须登记在允许清单里（带 reason + docs 指针）；裸元素/:root 覆盖判红）
 │                     # 注：研究期的 Python 工具（unmpkg/tex2png/mdl_explorer/xref）
 │                     #     **已删除（GPL 血缘存疑，2026-09-16）**，见 `../docs/COPYING-RULES.md` §6
 ├── dist/             # 构建产物（**不入库**，.gitignore 忽略）：dsh-mpkg-wallpaper.bundle.mjs（方式四用，现生成）
-├── docs/             # 研发笔记（不进发布包）：WEB-WALLPAPER.md（网页壁纸规格/沙箱/API 表/限制）、RELEASE.md（发布前置与命令）等
+├── docs/             # 研发笔记（不进发布包）：WEB-WALLPAPER.md（网页壁纸规格/沙箱/API 表/限制）、RELEASE.md（发布前置与命令）、
+│                     #   STYLE-SCOPE-GUARD.md（样式作用域护栏：允许什么/什么判红/怎么加允许清单/怎么复现）等
 ├── screenshots/      # （已移出仓库，见文末说明）
 ├── README.md         # 本文件（中文）
 └── README.en.md      # 英文说明

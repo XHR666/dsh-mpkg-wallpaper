@@ -227,7 +227,7 @@ cp -r ~/.dsh/profiles/web /tmp/dsh-probe/profiles/web    # 或按 §1.3 造一�
 DSH_HOME=/tmp/dsh-probe dsh --profile web --port 36311 --no-open
 
 # 3) 门禁里的自动化那一半
-node tools/better-sidebar-compat-test.mjs      # 28 断言（含变异 + 金丝雀）
+node tools/better-sidebar-compat-test.mjs      # 41 断言（含变异 + 金丝雀 + F 段 13 条几何纪律）
 ```
 
 **本次实测的合成锚点绑定结果**（0.19.1 真页面，`--synthetic`；插入后即删）：
@@ -253,7 +253,101 @@ node tools/better-sidebar-compat-test.mjs      # 28 断言（含变异 + 金丝�
 | `lib/index.js:80` | `detectBetterSidebarVersion()`（改名后；`/ping` 的版本来源） |
 | `lib/client.js:242-270` | `applyBetterSidebarVersion` + `refreshBetterSidebarVersion`（页面加载期探测） |
 | `lib/client.js:7519-7660` | bsCompat CSS 块（作用域 + 双锚点 + 版本门控） |
-| `tools/better-sidebar-compat-test.mjs` | 门禁第 10 步：28 断言（含变异用例与锚点金丝雀） |
+| `tools/better-sidebar-compat-test.mjs` | 门禁第 10 步：41 断言（A–F + 变异用例 + 锚点金丝雀；F 段 13 条**严格**断言见 §8.5） |
 | `tools/bs-compat-probe.mjs` | 真机 DOM 探针（计数 + 合成锚点绑定 + `/ping` 应答） |
+| `tools/bs-bottom-panel-probe.mjs` | **底部面板悬浮适配**真机 computed/几何探针（§8；证据 `tools/probe-out/bs-bottom-*.json`） |
 | `tools/_stub.mjs` | 桩 DOM 属性表（真语义 set/get/remove/has，支撑"结果落点"断言） |
 | `docs/BETTER-SIDEBAR-DOM-CONTRACT-0.19.1.md` | 0.19.1 的逐行 DOM 契约审计（附录） |
+
+---
+
+## 8. 底部工作台面板的"悬浮适配"（2026-09-17 用户第 2 项，真机定案）
+
+用户原话：「对 better sidebar 插件的底部面板做悬浮适配，你已经做过几次悬浮效果了，
+不要再犯和之前一样的 bug —— 像有些边被切掉、有些边重复显示各类 bug，不要再重复出现，尽量一次性做好。」
+
+`bsFloat` 给底部面板加圆角 + 内层透明。0.19.1 的面板**不是**一块静态盒子：
+它由自己的 ResizeObserver 实时对齐 DSH 中心列（inline `left=<中心列 left>; right:0`），
+面板内部还有独立的 resize strip、折叠按钮、tabBar、pane、终端（xterm）。
+所以本节全部结论都来自**真机 computed + 几何 + 浏览器命中测试**，不靠读 CSS 猜。
+
+### 8.1 探针（可复跑）
+
+```bash
+node tools/hdr-probe-mint-cookie.mjs --authority 127.0.0.1:3080 --out /tmp/ffprobe/cookie.json
+node tools/bs-bottom-panel-probe.mjs --label before  --variant ours    # 复刻用户设置：bsCompat+bsFloat
+node tools/bs-bottom-panel-probe.mjs --label after   --variant ours    # 修完再跑一次
+node tools/bs-bottom-panel-probe.mjs --label off     --variant off     # 对照：bsFloat 关（应零改动）
+node tools/bs-bottom-panel-probe.mjs --label notours --variant none    # 对照：bsCompat 关（我们零规则）
+node tools/bs-bottom-panel-probe.mjs --label all     --variant all     # 全子开关开（后写优先）
+# 证据：tools/probe-out/bs-bottom-<label>.{json,txt}（真面板：点侧栏会话 → [data-dsh-bottom-toggle] 展开）
+```
+
+探针给出四类判据：**几何**（rect / margin / 包含关系 / 与中心列对齐）、**边框归属**（每条边谁画的）、
+**内层不透明层扫描**（面板子树里凡"非透明/有背景图"的后代 + 是否覆盖圆角区）、
+**四角命中测试**（在四角圆角之外 2px 处 `elementFromPoint`：命中点落在面板内层 ⇒ 有直角从圆角外露出来）。
+
+### 8.2 改前（真机实测，`bs-bottom-before.json`）
+
+| 判据 | 实测值 | 结论 |
+| --- | --- | --- |
+| 面板 rect | `288,581,996,221`（right=1284） | **左边被 margin 推开 8px**、右边也少 8px |
+| 与中心列对齐 | `panelLeftVsCenterColLeft=8`、`panelRightVsCenterColRight=-8` | ✗ 破坏 ResizeObserver 对齐 |
+| 面板 margin | `0px 8px 8px 8px`（我们的规则） | ✗ 就是偏移来源 |
+| resize strip | `y=578`，面板 `y=581` ⇒ **strip 上沿 3px 在面板外**，而外壳 `overflow:hidden` | ✗ **strip 被切掉一截**（"边被切掉"） |
+| 内容壳 margin | `6px 8px 8px 0px`（不对称！） | ✗ 来自 `[class*="_panel"]` 子串**误命中 0.19 的 `nArs4W_panelBody`**（该规则本是给 0.19 已删除的旧右栏写的） |
+| 折叠态（`bottomPanelHidden`） | 面板 `y=806.42`，视口高 810 ⇒ **底部露 3.6px 残影** | ✗ "折叠了还留一条边" |
+| 内层不透明层 | `xterm-viewport`(71%)、`nArs4W_pane`(100%)、`tabBar`(16%)、激活胶囊(10%) | 全是直角背景，靠外壳 `overflow:hidden` 裁 → 与"strip 被切"互相冲突 |
+| 我们画的边框 | 无（面板上沿 1px 与 tabBar 下沿 1px 都是宿主的） | ✓ 这条本来就对 |
+
+### 8.3 改后（真机实测，`bs-bottom-after.json`）
+
+| 判据 | 实测值 | 结论 |
+| --- | --- | --- |
+| 面板 rect | `280,589,1012,221`（right=1292） | ✓ 与中心列**逐像素对齐** |
+| 对齐差 | `panelLeftVsCenterColLeft=0`、`panelRightVsCenterColRight=0`、`bottomGap=0` | ✓ 左右不偏、底部不留白 |
+| 四角圆角 | `border-radius:14px`（四角同值）；四角命中测试 = `pI_x6G_handle/frame`（**面板外**） | ✓ 四角真的圆、无内层直角外露 |
+| 面板 margin | `0px`（显式归零） | ✓ 不再产生偏移 |
+| 内容壳 margin | `0px`（旧 `_panel` 规则已排除 `_panelBody`） | ✓ 不对称内边距消失 |
+| resize strip | `y=590`（面板 `y=589`+1px 边框）⇒ **完全在面板内**，8px 全高可拖可点 | ✓ 不再被切 |
+| 裁切 | 外壳 `overflow:hidden` + 14px 圆角统一裁掉内层直角与激活胶囊 | ✓ 圆角外壳里不会套直角矩形 |
+| 内层背景 | `panelBody/pane/tabBar/terminalWrap/paneContent` 全部 `rgba(0,0,0,0)` | ✓ 单层外壳、无"两层透明度不同" |
+| 折叠态 | 面板 `y=814.42` > 视口 810 ⇒ **完全移出视口** | ✓ 无残影 |
+| 边框 | 仍只有宿主那两条（面板上沿 / tabBar 下沿），我们**一条都不画** | ✓ 无重复边框 |
+
+对照（同一次运行序列）：
+
+* `--variant off`（bsCompat 开、bsFloat 关）与 `--variant none`（bsCompat 关）：面板
+  `radius=0 / overflow=visible / margin=0`，内层 `pane/tabBar/terminalWrap` 恢复不透明
+  ⇒ **开关关了就是原样**（`bs-bottom-off.json` / `bs-bottom-notours.json` 逐项相同）。
+* `--variant all`（bsFloat+bsReveal+bsAlpha+bsAqua 全开）：几何仍是"半径 14 / 裁切 / 零边距"，
+  而面板底色 = `rgb(255,255,255)`（aqua 的 `--dsw-alias-bg-base` 胜出）⇒ **后写优先未被破坏**。
+
+### 8.4 修法的三条几何纪律（`lib/client.js` 的 bsFloat 块）
+
+1. **零外边距**：`[class*="_bottomPanel"], [data-dsh-bottom-panel] { margin: 0 }`。
+   面板 left/right 由它自己的 ResizeObserver 对齐，任何 margin 都会平移它、并让折叠态上移留残影
+   （真机：`x 288→280`、折叠态 `y 806.42→814.42`）。
+2. **裁切只在外壳一层**（`overflow:hidden` + `14px`），并把**宿主的 resize strip 挪进面板内**
+   （`[data-dsh-bottom-panel] > [class*="bottomResize"] { top: 0 }`，宿主原值 `top:-4px`）。
+   这样 8px 拖拽带全在面板内、圆角由外壳裁，既没有"被切掉"的 strip，也没有"拖动时强调色条
+   在圆角外露出两个直角凸块"的问题。
+3. **一条 border 都不画**，并把给旧右栏写的 `[class*="_panel"]` 规则收窄为
+   `[class*="_panel"]:not([class*="_panelBody"]):not([data-dsh-bottom-panel])`
+   —— `_panel` 子串会命中 0.19 的 `nArs4W_panelBody`（实测被塞进 `6px 8px 8px 0` 的不对称内边距）。
+   `bsReveal/bsAlpha/bsAqua` 三块的面板底色规则同步收窄（否则 `_panelBody` 会被刷成
+   "第二层不同透明度的背景"）。
+
+### 8.5 门禁（有分辨力）
+
+`tools/better-sidebar-compat-test.mjs` 新增 **F 段（13 条严格断言）**：F1 规则+稳定属性锚点 /
+F2 外壳裁切 / F3a 无非零 margin / F3b 显式 margin:0 / F4 无 left·right 偏移 / F5 strip 挪进面板 /
+F6 `_panel` 规则不泄漏到 `_panelBody` / F7 我们不画 border / F8 bsFloat 关 ⇒ 零几何规则 /
+F9 全开仍后写优先，外加 3 条**变异对照**（把源码改回旧写法后 F3a/F5/F6 必须变红）。
+
+> 断言助手：`ok(名, 条件, 详情)`（2026-09-17 起为**真判**；此前 `ok(n, d)` 把条件当详情打印 ⇒ 恒绿假绿，
+> 已由父级修正，本文件的 E 组两参调用点与 D 组"浮窗版本门控"断言同步修好）。F 段用 `assertF(cond, 名, 详情)`
+> （`ok` 的薄封装）。判别力实测：把 `lib/client.js` 临时改回旧写法 ⇒ **F3a/F3b/F5/F6 四项变红**；
+> 恢复修复 ⇒ **pass=41 fail=0**。
+
+---

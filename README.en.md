@@ -223,6 +223,28 @@ The plugin offers these partial solutions (chosen automatically by scene content
 
 > Details and the diagnostic field table: [`docs/HEADER-FROST.md`](docs/HEADER-FROST.md), [`docs/TIMELINE-RAIL-TOKEN.md`](docs/TIMELINE-RAIL-TOKEN.md).
 
+## Style-scope guard: why this class of bug cannot come back (2026-09-17, MASTER-TODO §5 item 2)
+
+Both bugs above share one mechanism: **nothing owned selector scope**, so a style edit could hit host UI
+without anyone noticing locally. Gate step 12 turns that into a machine-checkable, red-on-regression rule
+(`node tools/style-scope-guard.mjs`):
+
+* **It uses the real artifact**: `buildCss` is never re-implemented. `tools/_stub.mjs` loads `lib/client.js`
+  in Node and calls the plugin's own `__mpwBuildCss(patch)` over **600+ setting combinations** (613 today:
+  defaults / each boolean alone / all 512 combinations of the 9 core switches / the `bsCompat` family /
+  numeric 0 and 100 / no wallpaper / lgTest), then parses every generated rule, including `@media` / `@supports` nesting.
+* **Verdict**: every selector must hit our own markers (`.mpw*` / `[data-mpw*]` / `#mpw-*`) or a **registered**
+  host/third-party scope. The `bsCompat` block that deliberately targets third-party DOM
+  (`[data-dsh-better-sidebar] …`) is allowed **only because it is declared** in the allow-list with a reason and a
+  `docs/*.md:line` pointer (pointers are verified at runtime; a rotted pointer fails the gate). Bare element
+  selectors (`button{…}`), a bare `*`, `:root` overriding host tokens, host tokens set to transparent/inherit,
+  unregistered `!important` token overrides, touching the host turn-navigation rail without our own gate,
+  `[data-dsh-panel-host]`, or making the header border transparent ⇒ **red**.
+* **It proves it can discriminate**: `node tools/style-scope-guard.mjs --selftest` copies `lib/client.js` into a
+  temp dir and injects 10 mutations (plus a negative control that must still pass), asserting RED/REVIEW/PASS for each.
+* Criteria, the allow-list ledger and "how to register a new entry":
+  [`docs/STYLE-SCOPE-GUARD.md`](docs/STYLE-SCOPE-GUARD.md).
+
 ## Video-wallpaper transcoding: a **misjudgement** + resource caps (2026-09-17, item 1)
 
 > User report: "I'm not using transcoding, my wallpaper is a **video-class mpkg**, the
@@ -465,6 +487,8 @@ dsh-mpkg-wallpaper/
 │                     # web wallpapers: web-wallpaper-test.mjs (detection / sandbox / injection order / shim API diff / error boundary / no GPL)
 │                     # single-file install: build-bundle.mjs (inlines lib/index.js + relative deps into one ESM; `--check` for source parity)
 │                     #                      bundle-equivalence-test.mjs (gate step 11: same route assertions on source and bundle + mutation controls)
+│                     # style scope: style-scope-guard.mjs (gate step 12: every injected CSS rule must hit .mpw*/[data-mpw*];
+│                     #              host/third-party scopes must be registered in the allow-list with a reason + docs pointer)
 │                     # note: the research-era Python tools (unmpkg/tex2png/mdl_explorer/xref) were
 │                     #       **deleted (GPL lineage unresolved, 2026-09-16)** — see `../docs/COPYING-RULES.md` §6
 ├── dist/             # build output (**not committed**, gitignored): dsh-mpkg-wallpaper.bundle.mjs (Option 4, generated on demand)

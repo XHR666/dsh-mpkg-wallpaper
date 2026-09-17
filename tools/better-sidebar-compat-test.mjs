@@ -30,7 +30,14 @@ import { Writable } from 'node:stream';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(here, '..');
 let pass = 0, fail = 0, skip = 0;
-const ok = (n, d) => { pass++; console.log('  ✓ ' + n + (d ? '  [' + d + ']' : '')); };
+// ①(修正 2026-09-17 自查) **这里原来是"恒真"断言**：`ok(n, d)` 把第二参数当详情打印、条件被丢掉
+//   ⇒ 28 条断言永远不会红（假绿）。现在按 (name, cond, detail) 真判：cond 为假即 fail++ 并打印 ✗。
+//   同类模式在本仓库别的测试里也存在（`scene-audio-route-test` / `scene-video-test` / `transcode-limit-test`），
+//   已单独派单修（见 docs/PATCHES.md 的记录）。新增断言一律用 `ok(名, 条件, 详情)` 或 `bad(...)`。
+const ok = (n, cond, d) => {
+  if (cond) { pass++; console.log('  ✓ ' + n + (d ? '  [' + d + ']' : '')); }
+  else { fail++; console.error('  ✗ ' + n + (d ? ' → ' + d : '')); }
+};
 const bad = (n, d) => { fail++; console.error('  ✗ ' + n + (d ? ' → ' + d : '')); };
 const sk = (n, d) => { skip++; console.log('  ⤼ SKIP ' + n + (d ? '  [' + d + ']' : '')); };
 
@@ -159,7 +166,9 @@ console.log('\n== C. 客户端：apply()（页面加载路径）即写 body[data
 console.log('\n== D. 静态契约（版本门控 / 写入与读取同一属性名）==');
 {
   const client = fs.readFileSync(path.join(ROOT, 'lib', 'client.js'), 'utf8');
-  const gateLines = client.split('\n').filter((l) => l.includes('data-dsh-float-window'));
+  //  ①(修正 2026-09-17) 只统计**选择器行**：注释里也会提到 data-dsh-float-window（规则说明），
+  //  把注释算进来会让"每条都带版本门控"这条断言在真实现下假红。
+  const gateLines = client.split('\n').filter((l) => /\[data-dsh-float-window\]/.test(l) && !/^\s*(\/\*|\*|\/\/)/.test(l));
   ok('浮窗规则存在且**每条**都带 [data-mpw-bs-version^="0.16"] 门控',
     gateLines.length >= 2 && gateLines.every((l) => l.includes('data-mpw-bs-version^="0.16"')), gateLines.length + ' 行');
   ok('写入侧属性名 = data-mpw-bs-version', /setAttribute\("data-mpw-bs-version"/.test(client));
@@ -178,8 +187,103 @@ console.log('\n== D. 静态契约（版本门控 / 写入与读取同一属性�
   ok('面板内层规则挂了稳定属性锚点 [data-dsh-pane]', attrPane >= 2, 'attrPane=' + attrPane);
 }
 
-console.log('\n== E. 金丝雀：我们依赖的 DOM 锚点是否还在"已装版本"的产物里 ==');
+console.log('\n== F. 底部面板悬浮适配（bsFloat）：圆角 / 裁切 / 零边距 / 无边框 + 变异对照 ==');
 {
+  // ①(2026-09-17 用户第 2 项「对 better-sidebar 底部面板做悬浮适配，不要再犯"边被切掉/边重复"」)
+  //   真机证据：tools/probe-out/bs-bottom-{before,after,off,notours,all}.{json,txt}
+  //   （探针 tools/bs-bottom-panel-probe.mjs；结论与数字见 docs/BETTER-SIDEBAR-COMPAT.md §6）。
+  //   本节的断言全部是"改回旧写法就会变红"的几何纪律，而不是"规则存在"这种弱断言。
+  const { loadPlugin } = await import('./_stub.mjs');
+  /* ①(2026-09-17) 注意：本文件顶部的 ok(n,d) **只接收 (名字, 细节)**，不判定条件
+     （`ok('x', cond, detail)` 里的 cond 会被当成 detail 打印 ⇒ 断言是"装饰性"的）。
+     本节要的是"改回旧写法必须变红"，所以用严格版 assertF(cond, name, detail)。 */
+  const assertF = (cond, name, detail) => ok(name, cond, detail);   // ok 现已是 (名, 条件, 详情) 真判
+  const CLEAR = ['__mpwClientLoaded', '__mpwRegistered', '__mpwBsVerAt', '__mpwGlobalWired', '__mpwInlineWatcher', '__mpwStyleWatch', '__mpwBuildCss'];
+  const reset = () => { for (const k of CLEAR) { try { delete globalThis[k] } catch {} } };
+  const cssOf = (clientPath, patch) => {
+    reset();
+    loadPlugin({ quiet: true, clientPath, settings: { enabled: true, image: true, bsCompat: true, bsFloat: true } });
+    return String((globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss(patch) : '') || '');
+  };
+  const strip = (t) => String(t).replace(/\/\*[\s\S]*?\*\//g, '');
+  const rules = (css) => [...strip(css).matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => ({ sel: m[1].replace(/\s+/g, ' ').trim(), body: m[2] }));
+  const PANEL = (sel) => /\[data-dsh-bottom-panel\]|\[class\*="_bottomPanel"\]/.test(sel);
+  const geometryProblems = (css) => {
+    const rs = rules(css);
+    const panelRules = rs.filter((r) => PANEL(r.sel) && !/bottomResize|panelBody/i.test(r.sel));
+    return {
+      panelRules,
+      hasRadius: panelRules.some((r) => /border-radius\s*:\s*14px/.test(r.body)),
+      hasClip: panelRules.some((r) => /overflow\s*:\s*hidden/.test(r.body)),
+      // 显式归零（margin: 0 / 0px / 0 0 0 0）是允许的（覆盖宿主将来的默认外边距）；
+      // 任何**非零** margin 都算"给面板加偏移"（旧写法 0 8px 8px）——这条才是判据。
+      margins: panelRules.filter((r) => {
+        const m = /(?:^|;)\s*margin(-[a-z]+)?\s*:\s*([^;]+)/.exec(r.body)
+        if (!m) return false
+        return !/^(0|0px)(\s+(0|0px))*(\s*!important)?$/.test(m[2].trim())
+      }).map((r) => r.sel.slice(0, 60) + ' { margin… }'),
+      // 同时要求面板根**显式**写 margin:0（不依赖宿主默认值）
+      hasZeroMargin: panelRules.some((r) => /(?:^|;)\s*margin\s*:\s*0\s*(;|$)/.test(r.body)),
+      offsets: panelRules.filter((r) => /(^|;)\s*(left|right)\s*:/.test(r.body)).map((r) => r.sel + ' { ' + r.body.trim() + ' }'),
+      stripTop: (rs.find((r) => /bottomResize/.test(r.sel)) || {}).body || '',
+      // 只看**我们 bsCompat 作用域内**的规则（header [class*="_panel"] 那组是宿主顶栏菜单，与本条无关）
+      legacyLeak: rs.filter((r) => /\[data-dsh-better-sidebar\]/.test(r.sel) && /\[class\*="_panel"\]/.test(r.sel) && !(/:not\(\[class\*="_panelBody"\]\)/.test(r.sel) && /:not\(\[data-dsh-bottom-panel\]\)/.test(r.sel))).map((r) => r.sel),
+      // 注意排除 border-radius（它不是"画一条边"）
+      ourBorders: rs.filter((r) => /data-dsh-better-sidebar/.test(r.sel) && /(^|;)\s*border(-(top|right|bottom|left|color|style|width|image))?\s*:/.test(r.body)).map((r) => r.sel),
+    };
+  };
+
+  const CLIENT = path.join(ROOT, 'lib', 'client.js');
+  const css = cssOf(CLIENT, { image: true, enabled: true, bsCompat: true, bsFloat: true });
+  const g = geometryProblems(css);
+  assertF(g.panelRules.length > 0 && g.hasRadius,
+    'F1 底部面板根规则存在，且同时挂稳定属性锚点 [data-dsh-bottom-panel] + border-radius:14px',
+    'panelRules=' + g.panelRules.length + ' hasRadius=' + g.hasRadius);
+  assertF(g.hasClip, 'F2 外壳 overflow:hidden（内层直角/激活胶囊由外壳圆角裁掉，圆角里不会套直角矩形）');
+  assertF(g.margins.length === 0,
+    'F3a ★ 面板根不得有**任何非零 margin**（旧写法 margin:0 8px 8px 会把 left 推开 8px、折叠态留 3.6px 残影）',
+    g.margins.join(' | '));
+  assertF(g.hasZeroMargin, 'F3b 面板根显式 margin:0（不依赖宿主默认外边距）');
+  assertF(g.offsets.length === 0,
+    'F4 ★ 面板根不得有 left/right 偏移（面板 left/right 由它自己的 ResizeObserver 对齐中心列）', g.offsets.join(' | '));
+  assertF(/top\s*:\s*0/.test(g.stripTop),
+    'F5 ★ resize strip 被挪进面板内（top:0；宿主原为 top:-4px，外壳裁切后会切掉一半 = "边被切掉"）',
+    JSON.stringify(g.stripTop.replace(/\s+/g, ' ').slice(0, 90)));
+  assertF(g.legacyLeak.length === 0,
+    'F6 ★ 命中 [class*="_panel"] 的规则都排除了 _panelBody / 底部面板（子串会命中 nArs4W_panelBody）',
+    g.legacyLeak.join(' | '));
+  assertF(g.ourBorders.length === 0,
+    'F7 ★ 我们的 bs 规则不画任何 border（面板上沿 1px 与 tabBar 下沿 1px 都是宿主的，避免重复边框）',
+    g.ourBorders.join(' | '));
+  const cssOff = cssOf(CLIENT, { image: true, enabled: true, bsCompat: true, bsFloat: false });
+  assertF(!/\[data-dsh-bottom-panel\][^{]*\{[^}]*border-radius/.test(strip(cssOff)),
+    'F8 bsFloat 关 ⇒ 不输出底部面板圆角/裁切几何（关了就是原样；真机对照见 bs-bottom-off.json）');
+  const cssAll = cssOf(CLIENT, { image: true, enabled: true, bsCompat: true, bsFloat: true, bsReveal: true, bsAlpha: true, bsAqua: true });
+  const flat = strip(cssAll);
+  assertF(flat.indexOf('--dsw-alias-bg-base) 68%') > 0
+    && flat.indexOf('--dsw-alias-bg-base) 68%') < flat.indexOf('background-color: var(--dsw-alias-bg-base) !important'),
+    'F9 全开时仍是"后写优先"：bsAlpha 的面板底色规则出现在 bsAqua 之前（aqua 最终胜出，真机实测面板底=白）');
+
+  // ── 变异对照（证明上面的断言有分辨力）：把源码改回"旧写法" ⇒ F3/F5/F6 必须变红 ──
+  const raw = fs.readFileSync(CLIENT, 'utf8');
+  let mut = raw
+    .replace('\tborder-radius: 14px;\n\toverflow: hidden;\n\tmargin: 0;\n}', '\tborder-radius: 14px;\n\toverflow: hidden;\n\tmargin: 0 8px 8px;\n}')
+    .replace(/\[data-dsh-better-sidebar\] \[data-dsh-bottom-panel\] > \[class\*="bottomResize"\] \{\n\ttop: 0;\n\}\n/, '')
+    .replace(/\[class\*="_panel"\]\:not\(\[class\*="_panelBody"\]\)\:not\(\[data-dsh-bottom-panel\]\)/g, '[class*="_panel"]');
+  if (mut === raw || !/margin: 0 8px 8px;/.test(mut) || /bottomResize"\] \{\n\ttop: 0;/.test(mut)) {
+    bad('[变异自证] 未能把源码改回旧写法（闸门写法变了？同步改本用例）');
+  } else {
+    const TMP = mkTmp('mpw-bs-mut-');
+    const mutPath = path.join(TMP, 'client-bsfloat-old.js');
+    fs.writeFileSync(mutPath, mut);
+    const gm = geometryProblems(cssOf(mutPath, { image: true, enabled: true, bsCompat: true, bsFloat: true }));
+    assertF(gm.margins.length > 0, '（对照）旧写法下 F3 会红：面板根出现 margin', gm.margins.join(' | '));
+    assertF(!/top\s*:\s*0/.test(gm.stripTop), '（对照）旧写法下 F5 会红：strip 不再被挪进面板（回到 top:-4px）');
+    assertF(gm.legacyLeak.length > 0, '（对照）旧写法下 F6 会红：[class*="_panel"] 规则泄漏到 _panelBody', gm.legacyLeak.slice(0, 2).join(' | '));
+  }
+}
+
+console.log('\n== E. 金丝雀：我们依赖的 DOM 锚点是否还在"已装版本"的产物里 ==');{
   const BS_DIR = process.env.MPW_BS_DIR || '/root/.dsh/profiles/web/node_modules/dsh-better-sidebar';
   if (!fs.existsSync(path.join(BS_DIR, 'package.json'))) {
     sk('未安装 dsh-better-sidebar，跳过锚点金丝雀', BS_DIR);
@@ -193,7 +297,7 @@ console.log('\n== E. 金丝雀：我们依赖的 DOM 锚点是否还在"已装�
     const NEED = ['data-dsh-better-sidebar', '_panel', '_bottomPanel', '_pane', '_tabBar', '_terminalWrap', '_editorHeader', '_browserBar'];
     for (const tok of NEED) {
       const n = blob.split(tok).length - 1;
-      if (n > 0) ok('锚点仍在: ' + tok + ' ×' + n);
+      if (n > 0) ok('锚点仍在: ' + tok, true, '×' + n);
       else bad('锚点消失: ' + tok + '（我们 bsCompat 的规则在该版本上会静默失效，需更新 docs/BETTER-SIDEBAR-COMPAT.md 与选择器）');
     }
     // 已放弃的锚点（0.19 删除浮窗/添加栏）：允许为 0，但必须确认"不是我们唯一的锚点"
