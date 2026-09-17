@@ -304,6 +304,12 @@
   [`docs/TOKEN-NAMESPACE.md`](docs/TOKEN-NAMESPACE.md) §3b。
   另外：液态玻璃首次真正启用后加了 **`?lgcss=off` 一键回退**（已登记进渲染器仓诊断主表，
   `node tests/diag-flag-check.mjs` 报 149==149）。
+  **顶栏那一份折射放在伪元素上**（`html body[data-mpw-hdr-frost-el] .wSkVaW_header::before`，`z-index:0`）：
+  加在 `.wSkVaW_header` 本体会让它变成 **backdrop root** ⇒ 顶栏内浮层的 backdrop 采样被隔离
+  ⇒ 浮层磨砂失效、背后文字锐利透出（真机历史回归；`tools/css-matrix.mjs` 断言 3 实测 40 个问题）。
+  伪元素不是浮层的祖先 ⇒ 浮层照常采样；门控在"JS 真的注入了磨砂元素层"上（那一层已把顶栏直接子节点抬到
+  `z-index:1`，伪元素 `z-index:0` 正好画在底色之上、内容之下）。且**只在顶栏本来就在磨砂时才生成**
+  （`(headerBlur || unifyTint) && headerBg`，与 `css-matrix` 断言 7 同口径）—— 两条断言都没放宽。
 * 分辨力自证：把 `accent` / `aquaTextEnhance` 的门控改回被 `aquaOn` 包住 ⇒ 必须变红（两条变异）。
 
 ## 视频壁纸转码：判定是"误判" + 资源上限（2026-09-17，第 1 条）

@@ -296,6 +296,15 @@ check: `node tools/switch-wiring-test.mjs` (gate step 2):
   without implementation) — see [`docs/TOKEN-NAMESPACE.md`](docs/TOKEN-NAMESPACE.md) §3b. Liquid glass also gained a
   **`?lgcss=off` kill switch** now that it actually runs (registered in the renderer repo's diagnostics table;
   `node tests/diag-flag-check.mjs` reports 149==149).
+  **The header's share of the refraction lives on a pseudo-element**
+  (`html body[data-mpw-hdr-frost-el] .wSkVaW_header::before`, `z-index:0`): putting it on `.wSkVaW_header` itself
+  turns the header into a **backdrop root** ⇒ floating panels inside the header lose their backdrop sampling
+  (frosting fails, text behind shows through sharply) — a real-device regression that `tools/css-matrix.mjs`
+  assertion 3 caught with 40 problems. A pseudo-element is not an ancestor of those panels, so sampling still
+  works; it is gated on the JS-injected frost layer existing (that layer already raises the header's direct
+  children to `z-index:1`, so `z-index:0` lands between background and content), and it is only emitted when the
+  header is frosted anyway (`(headerBlur || unifyTint) && headerBg`, matching css-matrix assertion 7).
+  Neither assertion was relaxed.
 * discrimination proof: reverting either gate back under `aquaOn` must turn the audit red.
 
 ## Video-wallpaper transcoding: a **misjudgement** + resource caps (2026-09-17, item 1)

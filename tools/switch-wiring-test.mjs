@@ -140,6 +140,26 @@ if (!ONLY_JSON) {
       : `${wired.length} 个有 CSS 影响 / ${bools.filter((f) => NON_CSS[f]).length} 个已登记为"仅运行时" / ${bools.filter((f) => KNOWN_DEAD[f]).length} 个已知失效（下表）`)
 }
 
+/* ── 顶栏"自身不得带 filter/backdrop-filter"自查 ──
+ * 来历（本仓真机历史回归）：`.wSkVaW_header` 本体一旦带 backdrop-filter 就成了 **backdrop root**
+ * ⇒ 顶栏内浮层（子代理展开面板/后台任务条）的 backdrop 采样范围被隔离 ⇒ 浮层磨砂失效、背后文字锐利透出。
+ * 口径**逐字对齐** tools/css-matrix.mjs:88-96（含 `data-mpw-hdr-blur-element` 例外），只在这里做一次
+ * 独立复算，这样"液态玻璃把顶栏变成 backdrop root"会在秒级单项里就红，而不是等组合矩阵。 */
+const CSS_RULES = (t) => [...String(t).replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => [m[1].trim(), m[2]])
+const SUBJECT_IS = (sel, needle) => sel.split(',').some((x) => x.trim().endsWith(needle))
+const BODY_PROP = (body, prop) => { const m = new RegExp('(?:^|;)\\s*' + prop + '\\s*:([^;]*)').exec(body); return m ? m[1].trim() : null }
+function headerSelfFilter(css) {
+  return CSS_RULES(css).filter(([sel, body]) => {
+    if (/data-mpw-hdr-blur-element/.test(sel)) return false
+    if (!(SUBJECT_IS(sel, '.wSkVaW_header') || SUBJECT_IS(sel, 'header[class*="_header_"]'))) return false
+    return ['filter', 'backdrop-filter', '-webkit-backdrop-filter'].some((pr) => {
+      const v = BODY_PROP(body, pr)
+      return v && v !== 'none' && !/^none\s*!important$/.test(v)
+    })
+  }).map(([sel]) => sel)
+}
+const HEADER_PSEUDO_GLASS = (css) => CSS_RULES(css).some(([sel, body]) => /\.wSkVaW_header::before/.test(sel) && /backdrop-filter/.test(body) && !/backdrop-filter\s*:\s*none/.test(body))
+
 /* ── 1a0. sessionFollow（新会话按钮跟随面板不透明度）双向判据 ──
  * 来历：设置页有开关 + 文案 + DEFAULT_SESSION_FOLLOW，但**全仓没有任何地方读 section.sessionFollow**
  * （开关点了没效果）。用户裁定按**用户可见文案**实现：开 = 跟随那条透明度（U(panel) 现状公式）；
@@ -186,6 +206,10 @@ const lgOffFlag = (() => {
 })()
 lgCase.push(['★ ?lgcss=off 时产物里**没有**液态玻璃块（一键回退有效）', !LG_MARK_BLOCK.test(lgOffFlag) && !LG_MARK_SVG.test(lgOffFlag), `len=${lgOffFlag.length}`])
 lgCase.push(['★ 不写 ?lgcss=off 时必须出现液态玻璃块（回退口没把功能关死）', LG_MARK_BLOCK.test(lgOn), `len=${lgOn.length}`])
+lgCase.push(['★ 顶栏**本体**不得带 filter/backdrop-filter（否则顶栏成 backdrop root ⇒ 浮层磨砂失效）', headerSelfFilter(lgOn).length === 0, '违规选择器：' + JSON.stringify(headerSelfFilter(lgOn))])
+lgCase.push(['★ 顶栏折射确实落在**伪元素**上（不是被删掉，而是换了层）', HEADER_PSEUDO_GLASS(lgOn), `len=${lgOn.length}`])
+const lgNoHeaderFrost = build({ lgCss: true, headerBg: false, headerBlur: false, unifyTint: false })
+lgCase.push(['★ 用户关掉顶栏磨砂时，液态玻璃不许再给顶栏加折射（与 css-matrix 断言 7 同口径）', !HEADER_PSEUDO_GLASS(lgNoHeaderFrost), `len=${lgNoHeaderFrost.length}`])
 
 if (!ONLY_JSON) {
   console.log('\n== A4. sessionFollow（新会话按钮跟随面板不透明度）双向判据 ==')
@@ -230,6 +254,14 @@ const MUTS = [
     why: '把「配色」的门控改回被 aquaOn 包住（2026-09-18 修复前的写法）',
   },
   {
+    id: 'header-backdrop-root-restored',
+    mut: (s) => s.replace(
+      '.pI_x6G_sidebarCol,\n[class*="composer"] [class*="card"],\n.wSkVaW_scrollBody {',
+      '.pI_x6G_sidebarCol,\n.wSkVaW_header,\n[class*="composer"] [class*="card"],\n.wSkVaW_scrollBody {'),
+    expect: 'A6',
+    why: '把 `.wSkVaW_header` 加回"直接吃 backdrop-filter"那条规则（= 液态玻璃修复前的写法，会让顶栏变成 backdrop root）',
+  },
+  {
     id: 'sessionfollow-unread-again',
     mut: (s) => s.replace('const sessionFollowOn = section.sessionFollow !== void 0 ? !!section.sessionFollow : DEFAULT_SESSION_FOLLOW;', 'const sessionFollowOn = true;'),
     expect: 'A4',
@@ -269,6 +301,7 @@ for (const m of (NO_MUT ? [] : MUTS)) {
     A3: /✗ ★ (lgCss:true|lgCss:false|两档产物|环境支持|\?lgcss=off 时)/,
     A4: /✗ ★ sessionFollow/,
     A5: /✗ ★ (\?lgcss=off 时|不写 \?lgcss=off 时)/,
+    A6: /✗ ★ 顶栏/,
     A: /✗ ★ (accent|themeColor|aquaTextEnhance)/,
   }
   const caughtGroups = Object.keys(GROUPS).filter((g) => GROUPS[g].test(out))

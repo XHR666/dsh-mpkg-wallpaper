@@ -119,7 +119,13 @@ DSH 把设计 token 定义在 **`body`** 上，不是 `:root`：
 变异自证：把声明挪回块后（复现 TDZ）⇒ A3 段三条断言全红。
 `lgCss` 另配 **`?lgcss=off` 一键回退口**（首次真正启用的视觉特性必须能一键关掉）：已登记进
 `we-scene-demo/docs/README-DIAGNOSTICS.md` 主表（`node tests/diag-flag-check.mjs` ⇒ **代码 149 == 主表 149**），
-并由 A3 段双向断言「`?lgcss=off` 时产物里没有液态玻璃块 / 不写时必须有」。剩余一条：
+并由 A3 段双向断言「`?lgcss=off` 时产物里没有液态玻璃块 / 不写时必须有」。
+`lgCss` 真正开始产出后立刻撞上一条**真回归**（不是测试写错）：把折射加在 `.wSkVaW_header` **本体**会让顶栏成为
+backdrop root ⇒ 顶栏内浮层的 backdrop 采样被隔离（`tools/css-matrix.mjs` 断言 3 报 40 个问题）。修法=折射挪到
+`html body[data-mpw-hdr-frost-el] .wSkVaW_header::before`（`z-index:0`，配合仓库既有的"子节点抬到 z-index:1"约定），
+且**只在顶栏本来就在磨砂时生成**（与 `css-matrix` 断言 7 的 `wantFrost` 同口径）—— **两条断言都没放宽**；
+A3 段另加"顶栏本体不得带 backdrop-filter""折射确实在伪元素上""关掉顶栏磨砂时不许加折射"三条判据 +
+变异（把 `.wSkVaW_header` 加回本体）必红。剩余一条：
 
 | 开关 | 现象 | 证据 |
 | --- | --- | --- |
