@@ -351,3 +351,22 @@ F9 全开仍后写优先，外加 3 条**变异对照**（把源码改回旧写�
 > 恢复修复 ⇒ **pass=41 fail=0**。
 
 ---
+
+## 0. `bsCompat` 总开关：默认**开**（2026-09-18 用户裁定）+ 存量迁移
+
+底部面板悬浮适配（圆角外壳 + 单层裁切 + 零边距 + strip 挪进面板）已真机定案，而总开关 `bsCompat` 原来默认
+`false` ⇒ **没人看得见**。现在：
+
+* `DEFAULT_BS_COMPAT = true`（`lib/client.js`）——面板 toggle、`buildCss`、复位默认值三处统一读它；
+* **只迁移"从没显式设过"的存量用户**：读路径 `mpwNormalizeSection()` 里，`bsCompatUserSet === true`
+  （用户在面板里动过）⇒ **一字不动**；否则采用新默认。迁移**不打**标记（用户仍算"从没设过"）；
+* **写入口 `writeSection()` 只在"值真的变了"时才打标记** —— 不能照抄 `headerFrostUserSet` 那种
+  "键存在即打标"的写法：`commit()` 传进来的是 `Object.assign({}, readSection(), patch)`（**整段合并后**
+  的 section），键永远存在，那样写会让任何一次保存都打上标记，存量用户永远迁移不到新默认；
+* 备份还原路径：配置里**显式**带 `bsCompat`（含 `false`）时按用户选择处理并打标记，不会被迁移覆盖。
+
+判据 `tools/bs-compat-default-test.mjs`（门禁第 10 步，15 断言 + 3 变异自证）：
+默认档 + 子开关 `bsFloat` ⇒ 适配几何生效（`border-radius:14px`）；`bsCompat:false + bsCompatUserSet:true`
+⇒ 不生效且**迁移不发生**；存量用户（无标记 + 旧默认 false）⇒ 迁移生效且**不打标记**；迁移后手动关 ⇒
+持久为关（读回 + 落盘 JSON 带标记 + 用落盘那份 section 当"重启"重放仍是关）。
+变异自证：删掉"用户设过就不迁移" ⇒ ② 红；默认值改回 false ⇒ ① 红；写入口不打标记 ⇒ ③ 红。

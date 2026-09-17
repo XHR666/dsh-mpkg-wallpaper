@@ -256,8 +256,8 @@ const MUTS = [
   {
     id: 'header-backdrop-root-restored',
     mut: (s) => s.replace(
-      '.pI_x6G_sidebarCol,\n[class*="composer"] [class*="card"],\n.wSkVaW_scrollBody {',
-      '.pI_x6G_sidebarCol,\n.wSkVaW_header,\n[class*="composer"] [class*="card"],\n.wSkVaW_scrollBody {'),
+      '.pI_x6G_sidebarCol,\n[data-composer-card],\n.wSkVaW_scrollBody {',
+      '.pI_x6G_sidebarCol,\n.wSkVaW_header,\n[data-composer-card],\n.wSkVaW_scrollBody {'),
     expect: 'A6',
     why: '把 `.wSkVaW_header` 加回"直接吃 backdrop-filter"那条规则（= 液态玻璃修复前的写法，会让顶栏变成 backdrop root）',
   },

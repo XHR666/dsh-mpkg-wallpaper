@@ -302,7 +302,10 @@
   判据在 `tools/switch-wiring-test.mjs` 的 A4 段（默认档 + 统一虚化档各 3 条双向断言；变异「把读取删掉」必红）。
   第 3 条 `glassWindow` 仍登记未改（只有文案没有实现），详见
   [`docs/TOKEN-NAMESPACE.md`](docs/TOKEN-NAMESPACE.md) §3b。
-  另外：液态玻璃首次真正启用后加了 **`?lgcss=off` 一键回退**（已登记进渲染器仓诊断主表，
+  **`bsCompat`（better-sidebar 适配总开关）默认已改为开**（2026-09-18 用户裁定）：底部面板悬浮适配已真机定案，
+  默认关 = 没人看得见；存量用户**只在"从没显式设过"时**被迁移，**手动关过的绝不覆盖**（写入口打
+  `bsCompatUserSet` 标记，迁移不打）。判据 `node tools/bs-compat-default-test.mjs`（门禁第 10 步，
+  15 断言 + 3 变异）。液态玻璃首次真正启用后加了 **`?lgcss=off` 一键回退**（已登记进渲染器仓诊断主表，
   `node tests/diag-flag-check.mjs` 报 149==149）。
   **顶栏那一份折射放在伪元素上**（`html body[data-mpw-hdr-frost-el] .wSkVaW_header::before`，`z-index:0`）：
   加在 `.wSkVaW_header` 本体会让它变成 **backdrop root** ⇒ 顶栏内浮层的 backdrop 采样被隔离

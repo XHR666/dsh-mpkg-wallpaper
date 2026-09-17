@@ -293,8 +293,12 @@ check: `node tools/switch-wiring-test.mjs` (gate step 2):
   that opacity, off = **back to the host's original colour**), default unchanged, asserted in
   `tools/switch-wiring-test.mjs` section A4 (three two-way assertions in both default and unified-blur contexts;
   the "remove the read" mutation must go red). The third, `glassWindow`, stays registered and unchanged (copy
-  without implementation) — see [`docs/TOKEN-NAMESPACE.md`](docs/TOKEN-NAMESPACE.md) §3b. Liquid glass also gained a
-  **`?lgcss=off` kill switch** now that it actually runs (registered in the renderer repo's diagnostics table;
+  without implementation) — see [`docs/TOKEN-NAMESPACE.md`](docs/TOKEN-NAMESPACE.md) §3b. **`bsCompat` (the better-sidebar adaptation master switch) now defaults to on** (ruled 2026-09-18): the
+  bottom-panel float adaptation is settled on real devices, so a default of off meant nobody ever saw it.
+  Existing users are migrated **only if they never set it explicitly**; anyone who turned it off by hand is
+  **never overridden** (the write path stamps a `bsCompatUserSet` marker; the migration itself does not).
+  Asserted by `node tools/bs-compat-default-test.mjs` (gate step 10, 15 assertions + 3 mutations).
+  Liquid glass also gained a **`?lgcss=off` kill switch** now that it actually runs (registered in the renderer repo's diagnostics table;
   `node tests/diag-flag-check.mjs` reports 149==149).
   **The header's share of the refraction lives on a pseudo-element**
   (`html body[data-mpw-hdr-frost-el] .wSkVaW_header::before`, `z-index:0`): putting it on `.wSkVaW_header` itself

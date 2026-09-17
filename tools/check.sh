@@ -133,6 +133,11 @@ node tools/header-rail-replica.mjs --both || fail=1
 #   真机 DOM 证据（0.19.1 真页面）：node tools/bs-compat-probe.mjs（见 docs/BETTER-SIDEBAR-COMPAT.md）
 step "10/12 better-sidebar 适配（/ping 版本链路 + 页面加载期版本门控 + 锚点金丝雀）"
 node tools/better-sidebar-compat-test.mjs || fail=1
+# ①(2026-09-18 用户裁定) bsCompat 总开关**默认改为开**（底部面板悬浮适配已真机定案，默认关 = 没人看得见），
+#   并且**只迁移"从没显式设过"的存量用户**、用户手动关过的绝不覆盖（写入口打 bsCompatUserSet 标记；
+#   迁移不打标记）。判据双向：默认档生效 / 显式关过不生效且迁移不发生 / 迁移后手动关持久生效（含"重启"重放）；
+#   变异自证：删掉"用户设过就不迁移"、把默认值改回 false、写入口不打标记 ⇒ 三组各自变红。
+node tools/bs-compat-default-test.mjs || fail=1
 
 # ①(2026-09-17 单文件 bundle 轮 / MASTER-TODO §5 第 6 项)「npm + 单文件 bundle 两种装载」的机器门禁：
 #   单文件装载（README 方式四）是**只装宿主端**的降级通道；产物一旦与 lib/*.js 漂移（少一条路由、
