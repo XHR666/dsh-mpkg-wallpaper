@@ -27,10 +27,14 @@ import {
   probeTexVideoDecision, walkTexFirstMipmap, lz4Prefix,
 } from '../lib/pkg-extract.js';
 
+// ①(2026-09-17 夹具纪律) 断言中途抛异常也要清理：两处临时目录都挂到 exit 上。
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(here, '..');
 let pass = 0, fail = 0, skip = 0;
-const ok = (n, d) => { pass++; console.log('  ✓ ' + n + (d ? '  [' + d + ']' : '')); };
+// ①(2026-09-17 假绿修复轮) **这里原来是 `const ok = (n, d) => { pass++; … }`：第二参（真条件）只当
+//   展示细节打印，恒真 ⇒ 本文件永远不会红**（与 scene-audio-route-test.mjs 同款，同一轮一起修）。
+//   现在条件放第一位：不满足即 fail++、打 ✗ 与真实值，进程非零退出。
+const ok = (cond, n, d) => { if (cond) { pass++; console.log('  ✓ ' + n + (d ? '  [' + d + ']' : '')); } else { fail++; console.error('  ✗ ' + n + (d ? ' → ' + d : '')); } };
 const bad = (n, d) => { fail++; console.error('  ✗ ' + n + (d ? ' → ' + d : '')); };
 const sk = (n) => { skip++; console.log('  ⊘ SKIP ' + n); };
 const sha = (b) => crypto.createHash('sha256').update(b).digest('hex');
@@ -162,6 +166,7 @@ function buildPkg(entries) {
 }
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mpw-sv-'));
+process.on('exit', () => { try { fs.rmSync(tmp, { recursive: true, force: true }); } catch { /* 忽略 */ } });
 const cases = [
   { name: '独立视频（2 条，取最大的）', entries: [
       { name: 'scene.json', data: Buffer.from('{"objects":[]}') },
@@ -225,7 +230,7 @@ for (const c of cases) {
   const oldRef = oldV ? oldV.ref : null;
   const sameBytes = (oldV ? sha(oldV.bytes) : null) === (out && out.video ? sha(out.video.bytes) : null);
   const okAll = gotRef === c.expect && oldRef === c.expect && sameBytes;
-  if (okAll) ok(c.name, 'ref=' + gotRef + ' read=' + (out ? out.bytesRead : 0) + 'B entriesRead=' + (out ? out.entriesRead : 0));
+  if (okAll) ok(true, c.name, 'ref=' + gotRef + ' read=' + (out ? out.bytesRead : 0) + 'B entriesRead=' + (out ? out.entriesRead : 0));
   else bad(c.name, 'expect=' + c.expect + ' old=' + oldRef + ' new=' + gotRef + ' bytesEqual=' + sameBytes + (err ? ' err=' + err : ''));
 }
 // 独立视频 + TEX 视频：TEX 不应被整条读（旧路径读了也丢弃）
@@ -235,8 +240,8 @@ for (const c of cases) {
   fs.writeFileSync(p, buf);
   clearSceneVideoScanCache();
   const out = scanSceneVideo(p);
-  ok('独立视频在时 0 个 TEX 被整条读', out.entriesRead === 1, 'entriesRead=' + out.entriesRead);
-  ok('整条读字节只有那条 mp4（1234B）+ 索引头', out.bytesRead < 70000 + 1234 + 4096, 'bytesRead=' + out.bytesRead);
+  ok(out.entriesRead === 1, '独立视频在时 0 个 TEX 被整条读', 'entriesRead=' + out.entriesRead);
+  ok(out.bytesRead < 70000 + 1234 + 4096, '整条读字节只有那条 mp4（1234B）+ 索引头', 'bytesRead=' + out.bytesRead);
 }
 // 多视频：确认 2 条即停（第 3 个 TEX 不读）
 {
@@ -245,7 +250,7 @@ for (const c of cases) {
   fs.writeFileSync(p, buf);
   clearSceneVideoScanCache();
   const out = scanSceneVideo(p);
-  ok('多视频：确认 2 条即停（entriesRead=2，不是 3）', out.entriesRead === 2 && out.video === null, 'entriesRead=' + out.entriesRead);
+  ok(out.entriesRead === 2 && out.video === null, '多视频：确认 2 条即停（entriesRead=2，不是 3）', 'entriesRead=' + out.entriesRead);
 }
 // 松散目录：旧口径一致
 {
@@ -256,8 +261,8 @@ for (const c of cases) {
   clearSceneVideoScanCache();
   const outDir = scanSceneVideo(dir);
   const oldDir = oldFindInDir(dir);
-  ok('松散目录：ref/sha 与旧口径一致', (outDir.video && outDir.video.ref) === (oldDir && oldDir.ref) && sha(outDir.video.bytes) === sha(oldDir.bytes), 'ref=' + (outDir.video && outDir.video.ref) + ' source=' + outDir.source);
-  ok('松散目录：普通 TEX 不被整条读', outDir.entriesRead === 1, 'entriesRead=' + outDir.entriesRead);
+  ok((outDir.video && outDir.video.ref) === (oldDir && oldDir.ref) && sha(outDir.video.bytes) === sha(oldDir.bytes), '松散目录：ref/sha 与旧口径一致', 'ref=' + (outDir.video && outDir.video.ref) + ' source=' + outDir.source);
+  ok(outDir.entriesRead === 1, '松散目录：普通 TEX 不被整条读', 'entriesRead=' + outDir.entriesRead);
 }
 
 console.log('\n== D 缓存（同 path+mtime+size 第二次 O(1)）==');
@@ -266,14 +271,14 @@ console.log('\n== D 缓存（同 path+mtime+size 第二次 O(1)）==');
   clearSceneVideoScanCache();
   const c1 = scanSceneVideo(p);
   const c2 = scanSceneVideo(p);
-  ok('第一次未命中', c1.cacheHit === false);
-  ok('第二次命中且读 0 字节', c2.cacheHit === true && c2.bytesRead === 0 && c2.entriesRead === 0);
-  ok('命中返回同一 video 对象（含 bytes）', c1.video === c2.video && sha(c2.video.bytes) === sha(c1.video.bytes));
+  ok(c1.cacheHit === false, '第一次未命中');
+  ok(c2.cacheHit === true && c2.bytesRead === 0 && c2.entriesRead === 0, '第二次命中且读 0 字节');
+  ok(c1.video === c2.video && sha(c2.video.bytes) === sha(c1.video.bytes), '命中返回同一 video 对象（含 bytes）');
   const st = sceneVideoScanStats();
-  ok('计数器 hits=' + st.hits + ' misses=' + st.misses, st.hits === 1 && st.misses === 1);
+  ok(st.hits === 1 && st.misses === 1, '计数器 hits=' + st.hits + ' misses=' + st.misses);
   const past = new Date(Date.now() - 60000);
   fs.utimesSync(p, past, past);
-  ok('mtime 变化 → 失效重扫', scanSceneVideo(p).cacheHit === false);
+  ok(scanSceneVideo(p).cacheHit === false, 'mtime 变化 → 失效重扫');
 }
 
 console.log('\n== B 真包（11 个 scene.pkg，旧实现 vs 索引先行）==');
@@ -300,7 +305,7 @@ else {
     dist[kind]++;
     console.log('  ✓ ' + id.padEnd(11) + ' ' + kind.padEnd(10) + ' ref=' + String(out.video && out.video.ref).slice(0, 40) + ' read=' + (out.bytesRead / 1048576).toFixed(2) + 'MB entriesRead=' + out.entriesRead);
   }
-  ok('真包逐项一致 ' + corpusPkgs.length + '/' + corpusPkgs.length + '（' + JSON.stringify(dist) + '）', allSame ? '' : 'see above');
+  ok(allSame, '真包逐项一致 ' + corpusPkgs.length + '/' + corpusPkgs.length + '（' + JSON.stringify(dist) + '）', allSame ? '' : '见上面的 ✗');
 }
 
 console.log('\n== C 前缀判定不许说谎（语料每个 .tex 都与整条解析比）==');
@@ -322,12 +327,13 @@ else {
       if (decd !== truth) { lie++; if (lie < 4) bad('前缀判定与整条解析不符: ' + e.path, 'prefix=' + decd + ' full=' + truth); }
     }
   }
-  ok(n + ' 个 TEX 前缀判定无谎（video=' + videoN + ' none=' + noneN + '；mip0 LZ4=' + lz4mip + ' 裸=' + rawMip + ' TEXB0004=' + v4 + '）', lie ? lie + ' lie' : '');
+  ok(lie === 0, n + ' 个 TEX 前缀判定无谎（video=' + videoN + ' none=' + noneN + '；mip0 LZ4=' + lz4mip + ' 裸=' + rawMip + ' TEXB0004=' + v4 + '）', lie ? lie + ' 处与整条解析不符' : '');
 }
 
 console.log('\n== E 路由 /custom-scene-video-check（关键路径上的那一步）==');
 {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'mpw-svh-'));
+  process.on('exit', () => { try { fs.rmSync(home, { recursive: true, force: true }); } catch { /* 忽略 */ } });
   const customDir = path.join(home, 'custom');
   const sceneDir = path.join(customDir, 'tex-scene');
   fs.mkdirSync(path.join(home, '.dsh-mpkg-wallpaper'), { recursive: true });
@@ -337,10 +343,14 @@ console.log('\n== E 路由 /custom-scene-video-check（关键路径上的那一�
     const v = oldFindInPkg(b);
     return v && v.isTexEmbedded;
   }) || path.join(tmp, 'case-tex.pkg');
-  fs.copyFileSync(src, path.join(sceneDir, 'scene.pkg'));
+  // ①(2026-09-17 夹具纪律) 真包可能几百 MB：**符号链接**进夹具（<1MB），不拷贝；路由读同一份字节。
+  fs.symlinkSync(src, path.join(sceneDir, 'scene.pkg'));
   fs.writeFileSync(path.join(home, '.dsh-mpkg-wallpaper', 'custom-dir.json'), JSON.stringify({ dir: customDir }));
   process.env.DSH_HOME = home;
-  const { apply } = await import('../lib/index.js');
+  // ①(2026-09-17 假绿修复轮) 被测模块可换（变异自证：把 lib/ 拷到临时目录改坏一条路由 ⇒ 本文件必须红）
+  const mi = process.argv.indexOf('--module');
+  const MOD = (mi > 0 && process.argv[mi + 1]) ? process.argv[mi + 1] : (process.env.MPW_MODULE || '../lib/index.js');
+  const { apply } = await import(MOD);
   const routes = [];
   apply({ webServer: { register: (r) => routes.push(r) }, loader: null, logger: { info() {}, warn() {}, error() {} } });
   class Res extends Writable {
@@ -363,15 +373,15 @@ console.log('\n== E 路由 /custom-scene-video-check（关键路径上的那一�
   const st = fs.statSync(path.join(sceneDir, 'scene.pkg'));
   const buf = new Uint8Array(fs.readFileSync(path.join(sceneDir, 'scene.pkg')));
   const oldV = oldFindInPkg(buf);
-  ok('探测路由 {has,mime,size} 与旧实现一致', r1.body.has === !!oldV && r1.body.size === (oldV ? oldV.bytes.length : undefined) && (!oldV || r1.body.mime === 'video/mp4'), JSON.stringify(r1.body));
+  ok(r1.body.has === !!oldV && r1.body.size === (oldV ? oldV.bytes.length : undefined) && (!oldV || r1.body.mime === 'video/mp4'), '探测路由 {has,mime,size} 与旧实现一致', JSON.stringify(r1.body));
   const hash = crypto.createHash('sha256').update(sceneDir + '|' + st.mtimeMs + '|' + oldV.ref).digest('hex').slice(0, 24);
   const cacheFile = path.join(home, '.dsh-mpkg-wallpaper', 'scene-videos', hash + '.mp4');
-  ok('落盘缓存文件名 = 旧 hash 公式（升级后不重抽）', fs.existsSync(cacheFile), hash + '.mp4');
-  if (fs.existsSync(cacheFile)) ok('落盘缓存内容 sha256 = 旧实现提取结果', sha(fs.readFileSync(cacheFile)) === sha(oldV.bytes));
+  ok(fs.existsSync(cacheFile), '落盘缓存文件名 = 旧 hash 公式（升级后不重抽）', hash + '.mp4');
+  if (fs.existsSync(cacheFile)) ok(sha(fs.readFileSync(cacheFile)) === sha(oldV.bytes), '落盘缓存内容 sha256 = 旧实现提取结果');
   const r2 = await call('/api/mpkg-wallpaper/custom-scene-video-check?folder=tex-scene');
-  ok('二次探测结果不变（走缓存）', JSON.stringify(r2.body) === JSON.stringify(r1.body));
+  ok(JSON.stringify(r2.body) === JSON.stringify(r1.body), '二次探测结果不变（走缓存）');
   const videoRoute = routes.find((x) => x.kind === 'exact' && x.path === '/api/mpkg-wallpaper/custom-scene-video');
-  ok('/custom-scene-video 路由在位且能 200 给出 mp4', !!videoRoute);
+  ok(!!videoRoute, '/custom-scene-video 路由在位且能 200 给出 mp4');
   try { fs.rmSync(home, { recursive: true, force: true }); } catch { /* 忽略 */ }
 }
 

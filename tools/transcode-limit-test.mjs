@@ -36,9 +36,13 @@ if (DATA_DIR_ARG) process.env.DSH_HOME = path.dirname(DATA_DIR_ARG);
 
 const ROOT = path.resolve(here, '..');
 let pass = 0, fail = 0;
-const ok = (n, d) => { pass++; console.log('  ✓ ' + n + (d ? '  [' + d + ']' : '')); };
+// ①(2026-09-17 假绿修复轮) 本文件**本来就不是**假绿：44 条断言全部走 `check(n, cond, d)`（cond 决定走
+//   通过还是失败分支），没有一处把条件当"展示细节"丢给打印原语。但仓库扫描里那个原语的形状与真·假绿的
+//   scene-video-test / scene-audio-route-test 完全一样 —— 为免日后有人顺手写 `ok(名字, 条件)` 又造一个恒真，
+//   这里把它改名成 `passLine`：能提条件的地方**只有** check 一家。
+const passLine = (n, d) => { pass++; console.log('  ✓ ' + n + (d ? '  [' + d + ']' : '')); };
 const bad = (n, d) => { fail++; console.error('  ✗ ' + n + (d ? '  → ' + d : '')); };
-const check = (n, cond, d) => { if (cond) ok(n, d); else bad(n, d); };
+const check = (n, cond, d) => { if (cond) passLine(n, d); else bad(n, d); };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const MB = 1024 * 1024;
 const TMP_CAP_MB = Number(process.env.MPW_TEST_TMP_CAP_MB || 50);
