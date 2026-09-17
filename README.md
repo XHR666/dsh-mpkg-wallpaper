@@ -37,7 +37,10 @@
 
 **🧩 dsh-better-sidebar 适配（检测到该插件后显示）**
 - 已安装 dsh-better-sidebar 时，「其他」tab 自动出现**适配分类**（**只挂在「其他」tab，不在「外观」**）：总开关 + 子开关：
-  - **悬浮双层修复**（bsFloat）：让悬浮侧边栏的 `_panel` 内层 `pane/tabBar` 背景透明，避免悬浮时出现双重实色矩形
+  - **悬浮双层修复**（bsFloat）：悬浮面板 = 14px 圆角外壳（`overflow:hidden` 统一裁掉内层直角/激活胶囊）
+    + 内层 `pane/tabBar/terminalWrap` 背景透明（避免「圆角里套直角矩形 / 两层透明度不同」）
+    + **零外边距**（面板 left/right 由 better-sidebar 自己的 ResizeObserver 对齐中心列，加 margin 会偏移 8px、
+    折叠态还会在底部留 3.6px 残影）+ 把宿主的 resize strip 挪进面板内（原 `top:-4px`，加圆角裁切后会被切掉一半）
   - **透出程度**（bsReveal + bsRevealAlpha 滑条）：better-sidebar 表面透出壁纸的浓度可调（越高越透）
   - **跟随主题 / Aqua**（bsAlpha / bsAqua）：better-sidebar 面板跟随主题底色 / 跟随统一雾取色
   - **底部面板避让**（bsBottomAvoid）：底部面板实时对齐 DSH 中心列（better-sidebar 自身 ResizeObserver 负责，无需手动偏移）
@@ -50,8 +53,10 @@
   **2026-09-17 修掉了两个「看起来在适配、实际没适配」的真因**（`/ping` 版本恒 `null`；版本探测只在
   打开设置页时才跑）——判据、真机证据与复现命令见 [`docs/BETTER-SIDEBAR-COMPAT.md`](docs/BETTER-SIDEBAR-COMPAT.md)，
   0.19.1 的 DOM 契约见 [`docs/BETTER-SIDEBAR-DOM-CONTRACT-0.19.1.md`](docs/BETTER-SIDEBAR-DOM-CONTRACT-0.19.1.md)。
-  回归：`node tools/better-sidebar-compat-test.mjs`（28 断言，含「改回旧写法必须变红」的变异用例与
-  已装版本的锚点金丝雀，已接入 `tools/check.sh` 第 10 步）。
+  回归：`node tools/better-sidebar-compat-test.mjs`（**41 断言**，含「改回旧写法必须变红」的变异用例、
+  已装版本的锚点金丝雀，以及底部面板悬浮适配的 13 条几何纪律断言（F 段），已接入 `tools/check.sh` 第 10 步）。
+  底部面板悬浮适配的真机 computed 证据：`node tools/bs-bottom-panel-probe.mjs --label before|after`
+  → `tools/probe-out/bs-bottom-*.json`（判据与 before/after 数字见 docs/BETTER-SIDEBAR-COMPAT.md §8）。
 
 **⏯️ 播放控制与省电**
 - **暂停 / 播放按钮**：当前壁纸为视频/网页类时，设置页「壁纸设置」下方出现**暂停/播放**按钮（点击停住画面，再点恢复）。暂停状态**实时同步**（按钮反映视频实际播放状态）；**调整无关设置（静音/亮度/模糊等）不会触发重播**——已修复「video.src 用绝对 URL 判等恒不等 → 每次应用设置都重载媒体源」的根因。

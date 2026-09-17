@@ -37,7 +37,7 @@ A plugin for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harn
 
 **🧩 dsh-better-sidebar adaptation (shown when that plugin is detected)**
 - When dsh-better-sidebar is installed, an **adaptation section** appears in the **"Other" tab** (not "Appearance") with a master toggle + sub-toggles:
-  - **Floating double-layer fix** (bsFloat): makes the floating sidebar's inner `pane/tabBar` background transparent so no double solid rectangle appears when floating
+  - **Floating double-layer fix** (bsFloat): 14px rounded shell with `overflow:hidden` (clips inner right angles / active-tab pill), transparent inner `pane/tabBar/terminalWrap`, **zero outer margin** (the panel's left/right are aligned by better-sidebar's own ResizeObserver — margins shift it 8px and leave a 3.6px sliver when collapsed), and the host resize strip is moved inside the panel (host default `top:-4px` gets half-clipped once the shell has rounded corners)
   - **Reveal level** (bsReveal + bsRevealAlpha slider): how much wallpaper shows through the better-sidebar surface (higher = more transparent)
   - **Follow theme / Aqua** (bsAlpha / bsAqua): better-sidebar panel follows the theme base / the unified-fog color
   - **Bottom panel avoidance** (bsBottomAvoid): the bottom panel stays aligned with the DSH center column (handled by better-sidebar's own ResizeObserver — no manual offset)
@@ -52,7 +52,7 @@ A plugin for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harn
   `null` version; version probing only ran when the settings panel was opened). Criteria, real-machine evidence and
   reproduction commands: [`docs/BETTER-SIDEBAR-COMPAT.md`](docs/BETTER-SIDEBAR-COMPAT.md); the 0.19.1 DOM contract:
   [`docs/BETTER-SIDEBAR-DOM-CONTRACT-0.19.1.md`](docs/BETTER-SIDEBAR-DOM-CONTRACT-0.19.1.md).
-  Regression: `node tools/better-sidebar-compat-test.mjs` (28 assertions, including a mutation case that must turn
+  Regression: `node tools/better-sidebar-compat-test.mjs` (41 assertions, including a mutation case that must turn
   red when the old code shape comes back, plus an anchor canary against the installed version; wired into
   `tools/check.sh` step 10).
 
