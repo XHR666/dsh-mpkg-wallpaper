@@ -551,6 +551,8 @@ dsh-mpkg-wallpaper/
 
 ## Acknowledgements
 
+> **Naming note (2026-09-19):** the renderer product this plugin integrates with is now called **WEwebLoader**; the upstream project is still **WebWallGL** (`oneincase/webwallgl`, MIT) — its attribution and licence are unchanged.
+
 - [Bil812](https://github.com/Bil812) — proposed wallpaper tint, adaptive text and unified full-screen mask in [PR #2](https://github.com/XHR666/dsh-mpkg-wallpaper/pull/2) and maintains a fork; those ideas were absorbed as the "Aqua" experiment mode (toggles, off by default)
 - [elysia395/dsh-wallpaper-engine](https://github.com/elysia395/dsh-wallpaper-engine) — the scene.pkg static-frame extractor (MIT); `lib/pkg-extract.js` is adopted from this project; its "settings persist to host file" and "Edge canvas-compat rendering" ideas are also borrowed
 - [oneincase/webwallgl](https://github.com/oneincase/webwallgl) — sandboxed-iframe + WE API shim approach for web wallpapers (MIT): the **API list and semantics** of `lib/web-wallpaper.js` were studied against that project (**no code copied**; diff list in `docs/WEB-WALLPAPER.md` §10, ledger in `../docs/COPYING-RULES.md` §4)

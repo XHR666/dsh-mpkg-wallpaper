@@ -553,6 +553,8 @@ dsh-mpkg-wallpaper/
 
 ## 致谢
 
+> **命名说明（2026-09-19）**：本插件对接的渲染器产品现名 **WEwebLoader**；上游项目名仍是 **WebWallGL**（`oneincase/webwallgl`，MIT），归属与许可不因此改变。
+
 - [Bil812](https://github.com/Bil812) — 在 [PR #2](https://github.com/XHR666/dsh-mpkg-wallpaper/pull/2) 提出壁纸取色、自适应文字色、全屏统一遮罩等方案并维护 fork；其中思路已吸收为「Aqua 实验」模式（可开关，默认关）
 - [elysia395/dsh-wallpaper-engine](https://github.com/elysia395/dsh-wallpaper-engine) — scene.pkg 静态帧提取器（MIT），本插件 `lib/pkg-extract.js` 采用自该项目；其「设置持久化到宿主端文件」「Edge canvas 兼容渲染」思路也已借鉴
 - [oneincase/webwallgl](https://github.com/oneincase/webwallgl) — 网页壁纸的 sandbox iframe + WE API shim 方案（MIT）：本插件 `lib/web-wallpaper.js` 的 **API 名单与语义参考**了该项目（**未复制代码**，差异清单见 `docs/WEB-WALLPAPER.md` §10；台账见 `../docs/COPYING-RULES.md` §4）
