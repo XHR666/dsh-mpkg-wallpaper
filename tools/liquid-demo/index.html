@@ -60,7 +60,9 @@
 <div id="status">LiquidGlass V2 · 状态: 初始化中…</div>
 
 <script type="module">
-import { LiquidGlassWebGLV2 } from './vendor/v2.js';
+// ①(P-122 去重) 唯一一份渲染器源码在 lib/liquid-glass/（server.mjs 挂到 /lg/）；
+//    原来这里的 `./vendor/v2.js` 与它逐字节相同，副本已删。
+import { LiquidGlassWebGLV2 } from '/lg/v2.js';
 
 const canvas = document.getElementById('glassCanvas');
 const bgVideo = document.getElementById('bgVideo');

@@ -19,15 +19,31 @@ const MIME = {
   '.json': 'application/json', '.ico': 'image/x-icon',
 };
 
+// ①(P-122 去重) 演示页的渲染器源码**不再自存副本**：原 `tools/liquid-demo/vendor/`（9 个文件）
+//   与 `lib/liquid-glass/` 的 9 个文件 sha256 两两相同（逐字节重复），已删除；演示页统一从仓库里
+//   唯一的那一份加载 ⇒ 这里把 `lib/liquid-glass/` 挂到 `/lg/`（只允许 `.js`、防穿越）。
+//   注意 `?frost-ratio=1` 之类的 query 由 `url.pathname` 天然剥掉，与渲染器内部 import 兼容。
+const LG_DIR = normalize(join(__dirname, '..', '..', 'lib', 'liquid-glass'));
+
 const server = createServer((req, res) => {
   try {
     const url = new URL(req.url || '/', 'http://localhost');
     let path = url.pathname;
     if (path === '/') path = '/index.html';
     // 防路径穿越
-    const filePath = normalize(join(__dirname, path));
-    if (!filePath.startsWith(normalize(__dirname))) {
-      res.writeHead(403); res.end('forbidden'); return;
+    let filePath;
+    if (path.startsWith('/lg/')) {
+      const rel = path.slice('/lg/'.length);
+      if (!rel.endsWith('.js') || rel.includes('/') || rel.includes('\\') || rel.includes('..')) {
+        res.writeHead(403); res.end('forbidden'); return;
+      }
+      filePath = normalize(join(LG_DIR, rel));
+      if (!filePath.startsWith(LG_DIR)) { res.writeHead(403); res.end('forbidden'); return; }
+    } else {
+      filePath = normalize(join(__dirname, path));
+      if (!filePath.startsWith(normalize(__dirname))) {
+        res.writeHead(403); res.end('forbidden'); return;
+      }
     }
     if (!existsSync(filePath) || statSync(filePath).isDirectory()) {
       res.writeHead(404); res.end('not found: ' + path); return;

@@ -38,11 +38,47 @@
    （旧版 `loadDemoOracle()` ~40 行已删），改为对规格表格的独立断言（61 条）；
    `tools/audio-scan-bench.mjs` 的"逐字复刻 demo.html"对照实现改成规格字面量参考实现。
 
-### 1.3 保留的第三方归属
+### 1.3 保留的第三方归属：liquid-glass 渲染器库（**本包唯一 vendored 的第三方代码**）
 
-- 本包**不 vendor** 任何第三方代码（`lib/liquid-glass/**` 与 `lib/liquid-glass-bundle.js` 是
-  外部 MIT 项目 `apple-liquid-glass-webgl` 的副本，其 MIT 声明随文件保留）。
-- 若将来引入任何第三方代码（含 GPL-3.0 的渲染器侧代码），**不得**进入本 MIT 包，
+> ①(2026-09-18，P-122) 本节按逐副本复核结果重写；复核全过程（引用面/身份/判据/反向自证）见
+> `docs/LIQUID-GLASS-DEDUP.md`。
+
+| 项 | 内容 |
+|---|---|
+| 涉及文件 | `lib/liquid-glass/*.js`（9 文件，129 097 B，5830 行）+ 其派生产物 `lib/liquid-glass-bundle.js`（107 420 B，2611 行） |
+| 出处 | 外部 MIT 项目 **`apple-liquid-glass-webgl`**。**唯一记录是提交 `d13019d`**（2026-08-24）的说明："复用 apple-liquid-glass-webgl（MIT，零依赖）源码 → lib/liquid-glass/ + vendor/" |
+| 许可 | **MIT**（MIT 要求随副本携带版权声明与许可正文） |
+| 发布面 | 随包发布（`files: ["lib"]` 为目录级白名单 ⇒ 上述 10 个文件全部进 npm 包，实测见 `docs/LIQUID-GLASS-DEDUP.md` §1②、§4 第 6 项） |
+| 运行期引用 | 宿主路由 `GET /api/mpkg-wallpaper/lg/<file>.js` 在命中时 `readFileSync` 读取 `lib/liquid-glass/<file>`（`lib/index.js:3299-3314`）。客户端**无**调用方（`lib/client.js` 无 `liquid-glass` 引用、无动态 import） |
+| 副本数 | **1 份**（原 `tools/liquid-demo/vendor/` 的 9 文件与 `lib/liquid-glass/` sha256 两两相同 ⇒ 2026-09-18 已删，演示页改为加载唯一一份） |
+
+**⚠ 更正（复核结论，重要）**：本节原文写"其 MIT 声明随文件保留"——**不成立**。
+对这 9 个文件 + bundle 逐个 grep，`MIT License` / `Copyright (c)` / `Copyright ©` /
+`SPDX-License-Identifier` / `Permission is hereby granted` / `The above copyright`
+命中数**全部为 0**，也没有任何上游 URL（`github`/`http`/`apple-liquid` 命中 0）。
+⇒ 保留副本**不带上游署名**；署名义务目前**只**由本文件 + 提交记录承担。
+补法（未做，见 `docs/LIQUID-GLASS-DEDUP.md` §9 第 1 项）：找到上游后把其 LICENSE 正文与版权行
+落到本文件或随附文件。
+
+**sha256 登记（`sha256sum` 实测，2026-09-18；删除副本前对真树取，跑完复核 10/10 未变）**：
+
+```
+260e9d6a6960554f8ea508fc103451c9019621b49115fbccad7c22841a73d761  lib/liquid-glass/geometry.js
+1accae280917af694e3f9a088dde293d31176e9cfba7f2ba58ac0374a639ce5e  lib/liquid-glass/index.js
+632f030e7bafccac4ae7bd059bc90d88ab182cb00b0853546d5ccaad923d8888  lib/liquid-glass/material.js
+6037f8129f31d4ccdee45db520df260eac2a56de9e57ae06cda60691581c872f  lib/liquid-glass/renderer.js
+e11c8493ec5610842cffffe626515d111c507d9147dde94c06efe3dbcfffd18f  lib/liquid-glass/shaders.js
+3029655dbb38a6cce4af7c3e960388822c56cd6663c1cfbdabe7ffcd225ceb8c  lib/liquid-glass/v2-geometry.js
+cd8deca3e8ec99945bf02782b4e081cf6c1e1c0e83d685cda1247780dcb03ec5  lib/liquid-glass/v2.js
+2100f2b4f211b94f2d83497b9e6976a24db4e6bb169e47e62f3932aa088ace53  lib/liquid-glass/v2-material.js
+708e94b1ce273fcc336c58f46d7eb8e9205f70f5b21bf630391459b5ccde1a0a  lib/liquid-glass/v2-shaders.js
+db50361cfd3d860602ddc2ff8bd1b6567ff01f471df1eccb60b3bcbfbbb0cd08  lib/liquid-glass-bundle.js
+```
+
+- `lib/liquid-glass-bundle.js` 是**派生产物**（`tools/build-lg-bundle.mjs` 拼接上面 7 个 V2 文件，
+  去 `import`/改写 `export`）：在副本上重跑该工具，产物 sha256 与上表**逐字节相同** ⇒ 无独立信息，
+  但仍在发布白名单内，故保留（理由见 `docs/LIQUID-GLASS-DEDUP.md` §6）。
+- 若将来引入任何**其它**第三方代码（含 GPL-3.0 的渲染器侧代码），**不得**进入本 MIT 包，
   只允许进渲染器并按 `../docs/COPYING-RULES.md` 登记台账。
 
 ---
