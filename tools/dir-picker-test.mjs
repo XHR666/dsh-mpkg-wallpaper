@@ -117,11 +117,27 @@ const A = auditSource(src)
 for (const k of Object.keys(A)) ok(A_LABEL[k], A[k])
 
 if (!SKIP_LEGACY) {
-  head('A 组对照：同一套断言跑 git HEAD 的旧实现（必须大面积变红 ⇒ 证明断言有分辨力）')
+  // ①(2026-09-17 判据轮修正) 对照用的"旧实现"必须是**修复落地前的那一次提交**，不能再用 `HEAD`：
+  //   修复一旦被提交，`HEAD:lib/client.js` 就已经是"修复后"，本对照退化成"自己对自己" ⇒
+  //   恒 0 失分、恒红（2026-09-17 实测：HEAD=7a20020 已含 MPW-DIRPICK 块，A 组 11/11 全绿，
+  //   于是"旧实现必须失分"三条永远失败 —— 门禁假红，与本次壁纸层改动无关）。
+  //   取法：`git log -S MPW-DIRPICK-BEGIN` 里**最早**引入该块的提交，取其**父提交**；
+  //   取不到时回退固定 rev（环境变量 MPW_DIRPICK_BEFORE 可覆盖，便于人工指定对照点）。
+  const BEFORE_REV = (() => {
+    if (process.env.MPW_DIRPICK_BEFORE) return process.env.MPW_DIRPICK_BEFORE
+    try {
+      const list = execFileSync('git', ['log', '--format=%H', '-S', 'MPW-DIRPICK-BEGIN', '--', 'lib/client.js'],
+        { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }).trim().split('\n').filter(Boolean)
+      const first = list[list.length - 1]        // 最早引入该块的那次提交
+      if (first) return first + '^'
+    } catch {}
+    return '73b860f' + '^'                       // 兜底：引入该块之前的那次提交
+  })()
+  head('A 组对照：同一套断言跑**修复前**的实现 ' + BEFORE_REV + '（必须大面积变红 ⇒ 证明断言有分辨力）')
   let legacySrc = ''
   try {
-    legacySrc = execFileSync('git', ['show', 'HEAD:lib/client.js'], { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
-  } catch (e) { console.log('  (跳过：拿不到 git HEAD 版本 — ' + String((e && e.message) || e).split('\n')[0] + ')') }
+    legacySrc = execFileSync('git', ['show', BEFORE_REV + ':lib/client.js'], { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
+  } catch (e) { console.log('  (跳过：拿不到 ' + BEFORE_REV + ' 版本 — ' + String((e && e.message) || e).split('\n')[0] + ')') }
   if (legacySrc) {
     const L = auditSource(legacySrc)
     const bad = Object.keys(L).filter((k) => !L[k])

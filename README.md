@@ -43,6 +43,15 @@
   - **底部面板避让**（bsBottomAvoid）：底部面板实时对齐 DSH 中心列（better-sidebar 自身 ResizeObserver 负责，无需手动偏移）
   - 字体跟随（bsFont）等其余子开关
 - 主机端 `/ping` 自动探测 better-sidebar 是否安装；未安装时该分类隐藏
+- **按版本适配**：host 把已装的 better-sidebar 版本（如 `0.19.1`）一并返回，客户端写
+  `body[data-mpw-bs-version]`，版本专属规则用 `[data-mpw-bs-version^="…"]` 门控（例如 0.16+ 的浮窗透出；
+  0.19 起浮窗已被上游删除，该规则自然不生效）；面板级规则同时挂 0.19 的稳定属性锚点
+  `[data-dsh-bottom-panel]` / `[data-dsh-pane]`，类名哈希再换也不失配。
+  **2026-09-17 修掉了两个「看起来在适配、实际没适配」的真因**（`/ping` 版本恒 `null`；版本探测只在
+  打开设置页时才跑）——判据、真机证据与复现命令见 [`docs/BETTER-SIDEBAR-COMPAT.md`](docs/BETTER-SIDEBAR-COMPAT.md)，
+  0.19.1 的 DOM 契约见 [`docs/BETTER-SIDEBAR-DOM-CONTRACT-0.19.1.md`](docs/BETTER-SIDEBAR-DOM-CONTRACT-0.19.1.md)。
+  回归：`node tools/better-sidebar-compat-test.mjs`（28 断言，含「改回旧写法必须变红」的变异用例与
+  已装版本的锚点金丝雀，已接入 `tools/check.sh` 第 10 步）。
 
 **⏯️ 播放控制与省电**
 - **暂停 / 播放按钮**：当前壁纸为视频/网页类时，设置页「壁纸设置」下方出现**暂停/播放**按钮（点击停住画面，再点恢复）。暂停状态**实时同步**（按钮反映视频实际播放状态）；**调整无关设置（静音/亮度/模糊等）不会触发重播**——已修复「video.src 用绝对 URL 判等恒不等 → 每次应用设置都重载媒体源」的根因。
@@ -253,7 +262,7 @@ MP4 里 h264+opus、HEVC Main10 这类确定性缺口；探测不出来一律不
 
 > 细节、判据表、内存实测与"实测排除的做法"：[`docs/TRANSCODE-RESOURCE.md`](docs/TRANSCODE-RESOURCE.md)；
 > 回退开关 `?mpwtranscode=legacy`（回到旧行为）/ `aggressive`（连用户设的上限也先探测）；
-> 回归：`node tools/transcode-limit-test.mjs`（43 断言，已接入 `tools/check.sh` 第 5/9 步）。
+> 回归：`node tools/transcode-limit-test.mjs`（43 断言，已接入 `tools/check.sh` 第 5/10 步）。
 
 ## 选择文件夹 / 选择文件：行为契约与快捷键（2026-09-17，第13条）
 

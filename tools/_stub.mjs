@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 
-export function installStubs() {
+export function installStubs(opts = {}) {
   /* ---------- 桩 React ---------- */
   const mkEl = (type, props, ...kids) => ({ __el: true, type, props: props || {}, kids: kids.flat(9) })
   const hookState = []
@@ -30,11 +30,29 @@ export function installStubs() {
 
   /* ---------- 桩浏览器环境 ---------- */
   const listeners = {}
-  const el = (tag = 'div') => ({
-    tagName: String(tag).toUpperCase(), style: {}, className: '', id: '', textContent: '', innerHTML: '',
+  // ①(2026-09-17 持久化轮) 桩 DOM 也要有 **id 索引**：生产里 `getElementById('mpw-bgWrap')` 会拿到
+  //   已存在的层（ensureBgDom 幂等复用），桩恒返回 null ⇒ 每次重载都新建一层、`#mpw-bgImg` 永远查不到，
+  //   连"刷新后壁纸是否恢复"这种最关键的断言都做不了（也用假语义掩盖了重复挂载）。
+  const byId = new Map()
+  const el = (tag = 'div') => {
+    const node = {
+    tagName: String(tag).toUpperCase(),
+    // 真 DOM 的 `style` 是 CSSStyleDeclaration（有 setProperty/removeProperty）。桩原先只给 `{}`
+    // ⇒ 壁纸挂载后 `wrap.style.setProperty('--mpw-zoom', …)` 抛 TypeError，被"有源必挂"兜底当成
+    // "没挂上"再补一次（假失败）。这里补上最小实现，桩行为贴近真 DOM。
+    style: { setProperty(k, v) { this[k] = String(v) }, removeProperty(k) { delete this[k] }, getPropertyValue(k) { return this[k] === undefined ? '' : String(this[k]) } },
+    className: '', textContent: '', innerHTML: '',
     children: [], childNodes: [], parentElement: null, dataset: {}, nodeType: 1,
     classList: { add() {}, remove() {}, contains: () => false, toggle() {} },
-    setAttribute() {}, getAttribute: () => null, removeAttribute() {}, hasAttribute: () => false,
+    // ①(2026-09-17 better-sidebar 适配轮) 真 DOM 的属性表。原先 setAttribute 是空实现、
+    //   getAttribute 恒 null ⇒ "版本探测到底有没有把 data-mpw-bs-version 写到 body 上"这种
+    //   **结果落点**在桩里根本断言不了（只能断言"代码跑过"，正是假绿的温床）。现在每个节点
+    //   一份最小属性表，set/get/remove/has 与真 DOM 同语义。
+    __attrs: new Map(),
+    setAttribute(k, v) { this.__attrs.set(String(k), String(v)) },
+    getAttribute(k) { const key = String(k); return this.__attrs.has(key) ? this.__attrs.get(key) : null },
+    removeAttribute(k) { this.__attrs.delete(String(k)) },
+    hasAttribute(k) { return this.__attrs.has(String(k)) },
     appendChild(c) { this.children.push(c); c.parentElement = this; return c },
     insertBefore(c) { return this.appendChild(c) },
     removeChild(c) { this.children = this.children.filter((x) => x !== c); return c },
@@ -43,13 +61,23 @@ export function installStubs() {
     removeEventListener() {}, querySelector: () => null, querySelectorAll: () => [], closest: () => null,
     getBoundingClientRect: () => ({ x: 0, y: 0, width: 300, height: 200, top: 0, left: 0, right: 300, bottom: 200 }),
     getContext: () => null, focus() {}, click() {}, contains: () => false, matches: () => false,
-  })
+    }
+    try {
+      Object.defineProperty(node, 'id', {
+        configurable: true,
+        get () { return node.__id || '' },
+        set (v) { node.__id = String(v); if (v) byId.set(String(v), node) },
+      })
+    } catch {}
+    return node
+  }
   const docEl = el('html')
   const doc = {
     documentElement: docEl, body: el('body'), head: el('head'), title: 'test',
     createElement: (t) => el(t), createElementNS: (ns, t) => el(t), createTextNode: (t) => ({ textContent: t, nodeType: 3 }),
     createDocumentFragment: () => el('fragment'),
-    getElementById: () => null, querySelector: () => null, querySelectorAll: () => [], addEventListener() {}, removeEventListener() {},
+    getElementById: (id) => byId.get(String(id)) || null,
+    querySelector: () => null, querySelectorAll: () => [], addEventListener() {}, removeEventListener() {},
     fonts: { add() {}, ready: Promise.resolve() }, readyState: 'complete',
   }
   globalThis.document = doc
@@ -61,7 +89,10 @@ export function installStubs() {
   globalThis.getComputedStyle = () => ({ getPropertyValue: () => '', position: 'static', display: 'block', visibility: 'visible', opacity: '1', zIndex: 'auto', backdropFilter: 'none', overflow: 'visible', contain: 'none', isolation: 'auto', willChange: 'auto', color: '', fontSize: '', height: '', overflowY: '' })
   globalThis.location = { href: 'http://127.0.0.1:3080/', search: '', hash: '', origin: 'http://127.0.0.1:3080' }
   try { Object.defineProperty(globalThis, 'navigator', { value: { userAgent: 'node-smoke', language: 'zh-CN' }, configurable: true }) } catch {}
-  globalThis.localStorage = {
+  // ①(2026-09-17 持久化轮) `opts.localStorage` 允许用例传一份**自己持有的**存储（默认每次新建）：
+  //   "刷新/重启"用例要跨两次 loadPlugin 复用同一份 localStorage —— 否则重新载入会把数据清空，
+  //   测的就不是"重载后能不能恢复"了。
+  globalThis.localStorage = opts.localStorage || {
     _m: new Map(),
     getItem(k) { return this._m.has(k) ? this._m.get(k) : null },
     setItem(k, v) { this._m.set(k, String(v)) },
@@ -76,28 +107,42 @@ export function installStubs() {
   globalThis.clearInterval = () => {}
   try { if (!globalThis.performance) Object.defineProperty(globalThis, 'performance', { value: { now: () => Date.now() }, configurable: true }) } catch {}
   globalThis.Image = class { constructor() { this.onload = null; this.onerror = null; this.complete = false } set src(v) { this._s = v } get src() { return this._s } }
-  globalThis.URL.createObjectURL = () => 'blob:stub'
+  // ①(持久化轮) 桩里没有渲染引擎，`blob:` URL 在断言里不可比对 ⇒ 桩把"字符串内容"原样当
+  //   URL 返回（真浏览器里 Blob → ObjectURL 才是真实路径）。这样"刷新后壁纸是否真是原来那张"
+  //   可以用 `img.src === <原 dataURL>` **严格相等**判定，而不是只能比前缀。
+  globalThis.URL.createObjectURL = (v) => (typeof v === 'string' ? v : 'blob:stub')
   globalThis.URL.revokeObjectURL = () => {}
   const fetchCalls = []
   const diagEvents = []
-  globalThis.fetch = async (url, opts) => {
-    fetchCalls.push(String(url))
-    try { if (String(url).indexOf('/diag') >= 0 && opts && opts.body) diagEvents.push(JSON.parse(opts.body)) } catch {}
-    return { ok: false, status: 404, json: async () => ({}), text: async () => '', arrayBuffer: async () => new ArrayBuffer(0) }
-  }
+  // ①(2026-09-17 壁纸层可见性轮) 允许用例**替换宿主应答**（installStubs({fetch})）：
+  //   默认桩 = 宿主不可用（ok:false/404）；bgwrap-visible-test 用它模拟"宿主 /settings 返回
+  //   settings:null / 慢响应 / 带 opacity 的合并"三种时序场景。
+  globalThis.fetch = typeof opts.fetch === 'function'
+    ? async (url, o) => { fetchCalls.push(String(url)); try { if (String(url).indexOf('/diag') >= 0 && o && o.body) diagEvents.push(JSON.parse(o.body)) } catch {}; return opts.fetch(String(url), o) }
+    : async (url, opts2) => {
+      fetchCalls.push(String(url))
+      try { if (String(url).indexOf('/diag') >= 0 && opts2 && opts2.body) diagEvents.push(JSON.parse(opts2.body)) } catch {}
+      return { ok: false, status: 404, json: async () => ({}), text: async () => '', arrayBuffer: async () => new ArrayBuffer(0) }
+    }
   return { react, ReactDOM, doc, listeners, fetchCalls, diagEvents }
 }
 
 /**
  * 载入插件并 apply()。
- * @param {{clientPath?:string, search?:string, settings?:object, quiet?:boolean}} opts
+ * @param {{clientPath?:string, search?:string, settings?:object, quiet?:boolean, fetch?:Function}} opts
  */
 export function loadPlugin(opts = {}) {
-  const stubs = installStubs()
+  const stubs = installStubs(opts)
   const clientPath = opts.clientPath || path.join(here, '..', 'lib', 'client.js')
   const src = fs.readFileSync(clientPath, 'utf8')
   if (opts.search !== undefined) globalThis.location = { href: 'http://127.0.0.1:3080/' + String(opts.search), search: String(opts.search), hash: '', origin: 'http://127.0.0.1:3080' }
   if (opts.settings) globalThis.localStorage.setItem('dsh.mpkg-wallpaper.v2', JSON.stringify(opts.settings))
+  // ①(2026-09-17 持久化轮) IndexedDB 桩：只在用例显式传入 `indexedDB` 时装上（默认**不装** ⇒
+  //   走"IDB 不可用"的降级分支）。用例自己提供持久化对象（跨"重载"复用同一份 db 实例）。
+  if (opts.indexedDB !== undefined) globalThis.indexedDB = opts.indexedDB
+  else { try { delete globalThis.indexedDB } catch {} }
+  // `Blob` 在 Node 18+ 是内建全局（写侧落 IDB 的是真 Blob/dataURL，读侧用 instanceof Blob 判定）。
+  if (typeof globalThis.Blob === 'undefined' && opts.Blob) globalThis.Blob = opts.Blob
 
   const registry = []
   globalThis.__ModuleLoader__ = { load: (reg) => registry.push(reg) }

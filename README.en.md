@@ -43,6 +43,18 @@ A plugin for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harn
   - **Bottom panel avoidance** (bsBottomAvoid): the bottom panel stays aligned with the DSH center column (handled by better-sidebar's own ResizeObserver — no manual offset)
   - Font follow (bsFont) and other sub-toggles
 - The host `/ping` endpoint auto-detects whether better-sidebar is installed; the section is hidden when it is not
+- **Version-aware adaptation**: the host also reports the installed better-sidebar version (e.g. `0.19.1`) and the
+  client writes `body[data-mpw-bs-version]`, so version-specific rules can be gated with
+  `[data-mpw-bs-version^="…"]` (e.g. the 0.16+ floating-window reveal; 0.19 removed floating windows upstream, so
+  that rule simply stops matching). Panel-level rules additionally carry the 0.19 stable attribute hooks
+  `[data-dsh-bottom-panel]` / `[data-dsh-pane]`, so a CSS-module hash change cannot silently break them.
+  **2026-09-17: two "looks adapted but never actually ran" root causes were fixed** (`/ping` always returned a
+  `null` version; version probing only ran when the settings panel was opened). Criteria, real-machine evidence and
+  reproduction commands: [`docs/BETTER-SIDEBAR-COMPAT.md`](docs/BETTER-SIDEBAR-COMPAT.md); the 0.19.1 DOM contract:
+  [`docs/BETTER-SIDEBAR-DOM-CONTRACT-0.19.1.md`](docs/BETTER-SIDEBAR-DOM-CONTRACT-0.19.1.md).
+  Regression: `node tools/better-sidebar-compat-test.mjs` (28 assertions, including a mutation case that must turn
+  red when the old code shape comes back, plus an anchor canary against the installed version; wired into
+  `tools/check.sh` step 10).
 
 **⏯️ Playback control & power saving**
 - **Pause / Play button**: when the current wallpaper is a video/web type, the settings page shows a **Pause/Play** button (click to freeze the image, click again to resume). The paused state is **synced in real-time** (the button follows the actual video state); **adjusting unrelated settings (mute/brightness/blur etc.) does NOT trigger a replay** — the root cause ("video.src" compared as an absolute URL to a relative one → every settings apply reloaded the media source) has been fixed.
