@@ -71,7 +71,7 @@
 - 基于 CSS `backdrop-filter` 的半透明 + 模糊 + 边缘高光（**不再是 WebGL 折射版**——WebGL 液态玻璃已在 v3.6.0 移除，见下）。分四个开关：
   - **lgTest（测试模式）**：只保留壁纸 + 悬浮 + 布局，不覆盖任何 DSH token（否则背景读半透明会让聊天框透明无模糊）
   - **lgComposer / lgSidebar / lgHeader**：分别给聊天气泡区、侧边栏、标题栏加液态玻璃叠加层（侧边栏因设置弹窗渲染层级限制，只能做半透明 + 边缘高光，**不能加 backdrop-filter**，否则会把设置弹窗压缩进侧边栏——历史踩坑）
-- **历史说明**：早期版本用的是 WebGL 真折射（`lib/liquid-glass/` 库 + `liquid-glass-bundle.js` 107KB）；因不稳定且体积大，v3.6.0 已删掉 WebGL 运行时，改用纯 CSS 版。`lib/liquid-glass/*.js`、`liquid-glass-bundle.js` 仍在仓库并**随包发布**（`files: ["lib"]`），但**客户端已无任何引用**；宿主端仍保留 `/api/mpkg-wallpaper/lg` 静态托管路由（当前无调用方）。`tools/liquid-demo/` 只留在仓库、**不进发布包**（`files` 白名单不含 `tools/`）。以上均属遗留死文件（后续可清）。
+- **历史说明**：早期版本用的是 WebGL 真折射（`lib/liquid-glass/` 库 + `liquid-glass-bundle.js` 107KB）；因不稳定且体积大，v3.6.0 已删掉 WebGL 运行时，改用纯 CSS 版。`lib/liquid-glass/*.js`、`liquid-glass-bundle.js` 仍在仓库并**随包发布**（`files: ["lib"]`），**客户端已无任何引用**，但**宿主端那条静态托管路由是活路径**（`/api/mpkg-wallpaper/lg/<file>.js` 命中时真的 `readFileSync` 读 `lib/liquid-glass/<file>`），`tools/liquid-demo/` 的演示页也改走同一条挂载（P-122）。`tools/liquid-demo/` 只留在仓库、**不进发布包**（`files` 白名单不含 `tools/`）。⇒ 它们**不是死文件**，删与否属发布面决定（复核见 `docs/LIQUID-GLASS-DEDUP.md`）。
 
 **🎬 镜头与画面**
 - 镜头缩放（10–2000%）与平移、画面亮度（50–150%）、轻度锐化、Deep diving 背景框
@@ -542,7 +542,7 @@ dsh-mpkg-wallpaper/
 │   ├── client.js     # 浏览器端：mpkg 解析 + 设置页 + 背景 DOM + 虚化体系 + 壁纸库 + 时间变化/网页设置 + 播放控制/省电
 │   ├── pkg-extract.js# scene.pkg 静态帧/图层提取（PKG+LZ4+TEX，MIT，来自 elysia395）
 │   ├── liquid-glass/ # 液态玻璃 WebGL 库（**遗留**：客户端无引用，宿主仍托管 `/lg` 路由，v3.6.0 已改 CSS 版）
-│   ├── liquid-glass-bundle.js # 液态玻璃打包产物（107KB，**客户端无引用**，随包冗余）
+│   ├── liquid-glass-bundle.js # 液态玻璃打包产物（107KB，**客户端无引用**；可由保留源逐字节重建，sha256 db50361c…）
 │   └── THIRD-PARTY.md # 第三方来历/洁净室记录与许可归属（**随包发布**，MIT 侧署名）
 ├── tools/            # 门禁/测试/基准脚本 + lg 构建/内联脚本 + liquid-demo 演示页（供开发者）
 │                     # 音频扫描：audio-scan-bench.mjs（耗时表）/ audio-scan-test.mjs（规格断言 · 不整包解压 · 缓存）
@@ -563,11 +563,11 @@ dsh-mpkg-wallpaper/
 └── README.en.md      # 英文说明
 ```
 > 注：`lib/liquid-glass/`、`lib/liquid-glass-bundle.js` 因 `files: ["lib"]` 仍会打进 npm 包，但**客户端不再引用**（WebGL 已在 v3.6.0 移除，改用 CSS 版）；宿主仍保留 `/api/mpkg-wallpaper/lg` 托管路由（无调用方）。本地备份 `lib/client.js.bak-*` 已被 `files` 负向模式（`!lib/**/*.bak*`）排除，**不进发布包**，由 `tools/integrity-check.mjs` 第 ⑨ 节机器断言把关。
-> `dist/` 为什么**不入库**：它是 `lib/*.js` 的纯派生物（内联产物），与被跟踪源码逐字节重复；两次构建 sha256 逐字节相同（`tools/bundle-equivalence-test.mjs` 第②节机器断言），入库只会制造"改了 lib 忘了重跑 bundle"的漂移。对照：`lib/liquid-glass-bundle.js` **入库**是因为它是**运行期输入**（被 `tools/inline-lg-bundle.mjs` 写进 `lib/client.js` 的模板常量），不是发布派生物。`dist/` 也不在 `files` 白名单 ⇒ npm 包不夹带。
+> `dist/` 为什么**不入库**：它是 `lib/*.js` 的纯派生物（内联产物），与被跟踪源码逐字节重复；两次构建 sha256 逐字节相同（`tools/bundle-equivalence-test.mjs` 第②节机器断言），入库只会制造"改了 lib 忘了重跑 bundle"的漂移。对照：`lib/liquid-glass-bundle.js` **入库**是因为它历史上曾是**运行期输入**（由 `tools/inline-lg-bundle.mjs` 把 base64 写进 `lib/client.js` 的模板常量）——⚠ **2026-09-18 实测该链路已失效**：`lib/client.js` 里 `LG_BUNDLE_B64`/`LG_BUNDLE_SRC` 常量**都不存在**（全文 `B64` 仅 1 处，是注释），两个 inline 工具现在跑会报「缺少占位区」；因此它当前**既不被客户端引用、也不再是运行期输入**，只是随 `files: ["lib"]` 打进包，且可由保留源**逐字节重建**（`node tools/build-lg-bundle.mjs` ⇒ sha256 与入库那份相同）。`dist/` 也不在 `files` 白名单 ⇒ npm 包不夹带。
 
 ## 致谢
 
-> **命名说明（2026-09-19）**：本插件对接的渲染器产品现名 **WEwebLoader**；上游项目名仍是 **WebWallGL**（`oneincase/webwallgl`，MIT），归属与许可不因此改变。
+> **命名说明（2026-09-18）**：本插件对接的渲染器产品现名 **WEwebLoader**；上游项目名仍是 **WebWallGL**（`oneincase/webwallgl`，MIT），归属与许可不因此改变。
 
 - [Bil812](https://github.com/Bil812) — 在 [PR #2](https://github.com/XHR666/dsh-mpkg-wallpaper/pull/2) 提出壁纸取色、自适应文字色、全屏统一遮罩等方案并维护 fork；其中思路已吸收为「Aqua 实验」模式（可开关，默认关）
 - [elysia395/dsh-wallpaper-engine](https://github.com/elysia395/dsh-wallpaper-engine) — scene.pkg 静态帧提取器（MIT），本插件 `lib/pkg-extract.js` 采用自该项目；其「设置持久化到宿主端文件」「Edge canvas 兼容渲染」思路也已借鉴
