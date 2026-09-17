@@ -107,8 +107,9 @@ syncHeaderFrost 进入次数 = 1 | 被函数自身 catch 吞掉的异常 = "norm
 | 项 | 做法 | 理由 |
 | --- | --- | --- |
 | 同步时机 | 只在**状态变化时**同步一次：`applyFromStorageInner()`（任何设置提交/壁纸切换/主题翻转都会重入）里调 `syncHeaderFrost()`；另有主题翻转钩子（`data-ds-dark-theme` 变化）各调一次 | 磨砂是"配置 + 主题"的函数，不需要跟滚动/动画/每帧走 |
-| 低频保险 | `setInterval(syncHeaderFrost, 3000)`（单实例，`__mpwHdrFrostGuard` 守卫） | 宿主热重载/React 重建顶栏时可能把注入层挤掉；3s 一次的空转成本 ≈ 1 次 `querySelector` + 1 次 `getComputedStyle`，远低于一帧渲染 |
-| 不做的事 | **不装全树 `MutationObserver`**、不监听 `scroll`/`resize`/`pointermove`、不做 requestAnimationFrame 轮询、不在高频路径里反复 `getComputedStyle` | 全树观察在 DSH 这种长列表页面上开销与风险都高（每次 DOM 变更都要回调） |
+| 低频保险 | `setInterval(syncHeaderFrost, 3000)`（单实例，`__mpwHdrFrostGuard` 守卫） | 宿主热重载/React 重建顶栏时可能把注入层挤掉；3s 一次的空转成本 ≈ 1 次 `querySelector` + 1 次 `getComputedStyle`，远低于一帧渲染。**①(2026-09-17) 它仍是兜底，但不再是唯一补救**：结构变化由下面的窄观察器即时触发（见 §7） |
+| 结构自愈（①2026-09-17 新增） | 在**稳定会话容器**（`[data-slot="main.conversation"]`/`[data-slot="main"]`）与当前顶栏的父节点/自身上挂 **childList-only** 的 `MutationObserver`（**不开 `subtree`**），命中后去抖 50ms 同步一次 | 切会话时宿主把顶栏三个节点整块重建（真机实测），只靠 3s 保险会让磨砂"消失 0～3 秒"（用户实测 ≈3s）。窄观察器真机空闲 3s **0 次回调**，且 `?hdrfrostwatch=off` 可一键回退 |
+| 不做的事 | **不装全树 `MutationObserver`**（只在上面那几个稳定锚点上观察"直接子节点"）、不监听 `scroll`/`resize`/`pointermove`、不做 requestAnimationFrame 轮询、不在高频路径里反复 `getComputedStyle` | 全树观察在 DSH 这种长列表页面上开销与风险都高（每次 DOM 变更都要回调） |
 | rail 侧 | 只在 `applyFromStorageInner()` / web 壁纸路径 / 主题翻转时各调一次 `refreshRailInk()`（写 3 个 CSS 变量 + 1 个 body 属性） | 与磨砂同一节拍；变量只写 `documentElement`，浏览器只在下一帧重算一次样式 |
 
 ## 3. 门控语义（可预期、可回退）
@@ -185,3 +186,98 @@ R3 blur10              mean=(234.7,197.3,197.3) span=124 jumps=79
 真机实测 `meanAbsDiff=0.014`，与"完全没变"同级）。真机（用户设备，Firefox/Via 有 GPU）不受此限。
 所以本仓库的判据分两层：**结构/层叠事实**用本机探针（本文件 §5 的两条），
 **观感强度**留给真机确认。
+
+## 7. 切会话时磨砂"先消失、约 3 秒才回来"（2026-09-17 真机定案 + 修复）
+
+用户原话（翻译）：「在标题栏里切换主会话和子代理会话时，**顶栏磨砂先消失，大约三秒后才回来**，
+两个方向都这样（主→子代理、子代理→主）。」
+
+### 7.1 真机取证（无头 Firefox + 真实页面，探针在 /tmp 侧、不进本仓库）
+
+方法（可复跑，Cookie 由 `tools/hdr-probe-mint-cookie.mjs` 生成）：
+
+```bash
+mkdir -p /tmp/ffprobe
+node tools/hdr-probe-mint-cookie.mjs --authority 127.0.0.1:3080 --out /tmp/ffprobe/cookie.json
+# ① 相位对齐最坏情况：等 3s 定时器刚把层补回 → 立刻删掉它 → 测恢复（确定性，不受相位运气影响）
+# ② 真实路径：点左侧会话列表切会话；③ 模拟宿主重挂载：把 header 节点换成克隆
+node /tmp/hdrwatch/measure2.mjs --mode align|click|cloneheader --trials 3 --label before|after
+```
+
+| 事实 | 证据 |
+| --- | --- |
+| 补挂磨砂层的**唯一**路径是 3s 低频保险 | 拦截 `Node.prototype.insertBefore` 抓到调用栈：`setInterval handler → applyFromStorageInner → syncHeaderFrost → ensureHeaderFrost`（`lib/client.js:3698` 的 `setInterval(…, 3000)`），**没有任何结构变化路径参与** |
+| 相位对齐最坏情况 | 改前 **2996 / 3000 / 3000 ms**；改后 **66 / 67 / 67 ms** |
+| 直接删掉注入层（模拟 React 重渲染挤掉子节点） | 改前 339 ms（相位运气好）～3000 ms；改后 **60 / 61 / 61 ms** |
+| 模拟宿主重挂载（`header.replaceWith(clone)`） | 改后 **34 / 59 / 60 ms** |
+| 真实点侧栏切会话 | 改前 **347 / 1696 / 1741 ms**（= 3s 保险的相位分布）；改后「新顶栏挂上文档 → 磨砂回到新顶栏」Δ = **85 / 266 / 290 ms**（其余时间是宿主自己重建顶栏，见下） |
+| 回退开关自证 | 同一份修复后构建 + `?hdrfrostwatch=off`：**3004 / 3013 ms**（完全复现旧行为） |
+
+结构取证（哪一步把我们的层弄丢）：一次会话切换会让 `header.wSkVaW_header`、
+`[data-slot="conversation.session.header"]`、`.wSkVaW_root` **三个节点同时换成新节点**；
+`[data-slot="main.conversation"]`（及其上溯 `[data-slot="main"]`）**跨会话保持同一节点**。
+节点级时间线（探针拦截 appendChild/insertBefore）：新顶栏在 +38ms 就被"造"出来，
+但要到 +402ms 才挂进文档，我们的层在 +452ms 补上 ⇒ **磨砂的可见空窗主要是宿主重建顶栏的时间**，
+我们这一侧只占 50ms 去抖 + 一次同步。
+
+### 7.2 根因（机制 + 行号）
+
+1. `.mpw-hdrFrost` 是**我们注入到宿主顶栏里的子节点**（`lib/client.js:3520` 附近的
+   `ensureHeaderFrost()`：`hdr.insertBefore(el, hdr.firstChild)`）。
+2. 宿主在切会话时**整块重建顶栏节点**（三个节点全换，见上）⇒ 注入层随旧顶栏一起被丢弃。
+3. 补挂时机当时只有两处：设置/主题变化时同步一次（`lib/client.js:3687`）和
+   **3s 低频保险**（`lib/client.js:3698`）。切会话这两个都不触发 ⇒ 只能等下一次滴答，
+   表现为"消失 0～3 秒"（用户看到的是最坏情况 ≈3 秒）。
+
+### 7.3 修法（最小改动，**不新增轮询/网络/依赖**）
+
+`lib/client.js` 新增 `armHeaderFrostWatch()` 一族（`lib/client.js:3403-3480` 附近），挂
+**childList-only** 的 `MutationObserver`（不开 `subtree`）：
+
+| 观察目标 | 覆盖的失效方式 |
+| --- | --- |
+| `[data-slot="main.conversation"]`、`[data-slot="main"]`（稳定容器） | 顶栏整块重建（`.wSkVaW_root` 被换成新节点） |
+| 当前顶栏的父节点 | 顶栏节点本身被换 |
+| 当前顶栏自身 | 宿主原地重渲染，把我们的层从子节点列表里挤掉 |
+
+命中后：忽略"仅仅新增了我们自己的磨砂层"的自触发 ⇒ **去抖 50ms**（用 `setTimeout` 而不是
+`requestAnimationFrame`：后台标签页的 rAF 会被暂停，而"切会话"完全可能发生在后台标签页）⇒
+`syncHeaderFrost()` 一次。3s 低频保险**保留**作兜底。
+
+* **幂等**：观察器实例 + 目标表放在 window 级单例 `window.__mpwHdrFrostWatch`（与
+  `__mpwHdrFrostGuard` / `__mpwStyleWatch` 同风格）；目标没变就复用，绝不堆第二个；
+  构造器被换（宿主 HMR / 测试桩）才重建。
+* **开销**：真机实测 3s 空闲窗口 **0 次回调**；3 次会话切换期间该子树
+  `childList+subtree` 也只有 280 条，而我们只观察"直接子节点"（不跟消息流）。
+* **关掉就消失**：总开关关闭 / `?hdrfrost=off` / `headerBg=false` / `px<=0` / `?hdrblur=pseudo|element`
+  一律 `disarmHeaderFrostWatch()`（`disconnect()` + 状态清零），不留观察器、不留回调。
+* **回退开关**：`?hdrfrostwatch=off` ⇒ 完全退回"只有设置/主题变化 + 3s 保险"的旧行为
+  （真机实测 3004/3013ms，见 §7.1 表）。
+* **诊断**：`POST /diag` 的 `headerFrost.watch`（`armed` / `targets` / `hits` / `queued` / `off`）
+  + `hdrFrostState.watch/watchTargets/watchHits`。**`hits` 增长即证明"这次是观察器补的，不是 3s 定时"**
+  （真机上点一次会话 `hits` +1）。
+
+### 7.4 回归（红/绿有分辨力）
+
+`node tools/frost-rail-test.mjs` 新增两个场景（PART 2）：
+
+| 场景 | 装置 | 断言 |
+| --- | --- | --- |
+| `remount` | 假 DOM 复刻真机结构 `div[data-slot="main.conversation"] > header.wSkVaW_header`；把 `MutationObserver` 换成**可手动触发**的桩；手动派发"顶栏被换成新节点"的 childList 变更 | 观察器已挂载 / 目标 ≥2 / 连调 5 次 `sync` 不新建实例（不堆叠）/ **顶栏重建后磨砂自己回来**（< 300ms）/ 由观察器触发（`hits ≥ 1`）/ 新顶栏被重新标记 + 半透明底补上 |
+| `remount-before` | 把源码里 `armHeaderFrostWatch()` 那一行删掉的**变异副本**（`mkdtemp` + 退出即删） | 反向对照：观察器未挂载、层**没有**回来、`hits = 0` |
+
+关键点：**测试进程里 `setInterval` 是空桩**（`tools/_stub.mjs`）⇒ 3s 保险根本不存在，
+层丢掉后能补回来的唯一通路就是自愈观察器 ⇒ 断言天然有分辨力。
+判别力实测：临时删掉源码里的 `armHeaderFrostWatch()` 调用行后，同一测试
+**14 项断言变红**（`[default]`/`[remount]`/`[remount-before]`），恢复后 0 项失败。
+
+### 7.5 未证实 / 边界
+
+* 本机无 GPU + 无头 Firefox 不合成 `backdrop-filter`（见 §6）⇒ 本节所有数字都是**结构与时间**证据，
+  "用户眼里这三秒有多明显"仍需真机观感确认。
+* 真实点击路径的 Δ = 85～290ms（不是恒定的 50～70ms）：素材来自"宿主把新顶栏分多次提交进文档"，
+  我们只能在**最后一次结构变更**后再补（每次补挂仍 ≤ 一帧 + 50ms 去抖）；换更激进的 0 去抖会变成
+  "每个 mutation 批次都做 DOM 查询"，与 §2b 的开销纪律冲突，故不做。
+* 若宿主未来把顶栏搬到 `[data-slot="main.conversation"]`/`[data-slot="main"]` 之外的位置
+  （即上面两个稳定锚点也失效），自愈会退回 3s 保险的频率 —— 届时诊断字段
+  `headerFrost.watch.targets` 会先变小（1）可作为预警。

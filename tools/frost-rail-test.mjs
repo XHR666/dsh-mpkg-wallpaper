@@ -234,7 +234,7 @@ if (process.argv[2] !== '--child') {
      PART 2 —— bug②：磨砂注入链的假 DOM 断言（子进程跑，避免 __ModuleLoader__ 复用）
      ══════════════════════════════════════════════════════════════════ */
   console.log('\n== PART 2: 标题栏磨砂注入链（假 DOM）==')
-  const scenarios = ['default', 'off', 'legacy-off', 'legacy-on', 'pseudo', 'no-header', 'no-wallpaper', 'broken-scope', 'fade-sweep', 'fade-sweep-before']
+  const scenarios = ['default', 'off', 'legacy-off', 'legacy-on', 'pseudo', 'no-header', 'no-wallpaper', 'broken-scope', 'fade-sweep', 'fade-sweep-before', 'remount', 'remount-before']
   for (const sc of scenarios) {
     let out = ''
     try {
@@ -370,6 +370,10 @@ function checkScenario(sc, r) {
   const t = (msg, cond) => assert(cond, '[' + sc + '] ' + msg)
   if (sc === 'default') {
     t('注入发生', r.state.injected === true)
+    // ①(2026-09-17 切会话磨砂消失 bug) 开着磨砂时必须挂上自愈观察器（否则顶栏被重建后只能等 3s）
+    t('★ 自愈观察器已挂载（watch.armed）', !!(r.watch && r.watch.armed === true))
+    t('★ 观察目标 ≥1（稳定容器 + 顶栏父节点/自身）', !!(r.watch && r.watch.targets >= 1))
+    t('★ 未走回退开关（watch.off=false）', !!(r.watch && r.watch.off === false))
     t('半径 px ≥ 12 且等于整屏虚化 30', r.state.px === 30)
     t('诊断 reason 非空', typeof r.state.reason === 'string' && r.state.reason.length > 0)
     t('宿主 header 被标记 data-mpw-hdr-frost', r.hdrFrostAttr === 'el')
@@ -416,6 +420,9 @@ function checkScenario(sc, r) {
     t('?hdrfrost=off → 无半透明属性（彻底关，不是"只关半透明"）', r.translucent === false)
     t('?hdrfrost=off → 无 body 标记', r.bodyFrostEl === null)
     t('?hdrfrost=off → 诊断 reason 说明原因', /hdrfrost=off/.test(r.state.reason))
+    // ①(2026-09-17) 关掉磨砂就必须把自愈观察器一起撤掉：不留观察器、不留回调
+    t('★ ?hdrfrost=off → 自愈观察器未挂载（不留观察器）', !!(r.watch && r.watch.armed === false))
+    t('★ ?hdrfrost=off → 观察器未残留（targets=0）', !!(r.watch && r.watch.targets === 0))
   }
   if (sc === 'legacy-off') {
     t('?hdrfrost=legacy + 三个开关全关 → 不注入（旧门控语义）', r.state.injected === false)
@@ -429,6 +436,7 @@ function checkScenario(sc, r) {
     t('?hdrblur=pseudo → 不注入元素（走宿主伪元素对照）', r.state.injected === false)
     t('?hdrblur=pseudo → body 标记被清（伪元素兜底生效）', r.bodyFrostEl === null)
     t('?hdrblur=pseudo → reason 说明对照模式', /hdrblur=pseudo/.test(r.state.reason))
+    t('★ ?hdrblur=pseudo → 自愈观察器也撤掉（没有元素层可补）', !!(r.watch && r.watch.armed === false))
   }
   if (sc === 'no-header') {
     t('找不到宿主 header → 不注入且不抛错', r.state.injected === false)
@@ -464,6 +472,33 @@ function checkScenario(sc, r) {
     //   若这里不红，说明上面的断言没有分辨力（假绿）。
     t('（对照）旧写法下 rail 确实被内联 display:none（证明断言有分辨力）', r.railDisplay === 'none')
     t('（对照）旧写法下第三方 fade 也被内联 display:none（证明新断言有分辨力）', r.tpFadeDisplay === 'none')
+  }
+  /* ①(2026-09-17 切会话磨砂消失 bug) 顶栏被宿主重建 ⇒ 磨砂必须**自己**回来（不能靠 3s 保险：
+     本进程 setInterval 是空桩）。断言分三层：观察器挂上了 / 幂等没堆实例 / 重建后确实补回来了。 */
+  if (sc === 'remount') {
+    const rm = r.remount || {}
+    t('★ 观察器已挂载（watch.armed）', !!(rm.watchBefore && rm.watchBefore.armed === true))
+    t('★ 观察目标含稳定容器 + 顶栏父节点（targets ≥ 2）', !!(rm.watchBefore && rm.watchBefore.targets >= 2))
+    t('★ 幂等：连调 5 次 sync 不新建观察器实例（桩 created 不增）',
+      rm.moCreated === rm.moCreatedBeforeFire)
+    t('★ 幂等：任一时刻只有 1 个活着的手动观察器实例（不堆叠）', rm.moLive === 1)
+    t('★ 顶栏重建后磨砂层自己回来了（不依赖 3s 保险；本进程里它不存在）', rm.recovered === true)
+    t('★ 由观察器触发补同步（watch.hits ≥ 1）', typeof rm.hits === 'number' && rm.hits >= 1)
+    t('★ 恢复很快（< 300ms；去抖 50ms + 一次同步）', typeof rm.recoveredMs === 'number' && rm.recoveredMs < 300)
+    t('★ 新顶栏里是**我们注入的层**（.mpw-hdrFrost 是新顶栏的第一个子节点）', rm.newHdrFrostEl === true)
+    t('★ 新顶栏被重新标记 data-mpw-hdr-frost=el', rm.newHdrMarked === 'el')
+    t('★ 新顶栏的半透明底也补上了（模糊不会被不透明底挡住）', rm.newHdrTranslucent === true)
+    t('★ 诊断 injected=true（真机 diag 同一字段，可自证）', rm.injected === true)
+    // 说明：被丢弃的旧顶栏节点（已脱离文档）里残留的那份层无需清理 ——
+    // document.querySelector 只搜文档树，cleanup 不会误命中它；这里不做无意义断言。
+  }
+  if (sc === 'remount-before') {
+    // 反向对照：源码里删掉"挂自愈观察器"那一行（= 修复前行为）⇒ 观察器不存在、层永远不回来。
+    // 这一条只要变绿，就说明 remount 的断言没有分辨力（假绿）。
+    const rm = r.remount || {}
+    t('（对照）修复前：观察器未挂载', !!(rm.watchBefore && rm.watchBefore.armed === false))
+    t('（对照）修复前：顶栏重建后磨砂层**没有**回来（证明断言有分辨力）', rm.recovered === false)
+    t('（对照）修复前：没有观察器触发（hits=0）', rm.hits === 0)
   }
 }
 
@@ -522,6 +557,10 @@ async function runChild(sc) {
     'broken-scope': { settings: { enabled: true, image: true, unifyTint: true, unifyAmount: 30 }, search: '', breakScope: true },
     'fade-sweep': { settings: { enabled: true, image: true, unifyTint: true, unifyAmount: 30 }, search: '' },
     'fade-sweep-before': { settings: { enabled: true, image: true, unifyTint: true, unifyAmount: 30 }, search: '', revertFadeSweep: true },
+    // ①(2026-09-17 用户实测"切会话时顶栏磨砂先消失、约 3 秒才回来")：顶栏被宿主重建后的自愈
+    remount: { settings: { enabled: true, image: true, unifyTint: true, unifyAmount: 30 }, search: '' },
+    // 反向对照：把"挂自愈观察器"那一行从源码里删掉（= 修复前的旧行为）⇒ 断言必须变红
+    'remount-before': { settings: { enabled: true, image: true, unifyTint: true, unifyAmount: 30 }, search: '', revertRemount: true },
   }[sc]
 
   let clientPath = CLIENT
@@ -567,6 +606,20 @@ async function runChild(sc) {
     clientPath = path.join(TMP, 'client-fade-sweep-before.js')
     fs.writeFileSync(clientPath, cut)
   }
+  if (SCEN.revertRemount) {
+    // 反向对照用：把 syncHeaderFrost 末尾"挂自愈观察器"那一行删掉 = **修复前的旧行为**
+    //   （宿主重建顶栏丢掉注入层后，只能等 3s 低频保险；本测试环境里 setInterval 是空桩
+    //    ⇒ 层永远不会回来）。用来证明 remount 断言真的能分辨修复前后（不是假绿）。
+    const raw = fs.readFileSync(CLIENT, 'utf8')
+    const ARM_LINE = '\t\t\t\ttry { armHeaderFrostWatch(); } catch (e) { mpwErr("armHeaderFrostWatch", e); }\n'
+    if (raw.indexOf(ARM_LINE) < 0) {
+      console.log('__RESULT__' + JSON.stringify({ remountFail: '测试自身失败：找不到 armHeaderFrostWatch() 调用行（闸门写法变了？同步改测试）' }))
+      return
+    }
+    const cut = raw.replace(ARM_LINE, '\t\t\t\t/* 变异用例：不挂自愈观察器（= 修复前行为） */\n')
+    clientPath = path.join(TMP, 'client-remount-before.js')
+    fs.writeFileSync(clientPath, cut)
+  }
 
   class FakeStyle {
     constructor() { this._p = new Map() }
@@ -585,6 +638,14 @@ async function runChild(sc) {
     constructor(tag = 'div', cls = '') {
       this.tagName = String(tag).toUpperCase(); this.className = cls; this.style = new FakeStyle()
       this.children = []; this._attrs = new Map(); this.parentElement = null; this.nodeType = 1
+      // ①(2026-09-17 切会话磨砂消失 bug) 真 DOM 的 classList：自愈观察器的回调靠
+      //   `n.classList.contains('mpw-hdrFrost')` 区分"我们自己插的层"与"宿主重建"，桩里必须有。
+      const self = this
+      this.classList = {
+        contains: (c) => String(self.className || '').split(/\s+/).includes(c),
+        add: (c) => { if (!self.classList.contains(c)) self.className = (self.className ? self.className + ' ' : '') + c },
+        remove: (c) => { self.className = String(self.className || '').split(/\s+/).filter((x) => x && x !== c).join(' ') },
+      }
     }
     setAttribute(k, v) { this._attrs.set(k, v === undefined ? '' : String(v)) }
     getAttribute(k) { return this._attrs.has(k) ? this._attrs.get(k) : null }
@@ -607,6 +668,27 @@ async function runChild(sc) {
     getBoundingClientRect() { return { x: 0, y: 0, width: 1200, height: 48, top: 0, left: 0, right: 1200, bottom: 48 } }
     get firstChild() { return this.children[0] || null }
   }
+
+  /* ①(2026-09-17 切会话磨砂消失 bug) 可手动触发的 MutationObserver 桩（只覆盖生产代码用到的 API）：
+     observe/disconnect/takeRecords + 静态 fire（把一条 mutation 派发给"仍在观察该目标"的实例）。
+     为什么必须有它：本机无头环境没有真 DOM，而"顶栏被宿主重建后磨砂能不能自己回来"正是本轮
+     bug 的唯一判据；又因为桩里 `setInterval` 是空的（_stub.mjs），层被丢掉之后**唯一**能把它
+     补回来的通路就是自愈观察器 ⇒ 断言天然有分辨力（修复前必红）。 */
+  class FakeMO {
+    constructor(cb) { this.cb = cb; this.targets = []; FakeMO.instances.push(this); FakeMO.created++ }
+    observe(t, o) { this.targets.push({ t, o }) }
+    disconnect() { this.targets = [] }
+    takeRecords() { return [] }
+    static fire(target, added, removed) {
+      const rec = { target, addedNodes: added || [], removedNodes: removed || [] }
+      for (const inst of FakeMO.instances) {
+        if (!inst.targets.some((x) => x.t === target)) continue
+        try { inst.cb([rec], inst) } catch {}
+      }
+    }
+  }
+  FakeMO.instances = []; FakeMO.created = 0
+  globalThis.__FakeMO = FakeMO
 
   /* ── 极简选择器匹配器（只覆盖本插件 CSS/JS 里实际出现的语法）────────────────
      tag / .class / [attr] / [attr="v"] / [attr*="v"] / [attr^="v"] / [attr$="v"] / :not(...)，
@@ -686,7 +768,19 @@ async function runChild(sc) {
   const body = new FakeEl('body', '')
   const html = new FakeEl('html', '')
   const noHeader = sc === 'no-header'
-  globalThis.document.querySelector = (sel) => (noHeader ? null : (/wSkVaW_header/.test(sel) ? hdr : null))
+  /* ①(2026-09-17 切会话磨砂消失 bug) 重挂载场景的装置：真机结构 = 稳定容器 > 顶栏
+     （`div[data-slot="main.conversation"] > header.wSkVaW_header`；真机实测切会话时顶栏换新、
+     容器不换 ⇒ 观察器就挂在容器上）。 */
+  const REMOUNT = sc === 'remount' || sc === 'remount-before'
+  const convRoot = new FakeEl('div', ''); convRoot.setAttribute('data-slot', 'main.conversation')
+  if (REMOUNT) { convRoot.appendChild(hdr); globalThis.MutationObserver = globalThis.__FakeMO }
+  globalThis.__hdrNow = hdr
+  globalThis.document.querySelector = (sel) => {
+    if (noHeader) return null
+    if (/wSkVaW_header/.test(sel)) return globalThis.__hdrNow
+    if (REMOUNT && /main\.conversation/.test(sel)) return convRoot
+    return null
+  }
   // ②(2026-09-16) 壁纸层三件套：没有它们 applyFromStorageInner 会早退（`if (!img||!video||!wrap) return`），
   //   rail 对比补偿（refreshRailInk）这个调用点就走不到 → 回归断言会变成"永远量不到"的假绿/假红。
   const bgWrapEl = new FakeEl('div', 'mpw-bgWrap'); bgWrapEl.id = 'mpw-bgWrap'
@@ -739,6 +833,43 @@ async function runChild(sc) {
   const syncRes = T.sync()
   const state = T.state() || {}
   const el = T.frostEl()
+
+  /* ①(2026-09-17 切会话磨砂消失 bug) 顶栏重挂载自愈的**行为**断言：
+     · 本进程 `setInterval` 是空桩（_stub.mjs）⇒ 3s 低频保险完全不存在，层丢掉后能补回来的
+       唯一通路就是自愈观察器（这就是红/绿分水岭，修复前必红）；
+     · 触发装置 = 宿主重建顶栏：真机实测 header 节点换新、`[data-slot="main.conversation"]`
+       容器不换 ⇒ 手动向容器派发一条 childList mutation（added=新顶栏）； */
+  let remountOut = null
+  if (REMOUNT) {
+    const before = T.watch()
+    for (let i = 0; i < 5; i++) T.sync()               // 幂等：连调 5 次不得堆出第二个观察器
+    const afterIdem = T.watch()
+    const madeBeforeFire = globalThis.__FakeMO.created
+    const hdr2 = new FakeEl('header', 'wSkVaW_header')
+    convRoot.removeChild(globalThis.__hdrNow)
+    convRoot.appendChild(hdr2)
+    globalThis.__hdrNow = hdr2
+    const t0 = Date.now()
+    globalThis.__FakeMO.fire(convRoot, [hdr2], [])
+    let recoveredMs = null
+    while (Date.now() - t0 < 1000) {
+      if (T.frostEl()) { recoveredMs = Date.now() - t0; break }
+      await new Promise((r) => setTimeout(r, 10))
+    }
+    const st2 = T.state() || {}
+    remountOut = {
+      watchBefore: before, watchAfterIdem: afterIdem,
+      moCreatedBeforeFire: madeBeforeFire, moCreated: globalThis.__FakeMO.created,
+      moLive: globalThis.__FakeMO.instances.filter((x) => x.targets.length).length,
+      recovered: !!T.frostEl(), recoveredMs,
+      injected: !!st2.injected, hits: (T.watch() || {}).hits,
+      newHdrFrostEl: !!(hdr2.querySelector(':scope > .mpw-hdrFrost')),
+      newHdrTranslucent: hdr2.hasAttribute('data-mpw-hdr-translucent'),
+      newHdrMarked: hdr2.getAttribute('data-mpw-hdr-frost'),
+      oldHdrHasFrostEl: !!(hdr.querySelector(':scope > .mpw-hdrFrost')),
+    }
+  }
+
   const collected = (() => { try { return T.collect() } catch { return null } })()
   console.log('__RESULT__' + JSON.stringify({
     syncOk: !!(syncRes && syncRes.ok),
@@ -762,5 +893,8 @@ async function runChild(sc) {
     backdropFilter: el ? el.style.backdropFilter : null,
     webkitBackdropFilter: el ? el.style.webkitBackdropFilter : null,
     hdrFrostBg: html.style.getPropertyValue('--mpw-hdr-frost-bg'),
+    // ①(2026-09-17 切会话磨砂消失 bug) 自愈观察器现场 + 重挂载恢复结果
+    watch: (() => { try { return T.watch ? T.watch() : null } catch { return null } })(),
+    remount: remountOut,
   }))
 }
