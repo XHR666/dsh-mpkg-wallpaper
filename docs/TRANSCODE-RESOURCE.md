@@ -139,7 +139,7 @@ ffprobe -v error -select_streams a -show_entries stream=codec_name,profile,chann
 node tools/transcode-limit-test.mjs      # 43 断言：闸门/缓存复用/并发/上限/取消/内存准入/客户端接线/磁盘卫生
 ```
 
-已接入 `tools/check.sh`（第 5/11 步）。
+已接入 `tools/check.sh`（第 5/12 步）。
 
 **磁盘卫生（硬要求）**：本测试曾因"为了验 512MB 上限而造 6×128MB 假产物"把盘写满。
 现在：①夹具全部 ≤1MB（产物桩只写 4KB，上限用 `DSH_WE_TRANSCODE_MAX_BYTES` 压到 **KB 级**验证）；
