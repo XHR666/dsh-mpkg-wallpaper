@@ -9,5 +9,13 @@ dsh-mpkg-wallpaper-3.5.0.tgz
 
 # ⓪(2026-09-17 对抗性审查) 探针证据目录：tools/*.mjs 生成的截图/JSON（每次跑 A/B 都会重写，属草稿，不入库）
 tools/probe-out/
+# ①(2026-09-17 单文件 bundle 轮) 构建产物目录：dist/ 里的 .mjs **是 lib/*.js 的纯派生物**
+#   （tools/build-bundle.mjs 内联生成；两次构建 sha256 逐字节相同，见 tools/bundle-equivalence-test.mjs 第②节）。
+#   为什么不入库：内容与被跟踪的 lib/ 逐字节重复（342KB 级），提交只会带来"改了 lib 忘了重跑 bundle"的漂移；
+#   而 lib/liquid-glass-bundle.js 之所以入库，是因为它是**运行期输入**（被 tools/inline-lg-bundle.mjs 写进
+#   client.js 模板），不是单纯的发布派生物。发布时用 `node tools/build-bundle.mjs` 现生成，
+#   机器可读摘要落在已被忽略的 tools/probe-out/bundle-manifest.json（同 probe-out 惯例）。
+#   `dist/` 也不在 package.json 的 files 白名单里 ⇒ npm 包不会夹带（tools/integrity-check.mjs 第⑨节机器断言）。
+dist/
 # 误重定向产生的垃圾（如 `ffmpeg -version > -version`）
 -version

@@ -12,12 +12,12 @@ cd "$(dirname "$0")/.."
 fail=0
 step() { printf '\n\033[1m== %s ==\033[0m\n' "$1"; }
 
-step "1/10 语法检查 lib/*.js"
+step "1/11 语法检查 lib/*.js"
 for f in lib/*.js; do
   if node --check "$f"; then echo "  ✓ $f"; else echo "  ✗ $f 语法错误"; fail=1; fi
 done
 
-step "2/10 面板冒烟（含 CSS 模板闭合 / h 声明 / 花括号配平 / 渲染）+ P-66 面板健壮性/语言回归 + 选择器（第13条）回归 + 壁纸层可见性（.mpw-bgWrap）回归 + 壁纸持久化（刷新不丢）回归"
+step "2/11 面板冒烟（含 CSS 模板闭合 / h 声明 / 花括号配平 / 渲染）+ P-66 面板健壮性/语言回归 + 选择器（第13条）回归 + 壁纸层可见性（.mpw-bgWrap）回归 + 壁纸持久化（刷新不丢）回归"
 node tools/panel-smoke.mjs || fail=1
 # ①(第13条 用户点名"长期没修好"的 bug) 选择文件夹/选择文件的选择器：
 #   滚动位置（重渲染/容器被重建后不跳顶）、不抢焦点、键盘导航、500 项大目录、滚轮不串联宿主。
@@ -47,20 +47,20 @@ node tools/bgwrap-visible-test.mjs || fail=1
 node tools/persist-test.mjs || fail=1
 
 if [ "${1:-}" != "--quick" ]; then
-  step "3/10 CSS 组合矩阵（512 全组合 + 600 随机 + 边界；8 类历史回归断言）"
+  step "3/11 CSS 组合矩阵（512 全组合 + 600 随机 + 边界；8 类历史回归断言）"
   node tools/css-matrix.mjs || fail=1
 else
-  step "3/10 组合矩阵（已按 --quick 跳过）"
+  step "3/11 组合矩阵（已按 --quick 跳过）"
 fi
 
-step "4/10 场景看门狗/调试参数回归（批次15：B1/B3/B5 + 作用域修复 P0）"
+step "4/11 场景看门狗/调试参数回归（批次15：B1/B3/B5 + 作用域修复 P0）"
 node tools/scene-watchdog-test.mjs || fail=1
 
 # 批次18 / B6：渲染器沙箱（去 allow-same-origin）+ 场景级短期 token
 # 契约 we-scene-demo/RENDERER-SANDBOX-CONTRACT.md；两侧各自回归，宿主侧只走拒绝路径（不落盘）。
 # ①(2026-09-16 I 项) 网页（web）壁纸：类型判定（内容优先）/ sandbox 最小必要集 /
 #   shim 注入顺序 / shim API 与参考实现的差异 / 作者脚本抛错兜底 / 无 GPL 代码 —— 见 docs/WEB-WALLPAPER.md
-step "5/10 B6 沙箱与场景 token + 网页壁纸 shim 沙箱（客户端模式/回退 + 宿主签发与 Origin:null 闸门）"
+step "5/11 B6 沙箱与场景 token + 网页壁纸 shim 沙箱（客户端模式/回退 + 宿主签发与 Origin:null 闸门）"
 node tools/scene-sandbox-test.mjs || fail=1
 node tools/host-sandbox-token-test.mjs || fail=1
 node tools/web-wallpaper-test.mjs || fail=1
@@ -76,7 +76,7 @@ node tools/web-interaction-test.mjs || fail=1
 node tools/transcode-limit-test.mjs || fail=1
 
 # ①(第16项) 发布前完整性自检：必需文件/package.json 字段/files 白名单/个人路径/凭据形态/图标/门禁脚本在位
-step "6/10 发布完整性自检（第16项：文件齐全、元数据、白名单、无个人路径与凭据）"
+step "6/11 发布完整性自检（第16项：文件齐全、元数据、白名单、无个人路径与凭据）"
 node tools/integrity-check.mjs || fail=1
 
 # ①(2026-09-15 用户第 1 条反馈「扫描音频的速度能否快些」)
@@ -87,7 +87,7 @@ node tools/integrity-check.mjs || fail=1
 #                    + 真包与**规格字面量参考实现**逐项比对。
 #                    （2026-09-16 洁净室重写 P-89：不再读取/切片渲染器文件，详见 THIRD-PARTY.md）
 #   scene-audio-route-test：真 index.js 路由桩（206 只回 64KB / 预检 / 探测 JSON / 安全）。
-step "7/10 音频扫描提速（惰性索引 + Range/探测路由；真包与规格参考实现逐项一致）"
+step "7/11 音频扫描提速（惰性索引 + Range/探测路由；真包与规格参考实现逐项一致）"
 node tools/audio-scan-test.mjs || fail=1
 node tools/scene-audio-route-test.mjs || fail=1
 
@@ -96,7 +96,7 @@ node tools/scene-audio-route-test.mjs || fail=1
 #   语义门禁：四类（独立视频 / TEX 内嵌 / 无视频 / 多视频）+ mip0 LZ4 / 条目级 LZ4 / 前缀不可判定
 #   全部与**旧实现**逐项比 ref 与 sha256；语料每个 .tex 的"前缀判定"不许说谎；缓存 O(1)；
 #   落盘缓存文件名（hash 公式）与内容 sha256 与改前一致（升级后不重抽）。
-step "8/10 scene 视频索引（应用壁纸关键路径；旧实现逐项一致 + 缓存 + 缓存文件同名同内容）"
+step "8/11 scene 视频索引（应用壁纸关键路径；旧实现逐项一致 + 缓存 + 缓存文件同名同内容）"
 node tools/scene-video-test.mjs || fail=1
 
 # ①(2026-09-16 第三个视觉 bug 定案轮) 「顶栏磨砂 / 顶栏描边 / 时间线条」的**真机复刻 A/B**：
@@ -106,7 +106,7 @@ node tools/scene-video-test.mjs || fail=1
 #   本步改用结构性判据（z-index 正负 / 层可见性 / 描边 alpha / rail 晕），并强制
 #   "before 变体必须测到旧 bug、after 变体必须测到已修复" ⇒ 探针自身有分辨力（防"假绿"）。
 #   证据落盘：tools/probe-out/replica-ab.txt 与 replica-{before,after}/{measure.json,shot.png}
-step "9/10 真机复刻 A/B（磨砂层叠 / 描边恢复 / rail 反色晕；before↔after 双向断言）"
+step "9/11 真机复刻 A/B（磨砂层叠 / 描边恢复 / rail 反色晕；before↔after 双向断言）"
 node tools/header-rail-replica.mjs --both || fail=1
 
 # ①(2026-09-17 第 1 项「壁纸插件对 better-sidebar 的适配」) 两段链路都曾**静默失效**：
@@ -117,8 +117,24 @@ node tools/header-rail-replica.mjs --both || fail=1
 #   同名后同断言必须变红（变异用例，防假绿）/ apply() 页面加载路径即写 body 属性（桩 DOM 属性表）/
 #   浮窗规则必须带 0.16 版本门控 / 已装版本的产物里我们依赖的 DOM 锚点仍在（金丝雀）。
 #   真机 DOM 证据（0.19.1 真页面）：node tools/bs-compat-probe.mjs（见 docs/BETTER-SIDEBAR-COMPAT.md）
-step "10/10 better-sidebar 适配（/ping 版本链路 + 页面加载期版本门控 + 锚点金丝雀）"
+step "10/11 better-sidebar 适配（/ping 版本链路 + 页面加载期版本门控 + 锚点金丝雀）"
 node tools/better-sidebar-compat-test.mjs || fail=1
+
+# ①(2026-09-17 单文件 bundle 轮 / MASTER-TODO §5 第 6 项)「npm + 单文件 bundle 两种装载」的机器门禁：
+#   单文件装载（README 方式四）是**只装宿主端**的降级通道；产物一旦与 lib/*.js 漂移（少一条路由、
+#   Range/206 语义变了、ping 键变了、导出面变了），用户侧就是"静默半坏"。本步：
+#   ① 重新构建 dist/dsh-mpkg-wallpaper.bundle.mjs 并核对 manifest（sha256 + 字节数 + 模块表）；
+#   ② 两次构建**字节级一致**（产物可复现 ⇒ release 页能公布哈希让人复算）；
+#   ③ 同一套路由断言分别打源码与 bundle（各自独立子进程 + 独立 DSH_HOME 夹具；235MB 的真 scene.pkg
+#      用**符号链接**引入，夹具每份 <1MB）⇒ 路由表与 11 组路由行为逐字段一致；
+#   ④ 两种真实装载布局的降级边界：隔离目录（ping.version=null、/lg/* 404）↔ 伴生目录（版本一致、
+#      /lg/* 与源码逐字节相同）；
+#   ⑤ 变异对照（/raw 路由改名 / ping 载荷改 / 少一个导出）必须让门禁变红 —— 防假绿。
+#   产物与摘要：dist/dsh-mpkg-wallpaper.bundle.mjs、tools/probe-out/bundle-manifest.json（都不入库）；
+#   设计与装载边界见 README「方式四」、发布流程见 docs/RELEASE.md
+step "11/11 单文件 bundle 等价性（构建可复现 + 源码↔bundle 路由逐字段对拍 + 装载布局 + 变异对照）"
+node tools/bundle-equivalence-test.mjs || fail=1
+
 
 echo
 if [ "$fail" = 0 ]; then

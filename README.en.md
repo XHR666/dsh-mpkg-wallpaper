@@ -338,6 +338,70 @@ git clone https://github.com/XHR666/dsh-mpkg-wallpaper.git $DSH_HOME/profiles/<p
 
 Uninstall: `dsh plugin --profile web remove dsh-mpkg-wallpaper`.
 
+### Option 4: single-file bundle (offline / drop-in; **host half only**)
+
+If you would rather not have DSH resolve a package (no npm/pnpm network), inline the host half into one
+self-contained ESM file and register that file:
+
+```bash
+cd /path/to/dsh-mpkg-wallpaper
+node tools/build-bundle.mjs          # output: dist/dsh-mpkg-wallpaper.bundle.mjs (~342KB, sha256 printed)
+node tools/build-bundle.mjs --check  # parity vs. source: exports / 39 routes / ping JSON shape (20 assertions)
+node tools/bundle-equivalence-test.mjs   # full equivalence gate: same route assertions on source and bundle (38)
+```
+
+Copy `dist/dsh-mpkg-wallpaper.bundle.mjs` anywhere (e.g. `~/.dsh/plugins/`), register it by **absolute path**
+in the profile's `cordis.patch.yml`, then restart `dsh web`:
+
+```yaml
+# $DSH_HOME/profiles/<profile>/cordis.patch.yml
+- insert:
+    - id: dsh-mpkg-wallpaper
+      name: /absolute/path/dsh-mpkg-wallpaper.bundle.mjs   # ← the .mjs file itself
+```
+
+**What this mode does and does not load** (code facts, not guesses):
+
+| Item | Option 4 behaviour | Evidence |
+| --- | --- | --- |
+| Host half (upload/streaming + Range, scene extraction, audio listing, settings persistence, diagnostics — 39 routes) | **Complete** (`lib/index.js` + `pkg-extract.js` + `web-wallpaper.js` all inlined; external deps are node builtins only) | `node tools/build-bundle.mjs --check`: route table equal, 39/39 |
+| `GET /api/mpkg-wallpaper/ping` | Same key set as source (`ok`, `version`, `betterSidebar`, `betterSidebarVersion`) | same `--check` run, section ③ |
+| **Client half (settings panel / wallpaper layer / frost)** | **Not loaded.** The single file only exports the host surface (`apply`/`inject`/`__mpwTest`) | DSH discovers client halves **per package**: it scans host Loader entries for packages declaring `dsh.client` and resolves `exports["./client"]` (`@deepseek-ai/dsh-client-modules/lib/index.js:66-70,153-165,650-658`). A bare `.mjs` has no package.json ⇒ no `dsh.client` declaration |
+| `GET /api/mpkg-wallpaper/lg/*` (legacy WebGL hosting route, no client caller) | **404** unless a `liquid-glass/` directory sits next to the bundle; `cp -r lib/liquid-glass <bundle dir>/` makes it byte-identical to source | that route locates `liquid-glass/` via `import.meta.url` (`lib/index.js:3304`); asserted in both layouts by `--check` |
+| `ping.version` | `null` when the bundle's **parent** directory has no `package.json` (version display only) | same `new URL('../package.json', import.meta.url)` (`lib/index.js:1622`); equals source when a companion `package.json` is present |
+| "Check for updates / one-click update" | `update-check` returns 500 without a companion `package.json`; `update-apply` writes files **next to/above the bundle** ⇒ **do not use one-click update in Option 4** | `lib/index.js:1801/1812/1847-1849` |
+| Uninstall | delete the `.mjs` and its line in `cordis.patch.yml` | — |
+
+> Bottom line: **Option 4 is a host-side-only, degraded install** (great for offline/emergency use or for reusing
+> the routes from another host). Use Options 1–3 for the full UI. The artifact is **not committed**
+> (`dist/` is gitignored: it is a pure derivative of `lib/*.js` and two builds are byte-identical, asserted in
+> `tools/bundle-equivalence-test.mjs` §②; generate it at release time).
+
+## Degraded behaviour without a Wallpaper Engine install (missing WE / non-Windows)
+
+"WE installed" means the Steam build of Wallpaper Engine (appid **431960**). The host locates it with
+`locateWallpaperEngine()` (`lib/index.js:303-327`): Windows registry `HKCU\Software\Valve\Steam\SteamPath` →
+common Steam dirs (`C:\Program Files (x86)\Steam`, `D:\Steam`, …) → non-Windows Steam dirs
+(macOS `~/Library/Application Support/Steam`, Linux/Android `~/.local/share/Steam`, WSL `/mnt/c/...`) →
+any library listed in `steamapps/libraryfolders.vdf` containing 431960 → and it only accepts a library where
+`<lib>/steamapps/common/wallpaper_engine/wallpaper32.exe` exists. **If nothing matches it returns `null`**, and
+everything downstream follows the degraded paths below (this Linux box takes exactly that path):
+
+| Situation | Actual behaviour (with code location) |
+| --- | --- |
+| WE not installed (or `wallpaper32.exe` not found) | `GET /api/mpkg-wallpaper/steam-inventory` returns **200 `{ok:true, installDir:null, wallpapers:[]}`** — not an error, no 500 (`lib/index.js:2967-2968`) |
+| User clicks "scan local wallpaper library" | List stays empty plus an error line **"Wallpaper Engine install not found (requires Windows + Steam Wallpaper Engine)"** (`lib/client.js:8781` tests `!d.installDir`, string at `lib/client.js:11555`); an empty list also shows "No usable wallpapers found (or not a Windows environment)" (`lib/client.js:10419/11553`). **The scan itself does not fail** — it just returns nothing |
+| WE installed but `projects/myprojects`, `projects/defaultprojects` and `steamapps/workshop/content/431960` are all absent | each root is checked separately (`scan()` starts with `if (!existsSync(root)) return`, `lib/index.js:2976-2977`) ⇒ empty list, and the "install not found" message is **not** shown (because `installDir` is non-null); the UI only shows "No usable wallpapers found (or not a Windows environment)" / an empty rotation group. **Not implemented**: there is no *dedicated* message for "WE installed but its asset dirs are missing" (the existing copy lumps it together with "not Windows"); to diagnose, inspect `installDir`/`wallpapers` from `steam-inventory` |
+| Non-Windows / mobile | same as "WE not installed": `installDir=null` (the registry branch returns null when `process.platform !== 'win32'`, `lib/index.js:282-284`); all Steam probe paths are plain strings, so `existsSync` is simply false — no side effects |
+| WE native playlists (`config.json` → `general.playlists`) | only when `installDir` exists and `config.json` parses; otherwise `playlists` is absent ⇒ after its first scan the client writes `rotSeeded:true` and **stops re-seeding** the rotation list (`lib/client.js:8782-8793`), so user-defined rotations are not overwritten on every scan |
+| **Still works without WE** (the degradation is not "everything breaks") | (1) manual folder picking: `/list-dirs` + `/custom-dir` browse any drive/folder and use it as the wallpaper source; (2) importing `.mpkg` directly (hybrid mode streams from the host, no 600MB cap); (3) URL / local-file web and video wallpapers; (4) scene extraction, audio listing, settings persistence and diagnostics do not depend on WE at all |
+| Host half entirely unavailable (Option 4 missing / port closed) | the client's `/ping` probe fails ⇒ falls back to **browser-only mode**: status line "Host unavailable (fell back to browser-only mode, 600MB cap)" (`lib/client.js:10203/11603`) and the library button reports "Host unavailable — cannot scan the local library" (`lib/client.js:8774/11554`); assets above 600MB cannot be handled in browser-only mode (see Limitations) |
+| `ffmpeg` missing (video transcoding; unrelated to WE) | `GET /api/mpkg-wallpaper/ffmpeg-check` returns **200 `{ok:true, found:false, source:null, path:null, version:null}`** (`lib/index.js:3089-3090`); the client shows "not installed" and only starts the download chain when the user clicks; directly playable videos are never transcoded |
+
+> In one line: **no WE install = you lose the "auto-discover the local library" convenience channel**; the plugin
+> still works. Every degraded path returns an empty list with explicit copy and keeps the manual folder/upload
+> channels — nothing fails silently and nothing returns 500.
+
 ## Limitations
 
 - **Scene wallpapers cannot be fully dynamic on the web** (see [Scene wallpaper adaptation](#scene-wallpaper-adaptation)); mpkg adjustable options are read-only (apply changes in the WE app)
@@ -399,15 +463,19 @@ dsh-mpkg-wallpaper/
 │                     # audio scan: audio-scan-bench.mjs (timing table) / audio-scan-test.mjs (spec assertions · no full inflate · cache)
 │                     #             scene-audio-route-test.mjs (/raw Range + probe route + security)
 │                     # web wallpapers: web-wallpaper-test.mjs (detection / sandbox / injection order / shim API diff / error boundary / no GPL)
+│                     # single-file install: build-bundle.mjs (inlines lib/index.js + relative deps into one ESM; `--check` for source parity)
+│                     #                      bundle-equivalence-test.mjs (gate step 11: same route assertions on source and bundle + mutation controls)
 │                     # note: the research-era Python tools (unmpkg/tex2png/mdl_explorer/xref) were
 │                     #       **deleted (GPL lineage unresolved, 2026-09-16)** — see `../docs/COPYING-RULES.md` §6
-├── docs/             # developer notes (not shipped): WEB-WALLPAPER.md (web-wallpaper spec / sandbox / API table / limits) etc.
+├── dist/             # build output (**not committed**, gitignored): dsh-mpkg-wallpaper.bundle.mjs (Option 4, generated on demand)
+├── docs/             # developer notes (not shipped): WEB-WALLPAPER.md (web-wallpaper spec / sandbox / API table / limits), RELEASE.md (release preconditions + commands) etc.
 ├── screenshots/      # (moved out of the repo)
 ├── README.md         # Chinese
 ├── README.en.md      # English
 └── THIRD-PARTY.md    # third-party provenance / clean-room record (shipped, MIT-side attribution)
 ```
 > Note: `lib/liquid-glass/` and `lib/liquid-glass-bundle.js` still ship in the npm package because of `files: ["lib"]`, but the **client no longer references them** (WebGL was removed in v3.6.0 in favor of the CSS version); the host still serves the `/api/mpkg-wallpaper/lg` route (no callers). Local backups such as `lib/client.js.bak-*` are excluded by the negative `files` patterns (`!lib/**/*.bak*`) and are **not shipped** — enforced by section ⑨ of `tools/integrity-check.mjs`.
+> Why `dist/` is **not committed**: it is a pure derivative of `lib/*.js` (an inlined artifact) that duplicates tracked sources byte for byte, and two builds are byte-identical (machine-asserted in `tools/bundle-equivalence-test.mjs` §②); committing it would only create drift ("edited lib, forgot to rebuild") . By contrast `lib/liquid-glass-bundle.js` **is** committed because it is a **runtime input** (written into `lib/client.js` as a template constant by `tools/inline-lg-bundle.mjs`), not a release derivative. `dist/` is also outside the `files` whitelist, so the npm package never carries it.
 
 ## Acknowledgements
 

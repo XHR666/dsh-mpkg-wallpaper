@@ -262,7 +262,7 @@ MP4 里 h264+opus、HEVC Main10 这类确定性缺口；探测不出来一律不
 
 > 细节、判据表、内存实测与"实测排除的做法"：[`docs/TRANSCODE-RESOURCE.md`](docs/TRANSCODE-RESOURCE.md)；
 > 回退开关 `?mpwtranscode=legacy`（回到旧行为）/ `aggressive`（连用户设的上限也先探测）；
-> 回归：`node tools/transcode-limit-test.mjs`（43 断言，已接入 `tools/check.sh` 第 5/10 步）。
+> 回归：`node tools/transcode-limit-test.mjs`（43 断言，已接入 `tools/check.sh` 第 5/11 步）。
 
 ## 选择文件夹 / 选择文件：行为契约与快捷键（2026-09-17，第13条）
 
@@ -340,7 +340,67 @@ git clone https://github.com/XHR666/dsh-mpkg-wallpaper.git $DSH_HOME/profiles/<p
 
 > 注：方式三不写入依赖表，市场不显示「已安装」（仅影响显示，不影响功能）。
 
-卸载：`dsh plugin --profile web remove dsh-mpkg-wallpaper`。
+卸载（方式一/二/三）：`dsh plugin --profile web remove dsh-mpkg-wallpaper`。
+
+### 方式四：单文件 bundle（离线 / 拷文件即装；**只装宿主端**）
+
+不想让 DSH 解析包、也没有 npm/pnpm 网络时，可以把宿主端**内联成一个自包含 ESM 文件**再登记：
+
+```bash
+cd /path/to/dsh-mpkg-wallpaper
+node tools/build-bundle.mjs          # 产物：dist/dsh-mpkg-wallpaper.bundle.mjs（约 342KB，sha256 见下方输出）
+node tools/build-bundle.mjs --check  # 与源码对拍：导出面 / 39 条路由 / ping JSON 形状（20 条断言）
+node tools/bundle-equivalence-test.mjs   # 更全的等价性门禁：同一套路由断言分别打源码与 bundle（38 条）
+```
+
+把 `dist/dsh-mpkg-wallpaper.bundle.mjs` 拷到任意目录（例如 `~/.dsh/plugins/`），
+在 profile 的 `cordis.patch.yml` 里按**绝对路径**登记，然后重开 `dsh web`：
+
+```yaml
+# $DSH_HOME/profiles/<profile>/cordis.patch.yml
+- insert:
+    - id: dsh-mpkg-wallpaper
+      name: /绝对路径/dsh-mpkg-wallpaper.bundle.mjs   # ← 指向那个 .mjs 文件本身
+```
+
+**这条路装载了什么 / 没装载什么**（都是代码事实，不是猜测）：
+
+| 项 | 方式四的行为 | 依据 |
+| --- | --- | --- |
+| 宿主端（上传/流式播放/Range、场景提取、音频清单、设置持久化、诊断上报等 39 条路由） | **完整**（`lib/index.js` + `pkg-extract.js` + `web-wallpaper.js` 全部内联，外部依赖只有 node 内建） | `node tools/build-bundle.mjs --check`：路由表 39 条逐项相等 |
+| `/api/mpkg-wallpaper/ping` | `{ok:true, version, betterSidebar, betterSidebarVersion}` 键集合与源码一致 | 同上（`--check` 第③节） |
+| **客户端半（设置面板 / 壁纸层 / 磨砂）** | **不装载**。单文件里只有宿主端导出面（`apply`/`inject`/`__mpwTest`） | 客户端半由 DSH 客户端模块系统按**包**发现：扫描宿主 Loader 条目里声明了 `dsh.client` 的包并解析其 `exports["./client"]`（`@deepseek-ai/dsh-client-modules/lib/index.js:66-70,153-165,650-658`）；裸 `.mjs` 没有 package.json ⇒ 没有 `dsh.client` 声明 |
+| `GET /api/mpkg-wallpaper/lg/*`（遗留 WebGL 托管路由，客户端已不调用） | bundle 旁边没有 `liquid-glass/` 时 **404**；放一份 `cp -r lib/liquid-glass <bundle 目录>/` 即与源码逐字节一致 | 该路由以 `import.meta.url` 定位同目录 `liquid-glass/`（`lib/index.js:3304`）；`--check` 两种布局都断言过 |
+| `ping.version` | bundle 的**上一级目录**没有 `package.json` 时返回 `null`（只影响版本号显示） | 同上是 `new URL('../package.json', import.meta.url)`（`lib/index.js:1622`）；带伴生 `package.json` 时与源码一致 |
+| 「检查更新 / 一键更新」 | `update-check` 在无伴生 `package.json` 时返回 500；`update-apply` 会往 **bundle 同级/上级目录**写文件 ⇒ **不建议在方式四下使用一键更新** | `lib/index.js:1801/1812/1847-1849` |
+| 卸载 | 删掉那个 `.mjs` 与 `cordis.patch.yml` 里那一行即可 | — |
+
+> 结论：**方式四是"宿主端能力"的降级装载**（离线/应急/给非 DSH 宿主复用路由时很好用），
+> 想要完整界面请用方式一/二/三。产物**不入库**（`dist/` 在 `.gitignore` 里：它是 `lib/*.js` 的纯派生物，
+> 两次构建 sha256 逐字节相同，见 `tools/bundle-equivalence-test.mjs` 第②节；发布时现生成即可）。
+
+## 无 WE 安装时的降级行为（Wallpaper Engine 缺失 / 非 Windows）
+
+「WE 安装」指 Steam 版 Wallpaper Engine（appid **431960**）。宿主端用 `locateWallpaperEngine()`
+（`lib/index.js:303-327`）按这个顺序找：Windows 注册表 `HKCU\Software\Valve\Steam\SteamPath` →
+常见 Steam 目录（`C:\Program Files (x86)\Steam`、`D:\Steam`…）→ 非 Windows 的 Steam 目录
+（macOS `~/Library/Application Support/Steam`、Linux/Android `~/.local/share/Steam`、WSL `/mnt/c/...`）→
+各库的 `steamapps/libraryfolders.vdf` 里含 431960 的库 → 只认 `<库>/steamapps/common/wallpaper_engine/wallpaper32.exe`
+存在的那一个。**找不到就返回 `null`**，后续全部走下面的降级路径（本机 Linux 就是这一路）：
+
+| 场景 | 真实行为（含代码位置） |
+| --- | --- |
+| 没装 WE（或找不到 `wallpaper32.exe`） | `GET /api/mpkg-wallpaper/steam-inventory` 返回 **200 `{ok:true, installDir:null, wallpapers:[]}`**（不是错误、不抛 500）—— `lib/index.js:2967-2968` |
+| 客户端点「扫描本地壁纸库」 | 列表保持空 + 顶部报错条 **「未检测到壁纸引擎安装（需 Windows + Steam 版 Wallpaper Engine）」**（`lib/client.js:8781` 判 `!d.installDir`，文案在 `lib/client.js:11555`）；空列表另有提示「未发现可用的壁纸（或不是 Windows 环境）」（`lib/client.js:10419/11553`）。**扫描本身不会报错**，只是没有结果 |
+| 装了 WE 但 `projects/myprojects`、`projects/defaultprojects`、`steamapps/workshop/content/431960` 都不存在 | 每个根目录单独判存在（`scan()` 开头 `if (!existsSync(root)) return`，`lib/index.js:2976-2977`）⇒ 清单为空、**且不弹「未检测到安装」**（因为 `installDir` 非空）；界面只剩「未发现可用的壁纸（或不是 Windows 环境）」/轮播区空提示。**未实现**：这里没有"WE 装了但素材目录缺失"的**专用**提示（现有文案把它和"非 Windows"混在一起），排查时只能看 `steam-inventory` 的 `installDir`/`wallpapers` |
+| 非 Windows / 移动端 | 同"没装 WE"：`installDir=null`（注册表分支 `process.platform !== 'win32'` 直接返回 null，`lib/index.js:282-284`），Steam 目录探测串都是纯字符串、`existsSync` 自然为 false，无副作用 |
+| WE 原生播放列表（`config.json` → `general.playlists`） | 只在 `installDir` 存在且 `config.json` 可解析时才有；否则 `playlists` 缺失 ⇒ 客户端首次扫描后会写 `rotSeeded:true` 并**不再重播种**轮播列表（`lib/client.js:8782-8793`），避免每次扫描都覆盖用户自定义轮播 |
+| **没装 WE 时仍然可用的**（降级不是"功能全废"） | ① 手动选目录：`/list-dirs` + `/custom-dir` 逐级浏览任意盘/目录，选中的目录当壁纸源；② 直接导入 `.mpkg`（hybrid 模式上传到宿主流式播放，无 600MB 上限）；③ 网页/视频类壁纸走 URL 或本地文件；④ 场景提取、音频清单、设置持久化、诊断上报全都不依赖 WE 安装 |
+| 宿主端整体不可用（方式四没装/端口不通） | 客户端探测 `/ping` 失败 ⇒ 回退**纯浏览器模式**：状态行「宿主端不可用（已回退纯浏览器模式，600MB 上限）」（`lib/client.js:10203/11603`），壁纸库按钮报「宿主端不可用，无法扫描本地壁纸库」（`lib/client.js:8774/11554`）；超过 600MB 的素材在纯浏览器模式无法处理（见「限制」） |
+| `ffmpeg` 缺失（视频转码相关，与 WE 安装无关） | `GET /api/mpkg-wallpaper/ffmpeg-check` 返回 **200 `{ok:true, found:false, source:null, path:null, version:null}`**（`lib/index.js:3089-3090`），客户端显示"未装"并只在用户点按后才走下载链；可直读的视频不做转码 |
+
+> 一句话：**没有 WE 安装 = 少了"自动发现本地壁纸库"这一条便利通道**，插件本身照常工作；
+> 所有降级都是"返回空清单 + 明确文案 + 保留手动目录/上传通道"，不会静默失败、也不会报 500。
 
 ## 限制
 
@@ -412,14 +472,18 @@ dsh-mpkg-wallpaper/
 │                     #           scene-audio-route-test.mjs（/raw Range + 探测路由 + 安全）
 │                     # 网页壁纸：web-wallpaper-test.mjs（类型判定/sandbox/注入顺序/shim API 差异/抛错兜底/无 GPL/帧内交互 E13）
 │                     #           web-interaction-test.mjs（坐标/事件整形/开关状态机/沙箱边界/舞台契约/两侧源码对拍）
+│                     # 单文件装载：build-bundle.mjs（把 lib/index.js + 相对依赖内联成一个 ESM；`--check` 与源码对拍）
+│                     #           bundle-equivalence-test.mjs（门禁第 11 步：同一套路由断言打源码与 bundle + 变异对照）
 │                     # 注：研究期的 Python 工具（unmpkg/tex2png/mdl_explorer/xref）
 │                     #     **已删除（GPL 血缘存疑，2026-09-16）**，见 `../docs/COPYING-RULES.md` §6
-├── docs/             # 研发笔记（不进发布包）：WEB-WALLPAPER.md（网页壁纸规格/沙箱/API 表/限制）等
+├── dist/             # 构建产物（**不入库**，.gitignore 忽略）：dsh-mpkg-wallpaper.bundle.mjs（方式四用，现生成）
+├── docs/             # 研发笔记（不进发布包）：WEB-WALLPAPER.md（网页壁纸规格/沙箱/API 表/限制）、RELEASE.md（发布前置与命令）等
 ├── screenshots/      # （已移出仓库，见文末说明）
 ├── README.md         # 本文件（中文）
 └── README.en.md      # 英文说明
 ```
 > 注：`lib/liquid-glass/`、`lib/liquid-glass-bundle.js` 因 `files: ["lib"]` 仍会打进 npm 包，但**客户端不再引用**（WebGL 已在 v3.6.0 移除，改用 CSS 版）；宿主仍保留 `/api/mpkg-wallpaper/lg` 托管路由（无调用方）。本地备份 `lib/client.js.bak-*` 已被 `files` 负向模式（`!lib/**/*.bak*`）排除，**不进发布包**，由 `tools/integrity-check.mjs` 第 ⑨ 节机器断言把关。
+> `dist/` 为什么**不入库**：它是 `lib/*.js` 的纯派生物（内联产物），与被跟踪源码逐字节重复；两次构建 sha256 逐字节相同（`tools/bundle-equivalence-test.mjs` 第②节机器断言），入库只会制造"改了 lib 忘了重跑 bundle"的漂移。对照：`lib/liquid-glass-bundle.js` **入库**是因为它是**运行期输入**（被 `tools/inline-lg-bundle.mjs` 写进 `lib/client.js` 的模板常量），不是发布派生物。`dist/` 也不在 `files` 白名单 ⇒ npm 包不夹带。
 
 ## 致谢
 
