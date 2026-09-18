@@ -26,6 +26,10 @@ import {
 } from '../lib/pkg-extract.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
+
+// ①(2026-09-19 敏感信息加固) 工作区根 = **仓库的上一级**（语料/WE 资产在它下面）：
+// 由**脚本自身位置**推导，兜底默认不再写作者本机绝对路径。优先级不变：参数 > env > 这里。
+const WS = path.resolve(here, '..', '..');
 const argv = process.argv.slice(2);
 const argOf = (k, dv) => { const i = argv.indexOf(k); return i >= 0 && argv[i + 1] ? argv[i + 1] : dv; };
 const RUNS = Math.max(1, Number(argOf('--runs', 3)) || 3);
@@ -35,7 +39,7 @@ function pickRoot() {
   const cands = [
     argOf('--root', ''),
     process.env.MPW_SCENE_ROOT || '',
-    '/root/Desktop/DSHarea/allwallpaper/dd',
+    path.join(WS, 'allwallpaper', 'dd'),
     path.join(here, '..', 'samples', 'wallpapers'),
   ].filter(Boolean);
   for (const c of cands) { try { if (fs.existsSync(c) && fs.statSync(c).isDirectory()) return c } catch { /* 下一个 */ } }

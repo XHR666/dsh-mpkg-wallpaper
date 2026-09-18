@@ -90,7 +90,7 @@ node tools/dir-picker-test.mjs --client /tmp/head-client.js  # git HEAD 旧实�
 ### C 组：真机无头 Firefox A/B（`tools/dir-picker-probe.mjs`，2026-09-17 实跑，一次启动内完成）
 
 真实 GUI（`http://127.0.0.1:3080/`）→ 设置 → 壁纸引擎背景 → 浏览…，把自定义目录切到
-`/root/Desktop/DSHarea`（30 个子目录、`scrollHeight 1510 / clientHeight 256`），注入
+`<工作区根>`（30 个子目录、`scrollHeight 1510 / clientHeight 256`），注入
 `Element.prototype.scrollTop` setter 钩子 + `.mpw_mask/.mpw_props` MutationObserver + `focusin` 监听：
 
 | 观测量 | 旧实现（before，profile 里已安装副本 md5 `6177a538…`） | 新实现（after，`update-plugin.sh` 同步后） |
@@ -105,7 +105,7 @@ node tools/dir-picker-test.mjs --client /tmp/head-client.js  # git HEAD 旧实�
 | 行内按钮 `tabindex` | `null`（可被 Tab 聚焦） | **`-1`** |
 | ↓↓ 后 | — | 活动行=`mpwdir-1`（↓ 下移）、`scrollTop` 不变（不跳顶）、焦点仍在容器 |
 | 列表内部/行的 `focusin` | — | **0 次行焦点**（容器自身 8 次 = 弹窗被重挂 8 次，正是 RC-5 的独立佐证） |
-| End/Enter/Esc 等键盘 | — | Enter 进入活动行目录（实测从 `/root/Desktop/DSHarea` 进到子目录，列表 `rows 30→9`） |
+| End/Enter/Esc 等键盘 | — | Enter 进入活动行目录（实测从 `<工作区根>` 进到子目录，列表 `rows 30→9`） |
 
 证据文件：`tools/probe-out/dirpick-before.json`、`dirpick-after.json`、`dirpick-probe.txt`、
 `dirpick-{before,after}-unreached.png`（早期一次"没走到弹窗"的诊断截图，保留以示过程）。

@@ -25,6 +25,10 @@ import { Writable } from 'node:stream';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(here, '..');
+
+// ①(2026-09-19 敏感信息加固) 工作区根 = **仓库的上一级**（语料/WE 资产/姊妹仓都在它下面）：
+// 由**脚本自身位置**推导，兜底默认不再写作者本机绝对路径。优先级不变：参数 > env > 这里。
+const WS = path.resolve(ROOT, '..');
 let pass = 0, fail = 0;
 // ①(2026-09-17 假绿修复) **曾经的写法是 `ok(n, d)`：第二参（真条件）只当作展示细节打印，
 //   恒真 ⇒ 本文件**永远不会红**（把 /raw 路由改名后仍报「全部通过 pass=25 fail=0」才发现）。
@@ -41,7 +45,7 @@ import { scanSceneAudio, clearPkgAudioIndexCache } from '../lib/pkg-extract.js';
 function findPkg() {
   const i = process.argv.indexOf('--pkg');
   if (i > 0 && process.argv[i + 1]) return { path: process.argv[i + 1], refsChecked: false };
-  const roots = [process.env.MPW_SCENE_ROOT, '/root/Desktop/DSHarea/allwallpaper/dd', path.join(ROOT, 'samples', 'wallpapers')].filter(Boolean);
+  const roots = [process.env.MPW_SCENE_ROOT, path.join(WS, 'allwallpaper', 'dd'), path.join(ROOT, 'samples', 'wallpapers')].filter(Boolean);
   const cands = [];
   for (const r of roots) {
     try { for (const d of fs.readdirSync(r)) { const p = path.join(r, d, 'scene.pkg'); if (fs.existsSync(p)) cands.push(p); } } catch { /* 下一个 */ }

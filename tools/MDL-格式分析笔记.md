@@ -79,10 +79,10 @@ scene.json → objects[i]（含 animationlayers: animation ID + name）
 
 ## 8. 文件清单
 
-- 移动版：`/root/Desktop/DSHarea/mpkg_work/mdl/*.mdl`（7 个）
-- 桌面版真值：`/root/Desktop/DSHarea/mpkg_work/winbin/wallpaper_engine/...`（camera/bars/pistols 已提取，其余在 7z 里共 27 个）
+- 移动版：`<工作区根>/mpkg_work/mdl/*.mdl`（7 个）
+- 桌面版真值：`<工作区根>/mpkg_work/winbin/wallpaper_engine/...`（camera/bars/pistols 已提取，其余在 7z 里共 27 个）
 - 分析脚本：~~`tools/mdl_explorer.py`~~ —— **已删除（GPL 血缘存疑，2026-09-16 P-89；见 `../../docs/COPYING-RULES.md` §6）**。
-  本文档只保留当时的格式观察结论；仓库外的旧副本 `/root/Desktop/DSHarea/mpkg_work/mdl_explorer.py` 不随本仓库分发。
+  本文档只保留当时的格式观察结论；仓库外的旧副本 `<工作区根>/mpkg_work/mdl_explorer.py` 不随本仓库分发。
 
 ## 9. Phase 1.5 新增发现（2026-08-16 第二轮）
 

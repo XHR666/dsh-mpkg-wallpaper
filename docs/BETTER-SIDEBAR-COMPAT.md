@@ -214,7 +214,7 @@ body[data-mpw-bs-version] = "0.19.1"   (body 上的 mpw 属性: data-mpw-bs-vers
 
 ```sh
 # 0) 前提：一个跑着 better-sidebar 的 DSH 页面（本机 3080，或探针实例见下）
-cd /root/Desktop/DSHarea/dsh-mpkg-wallpaper
+cd <仓库根>   # 本仓库（含 package.json 的那一级）
 
 # 1) 真机 DOM 探针（无头 Firefox；只读页面 + 可选合成锚点）
 node tools/hdr-probe-mint-cookie.mjs --authority 127.0.0.1:3080 --out /tmp/ffprobe/cookie.json

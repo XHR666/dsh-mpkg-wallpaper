@@ -94,6 +94,12 @@ node tools/transcode-limit-test.mjs || fail=1
 # ①(第16项) 发布前完整性自检：必需文件/package.json 字段/files 白名单/个人路径/凭据形态/图标/门禁脚本在位
 step "6/12 发布完整性自检（第16项：文件齐全、元数据、白名单、无个人路径与凭据）"
 node tools/integrity-check.mjs || fail=1
+# ①(2026-09-19 敏感信息加固) 密钥/本机绝对路径**常驻扫描**（tracked 全量；秒级，无网络/无浏览器）：
+#   与上面一条**故意并列**而不是并进去，因为覆盖面不同 —— integrity-check ④⑤ 只扫**发布面**（lib/**），
+#   而密钥与本机路径最容易从 docs/tools/CI 配置漏出去（那些目录不进 npm 包、却进公开仓库）。
+#   判据/白名单/退出码见 tools/secret-scan-test.mjs 文件头（白名单逐条写理由，且断言"每条都仍然命中"，
+#   防止白名单腐烂成遮羞布）。**不新增步骤**：integrity-check ⑨b 断言 "N/M" 编号自洽，加一步要全表改分母。
+node tools/secret-scan-test.mjs || fail=1
 
 # ①(2026-09-15 用户第 1 条反馈「扫描音频的速度能否快些」)
 #   惰性音频索引（只读目录表 + 仅候选条目 16 字节头，带 mtime+size 缓存）+
@@ -180,7 +186,7 @@ node tools/token-namespace-test.mjs || fail=1
 
 echo
 if [ "$fail" = 0 ]; then
-  echo "全部通过 ✓  下一步：bash /root/Desktop/DSHarea/update-plugin.sh 然后刷新浏览器"
+  echo "全部通过 ✓  下一步：bash $(cd .. && pwd)/update-plugin.sh 然后刷新浏览器"   # ①(2026-09-19 敏感信息加固) 工作区根按脚本位置推导，不写本机绝对路径
 else
   echo "存在失败项 ✗  修好再同步（不要带着失败项让用户刷新）"
 fi

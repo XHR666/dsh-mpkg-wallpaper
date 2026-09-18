@@ -31,6 +31,10 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.resolve(here, '..')
+
+// ①(2026-09-19 敏感信息加固) 工作区根 = **仓库的上一级**（语料/WE 资产在它下面）：
+// 由**脚本自身位置**推导，兜底默认不再写作者本机绝对路径。优先级不变：参数 > env > 这里。
+const WS = path.resolve(ROOT, '..');
 const argv = process.argv.slice(2)
 const arg = (n, d) => { const i = argv.indexOf('--' + n); return i >= 0 && argv[i + 1] && !argv[i + 1].startsWith('--') ? argv[i + 1] : d }
 const OUT = path.resolve(ROOT, arg('out', 'tools/probe-out'))
@@ -54,7 +58,7 @@ const STORE_KEY = (() => {
 
 /** 固定素材（A/B 必须同一张；本机已有 mpkg 渲染图）。 */
 function findWall () {
-  for (const c of ['/root/Desktop/DSHarea/mpkg_work/头_渲染v4a.png', '/root/Desktop/DSHarea/mpkg_work/Rella_渲染_final.png']) if (fs.existsSync(c)) return c
+  for (const c of [path.join(WS, 'mpkg_work', '头_渲染v4a.png'), path.join(WS, 'mpkg_work', 'Rella_渲染_final.png')]) if (fs.existsSync(c)) return c
   return null
 }
 const WALL = findWall()

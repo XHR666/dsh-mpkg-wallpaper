@@ -30,6 +30,10 @@ import {
 // ①(2026-09-17 夹具纪律) 断言中途抛异常也要清理：两处临时目录都挂到 exit 上。
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(here, '..');
+
+// ①(2026-09-19 敏感信息加固) 工作区根 = **仓库的上一级**（语料/WE 资产/姊妹仓都在它下面）：
+// 由**脚本自身位置**推导，兜底默认不再写作者本机绝对路径。优先级不变：参数 > env > 这里。
+const WS = path.resolve(ROOT, '..');
 let pass = 0, fail = 0, skip = 0;
 // ①(2026-09-17 假绿修复轮) **这里原来是 `const ok = (n, d) => { pass++; … }`：第二参（真条件）只当
 //   展示细节打印，恒真 ⇒ 本文件永远不会红**（与 scene-audio-route-test.mjs 同款，同一轮一起修）。
@@ -282,7 +286,7 @@ console.log('\n== D 缓存（同 path+mtime+size 第二次 O(1)）==');
 }
 
 console.log('\n== B 真包（11 个 scene.pkg，旧实现 vs 索引先行）==');
-const corpusRoots = [process.env.MPW_SCENE_ROOT, '/root/Desktop/DSHarea/allwallpaper/dd', path.join(ROOT, 'samples', 'wallpapers')].filter(Boolean);
+const corpusRoots = [process.env.MPW_SCENE_ROOT, path.join(WS, 'allwallpaper', 'dd'), path.join(ROOT, 'samples', 'wallpapers')].filter(Boolean);
 const corpus = corpusRoots.find((d) => { try { return fs.existsSync(d) && fs.statSync(d).isDirectory(); } catch { return false; } });
 let corpusPkgs = [];
 if (!corpus) sk('真包语料');

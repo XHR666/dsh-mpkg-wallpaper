@@ -31,6 +31,10 @@ import { Writable } from 'node:stream';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
+
+// ①(2026-09-19 敏感信息加固) 工作区根 = **仓库的上一级**（语料/WE 资产/姊妹仓都在它下面）：
+// 由**脚本自身位置**推导，兜底默认不再写作者本机绝对路径。优先级不变：参数 > env > 这里。
+const WS = path.resolve(ROOT, '..');
 const BUNDLE_REL = 'dist/dsh-mpkg-wallpaper.bundle.mjs';
 const MANIFEST_REL = 'tools/probe-out/bundle-manifest.json';
 let pass = 0, fail = 0;
@@ -117,7 +121,7 @@ ok(sha256(buf1) === sha256(buf2), '两次 sha256 相同（无时间戳/无随机
 console.log('\n== ③ 同一套路由断言分别打源码与 bundle，逐字段比对 ==');
 // 语料：优先真 scene.pkg（**符号链接**进夹具，不拷贝），否则现造 < 1KB 的最小包
 function findPkg() {
-  const roots = [process.env.MPW_SCENE_ROOT, '/root/Desktop/DSHarea/allwallpaper/dd', path.join(ROOT, 'samples', 'wallpapers')].filter(Boolean);
+  const roots = [process.env.MPW_SCENE_ROOT, path.join(WS, 'allwallpaper', 'dd'), path.join(ROOT, 'samples', 'wallpapers')].filter(Boolean);
   for (const r of roots) {
     try { for (const d of fs.readdirSync(r)) { const p = path.join(r, d, 'scene.pkg'); if (fs.existsSync(p)) return p; } } catch { /* 下一个 */ }
   }

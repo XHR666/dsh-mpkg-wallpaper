@@ -84,7 +84,7 @@ const svg = read('icon.svg') || ''
 ok(/<svg[\s>]/i.test(svg), 'icon.svg 是 SVG')
 
 console.log('\n== ⑦ 门禁脚本在位 ==')
-for (const f of ['tools/check.sh', 'tools/panel-smoke.mjs', 'tools/scene-watchdog-test.mjs', 'tools/scene-sandbox-test.mjs', 'tools/host-sandbox-token-test.mjs', 'tools/integrity-check.mjs']) ok(exists(f), f)
+for (const f of ['tools/check.sh', 'tools/panel-smoke.mjs', 'tools/scene-watchdog-test.mjs', 'tools/scene-sandbox-test.mjs', 'tools/host-sandbox-token-test.mjs', 'tools/integrity-check.mjs', 'tools/secret-scan-test.mjs']) ok(exists(f), f)
 
 console.log('\n== ⑧ 元数据一致性（包名 ↔ 仓库名 ↔ LICENSE ↔ README）==')
 const repoSlug = String((pkg.repository && pkg.repository.url) || '').replace(/\.git$/, '').replace(/\/+$/, '').split('/').pop()
@@ -146,6 +146,33 @@ if (packPaths) {
   // ②(2026-09-17) MIT 侧的署名必须随包分发：README 引用了 THIRD-PARTY.md 作为洁净室/归属依据
   ok(packPaths.includes('THIRD-PARTY.md'), '★ THIRD-PARTY.md 随包发布（第三方归属/洁净室记录，MIT 署名义务）')
   ok(packPaths.includes('LICENSE'), '★ LICENSE 随包发布')
+}
+
+console.log('\n== ⑩ tracked 文件里的「本机绝对路径」门禁（全量，不只发布面）==')
+// 为什么单独一条：④ 只查**发布面**（`lib/**`），而本机绝对路径最容易从 **docs / tools / CI 配置**漏出去
+// —— 那些目录不进 npm 包、却会进公开仓库（还带操作环境信息：本机目录结构/用户名）。判据 =
+// `git grep -InE "<三种图案>"` 在 **tracked 文件**里 0 命中。
+// ①(2026-09-19 敏感信息加固) 立此断言的来由：实测本仓 16 个 tracked 文件（docs/tools）里写着作者本机的
+// 工作区绝对路径（多为"环境变量优先 + 本机路径兜底"的兜底值）⇒ 已全量改成按脚本自身位置推导
+// （`tools/*.mjs` 里的 `const WS = path.resolve(ROOT, '..')`，优先级一字未动）。
+// 同一判据另有一处**独立执行**：`tools/secret-scan-test.mjs` 的 B 段（走 `git ls-files` 读内容），
+// 两处互为交叉校验，任一处腐烂另一处仍会响。
+// ⚠ 图案按片段拼装：整串写在这里会被这条门禁**自指**命中（与渲染器 publish-check 同一手法）。
+const LOCAL_PATH_GATES = [
+  { id: 'host-workspace-path', re: '/root/Desktop/' + 'DSHarea' },
+  { id: 'device-shared-storage', re: '/storage/' + 'emulated' },
+  { id: 'termux-private-dir', re: '/data/' + 'data/com\\.termux' },
+]
+for (const g of LOCAL_PATH_GATES) {
+  let hits = []
+  try {
+    const out = execFileSync('git', ['grep', '-InE', g.re], { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 1 << 28 })
+    hits = out.split('\n').filter(Boolean)
+  } catch (e) {
+    // git grep 的退出码 1 = "无命中"（干净）；其余（128 = 不是 git 仓库 / 没装 git）说明判据没跑成 ⇒ 报红
+    if (e.status !== 1) { ok(false, `★ tracked 全量无本机绝对路径：${g.id}`, 'git grep 未跑成（status=' + e.status + '）⇒ 未判定，不假装通过'); continue }
+  }
+  ok(hits.length === 0, `★ tracked 全量无本机绝对路径：${g.id}`, hits.slice(0, 3).join(' | ').slice(0, 220))
 }
 
 console.log('\n== ⑨b tools/check.sh 步数编号自洽 ==')

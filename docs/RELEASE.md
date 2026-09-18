@@ -19,7 +19,7 @@
 ## 1. 发布前置（逐条跑，全绿才谈第 2 节）
 
 ```bash
-cd /root/Desktop/DSHarea/dsh-mpkg-wallpaper
+cd <仓库根>
 
 # ① 全量门禁（重活，**先串行化**再跑，避免与别的重任务撞车 OOM）
 #    注意：`/tmp/.mpw-gate.lock` 曾被别的线用 `mkdir` 占成**目录** ⇒ `exec 9>/tmp/.mpw-gate.lock`
@@ -65,7 +65,7 @@ git status --porcelain
 ## 2. 发布命令（一行；**用户确认后**才执行）
 
 ```bash
-cd /root/Desktop/DSHarea/dsh-mpkg-wallpaper && npm publish --registry=https://registry.npmjs.org
+cd <仓库根> && npm publish --registry=https://registry.npmjs.org
 ```
 
 - **必须带 `--registry=https://registry.npmjs.org`**：本机 `npm config get registry` = `https://registry.npmmirror.com`

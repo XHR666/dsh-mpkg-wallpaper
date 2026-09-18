@@ -25,9 +25,13 @@ import { spawnSync } from 'node:child_process';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(here, '..');
+
+// ①(2026-09-19 敏感信息加固) 工作区根 = **仓库的上一级**（语料/WE 资产/姊妹仓都在它下面）：
+// 由**脚本自身位置**推导，兜底默认不再写作者本机绝对路径。优先级不变：参数 > env > 这里。
+const WS = path.resolve(ROOT, '..');
 const argv = process.argv.slice(2);
 const argOf = (k, dv) => { const i = argv.indexOf(k); return i >= 0 && argv[i + 1] ? argv[i + 1] : dv; };
-const ROOT_DIR = argOf('--root', process.env.MPW_SCENE_ROOT || '/root/Desktop/DSHarea/allwallpaper/dd');
+const ROOT_DIR = argOf('--root', process.env.MPW_SCENE_ROOT || path.join(WS, 'allwallpaper', 'dd'));
 const MAX_LAYERS = Math.max(1, Number(argOf('--layers', 4)) || 4);
 
 function listIds() {

@@ -27,6 +27,10 @@ import {
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(here, '..');
+
+// ①(2026-09-19 敏感信息加固) 工作区根 = **仓库的上一级**（语料/WE 资产/姊妹仓都在它下面）：
+// 由**脚本自身位置**推导，兜底默认不再写作者本机绝对路径。优先级不变：参数 > env > 这里。
+const WS = path.resolve(ROOT, '..');
 let pass = 0, fail = 0, skip = 0;
 // 断言：cond 为假必须计 fail（旧版本这里写成"永远 pass"，ADTS 那条断言实际是假却显示 ✓）。
 const ok = (n, cond, d) => {
@@ -389,7 +393,7 @@ try {
 
   console.log('\n== T8 真包 + 规格慢速参考实现（逐项一致）==');
   const corpusRoots = [process.env.MPW_SCENE_ROOT,
-    '/root/Desktop/DSHarea/allwallpaper/dd',
+    path.join(WS, 'allwallpaper', 'dd'),
     path.join(ROOT, 'samples', 'wallpapers')].filter(Boolean);
   const corpus = corpusRoots.find((d) => { try { return fs.existsSync(d) && fs.statSync(d).isDirectory() } catch { return false } });
   if (!corpus) sk('真包语料（设 MPW_SCENE_ROOT 或放 allwallpaper/dd）');

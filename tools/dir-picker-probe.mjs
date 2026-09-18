@@ -7,7 +7,7 @@
  *   假 DOM 断言能证明机制，但真机上"到底有没有人写 scrollTop / 节点有没有被重建"必须实测。
  *   本脚本在**同一次浏览器启动内**跑完 A/B：
  *     before = 当前 profile 里已安装的副本（旧代码）
- *     → 脚本自己执行 /root/Desktop/DSHarea/update-plugin.sh（同步新代码 + 触发 patch 热重载）
+ *     → 脚本自己执行**工作区根**的 update-plugin.sh（同步新代码 + 触发 patch 热重载）
  *     → page.reload() → after = 新代码
  *
  * 证据（落盘 tools/probe-out/）：
@@ -26,6 +26,10 @@ import { fileURLToPath } from 'node:url'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.resolve(here, '..')
+
+// ①(2026-09-19 敏感信息加固) 工作区根 = **仓库的上一级**（语料/WE 资产在它下面）：
+// 由**脚本自身位置**推导，兜底默认不再写作者本机绝对路径。优先级不变：参数 > env > 这里。
+const WS = path.resolve(ROOT, '..');
 const OUT = path.join(ROOT, 'tools', 'probe-out')
 fs.mkdirSync(OUT, { recursive: true })
 const argv = process.argv.slice(2)
@@ -186,7 +190,7 @@ async function phase(page, label) {
   await page.evaluate(() => { const P = window.__mpwDirPickProbe; if (P) { P.writes.length = 0; P.focus.length = 0; P.rebuilds.length = 0 } })
   let m0 = await measure(page, 'opened')
   if (m0.found && m0.sh <= m0.ch + 4) {   // 不可滚动 ⇒ 换一个"子目录很多"的路径，否则滚轮断言是空跑
-    const fat = arg('fat-path', '/root/Desktop/DSHarea')
+    const fat = arg('fat-path', WS)
     const r = await page.evaluate((p) => {
       const inp = document.querySelector('.mpw_dialog input.mpw_input, .mpw_mask input.mpw_input, input.mpw_input[type="text"], input.mpw_input')
       if (!inp) return { ok: false, why: 'no-input' }
@@ -303,7 +307,7 @@ try {
   result.before.ver = P1.ver
   if (!NO_AB && (result.before && result.before.reached || HAVE_BEFORE)) {
     say('\n=== 同步新代码（update-plugin.sh）→ 新 context → after ===')
-    try { say(execFileSync('bash', ['/root/Desktop/DSHarea/update-plugin.sh'], { encoding: 'utf8' }).trim()) } catch (e) { say('  update-plugin 失败: ' + String(e && e.message || e)) }
+    try { say(execFileSync('bash', [path.join(WS, 'update-plugin.sh')], { encoding: 'utf8' }).trim()) } catch (e) { say('  update-plugin 失败: ' + String(e && e.message || e)) }
     const P2 = await openPage('after')
     result.after = await phase(P2.page, 'after')
     result.after.ver = P2.ver
