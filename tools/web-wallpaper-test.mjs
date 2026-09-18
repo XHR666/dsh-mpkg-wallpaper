@@ -243,7 +243,10 @@ console.log('\n== D. shim API 名单与参考实现（webwallgl，MIT）的覆�
   eq(WEB_SHIM_REFERENCE.vendored, false, 'D3 参考实现**未 vendored**（仅参考未复制）')
   eq(WEB_SHIM_REFERENCE.spdx, 'MIT', 'D3 参考实现 SPDX = MIT')
   ok(/^[0-9a-f]{40}$/.test(WEB_SHIM_REFERENCE.commit), 'D3 台账 commit 为 40 位 sha1（可追溯）')
-  ok(WEB_SHIM_REFERENCE.notCovered.length >= 5, 'D4 差异清单列出 ≥5 项「参考有、本实现有意不做」')
+  // ①(WP-1) **照抄**的登记：台账里必须逐行写下出处，且文档/包内声明都要能查到
+  //   （照抄是允许的，但"登记"必须是机器可核对的，不能只写在提交信息里）
+  ok(Array.isArray(WEB_SHIM_REFERENCE.copied) && WEB_SHIM_REFERENCE.copied.length >= 1, 'D3 台账登记了照抄项（copied 非空）')
+  ok(WEB_SHIM_REFERENCE.notCovered.length >= 4, 'D4 差异清单列出 ≥4 项「参考有、本实现有意不做」')
   ok(WEB_SHIM_REFERENCE.extras.length >= 3, 'D4 差异清单列出本实现独有项（架构不同导致）')
   eq(SHIM_CONTROL_OPS.length, 14, 'D4 控制指令白名单 14 项（9 项控制 + 5 项交互注入，postMessage op）')
 
@@ -256,6 +259,14 @@ console.log('\n== D. shim API 名单与参考实现（webwallgl，MIT）的覆�
   for (const k of SHIM_API_NAMES) ok(doc.indexOf(k) >= 0, 'D5 文档 API 表包含 ' + k)
   ok(doc.indexOf('allow-scripts') >= 0 && doc.indexOf('allow-same-origin') >= 0, 'D5 文档写明 sandbox 策略与两项属性')
   ok(/WEBWALLGL|webwallgl/.test(doc), 'D5 文档写明参考来源（MIT 署名要求）')
+  for (const c of WEB_SHIM_REFERENCE.copied) {
+    ok(/^renderer\/src\/[\w.-]+\.(ts|js):\d+-\d+$/.test(String(c.from || '')), 'D3 照抄出处是「文件:起-止行」形态：' + c.from)
+    ok(!!c.what, 'D3 照抄项写明是什么：' + c.from)
+    ok(doc.indexOf(c.from) >= 0, 'D5 文档写明照抄出处：' + c.from)
+    let tp = ''
+    try { tp = read('THIRD-PARTY.md') } catch {}
+    ok(tp.indexOf(c.from) >= 0 && /照抄/.test(tp), 'D5 THIRD-PARTY.md 有该照抄项的登记与「照抄」字样：' + c.from)
+  }
 }
 
 /* ══════════════════ E. shim 运行时（vm + 假 DOM） ══════════════════ */
