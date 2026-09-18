@@ -31,8 +31,10 @@ node tools/panel-fixes-test.mjs || fail=1
 #   来历是真事故：「配色」(accent) 与「深底文字可读增强」(aquaTextEnhance) 两段 CSS 被一起
 #   包在 `if (aquaOn(section))` 里 ⇒ 只开这两个开关时规则根本不生成（开关能点、没效果、不报错）。
 #   判据：每个布尔开关都必须在"默认档/富上下文/其它全开"三个上下文之一里改变 buildCss 产物；
-#   只影响运行时的开关必须登记 reason；**已证实失效未修的**（lgCss/sessionFollow/glassWindow）
-#   进 KNOWN_DEAD 并在每次运行时显式列出（修好则必须从表里删，双向断言防"遮羞布"）。
+#   只影响运行时的开关必须登记 reason；**已证实失效未修的**进 KNOWN_DEAD 并在每次运行时显式列出
+#   （修好则必须从表里删，双向断言防"遮羞布"—— 2026-09-19 该表**已清空**：lgCss/sessionFollow 已修好，
+#   glassWindow 按用户"不留看得见却点不动的死文案"政策**退役删除**，转由 A0 段看住
+#   "源码 0 悬空引用 + 两套字典 0 孤儿文案"，并配常驻变异 `retired-glasswindow-copy-restored`）。
 node tools/switch-wiring-test.mjs || fail=1
 # ①(2026-09-18 §5 第3项)「诊断自证闭环」：payload 补齐关键子系统（磨砂/侧栏/时间线是否被影响、
 #   壁纸类型与路径、shim 是否注入、视频解码、表面 token、场景健康），**每个字段带来源（provenance）**，
@@ -172,7 +174,7 @@ node tools/bundle-equivalence-test.mjs || fail=1
 #     SSOT 定义点必须唯一且是 body（宿主 --dsw-* 定义在 body，写 :root 会 guaranteed-invalid 继承）；
 #     变异自证：改 SSOT 取值 / 把 SSOT 挪回 :root / 表面换字面量 都必须变红。
 #   账本与清单：docs/TOKEN-NAMESPACE.md
-step "12/12 样式作用域护栏（真实产物 613 组设置全枚举；裸元素/裸 */:root 覆盖/宿主 token/禁止锚点判红）+ 表面 token 命名空间（宿主覆盖登记表 + 四表面共享 --mpw-* + 取值等价）"
+step "12/12 样式作用域护栏（真实产物 615 组设置全枚举；裸元素/裸 */:root 覆盖/宿主 token/禁止锚点判红）+ 表面 token 命名空间（宿主覆盖登记表 + 四表面共享 --mpw-* + 取值等价）"
 node tools/style-scope-guard.mjs || fail=1
 node tools/token-namespace-test.mjs || fail=1
 

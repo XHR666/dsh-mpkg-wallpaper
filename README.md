@@ -249,8 +249,8 @@
 门禁第 12 步把它变成会变红的机器判据（`node tools/style-scope-guard.mjs`）：
 
 * **拿真实产物**：不重写 `buildCss`，用 `tools/_stub.mjs` 在 Node 里跑 `lib/client.js`，调用插件自己暴露的
-  `__mpwBuildCss(patch)`，按源码里的 `boolFields`/`numFields` 自动枚举 **600+ 组设置**（当前 613：默认段 /
-  每个布尔开关单独开 / 核心 9 开关全 512 组合 / bsCompat 家族 / 数值 0 与 100 / 无壁纸 / lgTest），
+  `__mpwBuildCss(patch)`，按源码里的 `boolFields`/`numFields` 自动枚举 **600+ 组设置**（实跑会打印条数；
+  本轮 615：默认段 / 每个布尔开关单独开 / 核心 9 开关全 512 组合 / bsCompat 家族 / 数值 0 与 100 / 无壁纸 / lgTest），
   再对生成出来的 CSS 逐条解析（含 `@media`/`@supports`）。
 * **判据**：每条规则的选择器必须命中我们自己的标记（`.mpw*` / `[data-mpw*]` / `#mpw-*`），或命中**已登记**的
   宿主/第三方作用域——`bsCompat` 那句故意打第三方 DOM 的 `[data-dsh-better-sidebar] …` 也在其列，
@@ -292,6 +292,8 @@
 * 非布尔功能（`accent`/`aquaTextEnhance` 设值必须改变产物）；`themeColor` 属"CSS 常驻 + 运行时属性门控"，
   判据改为断言门控规则确实在产物里。
 * **已证实失效**的开关进 `KNOWN_DEAD` 并在每次运行时显式列出（双向断言：修好了必须从表里删）。
+  **该表现已清空**（`lgCss`/`sessionFollow` 已修好、`glassWindow` 已退役删除）；**退役**（删掉）的开关改由
+  A0 段看住"源码 0 悬空引用 + zh/en 两套字典 0 孤儿文案"，各配一条常驻变异（加回去必须变红）。
   本轮据此修掉了第 1 条：**`lgCss`（纯 CSS/SVG 液态玻璃）整块从未执行** —— 块内引用 `bdSupported`，
   而该 const 声明在它之后 ⇒ 同一函数作用域 TDZ `ReferenceError`，被外层
   `catch { /* 液态玻璃失败不得影响其它样式 */ }` 吞掉（catch 原样保留，现在只在真的失败时才起作用）。
@@ -300,7 +302,13 @@
   第 2 条也修了：**`sessionFollow`（新会话按钮跟随面板不透明度）**——设置页有开关 + 文案，但全仓无人读
   `section.sessionFollow`；按**用户可见文案**实现（开 = 跟随那条透明度，关 = **回到宿主原色**），默认档不变，
   判据在 `tools/switch-wiring-test.mjs` 的 A4 段（默认档 + 统一虚化档各 3 条双向断言；变异「把读取删掉」必红）。
-  第 3 条 `glassWindow` 仍登记未改（只有文案没有实现），详见
+  第 3 条 `glassWindow` 已按**用户政策「不留看得见却点不动」**处理：它**既无 toggleRow（没人看得见）、
+  也无读取点（点不动）**，而文案承诺的功能已由 `settingsBlur`（设置面板虚化）+ `dialogBlur`/`popoverBlur`
+  覆盖 ⇒ **删文案 + 删字段**（不接线，避免多出第二个管同一元素的开关、也避免把设置面板变成 backdrop root）。
+  删除点 6 处（zh/en i18n 各 2 行 + `lgTest` 预设默认值 + 重置默认值 + `BACKUP_FIELDS` + 导入 `boolFields`，
+  导出/净化**同步删**以免导入备份时落进"未登记类型"兜底）；判据在 `tools/switch-wiring-test.mjs` 的 **A0 段**
+  （源码 0 命中 + zh/en 两套字典 0 命中）+ 常驻变异 `retired-glasswindow-copy-restored` 必红；
+  删前删后**默认档产物 sha256 逐字节相同**。详见
   [`docs/TOKEN-NAMESPACE.md`](docs/TOKEN-NAMESPACE.md) §3b。
   **`bsCompat`（better-sidebar 适配总开关）默认已改为开**（2026-09-18 用户裁定）：底部面板悬浮适配已真机定案，
   默认关 = 没人看得见；存量用户**只在"从没显式设过"时**被迁移，**手动关过的绝不覆盖**（写入口打

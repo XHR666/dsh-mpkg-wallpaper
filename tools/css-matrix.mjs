@@ -36,8 +36,10 @@ const base = Object.assign({}, readSection(), { image: true, enabled: true })
 // 核心开关：全组合（2^9 = 512）——覆盖"透出/虚化/悬浮/玻璃/水色"之间的相互影响
 const CORE = ['sidebar', 'unifyTint', 'headerBg', 'headerBlur', 'float', 'lgCss', 'aquaMask', 'aquaTint', 'rightSidebarBlur']
 // 其余开关：随机组合抽样（含面板里的次要开关 + 数值极值）
+// ①(2026-09-19) 去掉 `glassWindow`：该字段已按用户裁定**退役删除**（无 toggleRow、无读取点，见
+//   tools/switch-wiring-test.mjs 的 RETIRED 段）⇒ 再放进组合里只是给 buildCss 传一个不存在的键。
 const EXTRA = ['headerFrostOwn', 'sidebarBlur', 'popoverBlur', 'confirmBlur', 'maskBlur', 'dialogBlur', 'settingsBlur', 'todoBlur',
-  'chatFollow', 'sessionFollow', 'clock', 'glassWindow', 'sharp', 'aquaInk', 'aquaTextEnhance']
+  'chatFollow', 'sessionFollow', 'clock', 'sharp', 'aquaInk', 'aquaTextEnhance']
 const NUM = { popoverAlpha: [50, 80, 94, 100], headerFrostAmount: [0, 12, 30, 60], opacity: [0, 50, 82, 100], blur: [0, 30], sidebarAlpha: [0, 35, 100], unifyAmount: [0, 30, 40],
   rightSidebarBlurAmount: [0, 14, 40], rightSidebarAlpha: [0, 45, 100], popoverAmount: [0, 10, 40], headerBlurAmount: [0, 30] }
 

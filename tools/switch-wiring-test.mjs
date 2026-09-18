@@ -70,14 +70,31 @@ const NON_BOOL_PROBES = [
 ]
 
 /* ── B. 已证实失效 / 未接线（尚未修）：审计会每次把它们显式列出来 ──
- * 已修并从本表删除：lgCss（TDZ，2026-09-18）、sessionFollow（无人读，2026-09-18 按用户裁定接线）。
- * 为什么要双向断言：条目一旦被修好，本表必须删掉（否则"已知失效"会变成永久遮羞布）。 */
-const KNOWN_DEAD = {
-  glassWindow: {
-    reason: '「设置窗口液态玻璃」只有 i18n 文案与导入净化名单，**既无设置页开关也无读取点** ⇒ 功能未接线（旧配置字段）',
-    evidence: 'grep -n "glassWindow" lib/client.js ⇒ 只有 i18n + boolFields 净化名单，无 toggleRow、无 section.glassWindow 读取',
+ * 已修并从本表删除：lgCss（TDZ，2026-09-18）、sessionFollow（无人读，2026-09-18 按用户裁定接线）、
+ * glassWindow（2026-09-19 **按用户裁定的政策删除**，见下方 RETIRED —— 不是接线，所以不进本表）。
+ * 为什么要双向断言：条目一旦被修好，本表必须删掉（否则"已知失效"会变成永久遮羞布）。
+ * **本表现在是空的**：45 个布尔开关要么真的改变产物，要么在 NON_CSS 里逐条写了"为什么只影响运行时"。 */
+const KNOWN_DEAD = {}
+
+/* ── B2. 已**退役**（删掉）的开关：必须 0 悬空引用、0 孤儿文案 ──
+ * 政策（2026-09-19 用户原话）：**不留"看得见却点不动"的死文案**。
+ * `glassWindow`（设置窗口液态玻璃）当时的处境：`lib/client.js` 里只有 i18n 2 键 ×2 语言 + 2 处默认值
+ * + 导出/导入名单，**既没有 toggleRow（没人看得见）、也没有任何 `section.glassWindow` 读取点（点不动）**；
+ * 而它文案承诺的功能（"整个设置卡片/弹窗玻璃化"）**已由 `settingsBlur`（设置面板虚化）+ `dialogBlur` /
+ * `popoverBlur` 覆盖** ⇒ 接线只会多出第二个管同一元素的开关（且要把设置面板变成 backdrop root，
+ * 正是仓库反复踩过的回归类），而"隐身文案"删掉对用户**零可见影响** ⇒ 选**删除**（A/B 里的 B）。
+ * 删了之后必须机器看住两件事（**判据就是这一段**）：
+ *   ① 源码里 0 命中 —— 只删 i18n 而漏删 `BACKUP_FIELDS`/`boolFields` 会让它在**导入备份**时落到
+ *      "未登记类型"的兜底 `patch[k] = v`（未净化直通）⇒ 悬空字段复活；
+ *   ② 两套字典里 0 命中 —— 只删 zh 会破坏 `panel-fixes-test` 的"zh/en 键集合一致"，只删源码会留孤儿文案。
+ * 变异自证：把 i18n 那两行加回副本 ⇒ 本段必红（`node tools/switch-wiring-test.mjs --client /tmp/mut.js`）。 */
+const RETIRED = [
+  {
+    id: 'glassWindow',
+    i18n: ['glassWindow', 'glassWindow.desc'],
+    why: '「设置窗口液态玻璃」：无 toggleRow、无读取点（功能已由 settingsBlur/dialogBlur/popoverBlur 覆盖）⇒ 2026-09-19 删文案 + 删字段（默认值/导出导入名单同步删），不接线',
   },
-}
+]
 
 /* ── C. 运行时门控型：CSS **常驻输出**，开关通过运行时属性/内联 token 生效 ──
  * 判据不是"产物变化"（它本来就不变，这是对的），而是"门控规则必须在产物里存在"。 */
@@ -107,6 +124,28 @@ const build = (patch) => {
 }
 
 if (!ONLY_JSON) console.log(`══ 开关接线审计（每个开关都必须改变 CSS，或在 NON_CSS 里登记原因）══\n产物：${path.relative(repoRoot, clientPath)} · 布尔开关 ${bools.length} 个`)
+
+/* ── 0. 已退役开关：源码 0 命中 + 两套字典 0 命中（理由见上方 RETIRED） ──
+ * 放在最前面：如果这一段落红，后面"A. 45 个布尔开关全部接线"的绿色就**不可信**
+ * （悬空字段会以"未净化直通"的方式从导入备份里复活）。 */
+const zhDict = (loaded.localeDicts && loaded.localeDicts.zh) || {}
+const enDict = (loaded.localeDicts && loaded.localeDicts.en) || {}
+const retiredCases = []
+for (const r of RETIRED) {
+  const re = new RegExp('\\b' + r.id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'g')
+  const hits = (src.match(re) || []).length
+  retiredCases.push([`★ 已退役开关 ${r.id}：源码里 0 命中（无悬空字段 / 无净化名单残留 / 无孤儿文案引用）`,
+    hits === 0, `命中 ${hits} 处`])
+  const left = r.i18n.filter((k) => (k in zhDict) || (k in enDict))
+  retiredCases.push([`★ 已退役开关 ${r.id}：i18n 键 ${r.i18n.join(' / ')} 两套字典都没有（无孤儿文案）`,
+    left.length === 0, left.length ? '仍在字典里: ' + left.join(', ') : `字典键数 zh=${Object.keys(zhDict).length} / en=${Object.keys(enDict).length}`])
+}
+if (!ONLY_JSON) {
+  console.log('\n== A0. 已退役开关（删掉的死文案/死字段）：0 悬空引用、0 孤儿文案 ==')
+  console.log('  （政策：不留"看得见却点不动"的死文案；每条退役理由见源码 RETIRED 表）')
+  for (const [name, cond, detail] of retiredCases) ok(name, cond, detail)
+  for (const r of RETIRED) console.log(`      ${r.id}：${r.why}`)
+}
 
 /* ── 1. 布尔开关：在**多个上下文**里，on vs off 至少要有一个不同 ──
  * 为什么不是一个上下文就够了：有些开关是**条件门**（例如 chatFollow 只在统一虚化开着时才
@@ -287,6 +326,13 @@ const MUTS = [
     expect: 'A',
     why: '把「深底文字可读增强」的门控改回被 aquaOn 包住',
   },
+  {
+    id: 'retired-glasswindow-copy-restored',
+    mut: (s) => s.replace('\t\t\t"glass.title": "液态玻璃（elysia395 方案）",',
+      '\t\t\t"glassWindow": "设置窗口液态玻璃",\n\t\t\t"glass.title": "液态玻璃（elysia395 方案）",'),
+    expect: 'A0',
+    why: '把已退役开关 glassWindow 的 i18n 文案加回 zh 字典（= 复现"孤儿文案/悬空键"，A0 段必须抓到）',
+  },
 ]
 if (!NO_MUT && !ONLY_JSON) console.log('\n== C. 分辨力自证：把门控改回"被 aquaOn 包住"必须变红 ==')
 for (const m of (NO_MUT ? [] : MUTS)) {
@@ -298,6 +344,7 @@ for (const m of (NO_MUT ? [] : MUTS)) {
   const out = (r.stdout || '') + (r.stderr || '')
   // 变红判定：**期望的那一组**断言必须真的报红（分组名 = 断言名前缀，避免"别的组红了也算过"）
   const GROUPS = {
+    A0: /✗ ★ 已退役开关/,
     A3: /✗ ★ (lgCss:true|lgCss:false|两档产物|环境支持|\?lgcss=off 时)/,
     A4: /✗ ★ sessionFollow/,
     A5: /✗ ★ (\?lgcss=off 时|不写 \?lgcss=off 时)/,

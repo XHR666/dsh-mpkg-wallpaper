@@ -121,7 +121,7 @@
 
 ```sh
 cd /root/Desktop/DSHarea/dsh-mpkg-wallpaper
-node tools/style-scope-guard.mjs              # 全量：600+ 组设置（按源码 boolFields/numFields 自动枚举，当前 613） → 一屏表格 + tools/probe-out/style-scope.json
+node tools/style-scope-guard.mjs              # 全量：600+ 组设置（按源码 boolFields/numFields 自动枚举，实跑会打印条数；本轮 615） → 一屏表格 + tools/probe-out/style-scope.json
 node tools/style-scope-guard.mjs --audit      # 只看未登记原子/未放行选择器
 node tools/style-scope-guard.mjs --selftest   # 变异自证（见 §6）
 node tools/style-scope-guard.mjs --quick      # 少量组合（调试护栏本身）

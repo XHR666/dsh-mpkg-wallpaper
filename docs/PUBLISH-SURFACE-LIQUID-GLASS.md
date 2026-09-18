@@ -138,7 +138,7 @@
 | # | 命令 | rc | 输出摘要 |
 |---|---|---|---|
 | 1 | `node tools/panel-smoke.mjs` | **0** | 5/5 通过 |
-| 2 | `node tools/switch-wiring-test.mjs` | **0** | 26 通过 / 0 失败（P-127 未动它） |
+| 2 | `node tools/switch-wiring-test.mjs` | **0** | 26 通过 / 0 失败（P-127 未动它；② P-128 起 A0 段 +2 条断言、+1 条常驻变异 ⇒ 28 通过 / 0 失败） |
 | 3 | `node tools/css-matrix.mjs` | **0** | 1115 组设置全过 |
 | 4 | `node tools/style-scope-guard.mjs` | **0** | 233 OK / 134 ALLOWLISTED / 0 RED |
 

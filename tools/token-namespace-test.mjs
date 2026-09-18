@@ -7,7 +7,7 @@
 //   ① 取 `git show HEAD:lib/client.js` 当 **before**，工作树 lib/client.js 当 **after**
 //      （`--before <path>` 可指定；夹具走 mkdtemp，806KB < 1MB，exit 兜底删除）
 //   ② 用 tools/_stub.mjs 分别调 `__mpwBuildCss(patch)`（与 style-scope-guard / css-matrix 同口径）
-//      遍历 613 组设置；
+//      遍历 615 组设置（按源码 boolFields/numFields 自动枚举，实跑打印条数；开关增减时数字随之变化）；
 //   ③ 对每条规则解析选择器与声明，挑出"打在四个表面上的 底色/磨砂/模糊"声明，
 //      用产物里自己的 token 定义（SSOT 的 body 块等）**递归代换 var()** ⇒ 得到"符号化取值"；
 //   ④ 按 (设置组合, 表面, 亮/暗档, 属性) 收集**取值集合**，before 与 after 必须**完全一致**

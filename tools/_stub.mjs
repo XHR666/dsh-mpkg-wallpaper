@@ -166,12 +166,23 @@ export function loadPlugin(opts = {}) {
   if (!plugin || typeof plugin.apply !== 'function') throw new Error('未取到插件 apply()')
 
   let sectionComp = null
+  // ①(2026-09-19，P-128) 语言字典**留证**：桩原来把 `register(NS, {zh,en})` 的参数吞掉（只返回 dispose），
+  //   ⇒ 想看"某个 i18n 键还在不在两套字典里"只能去正则读源码。改成把实参记下来并随结果返回
+  //   （`loadPlugin(...).localeDicts`），switch-wiring-test 用它断言"已退役开关的文案 0 残留"。
+  //   纯增量：不改任何既有返回值/语义。
+  let localeDicts = null, localeNs = null
   const ctx = {
     slots: {
       inject: (name, fn) => { try { fn() } catch (e) { if (!opts.quiet) console.error('inject 失败:', e.message) } },
       register: (o, comp) => { if (o && o.name === 'settings.section') sectionComp = comp; return { dispose() {} } },
     },
-    locale: { bind: () => (k) => k, register: () => ({ dispose() {} }) },
+    locale: {
+      bind: () => (k) => k,
+      register: (ns, dicts) => {
+        if (dicts && typeof dicts === 'object' && (dicts.zh || dicts.en)) { localeDicts = dicts; localeNs = ns }
+        return { dispose() {} }
+      },
+    },
     effect: (f) => { try { f() } catch (e) { if (!opts.quiet) console.error('effect 失败:', e.message) } },
     logger: { info() {}, warn() {}, error() {} },
   }
@@ -180,7 +191,7 @@ export function loadPlugin(opts = {}) {
   console.error = (...a) => { applyErrors.push(a.map((x) => (x && x.message) || String(x)).join(' ')); if (!opts.quiet) origErr.apply(console, a) }
   try { plugin.apply(ctx) } finally { console.error = origErr }
 
-  return { src, plugin, sectionComp, ctx, applyErrors, ...stubs }
+  return { src, plugin, sectionComp, ctx, applyErrors, localeDicts, localeNs, ...stubs }
 }
 
 /** 读取宿主真实设置（存在则用，不存在给空对象） */

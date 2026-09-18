@@ -113,9 +113,9 @@ DSH 把设计 token 定义在 **`body`** 上，不是 `:root`：
 ### 3b. 同一轮审计**新发现**、登记为「未修」的失效开关
 
 `tools/switch-wiring-test.mjs`（门禁第 2 步）会枚举每个开关并要求它真的改变产物，因此顺手查出
-同类的"开关没接线"。这三条**没有修**（改动会启用从未运行过的整块视觉特性，需要单独一轮 + 真机验证），
-审计每次运行都会显式列出，且**双向断言**（修好了就必须从 `KNOWN_DEAD` 删掉）。
-`lgCss` 与 `sessionFollow` 已修好并**从表里删除**（现表内只剩下面一条）；它的液态玻璃判据是**双向**的（true 必须产出标记、false 必须没有、两档不许逐字节相同），
+同类的"开关没接线"。`lgCss` 与 `sessionFollow` 已修好并**从表里删除**，`glassWindow` 按用户政策
+**退役删除**（见下表两条）⇒ **`KNOWN_DEAD` 现已清空**（"已证实失效未修"不再有例外；`lgCss` 的
+液态玻璃判据是**双向**的（true 必须产出标记、false 必须没有、两档不许逐字节相同），
 变异自证：把声明挪回块后（复现 TDZ）⇒ A3 段三条断言全红。
 `lgCss` 另配 **`?lgcss=off` 一键回退口**（首次真正启用的视觉特性必须能一键关掉）：已登记进
 `we-scene-demo/docs/README-DIAGNOSTICS.md` 主表（`node tests/diag-flag-check.mjs` ⇒ **代码 149 == 主表 149**），
@@ -131,7 +131,8 @@ A3 段另加"顶栏本体不得带 backdrop-filter""折射确实在伪元素上"
 | --- | --- | --- |
 | ~~`lgCss`（纯 CSS/SVG 液态玻璃）~~ ✅ **已修（2026-09-18）** | 真因同左：块内引用 `bdSupported`，而该 const 声明在它之后 ⇒ 同一函数作用域 TDZ `ReferenceError`，被外层 `catch { /* 液态玻璃失败不得影响其它样式 */ }` 吞掉，整块从未执行。修法 = **把声明提到使用之前**（catch 原样保留，它现在只在真的失败时才起作用） | 修后实测：`lgCss:true` 产物 **56 678 B（去注释后）含 `mix-blend-mode: screen` 与 `url(#mpw-lg-warp)` ×2**，`lgCss:false` **56 008 B、两者都没有**，两档不再逐字节相同（`tools/switch-wiring-test.mjs` A3 段每次打印） |
 | ~~`sessionFollow`（新会话按钮跟随）~~ ✅ **已修（2026-09-18，用户裁定候选 A）** | 真的存在过：设置页有开关 + 文案 + `DEFAULT_SESSION_FOLLOW`，但全仓无人读 `section.sessionFollow`。裁定按**用户可见文案**（"关 = 保持原按钮色"）实现：**开 = 跟随那条透明度（现状公式 `U(panel)`）；关 = 回到宿主原色 `var(--dsw-alias-button-elevated-fill)`**。默认 `true` ⇒ 默认档与修前逐字节一致 | 判据：`tools/switch-wiring-test.mjs` A4 段（默认档 + 统一虚化档各 3 条双向断言）；变异「把读取删掉」⇒ A4 全红 |
-| `glassWindow`（设置窗口液态玻璃） | 只有 i18n 文案 + 导入净化名单，**既无开关也无读取点** ⇒ 功能未接线 | `grep -n "glassWindow" lib/client.js` ⇒ 仅 i18n 与 `boolFields` 名单 |
+| ~~`glassWindow`（设置窗口液态玻璃）~~ 🗑 **已退役删除（2026-09-19，用户政策「不留看得见却点不动」）** | 处境：只有 i18n 2 键 ×2 语言 + 2 处默认值 + 导出/导入名单，**既无 toggleRow（没人看得见）也无 `section.glassWindow` 读取点（点不动）**；而文案承诺的功能已由 `settingsBlur`（设置面板虚化）+ `dialogBlur`/`popoverBlur` 覆盖 ⇒ 接线只会多出第二个管同一元素的开关，且要把设置面板变成 backdrop root（仓库反复踩过的回归类），而删掉"隐身文案"对用户**零可见影响** ⇒ 选**删除**（A/B 里的 B；拒绝理由与分析见 `tools/switch-wiring-test.mjs` 的 `RETIRED` 表头）。删除点 6 处：zh i18n 2 行、en i18n 2 行、`lgTest` 预设默认值、重置默认值、`BACKUP_FIELDS`、导入 `boolFields`（**导出/净化"同步删"**：只删 i18n 会让它在导入备份时落到"未登记类型"兜底 `patch[k]=v` ⇒ 悬空字段复活） | 判据：`tools/switch-wiring-test.mjs` **A0 段**（源码 `\bglassWindow\b` 0 命中 + zh/en 两套字典 0 命中）+ 常驻变异 `retired-glasswindow-copy-restored`（把文案加回 ⇒ A0 必红，实测 exit=1）；`grep -c glassWindow lib/client.js` ⇒ **0**；默认档产物与删前 **sha256 逐字节相同**（8 个上下文对拍） |
+| **（已登记、本轮未动）** `glass.*` 家族另 5 个孤儿键 + 2 个无读取点字段 | 与 `glassWindow` 同源（WebGL 时代"液态玻璃（elysia395 方案）"分区残留）：i18n `glass.title` / `glass.desc` / `glass.color` / `glass.color.hint` / `glass.alpha` **全仓无 `t("…")` 调用点**；设置字段 `glassColor`/`glassAlpha` 无读取点（只在默认值 + 导出/导入名单里）。**注意**：`glass.accent` / `glass.accent.hint` / `glass.reset` **不是**孤儿（外观 tab 的 accent 取色盘在用） | 命令：`for k in glass.title glass.desc glass.color glass.color.hint glass.alpha; do echo -n "$k "; grep -c "t(\"$k\")" lib/client.js; done` ⇒ 全 0；建议下一轮一次性裁定（删文案 or 接线），**本轮只登记不动**（② 的授权范围只有 `glassWindow`） |
 
 修 `accent` / `aquaTextEnhance` 那两条时的**变异自证**（`node tools/switch-wiring-test.mjs`）：
 

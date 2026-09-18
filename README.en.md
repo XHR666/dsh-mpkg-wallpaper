@@ -230,9 +230,9 @@ without anyone noticing locally. Gate step 12 turns that into a machine-checkabl
 (`node tools/style-scope-guard.mjs`):
 
 * **It uses the real artifact**: `buildCss` is never re-implemented. `tools/_stub.mjs` loads `lib/client.js`
-  in Node and calls the plugin's own `__mpwBuildCss(patch)` over **600+ setting combinations** (613 today:
-  defaults / each boolean alone / all 512 combinations of the 9 core switches / the `bsCompat` family /
-  numeric 0 and 100 / no wallpaper / lgTest), then parses every generated rule, including `@media` / `@supports` nesting.
+  in Node and calls the plugin's own `__mpwBuildCss(patch)` over **600+ setting combinations** (the run prints
+  the exact count; 615 this round: defaults / each boolean alone / all 512 combinations of the 9 core switches /
+  the `bsCompat` family / numeric 0 and 100 / no wallpaper / lgTest), then parses every generated rule, including `@media` / `@supports` nesting.
 * **Verdict**: every selector must hit our own markers (`.mpw*` / `[data-mpw*]` / `#mpw-*`) or a **registered**
   host/third-party scope. The `bsCompat` block that deliberately targets third-party DOM
   (`[data-dsh-better-sidebar] …`) is allowed **only because it is declared** in the allow-list with a reason and a
@@ -283,7 +283,10 @@ check: `node tools/switch-wiring-test.mjs` (gate step 2):
 * non-boolean features (`accent` / `aquaTextEnhance` must change the output); `themeColor` is
   "always-emitted CSS + runtime attribute gate", so the check asserts the gate rules exist instead;
 * switches **proven dead** go into `KNOWN_DEAD` and are listed on every run (two-way assertion: fixing one
-  requires deleting its entry). That list drove the first fix: **`lgCss` (pure CSS/SVG liquid glass) never ran at
+  requires deleting its entry). **The table is now empty** (`lgCss`/`sessionFollow` fixed, `glassWindow` retired
+  and deleted); **retired** switches are instead guarded by section A0 ("0 dangling references in the source +
+  0 orphan key in either dictionary"), each with a permanent mutation that must go red.
+  That list drove the first fix: **`lgCss` (pure CSS/SVG liquid glass) never ran at
   all** — the block referenced `bdSupported` while the `const` was declared after it, i.e. a same-scope TDZ
   `ReferenceError` swallowed by the outer `catch { /* liquid glass failure must not affect other styles */ }`
   (the catch is kept; it now only fires on real failures). The criteria are two-way: `lgCss:true` must emit the
@@ -292,8 +295,17 @@ check: `node tools/switch-wiring-test.mjs` (gate step 2):
   toggle and copy but nothing read `section.sessionFollow`; implemented per the **user-visible copy** (on = follow
   that opacity, off = **back to the host's original colour**), default unchanged, asserted in
   `tools/switch-wiring-test.mjs` section A4 (three two-way assertions in both default and unified-blur contexts;
-  the "remove the read" mutation must go red). The third, `glassWindow`, stays registered and unchanged (copy
-  without implementation) — see [`docs/TOKEN-NAMESPACE.md`](docs/TOKEN-NAMESPACE.md) §3b. **`bsCompat` (the better-sidebar adaptation master switch) now defaults to on** (ruled 2026-09-18): the
+  the "remove the read" mutation must go red). The third, `glassWindow`, was handled under the user's policy of
+  **"no copy that is visible but unclickable"**: it had **no toggle row (nobody could see it) and no read point
+  (nothing to click)**, while the feature its copy promised is already delivered by `settingsBlur` (settings-panel
+  blur) plus `dialogBlur`/`popoverBlur` ⇒ its copy and field were **deleted** rather than wired (wiring would add
+  a second switch for the same element and make the settings panel a backdrop root). Six deletion sites
+  (2 i18n lines each in zh/en + the `lgTest` preset default + the reset defaults + `BACKUP_FIELDS` + the import
+  `boolFields`; the export/sanitise lists are deleted **in lockstep** so an imported backup cannot fall through to
+  the "unregistered type" passthrough) — asserted in section **A0** of `tools/switch-wiring-test.mjs`
+  (0 hits in the source + 0 hits in both dictionaries) with the permanent mutation
+  `retired-glasswindow-copy-restored` required to go red; the default-context CSS is **sha256-identical**
+  before and after. See [`docs/TOKEN-NAMESPACE.md`](docs/TOKEN-NAMESPACE.md) §3b. **`bsCompat` (the better-sidebar adaptation master switch) now defaults to on** (ruled 2026-09-18): the
   bottom-panel float adaptation is settled on real devices, so a default of off meant nobody ever saw it.
   Existing users are migrated **only if they never set it explicitly**; anyone who turned it off by hand is
   **never overridden** (the write path stamps a `bsCompatUserSet` marker; the migration itself does not).
