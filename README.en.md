@@ -323,6 +323,31 @@ check: `node tools/switch-wiring-test.mjs` (gate step 2):
   Neither assertion was relaxed.
 * discrimination proof: reverting either gate back under `aquaOn` must turn the audit red.
 
+## Pre-commit gate (a few seconds, 2026-09-19 / P-129)
+
+The audit above (plus the panel-rendering regression) is now available as a **few-second pre-commit** — four
+seconds before a commit is enough to stop the two failure classes that **have really happened here several
+times**: "the switch isn't wired" and "the panel no longer renders".
+
+```sh
+cd dsh-mpkg-wallpaper
+git config core.hooksPath .githooks    # install (this clone only; git config --unset core.hooksPath to remove)
+git commit --no-verify                 # bypass once
+MPW_SKIP_PRECOMMIT=1 git commit -m …   # bypass once (the script's own explicit escape hatch, always exit 0)
+```
+
+* **What runs**: `tools/panel-smoke.mjs` (panel rendering + language dictionaries, ~0.3 s) and
+  `tools/switch-wiring-test.mjs` (every switch must really change the output + retired switches with 0 dangling
+  references + 7 discrimination mutations, ~2.5 s), **serially**, **2.8–3.9 s** total across repeated runs.
+* **What does not run**: the 12 steps of `tools/check.sh` (step 3 is the 1115-combination CSS matrix, step 9
+  onwards needs headless Firefox) stay **out** of pre-commit — a minute-long gate in pre-commit only makes people
+  afraid to commit. The full gate is still `bash tools/check.sh` (or CI).
+* **It does not block development**: installing is explicit (not installing changes nothing); if the staged
+  changes touch no artifact path (no `lib/`, `tools/`, `package.json`) it **skips**; a missing `node` or script
+  prints one line and exits 0; on failure it prints the red lines verbatim and tells you how to bypass — it never
+  edits files and never auto-fixes.
+* **Details, every measured output and the unverified items**: [`docs/PRE-COMMIT.md`](docs/PRE-COMMIT.md).
+
 ## Video-wallpaper transcoding: a **misjudgement** + resource caps (2026-09-17, item 1)
 
 > User report: "I'm not using transcoding, my wallpaper is a **video-class mpkg**, the
@@ -567,6 +592,8 @@ dsh-mpkg-wallpaper/
 │                     #                      bundle-equivalence-test.mjs (gate step 11: same route assertions on source and bundle + mutation controls)
 │                     # style scope: style-scope-guard.mjs (gate step 12: every injected CSS rule must hit .mpw*/[data-mpw*];
 │                     #              host/third-party scopes must be registered in the allow-list with a reason + docs pointer)
+│                     # pre-commit: pre-commit.sh (a few seconds: panel-smoke + switch-wiring, with path filtering and
+│                     #              bypass hatches; paired with ../.githooks/pre-commit — see README / docs/PRE-COMMIT.md)
 │                     # note: the research-era Python tools (unmpkg/tex2png/mdl_explorer/xref) were
 │                     #       **deleted (GPL lineage unresolved, 2026-09-16)** — see `../docs/COPYING-RULES.md` §6
 ├── dist/             # build output (**not committed**, gitignored): dsh-mpkg-wallpaper.bundle.mjs (Option 4, generated on demand)

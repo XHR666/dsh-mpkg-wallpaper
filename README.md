@@ -323,6 +323,26 @@
   （`(headerBlur || unifyTint) && headerBg`，与 `css-matrix` 断言 7 同口径）—— 两条断言都没放宽。
 * 分辨力自证：把 `accent` / `aquaTextEnhance` 的门控改回被 `aquaOn` 包住 ⇒ 必须变红（两条变异）。
 
+## 提交前门禁（秒级 pre-commit，2026-09-19 / P-129）
+
+上面这条审计（以及面板渲染回归）已经抽成**秒级 pre-commit**，**提交前 4 秒**就能拦住"开关没接线""面板渲染坏了"这两类**已经真实发生过多次**的事故：
+
+```sh
+cd dsh-mpkg-wallpaper
+git config core.hooksPath .githooks    # 装载（只影响本机 clone；git config --unset core.hooksPath 卸载）
+git commit --no-verify                 # 单次绕过
+MPW_SKIP_PRECOMMIT=1 git commit -m …   # 单次绕过（走脚本内显式口，恒 exit 0）
+```
+
+* **跑什么**：`tools/panel-smoke.mjs`（面板渲染 + 语言字典，~0.3 s）+ `tools/switch-wiring-test.mjs`
+  （每个开关必须真的改变产物 + 退役开关 0 悬空引用 + 7 条分辨力变异自证，~2.5 s），**串行**，多次实测合计
+  **2.8–3.9 s**。
+* **不跑什么**：`tools/check.sh` 的 12 步（第 3 步 1115 组 CSS 矩阵、第 9 步起无头 Firefox）**不进** pre-commit
+  —— 分钟级门禁塞进 pre-commit 只会让人"改一行不敢提交"。完整门禁仍是 `bash tools/check.sh`（或 CI）。
+* **不阻塞开发**：装载是显式的（不装零影响）；暂存区只动了非产物路径（无 `lib/`·`tools/`·`package.json`）⇒ **直接跳过**；
+  缺 `node`/缺脚本 ⇒ 打印一句就 `exit 0`；失败会**原样打印红行**并提示绕过方式，不改文件、不自动 fix。
+* **细节、全部实测输出与未证实项**：[`docs/PRE-COMMIT.md`](docs/PRE-COMMIT.md)。
+
 ## 视频壁纸转码：判定是"误判" + 资源上限（2026-09-17，第 1 条）
 
 > 用户原话：「我现在并没有使用视频转码，我用的是 **video 类的 mpkg**，然后**解码帧率无上限**，
@@ -561,6 +581,8 @@ dsh-mpkg-wallpaper/
 │                     #           bundle-equivalence-test.mjs（门禁第 11 步：同一套路由断言打源码与 bundle + 变异对照）
 │                     # 样式作用域：style-scope-guard.mjs（门禁第 12 步：注入的每条 CSS 规则都必须命中 .mpw*/[data-mpw*]，
 │                     #           宿主/第三方作用域必须登记在允许清单里（带 reason + docs 指针）；裸元素/:root 覆盖判红）
+│                     # 提交前门禁：pre-commit.sh（秒级：panel-smoke + switch-wiring，含路径过滤与绕过口；
+│                     #           配 ../.githooks/pre-commit，装载见 README「提交前门禁」/ docs/PRE-COMMIT.md）
 │                     # 注：研究期的 Python 工具（unmpkg/tex2png/mdl_explorer/xref）
 │                     #     **已删除（GPL 血缘存疑，2026-09-16）**，见 `../docs/COPYING-RULES.md` §6
 ├── dist/             # 构建产物（**不入库**，.gitignore 忽略）：dsh-mpkg-wallpaper.bundle.mjs（方式四用，现生成）

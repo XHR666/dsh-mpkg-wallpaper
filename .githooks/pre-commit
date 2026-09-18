@@ -1,0 +1,16 @@
+#!/bin/sh
+# .githooks/pre-commit —— 版本化的 git hook（**装了才生效**，见 README「提交前门禁（秒级 pre-commit）」）
+#
+# 装载：git config core.hooksPath .githooks      # 只影响本机 clone，且随时可 unset
+# 卸载：git config --unset core.hooksPath
+# 单次绕过：git commit --no-verify   或   MPW_SKIP_PRECOMMIT=1 git commit …
+#
+# 它只做一件事：把控制权交给 tools/pre-commit.sh（真正的判据都在那个脚本里，本文件不写业务逻辑）。
+# 用 bash 跑（脚本用了 bash 数组）；没有 bash 才退回 sh。
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+[ -n "$ROOT" ] || exit 0
+[ -f "$ROOT/tools/pre-commit.sh" ] || exit 0
+if command -v bash >/dev/null 2>&1; then
+  exec bash "$ROOT/tools/pre-commit.sh" "$@"
+fi
+exec sh "$ROOT/tools/pre-commit.sh" "$@"
