@@ -248,7 +248,7 @@ console.log('\n== D. shim API 名单与参考实现（webwallgl，MIT）的覆�
   ok(Array.isArray(WEB_SHIM_REFERENCE.copied) && WEB_SHIM_REFERENCE.copied.length >= 1, 'D3 台账登记了照抄项（copied 非空）')
   ok(WEB_SHIM_REFERENCE.notCovered.length >= 4, 'D4 差异清单列出 ≥4 项「参考有、本实现有意不做」')
   ok(WEB_SHIM_REFERENCE.extras.length >= 3, 'D4 差异清单列出本实现独有项（架构不同导致）')
-  eq(SHIM_CONTROL_OPS.length, 14, 'D4 控制指令白名单 14 项（9 项控制 + 5 项交互注入，postMessage op）')
+  eq(SHIM_CONTROL_OPS.length, 15, 'D4 控制指令白名单 15 项（9 项控制 + 6 项交互注入：指针/滚轮/键盘/触摸/失焦/交互开关，postMessage op）')
 
   // 文档同步：差异表的每一条都必须能在 docs/WEB-WALLPAPER.md 里找到（文档/代码不许漂移）
   let doc = ''

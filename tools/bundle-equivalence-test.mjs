@@ -106,7 +106,9 @@ const buf1 = fs.readFileSync(bundleAbs);
 const mf = JSON.parse(fs.readFileSync(path.join(ROOT, MANIFEST_REL), 'utf8'));
 ok(mf.bytes === buf1.length, 'manifest 字节数 == 产物实际字节数', mf.bytes + 'B / ' + (mf.bytes / 1024).toFixed(1) + 'KB');
 ok(sha256(buf1) === mf.sha256, 'manifest sha256 == 产物实际 sha256', mf.sha256.slice(0, 16) + '…');
-ok(sameList(mf.modules.map((m) => m.id), ['lib/index.js', 'lib/pkg-extract.js', 'lib/web-wallpaper.js']), '模块表 = 入口 + 两个相对依赖', mf.modules.map((m) => m.id).join(' + '));
+// ①(WP-2 2026-09-19)：web-wallpaper.js 现在 import './web-interaction.js'（帧内触摸代理的**唯一源**，
+//   注入 shim 时一并求值）⇒ 相对依赖多一个，模块表随之从 3 个变 4 个（这是**接线**带来的，不是漂移）。
+ok(sameList(mf.modules.map((m) => m.id), ['lib/index.js', 'lib/pkg-extract.js', 'lib/web-interaction.js', 'lib/web-wallpaper.js']), '模块表 = 入口 + 三个相对依赖', mf.modules.map((m) => m.id).join(' + '));
 ok(mf.exportNames.includes('apply'), '入口导出面含 apply', mf.exportNames.join(','));
 ok(mf.externalImports.length > 0 && mf.externalImports.every((s) => s.startsWith('node:')), '外部依赖全是 node 内建（真离线单文件）', mf.externalImports.join(', '));
 ok(mf.moduleRelativeRefs.length > 0 && mf.moduleRelativeRefs.every((r) => r.module === 'lib/index.js'), '记录了模块相对引用（README 方式四的依据）', mf.moduleRelativeRefs.length + ' 处');
