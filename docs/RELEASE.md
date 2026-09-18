@@ -117,11 +117,11 @@ GitHub 侧（可选，但方式四的用户需要它）：
 
 **发布命令**（官方 registry；本机默认 registry 是 npmmirror 镜像，**不带 `--registry` 会走镜像**）：
 ```bash
-cd /root/Desktop/DSHarea/dsh-mpkg-wallpaper
+cd "$MPW_ROOT/dsh-mpkg-wallpaper"
 node tools/integrity-check.mjs                       # 65 通过 / 0 失败（含唯一一次 npm pack --dry-run）
 bash tools/check.sh                                  # 12 步全绿 RC=0（第 9 步起无头 Firefox，须串行）
 npm publish --registry=https://registry.npmjs.org/   # + dsh-mpkg-wallpaper@3.7.3
-bash /root/Desktop/DSHarea/update-plugin.sh          # 同步进 DSH + 逐文件 md5 校验
+bash "$MPW_ROOT/update-plugin.sh"                    # 同步进 DSH + 逐文件 md5 校验
 ```
 
 **发布后验证（从 registry 拉回真实 tarball 逐项核对，不是只看 metadata）**：
@@ -129,7 +129,7 @@ bash /root/Desktop/DSHarea/update-plugin.sh          # 同步进 DSH + 逐文件
 npm pack dsh-mpkg-wallpaper@3.7.3 --registry=https://registry.npmjs.org/   → 467 488 B
 解包文件数 = 12（改前 22 ⇒ liquid-glass 10 文件已按 files 负向模式排除）
 与仓库源逐文件 md5：一致 12 / 不一致 0 / 仓库缺 0
-密钥与本机路径扫描（_authToken / 私钥头 / ghp_ / sk- / /root/Desktop / /storage/emulated）：0 命中
+密钥与本机路径扫描（`_authToken` / 私钥头 / `ghp_` / `sk-` / 本机工作区绝对路径 / 设备共享存储路径）：0 命中
 liquid-glass 相关文件：0（确认未随包）
 exports 映射 {".":"./lib/index.js","./client":"./lib/client.js"} → 目标文件全部存在
 node -e "import('./lib/index.js')" → 加载成功，导出 __mpwTest, apply, inject

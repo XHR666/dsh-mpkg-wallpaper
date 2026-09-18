@@ -186,6 +186,30 @@ ok(nums.length > 0 && nums.every(([, n]) => n === totalSteps), '每步分母一�
 ok(nums.length > 0 && nums[0][0] === 1 && nums[nums.length - 1][0] === totalSteps && nums.every(([i], idx) => idx === 0 || i >= nums[idx - 1][0]),
   '步骤序号覆盖 1..' + totalSteps + ' 且单调不减（改门禁时不会漏改编号）', JSON.stringify(nums))
 
+console.log('\n== ⑩ 客户端半边"自包含"（宿主按**单个文件**下发 `exports["./client"]`）==')
+{
+  // ①(2026-09-18 评估 S-6 的护栏落地) `client.js` 拆分的可行性评估结论是"本宿主上不可拆"：
+  //   `dsh-client-modules` 把 `exports["./client"]` 指向的**那一个文件**整体 readFileSync 下发，
+  //   浏览器侧是 lazy CJS 表，遇到"非 graph row 的说明符"直接 throw。⇒ 一旦有人给 client.js 加
+  //   `import './i18n.js'` 之类的**相对**依赖，线上会以"模块解析失败"整块挂掉，而本机一切正常。
+  //   这条断言就是那个坑的守门人（它是静态的、秒级、不需要真机）。
+  const clientSrc = read('lib/client.js') || ''
+  const relImports = [...clientSrc.matchAll(/(?:^|[\s;{(])(?:import|export)\s+(?:[^'"\n]*?\s+from\s+)?['"](\.[^'"]*)['"]/g)].map((m) => m[1])
+  const relRequires = [...clientSrc.matchAll(/require\(\s*['"](\.[^'"]*)['"]\s*\)/g)].map((m) => m[1])
+  const dynamicRel = [...clientSrc.matchAll(/import\(\s*['"](\.[^'"]*)['"]\s*\)/g)].map((m) => m[1])
+  const rel = [...new Set([...relImports, ...relRequires, ...dynamicRel])]
+  ok(rel.length === 0, 'lib/client.js 里 0 处**相对** import/require（宿主按单文件下发，相对依赖线上必挂）', JSON.stringify(rel.slice(0, 4)))
+  // 反向：允许且只允许**裸包名**（宿主注入的 runtime mirror），当前实际只有 react 一处
+  const bare = [...new Set([...clientSrc.matchAll(/require\(\s*['"]([^.'"][^'"]*)['"]\s*\)/g)].map((m) => m[1]))]
+  // 裸包名 = 宿主注入的 runtime mirror（`dsh-client-modules` 的 lazy CJS 表）⇒ 只允许**已知被注入**的那几个；
+  // 将来若 client.js 要用新的裸包，必须先在宿主侧确认它被注入，然后**显式加进这张表**（不要放宽成"任意裸名"）。
+  const HOST_INJECTED = ['react', 'react-dom', 'react-dom/client']
+  const unknownBare = bare.filter((b) => !HOST_INJECTED.includes(b))
+  ok(unknownBare.length === 0, '裸包名依赖都在"宿主已注入"白名单里（' + HOST_INJECTED.join(' / ') + '）', JSON.stringify(unknownBare))
+  const pkgExports = String((pkg.exports && pkg.exports['./client']) || '')
+  ok(pkgExports === './lib/client.js' && exists('lib/client.js'), 'exports["./client"] 仍指向 lib/client.js 且文件在', pkgExports)
+}
+
 console.log(`\n结果: ${pass} 通过, ${fail} 失败`)
 if (fail) { console.error('✗ 插件完整性自检未通过——修好再谈发布'); process.exit(1) }
 console.log(`✓ 插件完整性自检通过（配合 tools/check.sh 的 ${totalSteps} 步门禁一起看）`)
