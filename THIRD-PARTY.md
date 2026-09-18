@@ -106,10 +106,10 @@ db50361cfd3d860602ddc2ff8bd1b6567ff01f471df1eccb60b3bcbfbbb0cd08  lib/liquid-gla
 | 本包新增文件 | `lib/web-wallpaper.js`（内容优先类型判定 + WE API shim 源码 + 入口 HTML 注入 + 跨源策略）、`tools/web-wallpaper-test.mjs` |
 | 改动文件 | `lib/index.js`（`/custom-folder`、`/library-web` 注入 shim；`/custom-dir` 扫描改内容优先判定）、`lib/client.js`（沙箱 iframe 挂载 + postMessage 控制通道 + 兜底） |
 | 参考（**未复制**） | `oneincase/webwallgl`（MIT，commit `b61e8910ae0a176288aed99ce9a93a13ea07df57`）的 `renderer/src/web-shim.js`、`renderer/src/web.ts`、`renderer/src/web-rewrite.ts`：只对照 **WE API 名单与语义**（web 壁纸 = sandbox iframe + 作者脚本之前注入 shim + 属性/音频/媒体泵） |
-| 复制量 | **0 行**。无 vendored 文件、无逐行翻译；实现（属性表缓存 + 微任务重放、暂停与媒体策略、`file:///` URL 改写、postMessage op 白名单、错误预算限流、iframe 沙箱三档）为本仓库自写。差异清单 5 项 + 本实现独有 3 项见 `docs/WEB-WALLPAPER.md` §10 |
+| 复制量 | **0 行**。无 vendored 文件、无逐行翻译；实现（属性表缓存 + 微任务重放、暂停与媒体策略、`file:///` URL 改写、postMessage op 白名单、错误预算限流、iframe 沙箱三档）为本仓库自写。差异清单 5 项 + 本实现独有 3 项见 `docs/WEB-WALLPAPER.md` §10。**①(WP-1) 例外：1 个函数逐行照抄 ⇒ 见 §5**（`hasBlockingCsp`，上游 `web-rewrite.ts:26-43`；本轮新增，不改变上列历史结论） |
 | API 名称 | `wallpaperPropertyListener`、`wallpaperRegisterAudioListener`、`wallpaperRegisterMedia*Listener`、`wallpaperRequestRandomFileForProperty`、`wallpaperMediaIntegration`、`wallpaperPluginListener` —— 这些是 WE 的**接口名**（接口本身不受版权保护），语义来自 WE 官方文档与公开行为 |
-| 台账 | `../docs/COPYING-RULES.md` §4 第 7 条；**第 11 条（交互注入）追加同一条目**（见 §2.1） |
-| 机器断言 | `node tools/web-wallpaper-test.mjs` 的 D4/D5（参考未 vendored、SPDX=MIT、API 名单一致、差异项在文档里可查）、E13（交互合成的帧内行为）与 F1（注释剥离后 grep：无 GPL-2.0-only 项目派生标识符、无 GPL 许可文本） |
+| 台账 | `../docs/COPYING-RULES.md` §4 第 7 条；**第 11 条（交互注入）追加同一条目**（见 §2.1）；**①(WP-1) 第 11 条（照抄 `hasBlockingCsp`，主音量契约对齐为第 12 条）见 §5** |
+| 机器断言 | `node tools/web-wallpaper-test.mjs` 的 D4/D5（参考未 vendored、SPDX=MIT、API 名单一致、差异项在文档里可查、`WEB_SHIM_REFERENCE.copied` 登记照抄出处）、E13（交互合成的帧内行为）、F1（注释剥离后 grep：无 GPL-2.0-only 项目派生标识符、无 GPL 许可文本）与 **①(WP-1) H/I/J/K/L 段**（存储 facade / 主音量 / CSP 照抄判定 / 路由端到端 / 真语料计数） |
 | 明确未借用 | `Aromatic05/wallpaper-engine-renderer`、`waywallen/open-wallpaper-engine`、`catsout/wallpaper-scene-renderer`（GPL-2.0-only，一律不借） |
 
 ### 2.1 交互注入（2026-09-16，用户第 11 条）——仍属"参照语义、未复制代码"
@@ -147,5 +147,30 @@ db50361cfd3d860602ddc2ff8bd1b6567ff01f471df1eccb60b3bcbfbbb0cd08  lib/liquid-gla
 | 台账 | `../docs/COPYING-RULES.md` §4 第 12、13 条（**仅参考、未复制**） |
 | 机器断言 | `node tools/dir-picker-test.mjs`：A 组源码级 7 条 + B 组假 DOM 行为 37 条（44 断言）；**同一套 A 组断言对 `git show HEAD:lib/client.js` 旧实现变红 6/7** ⇒ 用例有分辨力 |
 | 明确未借用 | 未引入 chonky / react-aria / react-window 等任何第三方选择器包（理由同上）；未引入 GPL-2.0-only 项目 |
+
+---
+
+---
+
+## 5. ①(WP-1 2026-09-19) 照抄：`hasBlockingCsp`（web 壁纸 CSP 阻塞判定）——**这段代码是照抄**
+
+> **免责声明（照用户“协议是允许的，你要借鉴多少就自己想吧”的许可，并在本文件如实登记）**：
+> **本节的 `hasBlockingCsp` 是逐行照抄上游**，不是“参考语义、自写实现”。上游 MIT ⇒ 允许；
+> 本包自身也是 MIT，比上游更宽松。除本函数外，`lib/web-wallpaper.js` 的其余部分仍为本仓库自写
+> （见 §2：状态机/时序/URL 改写/控制协议/错误边界；§2.1：交互注入）。
+
+| 项 | 内容 |
+|---|---|
+| 照抄的文件 | `lib/web-wallpaper.js` 的导出函数 `hasBlockingCsp(html)` |
+| 上游项目 | `oneincase/webwallgl`（**MIT**） |
+| 上游文件:行 | `renderer/src/web-rewrite.ts:26-43`（`hasBlockingCsp`，含两条正则与 `'unsafe-inline'` / `*` 的放行判定） |
+| 上游 commit | `b61e8910ae0a176288aed99ce9a93a13ea07df57`（本机研读副本在仓库外，**未 vendored**：整文件没有进本仓库） |
+| 复制量 | 1 个函数（约 18 行；本仓库落点见 `lib/web-wallpaper.js` 的同名导出与调用点 `lib/index.js` 的 `serveWebAsset`） |
+| 为什么照抄而不是自写 | 这个判定是**纯字符串规则**（CSP 头里 `script-src` 是否含 `'unsafe-inline'`/`*`），自写只会得到逻辑等价但形状不同的第二份实现 ⇒ 引入"两份规则漂移"的风险；而它足够小、可逐行核对（本仓库测试 J1 有正/负例断言） |
+| 许可正文 | MIT（与 `LICENSE` 同文；上游版权行为其作者，本包不主张该函数版权） |
+| 落地行为（本仓库自己的部分） | 上游命中 CSP 时是"退回裸 src"；我们命中时**不注入** + 响应头 `x-mpw-shim-skipped: csp` + 由客户端既有 2.5s 兜底接管（`docs/WEB-WALLPAPER.md` §7）——**接入方式是我们写的**，照抄的只有判定本身 |
+| 台账 | `../docs/COPYING-RULES.md` §4 第 11 条 |
+| 机器断言 | `tools/web-wallpaper-test.mjs` 的 J1（判定正/负例）、K11（路由端到端：CSP 页面逐字节原样 + 留痕头）、D3（`WEB_SHIM_REFERENCE.copied` 登记了 `renderer/src/web-rewrite.ts:26-43`） |
+| 未引入 | 没有新增任何 npm 依赖；没有 vendored 任何上游文件；没有引入 GPL-2.0-only 项目的任何代码 |
 
 ---

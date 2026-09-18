@@ -1,13 +1,21 @@
 # WEB-WALLPAPER —— 网页（web）类壁纸：类型判定、沙箱策略与 WE API shim
 
 > 适用范围：`dsh-mpkg-wallpaper`（MIT，插件侧）对 Wallpaper Engine **web 类壁纸**的支持。
-> 相关代码：`lib/web-wallpaper.js`（宿主侧：判定 + shim 源码 + HTML 注入 + 跨源策略 + 帧内交互合成）、
-> `lib/web-interaction.js`（父页侧：坐标换算 + 事件整形 + 交互模式状态机；**交互语义的唯一源**）、
-> `lib/index.js`（`/custom-folder`、`/library-web` 两条资源路由 + `/custom-dir` 扫描）、
+> 相关代码：`lib/web-wallpaper.js`（宿主侧：判定 + shim 源码 + HTML 注入 + 跨源策略 + **帧内合成事件派发** + 存储 facade + 主音量）、
+> `lib/web-interaction.js`（父页侧：坐标换算 + 事件整形 + 交互模式状态机 + **触摸代理**；**交互语义的唯一源**）、
+> `lib/index.js`（`/custom-folder`、`/library-web` 两条资源路由 + `/custom-dir` 扫描 + `/web-store`、`/media-audio` 两条状态路由）、
 > `lib/client.js`（沙箱 iframe 挂载 + postMessage 控制通道 + 交互舞台 + 兜底）。
-> 回归：`node tools/web-wallpaper-test.mjs`（已并入 `tools/check.sh` 第 5 步；含**宿主路由端到端**：真注入 / 无标记零回归 / CORS / `__mpw-list.json` / `/custom-dir` 内容优先扫描）
+> 回归：`node tools/web-wallpaper-test.mjs`（已并入 `tools/check.sh` 第 5 步；含**宿主路由端到端**：真注入 / 无标记零回归 / CORS / `__mpw-list.json` / `/custom-dir` 内容优先扫描 / **`/web-store` + `/media-audio` + CSP 跳过 + 源级 URL 改写**）。
 > 与交互注入的帧内合成（E13）、`node tools/web-interaction-test.mjs`（坐标换算 / 事件整形 / 开关状态机 / 沙箱边界 / 舞台契约 / 两侧源码对拍）。
 > 本项**渲染器零改动**：`we-scene-demo/` 一行未动，网页壁纸不经过 WebGL/渲染器。
+>
+> **分工（①WP-1 / WP-2，2026-09-19，避免重复踩同一块地）**：
+> **帧内**（`WEB_SHIM_SOURCE`，在 `lib/web-wallpaper.js`）负责"消息 → 合成 DOM 事件"的实际派发与帧内策略执行；
+> **父页**（`lib/web-interaction.js`）负责坐标换算、事件整形、交互模式状态机与舞台；
+> 触摸/点击代理（`op:'touch'` + `WEB_TOUCH_FRAME_SOURCE`）由 **WP-2** 负责，注入点是 `rewriteWebEntryHtml` 的注入串
+> （shim → 种子 → 作者脚本，触摸源码插在 shim 之后）。
+> **触摸是自研**：上游 `oneincase/webwallgl` 的 `web-shim.js`/`web.ts` 里 **0 处** touch 处理（只有 pointer/wheel），
+> 所以没有可对照的上游语义，触摸协议由本仓库自定义（详见 `lib/web-interaction.js` 与 `docs/` 交互节）。
 
 ---
 
@@ -64,8 +72,8 @@ iframe（`lib/client.js` 的 `showWebEl`）——没有任何 WE API，于是所
 
 | 通道 | 何时使用 | `sandbox` 属性 | 帧的源 | 后果 |
 |---|---|---|---|---|
-| **网页 shim（默认）** | 入口 URL 带 `?mpwshim=1`（插件对网页壁纸默认加） | `allow-scripts` | **不透明源**（opaque origin） | 作者脚本读不到宿主 DOM / `localStorage`；父页也读不到帧内 DOM（静音/倍速/暂停由 shim 在帧内执行） |
-| **兼容模式** | 用户在确认弹窗选「兼容模式（同源）」 | `allow-scripts allow-same-origin allow-pointer-lock` | 与宿主同源（等价于改动前的裸 iframe） | Live2D 类壁纸的「网页壁纸选项」（写 iframe 同源 `localStorage`）可用；代价是作者脚本与 DSH 界面同源 |
+| **网页 shim（默认）** | 入口 URL 带 `?mpwshim=1`（插件对网页壁纸默认加） | `allow-scripts` | **不透明源**（opaque origin） | 作者脚本读不到宿主 DOM / `localStorage`；父页也读不到帧内 DOM（静音/倍速/暂停由 shim 在帧内执行）。**①(WP-1)** 帧内 `localStorage`/`sessionStorage` 由 shim 给 facade（内存 + 宿主 `/web-store` 持久化，见 §5.4）——**这不是放宽 sandbox**：facade 读写的是"这张壁纸自己的键值"，宿主按 wallId 隔离 |
+| **兼容模式** | 用户在确认弹窗选「兼容模式（同源）」 | `allow-scripts allow-same-origin allow-pointer-lock` | 与宿主同源（等价于改动前的裸 iframe） | Live2D 类壁纸的「网页壁纸选项」（写 iframe 同源 `localStorage`）可用；代价是作者脚本与 DSH 界面同源。**此档不注入 shim** ⇒ 作者直接用浏览器真 storage（facade 只在真 storage 不可用时才装，见 §5.4） |
 | 场景渲染器（不在本项范围） | 渲染器 `:8899` URL（`sandbox=strict` 与否） | `allow-scripts allow-pointer-lock` / 旧档 | 渲染器自己的源 | 见 `../docs/COPYING-RULES.md` 与 B6 契约 |
 
 ### 3.1 为什么 `allow-scripts` 必须保留、`allow-same-origin` 必须去掉
@@ -142,9 +150,12 @@ iframe（`lib/client.js` 的 `showWebEl`）——没有任何 WE API，于是所
 | `wallpaperRequestRandomFileForProperty` | `(prop, cb)=>void` | slideshow 随机文件；**池为空时回调空串**（作者侧普遍 `if (p)` 守卫） |
 | `wallpaperMediaIntegration` | 对象 | `PLAYBACK_STOPPED=0 / PLAYBACK_PLAYING=1 / PLAYBACK_PAUSED=2`（缺省会让 `PLAYING \|\| 0` 把"播放"误判成 0） |
 | `wallpaperPluginListener` | 对象 | `{ onPluginLoaded(){} }` 空实现（iCUE 类硬件灯效；避免作者 `if` 判断崩） |
+| `localStorage` / `sessionStorage`（**宿主提供的 facade**） | 对象 | **①(WP-1)** 不透明源下浏览器对这两个属性的**访问**就抛 `SecurityError`（不是返回 null）⇒ 作者脚本一句 `localStorage.getItem()` 就把初始化打断。真 storage 可用时**一个字节都不动**；不可用时才装 facade：同步内存语义 + 宿主 `/web-store` 异步落盘（§5.4）、条数/单值/总字节三重上限（超限抛 `QuotaExceededError`，与真 Storage 同形）。`?mpwstore=0` 关（退回"访问即抛"的旧行为），`?mpwstore=mem` 只内存不落盘 |
 
 另外实现两个**非 WE 官方**的内部钩子：`window.__mpwRewriteFileUrl`（文件 URL 改写，见 §6）、
-`window.__mpwWebControl`（控制面入口，与 `postMessage` 同一条处理路径）。
+`window.__mpwWebControl`（控制面入口，与 `postMessage` 同一条处理路径）、
+`window.__mpwWebStore`（**①WP-1**：存储 facade 的诊断面 `{installed, persist, session, disabled, snapshot(), flush()}`）、
+`window.__mpwWebAudio`（**①WP-1**：主音量诊断面 `{master(), set(v), hooked()}`）。
 
 **不提供 `$media*`**：`$mediaThumbnail` / `$mediaProperties` 等是**场景脚本**（scene 的 `script.js`）
 的接口；网页壁纸没有这套全局对象，官方 web 宿主也只给上面的 `wallpaperRegisterMedia*Listener` 回调形态。
@@ -156,7 +167,7 @@ iframe（`lib/client.js` 的 `showWebEl`）——没有任何 WE API，于是所
 | `props` | `props: {name:{value}}` | 合并进属性表并回调 `applyUserProperties`（全量快照） |
 | `general` | `general: {fps}` | 回调 `applyGeneralProperties` |
 | `pause` | `value: boolean` | 回调 `setPaused` + 冻结/解冻帧内 media |
-| `policy` | `muted, speed` | 帧内静音 / 倍速（沙箱下父页读不到帧内 DOM，只能这样下达） |
+| `policy` | `muted, speed`（**①WP-1 新增** `volume`） | 帧内静音 / 倍速 / **主音量**（沙箱下父页读不到帧内 DOM，只能这样下达）。`volume` **不传 = 完全不接管**作者音量（连原型钩子都不装，默认路径零回归） |
 | `audio` | `bands: number[]` | 转交 `wallpaperRegisterAudioListener`（暂停期间丢弃） |
 | `media` | `payload: {op,…}` | 转交对应媒体监听器 |
 | `directory` / `directory-remove` | `prop, files[]` | 维护 slideshow 文件池并回调 `userDirectoryFilesAddedOrChanged` / `…Removed` |
@@ -184,6 +195,26 @@ iframe（`lib/client.js` 的 `showWebEl`）——没有任何 WE API，于是所
 扫描，不是实时频谱）。shim 通道已打通，接上真实频谱源即可用；当前作者调用
 `wallpaperRegisterAudioListener` 不会收到数据（不报错、不崩）。
 
+### 5.4 ①(WP-1) 帧内存储 facade + 宿主 `/web-store` 契约
+
+```
+作者脚本         帧内 facade（shim）                     宿主路由
+localStorage.getItem(k)   ← 同步读内存（首帧由种子回灌）
+localStorage.setItem(k,v) → 内存立即生效 → 400ms debounce → POST /api/mpkg-wallpaper/web-store
+                                                            body: {w:<wallId>, k, v} 或 {w, del:k}
+                                                            正文 text/plain（CORS 简单请求，不触发预检）
+```
+
+| 项 | 契约 |
+|---|---|
+| 谁提供 | **shim 装 facade** 只在"真 `localStorage` 不可用"（不透明源 ⇒ 访问抛 `SecurityError`）时；真能用就一个字节都不动（同源测试台/兼容模式） |
+| 隔离 | `w` = `sha1(label + 目录键 + 入口相对路径)` 前 12 位（`webWallId`）；**不含绝对路径**，不同壁纸互不可见（K8 断言） |
+| 上限 | 单值 ≤ 4096 字符、单壁纸 ≤ 64 键 / 64 KiB、宿主最多保留 64 张壁纸（最旧淘汰）。超限时帧内抛 `QuotaExceededError`（与真 Storage 同形），宿主再拒一次（`{ok:false,error:"too large"}`） |
+| 持久化时机 | 写入 400ms debounce 后异步落盘到 `DATA_DIR/web-store.json`；**内存是权威**（落盘失败只 warn，不回灌作者） |
+| 首帧可用 | 宿主服务入口 HTML 时把该 wallId 的已存快照塞进种子脚本 `store.snap` ⇒ 作者首帧 `getItem` 就能命中（K9 断言） |
+| 关闭 | `?mpwstore=0`：种子写 `store:false`、**不带 wall**、帧内不装 facade（= 改动前"访问即抛"的行为）；`?mpwstore=mem`：装 facade 但不落盘 |
+| 安全边界 | 不放宽 sandbox（仍 `allow-scripts`）；facade 读写的是壁纸自己的键值，够不到宿主 `localStorage`/DSH 界面；键名不含宿主路径 |
+
 ---
 
 ## 6. 文件 URL 改写
@@ -195,9 +226,18 @@ iframe（`lib/client.js` 的 `showWebEl`）——没有任何 WE API，于是所
 - `HTMLImageElement` / `HTMLMediaElement` / `HTMLSourceElement` / `HTMLScriptElement` 的 `src` setter
 - `CSSStyleDeclaration.prototype.setProperty` 与 `HTMLElement.prototype.style`（`background*` 走 Proxy）
 
-规则：`file:///相对段` → 按文档 `baseURI` 解析成同目录 HTTP URL；**绝对系统路径**
-（形如 `Users/`、`tmp/` 开头，或 `C:` 盘符）无法映射 → 返回**空串**（作者侧通常有守卫，
-胜过给出一个必然 404 的地址）；非 `file:` URL 一律原样放行。
+**①(WP-1) 宿主的源级改写**（补运行时钩子够不到的形态）：`rewriteWebEntryHtml` 在注入前对 HTML 文本做一次
+`rewriteWebFileUrlsInHtml` —— 只改 `src|href|poster="file:///…"` 与 `url(file:///…)` 两类（**不碰 `<script>` 文本**，
+作者 `'file:///'+v` 的合成仍由运行时钩子在赋值处完成），解析出的路径是**路由前缀 + 相对段**（绝对路径比相对路径稳，
+不怕作者自带的 `<base>`）。无 `mpwshim` 标记的请求这一步不发生（K12 断言逐字节原样）。
+
+规则：`file:///相对段` → 按文档 URL 解析成同目录 HTTP URL；**绝对系统路径**
+（形如 `Users/`、`home/`、`tmp/`、`storage/`、`sdcard/` 开头，或 `C:` 盘符）无法映射 → 运行时钩子返回**空串**、
+源级改写**保留原值**（作者侧通常有守卫，胜过给出一个必然 404 的地址）；非 `file:` URL 一律原样放行。
+
+**①(WP-1) 解析基准改用 `location.href` 优先、`baseURI` 兜底**：作者若写了 `<base href="file:///C:/…">`，
+`baseURI` 就是 `file:` 协议，用它解析出来的还是 `file:` URL（必然加载失败）；`location.href` 在两条壁纸路由下
+都是 `http(s)`，稳（作者自带 `file:` base 同时还会被源级改写纠正）。
 
 ---
 
@@ -212,6 +252,7 @@ iframe（`lib/client.js` 的 `showWebEl`）——没有任何 WE API，于是所
 | 父页侧处理 | `console.warn` + `POST /diag {kind:"web-wallpaper", why:"script-error"}`；**不弹错误框、不改壁纸状态** |
 | shim 自身安装失败 | 整个 IIFE 体在 `try` 之外的最小逻辑里运行，安装标记幂等；最坏情况退化为"没有 WE API 的裸页面"，插件主流程不受影响 |
 | shim 未按时报到（2.5s） | 记 `shim-missing` 诊断 + **一次性**去掉 `mpwshim` 重载为兼容模式（旧宿主 / 页面 CSP 挡 inline script 的兜底），绝不白屏 |
+| **①(WP-1)** 入口自带 CSP 挡 inline script | 宿主**先判、不注入**（`hasBlockingCsp`，判定照抄上游，见 `THIRD-PARTY.md` §5）→ 原样返回 + 响应头 `x-mpw-shim-skipped: csp` 留痕。避免"注入了但被浏览器拒绝"这种半吊子状态；客户端 2.5s 兜底照旧接管 |
 
 ---
 
@@ -229,10 +270,14 @@ iframe（`lib/client.js` 的 `showWebEl`）——没有任何 WE API，于是所
 - 参考：`oneincase/webwallgl`（**MIT**，commit `b61e8910ae0a176288aed99ce9a93a13ea07df57`），
   仅研读其 `renderer/src/web-shim.js`、`renderer/src/web.ts`、`renderer/src/web-rewrite.ts` 的
   **API 名单与语义**（web 壁纸走 sandbox iframe + 作者脚本前注入 WE shim + 音频/属性泵）。
-- **未复制其代码**（未 vendored、无逐行翻译）：本实现的状态机、时序策略、URL 改写、
-  控制协议与错误边界均为本仓库自写，差异见 §10。API 名称属接口（不受版权保护），
-  API 语义来自 WE 官方文档与公开行为。
-- 台账：`../docs/COPYING-RULES.md` §4 第 7 条；包内声明：`THIRD-PARTY.md` §2。
+- **①(WP-1) 例外：一处照抄**（用户明确许可“协议是允许的，你要借鉴多少就自己想吧”，上游 MIT）：
+  `renderer/src/web-rewrite.ts:26-43` 的 `hasBlockingCsp` 逐行照抄（页面自带 CSP 是否挡 inline shim
+  的判定），落点 = `lib/web-wallpaper.js` 的同名导出；**未 vendored**（不是整文件副本，是一个函数）。
+  其余仍为本仓库自写：状态机、时序策略、URL 改写、控制协议、存储 facade、主音量实现与错误边界，
+  差异见 §10。逐行出处 / 许可正文 / “这份代码是照抄”的免责声明 = `THIRD-PARTY.md` §5。
+- API 名称属接口（不受版权保护），API 语义来自 WE 官方文档与公开行为。
+- 台账：`../docs/COPYING-RULES.md` §4 第 7 条（研读对照）+ **第 11 条（照抄 `hasBlockingCsp`）/ 第 12 条（音量契约对齐）**；
+  包内声明：`THIRD-PARTY.md` §2（研读）与 §5（照抄）。
 - 明确未借用任何 GPL-2.0-only 项目（`Aromatic05/wallpaper-engine-renderer`、
   `waywallen/open-wallpaper-engine`、`catsout/wallpaper-scene-renderer`）；
   `tools/web-wallpaper-test.mjs` 有机器断言（注释剥离后 grep 派生标识符 + 无 GPL 许可文本）。
@@ -241,29 +286,41 @@ iframe（`lib/client.js` 的 `showWebEl`）——没有任何 WE API，于是所
 
 **参考覆盖、本实现也覆盖**：上表 §5.1 的 10 项 API 全部覆盖。
 
-**参考实现有、本实现第 11 条起已对齐语义的非 API 能力**（逐项对照见 §11）：
+**①(WP-1) 照抄的部分（MIT 允许，已登记）**：
+
+| 照抄项 | 上游出处 | 我们的落点 |
+|---|---|---|
+| `hasBlockingCsp`（页面 CSP 是否挡 inline shim 的判定） | `renderer/src/web-rewrite.ts:26-43` | `lib/web-wallpaper.js` 的同名导出 |
+| 逐行出处、许可正文与“这份代码是照抄”的免责声明 | —— | `THIRD-PARTY.md` §5；台账 `../docs/COPYING-RULES.md` §4 第 11 条（照抄）/ 第 12 条（音量契约对齐） |
+
+**参考实现有、本实现已对齐语义的非 API 能力**（逐项对照见 §11 与 §14）：
 
 - 合成指针/滚轮/键盘事件注入（按命中元素派发 + click 边缘合成 + button:-1 哨兵）
 - 指针离开补 out/leave 链 + 补一次 up（作者 hover/按下态复位）
 - 滚轮同时发现代 wheel 与 legacy mousewheel（wheelDelta 与 deltaY 反号）
+- **①(WP-1) 媒体音量覆写**：`volume`/`muted` 原型钩子 + 主音量，实机口径 = 作者值 × 宿主音量
+  （上游 `web-shim.js:493-583` 的 `applyMediaVolume`/`__weSetVolume`；我们把“宿主音量”接到 §13 的 `/media-audio`）
+- **①(WP-1) CSP 阻塞检测与退回**：命中 ⇒ 不注入 + 留痕（上游是 fetch 后判 CSP 再退回裸 src）
 
 **仍不做**：合成事件点亮 CSS :hover / :active（合成事件固有边界，非实现缺陷）——
 `:hover` 由浏览器自己的 hit-test 驱动，任何合成事件都不会点亮它；需要 hover 视觉的壁纸
-在交互模式下依然会"指针到了但样式不变"，这是本方案的已知边界（见 §11.4）。
+在交互模式下依然会“指针到了但样式不变”，这是本方案的已知边界（见 §11.4）。
 
 **参考有、本实现有意不做**（每条都有理由，不是漏做）：
 
 | 差异项 | 为什么不做的 |
 |---|---|
-| `setTimeout/setInterval 冻结（暂停语义）` | 插件暂停语义只需"停住画面"：`pause` 已冻结帧内 media 与作者 `setPaused` 回调；改写 `window.setTimeout` 会污染作者计时器语义与我们的错误面 |
+| `setTimeout/setInterval 冻结（暂停语义）` | 插件暂停语义只需“停住画面”：`pause` 已冻结帧内 media 与作者 `setPaused` 回调；改写 `window.setTimeout` 会污染作者计时器语义与我们的错误面 |
 | `rAF 挂起与恢复（自递归主循环补跑）` | 同上；网页壁纸的 rAF 由浏览器按帧率节流，插件不接管（接管需精确补跑，风险大于收益） |
-| `合成指针/滚轮事件注入` | 插件的壁纸层是 `pointer-events:none` 的底层背景，桌面指针事件不由网页壁纸消费（该能力属桌面 underlay 形态，与 DSH 页面内嵌形态不同） |
-| `媒体音量覆写（volume/muted 原型钩子）` | 插件只有"静音"开关，没有主音量滑条；音量留给作者与壁纸自带设置（L2D 音量滑条走其 `localStorage`） |
-| `wallpaperPropertyListener 的 whenPageReady 时序` | 本实现改为"属性表 + 首赋值后微任务 flush"，语义更简单（晚挂 listener 也能拿到全量快照），不需要等 `load` |
+| `<base href>` 注入（上游走 blob URL 才需要；我们入口是路径式 URL，作者自带 file: base 由源级改写纠正） | 本实现入口是**路径式** URL（`/custom-folder/<名>/index.html`），相对资源天然按同目录解析，不需要 base；作者自带的 `file:` base 由**源级改写**纠正（§6） |
+| `wallpaperPropertyListener 的 whenPageReady 时序` | 本实现改为“属性表 + 首赋值后微任务 flush”，语义更简单（晚挂 listener 也能拿到全量快照），不需要等 `load` |
 
 **本实现独有**（架构不同导致）：`__mpwWebSeed 种子脚本`（首帧策略，免等 postMessage）、
 `postMessage 控制通道（op 白名单）`（沙箱帧下父页唯一可达路径）、
-`作者脚本错误上报（error/unhandledrejection）`（带 50 条预算的帧内错误边界）。
+`作者脚本错误上报（error/unhandledrejection）`（带 50 条预算的帧内错误边界）、
+**①(WP-1)** `帧内 localStorage/sessionStorage facade（不透明源下真 storage 抛 SecurityError；宿主 /web-store 持久化）`、
+**①(WP-1)** `宿主 /media-audio 音量·静音·播放控制 + audible 上报（网页壁纸帧与 video 壁纸共用一套口径）`、
+**①(WP-1)** `HTML 源级 file:/// 改写（解析器直接产出的属性，运行时钩子覆盖不到的形态）`。
 
 ---
 
@@ -341,18 +398,290 @@ iframe（`lib/client.js` 的 `showWebEl`）——没有任何 WE API，于是所
 ## 12. 已知限制
 
 1. **Live2D / Spine 类壁纸的建议**：这类壁纸常用 `loadJson.json` 的 `SettingModel` 存设置
-   （写 iframe 同源 `localStorage`）。沙箱模式下不可达 → 设置页会给出明确提示，
-   请用确认弹窗里的「兼容模式（同源）」重新应用该壁纸（`webHeavy` 预检也会标黄提示）。
+   （写 `localStorage`）。**①(WP-1) 起**沙箱模式下由帧内 facade 接管（同步内存 + 宿主 `/web-store`
+   持久化，§5.4）⇒ 多数设置在刷新后不丢；仍**不**等同于浏览器同源 storage 的语义（跨设备/跨插件实例
+   不共享、单值 4 KiB/单壁纸 64 KiB 上限、`indexedDB` 仍不可用）。需要真·同源存储的（例如依赖
+   `indexedDB` 或跨壁纸共享）仍请用确认弹窗里的「兼容模式（同源）」重新应用该壁纸。
 2. **音频频谱为空**：`wallpaperRegisterAudioListener` 通道已通但没有数据源（见 §5.3）；
-   依赖音频反应的网页壁纸只会收到空白（不崩）。
+   依赖音频反应的网页壁纸只会收到空白（不崩）。**①(WP-1) 说明**：本项**不伪造**频谱——
+   帧内虽然能对壁纸自己的音频做 FFT（`AudioContext` 在语料里 1 张命中），但 WE 的音频监听语义是
+   **系统音频**（用户正在放的音乐），把壁纸自身声音当作"系统频谱"喂给作者是**语义造假**
+   （可视化类壁纸会对着自己的 BGM 抖动，看起来"能用"但结论是错的）⇒ 宁可留空并在 UI/文档说明。
 3. **媒体（曲目/封面/进度）通道**：协议与回放已实现，但插件尚未接入系统媒体会话（SMTC / MPRIS）数据源，
    当前只有作者自己触发的事件才会到达；不能显示"正在播放"的网页壁纸属预期。
 4. **指针交互**：已由第 11 条的交互模式解决（默认关闭；开启后指针/滚轮/键盘可达帧内）。
    仍不可达的是 CSS `:hover`/`:active`（合成事件固有边界）与"不点交互按钮就想直接操作"的用法。
-5. **`file:///` 改写覆盖不到的地方**：由 HTML 解析器直接产出的属性（`innerHTML` 里写的
-   `src="file:///…"`）不经过 `setAttribute`/setter，不会被改写；`url()` 里带引号+空格的极端写法也只覆盖常见形态。
+5. **`file:///` 改写覆盖不到的地方**（**①WP-1 后已收窄**）：静态 HTML 里写死的 `src|href|poster="file:///…"`
+   与 `url(file:///…)` 现在由**宿主源级改写**覆盖（§6，K12 断言），`el.src`/`style.background`/`setAttribute`
+   由运行时钩子覆盖。**仍未覆盖**：① `innerHTML`/`insertAdjacentHTML` 里拼出来的 `file:///` 字符串
+   （不经过任何钩子，也不在源级改写范围内——本机语料 0 命中，故不实现，见 §16）；
+   ② `url()` 里带引号+空格+转义的极端写法；③ 绝对系统路径（`Users/…`/`C:`）一律映射不了，属设计如此。
 6. **`__mpw-list.json` 的池子来源**：插件没有"用户为该 file/directory 属性选目录"的交互，
    slideshow 池退化为**壁纸自有目录内的媒体文件**（最多 2000 个）。
 7. **外链页面**：帧内导航到外网页面后，对方文档不会带 shim（注入只发生在本插件路由上）。
 8. **兼容模式 = 同源**：此时作者脚本与 DSH 界面同源（可读 DOM/localStorage），
    仅建议对可信来源（本地库/自己下载的壁纸）使用；沙箱模式是默认值。
+
+## 13. ①(WP-1) 宿主媒体音频控制（用户第 6 项）：契约与“默认仍静音”
+
+**问题**：插件对 **video 类壁纸**默认静音（`lib/client.js` 的 `<video muted>`），网页壁纸帧也默认 `muted:true`；
+用户要求“把视频声音交给宿主的音量/播放控制”，但**默认行为不变**。
+
+**做法**：宿主提供一套**音频控制接口**（不是 UI；UI 归测试台线），宿主是状态的唯一权威：
+
+| 语义名 | HTTP（宿主路由） | 请求体 | 效果 |
+|---|---|---|---|
+| `getMediaAudio()` | `GET /api/mpkg-wallpaper/media-audio` | — | `{ok, muted, volume, playing, audible, explicit, hasAudio, source, updatedAt}` |
+| `setMuted(bool)` | `POST` 同上 | `{"muted":false}` | 显式打开/关闭声音 |
+| `setMediaVolume(v)` | `POST` 同上 | `{"volume":0.4}` | 音量夹到 `[0,1]`（`7` ⇒ `1`，`-3` ⇒ `0`） |
+| `play()` / `pause()` | `POST` 同上 | `{"play":true}` / `{"pause":true}` | 播放控制（`playing` 位） |
+| `resetMediaAudio()` | `POST` 同上 | `{"reset":true}` | 回默认档（`muted:true`、`explicit:false`） |
+| 上报音轨存在性（可选） | `POST` 同上 | `{"hasAudio":true}` | 客户端探测结果由宿主**如实回报**（宿主不猜） |
+
+**“当前是否有声”的上报** = 响应里的 `audible`：`audible = (!muted) && volume > 0 && playing`。
+**默认档 `muted:true` ⇒ `audible:false`**（K1 断言）；只有显式写过（写入即置 `explicit:true`）才可能为 true。
+
+**落到渲染上**：
+
+- **网页壁纸帧**：`explicit:true` 时宿主把 `{muted, volume}` 写进**入口种子脚本**（首帧生效；**不往客户端 URL
+  加参数** ⇒ 不改变客户端“同一张壁纸”的身份判定），帧内按“作者值 × 宿主音量”合成（§5.2 的 `policy.volume`）；
+  `explicit:false` 时**一个字段都不下发**（K7 断言：种子 JSON 里连 `volume` 键都不出现）。
+- **video 类壁纸**（插件自己的 `<video>`）：宿主只做**状态权威 + 契约**，实际 mute/volume 由客户端半边施加
+  （`lib/client.js` 既有 `muted` 默认**未改动**；UI 线接入后调上面的 POST 即可）。本轮**不动 `lib/client.js`**，
+  所以“默认仍静音”两端都成立：宿主默认 `audible:false` + 客户端 `<video>` 默认 `muted`。
+
+**持久化**：状态落在 `DATA_DIR/media-audio.json`（与 settings/custom-dir 同目录），重启后口径不变（K5 断言）。
+
+---
+
+## 14. ①(WP-1) 与上游 `oneincase/webwallgl` 的能力对照表（逐项）
+
+基准：上游 `renderer/src/web-shim.js`（1416 行）、`web.ts`（1110 行）、`web-rewrite.ts`（95 行），
+commit `b61e8910ae0a176288aed99ce9a93a13ea07df57`（MIT）。语义口径与逐条证据见 §10/§11。
+
+| 能力（上游 → 我们） | 上游 | 我们 | 备注 |
+|---|---|---|---|
+| WE API 10 项（§5.1） | ✅ | ✅ | 名单一致（D1/D2 断言） |
+| 作者脚本前注入 shim（`<head>` 最前） | ✅ | ✅ | 我们额外有种子脚本（首帧策略） |
+| HTML 改写（`<base href>` 注入） | ✅ 注入 | ❌ 有意不做 | 入口是路径式 URL；作者自带 `file:` base 由源级改写纠正（§6/§10） |
+| CSP 阻塞检测 → 退回 | ✅ `hasBlockingCsp` + 退回裸 src | ✅ **照抄判定** + 不注入 + `x-mpw-shim-skipped` 头 | 本机语料 0 命中（防御性；判定逐行照抄已登记） |
+| `file:///` → 同源（运行时钩子） | ✅ | ✅ | setAttribute / src setter / style Proxy |
+| `file:///` → 同源（**HTML 源级**） | ❌（上游只做运行时） | ✅ | 解析器直接产出的属性；语料 3/8 张有 `file:///` |
+| `localStorage` 持久化 | ❌（上游同源，直接用浏览器 storage） | ✅ facade + 宿主 `/web-store` | **本实现独有**；语料 4/8 张读 localStorage（不透明源下会抛） |
+| 媒体音量覆写（作者值 × 主音量） | ✅ `__weSetVolume` | ✅ `policy.volume` + `/media-audio` | 主音量接成**宿主权威**（§13） |
+| `new Audio()` 不进 DOM 也覆盖 | ✅ WeakRef 登记 | ✅ 同款（WeakRef 优先，退化有界数组） | |
+| 定时器冻结（暂停） | ✅ | ❌ 有意不做 | 理由见 §10（暂停只需停画面） |
+| rAF 挂起/恢复 | ✅ | ❌ 有意不做 | 同上 |
+| 音频泵 `__wePushAudio(arr128)` | ✅（宿主推频谱） | ⚠️ 通道有、**无数据源** | 不伪造频谱（§12.2）；`op:'audio'` 已在协议里 |
+| 媒体泵 `__wePushMedia` | ✅ | ✅（`op:'media'`，晚注册回放） | 数据源（SMTC/MPRIS）仍未接（§12.3） |
+| 目录文件泵 | ✅ | ✅（`op:'directory'` + `__mpw-list.json`） | |
+| 指针注入 | ✅ 同源直调 `__wePushPointer` | ✅ `postMessage`（不透明源下唯一可行） | 语义对齐（§11） |
+| 滚轮注入（含 legacy mousewheel） | ✅ | ✅ | 反号口径一致 |
+| 键盘注入 | ❌ | ✅ `full` 档 + 文本输入 | 本实现独有 |
+| **触摸/点击代理** | ❌（上游 **0 处** touch） | ✅ **自研（WP-2）** | 上游无可对照语义 ⇒ 协议自定（页首分工说明） |
+| 属性 `whenPageReady` 时序 | ✅ 等 load | ❌ 改成微任务 flush | 语义更简单（§10） |
+| 沙箱 | `allow-scripts allow-same-origin`（测试台同源） | 只要 `allow-scripts`（不透明源）+ 兼容模式可选 | §3 |
+
+---
+
+## 15. ①(WP-1) 真语料计数：本机 8 张 web 壁纸 → “我们必须实现哪些 API”
+
+量法（可复跑）：`node tools/web-wallpaper-test.mjs --corpus-json`（同一份扫描逻辑也用于 L 段断言）。
+语料 = `$MPW_ROOT/allwallpaper`（本机含 `0917/`、`dd/`、`wallpaperE/`、`wallpapertest1/`，34 个含
+`project.json` 的目录中按**内容**判定为 web 类 **8 张**；判定用生产实现 `detectWallpaperDir`，不重写第二套规则）。
+另有插件缓存 `~/.dsh-mpkg-wallpaper` 的 5 个 mpkg 容器（241 条目）——**web 条目 0**（`html=0`）⇒ 缓存语料对本项无输入。
+
+| API / 回调 | 本机命中次数 | 命中壁纸数 | 上游 42 张语料注释 | 我们有 | 结论 |
+|---|---|---|---|---|---|
+| `wallpaperPropertyListener` | 17 | 5/8 | 29 张 | ✅ 有 | 语料命中 ⇒ 必须实现（已实现；上游 42 张语料同样命中） |
+| `wallpaperRegisterAudioListener` | 4 | 1/8 | 22 张 | ✅ 有 | 语料命中 ⇒ 必须实现（已实现；上游 42 张语料同样命中） |
+| `wallpaperRegisterMediaPropertiesListener` | 0 | 0/8 | 2 张 | ✅ 有 | 本机 0 命中，但**上游 42 张语料命中 2 张** ⇒ 必须保留实现（删了就是看本机语料下菜） |
+| `wallpaperRegisterMediaThumbnailListener` | 0 | 0/8 | 未单列（0） | ✅ 有 | 本机 0 命中、上游 0 ⇒ 仍保留（官方 API 名，属“接口面完整”，删掉会让将来语料里的壁纸静默失效） |
+| `wallpaperRegisterMediaPlaybackListener` | 0 | 0/8 | 未单列（0） | ✅ 有 | 本机 0 命中、上游 0 ⇒ 仍保留（官方 API 名，属“接口面完整”，删掉会让将来语料里的壁纸静默失效） |
+| `wallpaperRegisterMediaTimelineListener` | 0 | 0/8 | 未单列（0） | ✅ 有 | 本机 0 命中、上游 0 ⇒ 仍保留（官方 API 名，属“接口面完整”，删掉会让将来语料里的壁纸静默失效） |
+| `wallpaperRegisterMediaStatusListener` | 0 | 0/8 | 未单列（0） | ✅ 有 | 本机 0 命中、上游 0 ⇒ 仍保留（官方 API 名，属“接口面完整”，删掉会让将来语料里的壁纸静默失效） |
+| `wallpaperRequestRandomFileForProperty` | 0 | 0/8 | 8 张 | ✅ 有 | 本机 0 命中，但**上游 42 张语料命中 8 张** ⇒ 必须保留实现（删了就是看本机语料下菜） |
+| `wallpaperMediaIntegration` | 0 | 0/8 | 未单列（0） | ✅ 有 | 本机 0 命中、上游 0 ⇒ 仍保留（官方 API 名，属“接口面完整”，删掉会让将来语料里的壁纸静默失效） |
+| `wallpaperPluginListener` | 1 | 1/8 | 2 张 | ✅ 有 | 语料命中 ⇒ 必须实现（已实现；上游 42 张语料同样命中） |
+| `applyUserProperties`（回调名，非全局 API） | 9 | 5/8 | 未单列 | ✅ 有 | 属性监听对象里的回调；shim 按名调用（§5.1） |
+| `applyGeneralProperties`（回调名，非全局 API） | 0 | 0/8 | 未单列 | ✅ 有 | 属性监听对象里的回调；shim 按名调用（§5.1） |
+| `setPaused`（回调名，非全局 API） | 9 | 5/8 | 未单列 | ✅ 有 | 属性监听对象里的回调；shim 按名调用（§5.1） |
+| `userDirectoryFilesAddedOrChanged`（回调名，非全局 API） | 1 | 1/8 | 未单列 | ✅ 有 | 属性监听对象里的回调；shim 按名调用（§5.1） |
+| `userDirectoryFilesRemoved`（回调名，非全局 API） | 1 | 1/8 | 未单列 | ✅ 有 | 属性监听对象里的回调；shim 按名调用（§5.1） |
+
+**语料给出的“为什么需要新能力”证据**：
+
+| 信号 | 命中次数 | 命中壁纸数 | 支撑的能力 |
+|---|---|---|---|
+| `localStorage` | 27 | 4/8 | 帧内存储 facade（§5.4）——不透明源下**访问即抛** SecurityError，作者初始化会被打断 |
+| `file:///` | 26 | 3/8 | 文件 URL 改写（§6）——静态属性靠**源级改写**，动态赋值靠运行时钩子 |
+| `new Audio(` | 9 | 2/8 | 主音量（§13 / §5.2）——不进 DOM 的元素 querySelectorAll 找不到，必须包构造器 |
+| `AudioContext` | 3 | 1/8 | 同上（WebAudio 路径；策略只保证不误伤 audio/video 元素） |
+
+**与上游 42 张语料的交叉验证**：上游注释（`web-shim.js:1-18`，2026-09 自测库）为
+`wallpaperPropertyListener 29 / RegisterAudioListener 22 / RequestRandomFileForProperty 8 /
+userDirectoryFiles* 9 / Media*Listener 2 / PluginListener 2`（42 张）。本机语料只有 8 张，命中集合是它的
+**子集**：`PropertyListener`、`RegisterAudioListener`、`userDirectoryFiles*`、`PluginListener` 都命中；
+本机 **0** 命中而上游有命中的是 `RequestRandomFileForProperty` 与 `Media*Listener` ⇒ 这两族**必须保留实现**
+（不能因为本机语料没有就删）。反向：本机命中的 `setPaused` / `applyUserProperties`（属性对象回调）上游注释未单列，
+但显然必需。⇒ **结论：10 项官方 API 一个都不删；新增能力按“本机语料证据 + 上游有”两条腿决定**（§14）。
+
+**真语料指纹（sha256，入口 HTML）**——L5 断言逐行比对（不一致通常意味着“语料变了”，不是代码 bug）：
+
+| 壁纸（语料内相对路径） | 入口 | sha256 |
+|---|---|---|
+| `0917/884307090` | `index.html` | `a31c4c88f48b025876faca0780b6dca8ff1f02db680f8a0d875f41e67e4b81ea` |
+| `dd/3580207945` | `index.html` | `7b8df325d08e73b082dcba3168471c33f5b0ba0902621b289d3910f180b04632` |
+| `dd/3644069061` | `index.html` | `ef707d2b8c017e04648ab5921d99a3edba6f9a8d94131cf8736f43b90fd62495` |
+| `dd/3646392375` | `index.html` | `48ffadc012a98cdbcc4e0f6f9c56d7fcb5e3c71b704e71dd00ababec98eb579d` |
+| `dd/3650880224` | `index.html` | `86d5f7477f720f772bf111b5d438217342ea2caacb724aaff19f25d5ed3308a2` |
+| `dd/3656000453` | `index.html` | `7b8df325d08e73b082dcba3168471c33f5b0ba0902621b289d3910f180b04632` |
+| `dd/3744579963` | `index.html` | `86d5f7477f720f772bf111b5d438217342ea2caacb724aaff19f25d5ed3308a2` |
+| `dd/3752477634` | `index.html` | `7b8df325d08e73b082dcba3168471c33f5b0ba0902621b289d3910f180b04632` |
+
+<!-- MPW-CORPUS-COUNTS:BEGIN -->
+机器可读的语料计数（**L5 断言逐项比对**；更新方法：`node tools/web-wallpaper-test.mjs --corpus-json`，
+把输出整段替换下面这块）：
+
+```json
+{
+  "corpus": {
+    "root": "allwallpaper",
+    "walls": 8,
+    "apis": {
+      "wallpaperPropertyListener": {
+        "hits": 17,
+        "walls": 5
+      },
+      "applyUserProperties": {
+        "hits": 9,
+        "walls": 5
+      },
+      "setPaused": {
+        "hits": 9,
+        "walls": 5
+      },
+      "wallpaperRegisterAudioListener": {
+        "hits": 4,
+        "walls": 1
+      },
+      "userDirectoryFilesAddedOrChanged": {
+        "hits": 1,
+        "walls": 1
+      },
+      "userDirectoryFilesRemoved": {
+        "hits": 1,
+        "walls": 1
+      },
+      "wallpaperPluginListener": {
+        "hits": 1,
+        "walls": 1
+      }
+    },
+    "signals": {
+      "localStorage": {
+        "hits": 27,
+        "walls": 4
+      },
+      "file:///": {
+        "hits": 26,
+        "walls": 3
+      },
+      "new Audio(": {
+        "hits": 9,
+        "walls": 2
+      },
+      "AudioContext": {
+        "hits": 3,
+        "walls": 1
+      }
+    },
+    "nonApi": {
+      "__weh": {
+        "hits": 6,
+        "walls": 3
+      },
+      "wallpaperAudioListener": {
+        "hits": 4,
+        "walls": 1
+      },
+      "wallpaperSettings": {
+        "hits": 4,
+        "walls": 1
+      }
+    },
+    "entries": [
+      {
+        "id": "0917/884307090",
+        "entry": "index.html",
+        "sha256": "a31c4c88f48b025876faca0780b6dca8ff1f02db680f8a0d875f41e67e4b81ea"
+      },
+      {
+        "id": "dd/3580207945",
+        "entry": "index.html",
+        "sha256": "7b8df325d08e73b082dcba3168471c33f5b0ba0902621b289d3910f180b04632"
+      },
+      {
+        "id": "dd/3644069061",
+        "entry": "index.html",
+        "sha256": "ef707d2b8c017e04648ab5921d99a3edba6f9a8d94131cf8736f43b90fd62495"
+      },
+      {
+        "id": "dd/3646392375",
+        "entry": "index.html",
+        "sha256": "48ffadc012a98cdbcc4e0f6f9c56d7fcb5e3c71b704e71dd00ababec98eb579d"
+      },
+      {
+        "id": "dd/3650880224",
+        "entry": "index.html",
+        "sha256": "86d5f7477f720f772bf111b5d438217342ea2caacb724aaff19f25d5ed3308a2"
+      },
+      {
+        "id": "dd/3656000453",
+        "entry": "index.html",
+        "sha256": "7b8df325d08e73b082dcba3168471c33f5b0ba0902621b289d3910f180b04632"
+      },
+      {
+        "id": "dd/3744579963",
+        "entry": "index.html",
+        "sha256": "86d5f7477f720f772bf111b5d438217342ea2caacb724aaff19f25d5ed3308a2"
+      },
+      {
+        "id": "dd/3752477634",
+        "entry": "index.html",
+        "sha256": "7b8df325d08e73b082dcba3168471c33f5b0ba0902621b289d3910f180b04632"
+      }
+    ]
+  },
+  "mpkgCache": {
+    "files": 5,
+    "entries": 241,
+    "html": 0,
+    "js": 0
+  }
+}
+```
+<!-- MPW-CORPUS-COUNTS:END -->
+
+---
+
+## 16. ①(WP-1) 未实现 / 不需要（0 命中且上游也没实现 ⇒ 不写代码）
+
+判据（用户第 4 条硬要求）：**本机语料 0 命中 且 上游也没实现** 的东西，不写实现代码，只登记在这里。
+
+| 项 | 本机语料 | 上游 | 为什么不实现 |
+|---|---|---|---|
+| `$mediaThumbnail` / `$mediaProperties` / `$media*` | 0 | 0（上游同样只给 `wallpaperRegisterMedia*Listener` 回调形态） | 那是**场景脚本**（scene 的 `script.js`）的全局对象；官方 web 宿主也不给网页壁纸这套接口（§5.1 已注明） |
+| `indexedDB` / `caches` / Service Worker | 0 | 0（上游同源直接用浏览器 API，从未适配） | 不透明源下不可用；补一套要另写事务/版本语义，语料 0 命中 ⇒ 收益为 0 |
+| `wallpaperRegisterMediaListener`（**不存在的** API 名） | 0 | 0 | 语料没有、WE 官方文档也没有 ⇒ 不实现（作者若写了属“API 名都不对”，静默失败与官方 CEF 一致） |
+| `wallpaperRequestFileForProperty` / `…AllFilesForProperty` | 0 | 0 | 官方只有 `wallpaperRequestRandomFileForProperty`（已实现）；其余名字是编造的 |
+| `wallpaperRegisterAudioListener2` 等名字变体 | 0 | 0 | 同上（名字不存在） |
+| `innerHTML` 里拼 `file:///` 的源级改写 | 0 | 0（上游只做运行时钩子） | 需要 HTML 解析器级别改写；语料 0 命中（§12.5 已如实写明覆盖边界） |
+| 给 `AudioContext` 图强塞主音量 | 3 次 / 1 张 | 0（上游只 hook 媒体元素 volume） | 会改作者音频图语义；该张是米哈游 SDK 内部音效 ⇒ 不动（我们只保证不误伤 `audio/video`） |
+| `sessionStorage` 独立实现 | 0 | 0 | 已用同一份 facade 兜住（会话语义由 `?mpwstore=mem` 覆盖），不另写一套 |
+| `setTimeout/setInterval` 冻结、rAF 挂起/恢复 | ——（非 API） | ✅ 上游有 | **不属本表**：这是“有意不做”，理由在 §10 |
+
+**作者自有符号（语料里有，但**不是** WE API ⇒ 不进 API 名单；L6 断言）**：
+`wallpaperAudioListener`（4 次 / 1 张：作者自己的回调函数名，写作
+`window.wallpaperRegisterAudioListener(wallpaperAudioListener)`）、
+`wallpaperSettings`（4 次 / 1 张：作者自建配置对象）、`__weh`（6 次 / 3 张：Vite/React 打包产物内部符号）。

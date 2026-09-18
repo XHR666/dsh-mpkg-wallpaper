@@ -16,6 +16,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import vm from 'node:vm'
+import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import { Writable } from 'node:stream'
 import { loadPlugin } from './_stub.mjs'
@@ -25,6 +26,10 @@ import {
   detectWebWallpaperKind, detectWallpaperDir, declaredTypeOf, declaredFileOf,
   isShimRequest, webPolicyFromQuery, buildSeedScript, rewriteWebEntryHtml, webAssetCorsHeaders,
   listWallpaperFiles, readProjectJson,
+  // ①(WP-1) 存储 facade / 宿主音量 / CSP / 源级改写
+  WEB_STORE_ROUTE, WEB_STORE_QUERY_KEY, WEB_STORE_MAX_VALUE, WEB_STORE_MAX_KEYS, WEB_STORE_MAX_BYTES,
+  MEDIA_AUDIO_ROUTE, MEDIA_AUDIO_DEFAULTS, normalizeMediaAudio, mediaAudioReport, mediaAudioPatchForEntry,
+  hasBlockingCsp, rewriteWebFileUrlsInHtml, webStoreFromQuery, sanitizeWebStore, webWallId, fileUrlToPath,
 } from '../lib/web-wallpaper.js'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -211,8 +216,9 @@ console.log('\n== C. shim 注入：作者脚本之前、幂等、转义 ==')
 
   // 宿主路由源码守卫：注入点必须在两条网页壁纸资源路由上（不是新增旁路）
   const host = read('lib/index.js')
-  ok(/serveWebAsset\(req, res, join\(customDir, folder\), file, 'custom'\)/.test(host), 'C8 /custom-folder 走统一的注入资源分发')
-  ok(/serveWebAsset\(req, res, rec\.dir, file, 'library'\)/.test(host), 'C8 /library-web 走统一的注入资源分发')
+  // ①(WP-1) 调用点追加了 wallKey 实参（存储隔离键）⇒ 正则只锚定"统一分发"这件事本身
+  ok(/serveWebAsset\(req, res, join\(customDir, folder\), file, 'custom'/.test(host), 'C8 /custom-folder 走统一的注入资源分发')
+  ok(/serveWebAsset\(req, res, rec\.dir, file, 'library'/.test(host), 'C8 /library-web 走统一的注入资源分发')
   ok(host.indexOf('detectWallpaperDir(sub)') > 0, 'C8 /custom-dir 扫描改用内容优先判定')
   ok(host.indexOf('__mpw-list.json') > 0, 'C8 宿主提供目录清单虚拟文件（slideshow 文件池）')
 }
@@ -254,9 +260,10 @@ console.log('\n== D. shim API 名单与参考实现（webwallgl，MIT）的覆�
 
 /* ══════════════════ E. shim 运行时（vm + 假 DOM） ══════════════════ */
 console.log('\n== E. shim 运行时：属性重放 / 音频 / 媒体 / 文件池 / 策略 / 抛错兜底 ==')
-function makeShimEnv(seed) {
+function makeShimEnv(seed, opts = {}) {
   const posted = []
   const media = []
+  const fetchCalls = []
   const parent = { postMessage: (m, o) => posted.push({ m, o }) }
   const ev = () => {
     const h = Object.create(null)
@@ -274,11 +281,22 @@ function makeShimEnv(seed) {
     getAttribute(k) { return Object.prototype.hasOwnProperty.call(this.attrs, k) ? this.attrs[k] : null }
   }
   class FakeStyle { constructor() { this.props = {} } setProperty(k, v) { this.props[k] = v } getPropertyValue(k) { return this.props[k] || '' } }
+  // ①(WP-1) 帧内媒体要带 **volume/muted 原型访问器**：主音量钩子挂的是 `HTMLMediaElement.prototype.volume`，
+  //   没有真描述符时钩子会正确地"不装"——那样就测不到"作者值 × 主音量"的合成了（假绿的反面：假红）。
   class FakeMedia {
-    constructor(tag) { this.tagName = tag; this.paused = false; this.muted = false; this.playbackRate = 1; this.plays = 0; this.pauses = 0 }
+    constructor(tag) { this.tagName = tag; this.paused = false; this.__muted = false; this.playbackRate = 1; this.plays = 0; this.pauses = 0; this.__volume = 1 }
     play() { this.paused = false; this.plays++; return Promise.resolve() }
     pause() { this.paused = true; this.pauses++ }
   }
+  Object.defineProperty(FakeMedia.prototype, 'muted', {
+    configurable: true, enumerable: true,
+    get() { return !!this.__muted }, set(v) { this.__muted = !!v },
+  })
+  Object.defineProperty(FakeMedia.prototype, 'volume', {
+    configurable: true, enumerable: true,
+    get() { return this.__volume }, set(v) { this.__volume = Number(v) },
+  })
+  class FakeAudio extends FakeMedia { constructor(src) { super('AUDIO'); this.src = src } }
   const docEl = new FakeElement()
   const doc = {
     readyState: 'complete',
@@ -293,21 +311,40 @@ function makeShimEnv(seed) {
     console, URL, Math, Object, Array, Number, String, JSON, Date, Error, Proxy, WeakMap, Promise, isFinite, parseInt, parseFloat,
     queueMicrotask, setTimeout, clearTimeout, setInterval, clearInterval, document: doc, location: { href: doc.baseURI },
     Element: FakeElement, HTMLElement: FakeElement, CSSStyleDeclaration: FakeStyle,
-    HTMLImageElement: class extends FakeElement {}, HTMLMediaElement: class extends FakeElement {},
+    HTMLImageElement: class extends FakeElement {}, HTMLMediaElement: FakeMedia,
     HTMLSourceElement: class extends FakeElement {}, HTMLScriptElement: class extends FakeElement {},
+    Audio: FakeAudio,   // ①(WP-1) `new Audio()`（不进 DOM）也要被主音量覆盖
     MutationObserver: class { observe() {} disconnect() {} },
     requestAnimationFrame: (f) => setTimeout(() => f(Date.now()), 0), cancelAnimationFrame: () => {},
+    // ①(WP-1) 帧内存储/音量测试需要：DOMException（配额异常名）、WeakRef（活实例登记）、fetch 探针
+    DOMException: class DOMException extends Error { constructor(msg, name) { super(msg); this.name = name || 'Error' } },
+    WeakRef,
+    fetch: (url, init) => { fetchCalls.push({ url, init }); return Promise.resolve({ ok: true }) },
   }
   sandbox.window = sandbox
   sandbox.self = sandbox
   sandbox.parent = parent
   sandbox.addEventListener = winEv.addEventListener
   sandbox.removeEventListener = () => {}
+  // ①(WP-1) 不透明源下的真 localStorage：**访问即抛** SecurityError（Chrome 行为）。
+  //   `opts.storageWorks: true` 用来做负面对照：真 storage 可用时 shim **不得**接管。
+  const fakeRealStore = {
+    data: Object.create(null),
+    getItem(k) { return Object.prototype.hasOwnProperty.call(this.data, String(k)) ? this.data[String(k)] : null },
+    setItem(k, v) { this.data[String(k)] = String(v) },
+    removeItem(k) { delete this.data[String(k)] },
+    clear() { this.data = Object.create(null) },
+    key(i) { return Object.keys(this.data)[Number(i) || 0] ?? null },
+    get length() { return Object.keys(this.data).length },
+  }
+  if (opts.storageWorks) sandbox.localStorage = fakeRealStore
+  else Object.defineProperty(sandbox, 'localStorage', { configurable: true, get() { throw new sandbox.DOMException('Access is denied for this document.', 'SecurityError') } })
   // 宿主注入的种子脚本（window.__mpwWebSeed）——必须在 shim 之前写入，模拟 HTML 里的注入顺序
   if (seed) sandbox.__mpwWebSeed = seed
   const ctx = vm.createContext(sandbox)
-  vm.runInContext(WEB_SHIM_SOURCE, ctx, { filename: 'mpw-we-shim.js' })
-  return { sandbox, ctx, posted, media, parent, winEv, docEv, FakeElement, FakeMedia, docEl }
+  // ①(WP-1) `skipShim`：H0 要在 shim 装 facade **之前**看夹具本身（否则观测到的是 facade）
+  if (!opts.skipShim) vm.runInContext(WEB_SHIM_SOURCE, ctx, { filename: 'mpw-we-shim.js' })
+  return { sandbox, ctx, posted, media, parent, winEv, docEv, FakeElement, FakeMedia, FakeAudio, docEl, fetchCalls, fakeRealStore }
 }
 {
   const env = makeShimEnv()
@@ -665,6 +702,167 @@ console.log('\n== E13. 交互注入：控制消息 → 帧内合成 DOM 事件�
   eq(e.seen.length, 0, 'E13-11 非父窗口来源的交互消息被丢弃（任意页面不能操纵壁纸交互）')
 }
 
+/* ══════════════════ H. ①(WP-1) 帧内存储 facade ══════════════════ */
+console.log('\n== H. ①(WP-1) 帧内存储：不透明源下 localStorage 会抛 SecurityError ⇒ facade + 宿主持久化 ==')
+{
+  // H0 前置事实：不透明源（沙箱帧）里 `window.localStorage` **访问即抛**（我们的假 DOM 照此建模）
+  const broken = makeShimEnv(null, { skipShim: true })
+  let threw = null
+  try { void broken.sandbox.localStorage } catch (e) { threw = e }
+  ok(!!threw && threw.name === 'SecurityError', 'H0 夹具成立：不透明源下真 localStorage 访问抛 SecurityError（Chrome 行为）')
+
+  // H1 装了 facade：读写不抛、内存权威、快照从种子回灌
+  const env = makeShimEnv({ v: SHIM_VERSION, entry: 'index.html', policy: { muted: true, speed: 1, paused: false }, wall: 'w1abc', store: { id: 'w1abc', url: WEB_STORE_ROUTE, persist: true, snap: { theme: 'dark' } } })
+  const { sandbox } = env
+  ok(!!sandbox.__mpwWebStore && sandbox.__mpwWebStore.installed === true, 'H1 不透明源 ⇒ 装 facade（localStorage 不再抛）')
+  eq(sandbox.localStorage.getItem('theme'), 'dark', 'H1 宿主已存快照回灌到帧内（刷新后作者设置还在）')
+  eq(sandbox.localStorage.getItem('nope'), null, 'H1 未存的键 → null（与真 Storage 同形）')
+  sandbox.localStorage.setItem('theme', 'light')
+  eq(sandbox.localStorage.getItem('theme'), 'light', 'H1 setItem 立即生效（同步内存语义）')
+  eq(sandbox.localStorage.length, 1, 'H1 length 反映键数')
+  eq(sandbox.localStorage.key(0), 'theme', 'H1 key(i) 可取键名')
+  sandbox.localStorage.removeItem('theme')
+  eq(sandbox.localStorage.getItem('theme'), null, 'H1 removeItem 生效')
+
+  // H2 属性写法（真 Storage 支持 `store.foo = '1'`，语料里有作者这么用）
+  sandbox.localStorage.foo = 'bar'
+  eq(sandbox.localStorage.getItem('foo'), 'bar', 'H2 属性写法 store.foo=… 等价 setItem（Proxy 对齐真 Storage）')
+  eq(sandbox.localStorage.foo, 'bar', 'H2 读属性写法也返回同一值')
+
+  // H3 持久化：写回宿主 /web-store（text/plain = CORS 简单请求，不透明源下不触发 preflight）
+  sandbox.localStorage.setItem('vol', '0.4')
+  sandbox.__mpwWebStore.flush()
+  const post = env.fetchCalls.filter((c) => c.init && c.init.method === 'POST')
+  ok(post.length >= 1, 'H3 写入排进宿主回写通道（fetch 被调用）')
+  const last = JSON.parse(String(post[post.length - 1].init.body))
+  eq(last.w, 'w1abc', 'H3 回写带壁纸隔离键 wallId')
+  ok(last.k === 'vol' && last.v === '0.4', 'H3 回写带键值')
+  ok(/text\/plain/.test(String(post[post.length - 1].init.headers['content-type'])), 'H3 用 text/plain（不触发 preflight —— 不透明源下 preflight 会失败）')
+  sandbox.localStorage.removeItem('foo')
+  sandbox.__mpwWebStore.flush()
+  const del = JSON.parse(String(env.fetchCalls.filter((c) => c.init && c.init.method === 'POST').pop().init.body))
+  eq(del.del, 'foo', 'H3 删除也回写（del 键）')
+
+  // H4 配额：与宿主同一套上限，超限抛 QuotaExceededError（与真 Storage 同形，作者按名字捕获）
+  let quota = null
+  try { sandbox.localStorage.setItem('big', 'x'.repeat(WEB_STORE_MAX_VALUE + 10)) } catch (e) { quota = e }
+  ok(!!quota && quota.name === 'QuotaExceededError', 'H4 单值超限抛 QuotaExceededError（不静默吞数据）')
+  eq(sandbox.localStorage.getItem('big'), null, 'H4 超限写入不落内存（不写半截值）')
+
+  // H5 显式关闭（?mpwstore=0 ⇒ seed.store=false）：**不装 facade** ⇒ 行为回到改动前（访问照旧抛）
+  const off = makeShimEnv({ v: SHIM_VERSION, entry: 'index.html', policy: { muted: true, speed: 1, paused: false }, store: false })
+  eq((off.sandbox.__mpwWebStore || {}).installed, false, 'H5 store:false ⇒ facade 未安装（负面对照）')
+  let offThrew = null
+  try { void off.sandbox.localStorage } catch (e) { offThrew = e }
+  ok(!!offThrew && offThrew.name === 'SecurityError', 'H5 关掉时逐字节回旧行为：真 localStorage 照旧抛（不越权接管）')
+
+  // H6 真 storage 可用（同源测试台/将来的兼容路径）⇒ 一个字节都不动
+  const realEnv = makeShimEnv(null, { storageWorks: true })
+  eq((realEnv.sandbox.__mpwWebStore || {}).installed, false, 'H6 真 localStorage 可用 ⇒ 不接管（最小干预）')
+  realEnv.sandbox.localStorage.setItem('k', 'v')
+  eq(realEnv.fakeRealStore.getItem('k'), 'v', 'H6 作者写的还是浏览器真 storage（我们没插一层影子）')
+
+  // H7 没有种子（旧宿主/直接打开页面）：仍给内存 facade —— "抛 SecurityError"是白屏真因，不能留着
+  const noSeed = makeShimEnv()
+  ok(!!noSeed.sandbox.__mpwWebStore && noSeed.sandbox.__mpwWebStore.installed === true, 'H7 无种子也装内存 facade（没有回写通道 ⇒ persist=false）')
+  eq(noSeed.sandbox.__mpwWebStore.persist, false, 'H7 无种子时不假装有持久化')
+  noSeed.sandbox.localStorage.setItem('a', 'b')
+  eq(noSeed.fetchCalls.length, 0, 'H7 无回写通道 ⇒ 一个网络请求都不发')
+}
+
+/* ══════════════════ I. ①(WP-1) 主音量（宿主音量 × 作者音量）══════════════════ */
+console.log('\n== I. ①(WP-1) 主音量：宿主显式给音量才接管；默认路径一个字段都不动 ==')
+{
+  // I1 默认（种子里没有 volume）⇒ 钩子不装、元素 volume 不被写（旧行为逐字节）
+  const def = makeShimEnv({ v: SHIM_VERSION, entry: 'index.html', policy: { muted: true, speed: 1, paused: false } })
+  const dv = new def.FakeMedia('VIDEO')
+  def.media.push(dv)
+  def.sandbox.__mpwWebControl({ mpw: SHIM_MSG, op: 'policy', muted: true, speed: 1 })
+  eq(def.sandbox.__mpwWebAudio.hooked(), false, 'I1 默认档：主音量钩子**不装**（不接管作者音量）')
+  eq(dv.volume, 1, 'I1 默认档：元素 volume 一个字节都没被改写')
+
+  // I2 宿主给了音量（种子 policy.volume=0.5）⇒ 作者 0.5 × 宿主 0.5 = 0.25
+  const env = makeShimEnv({ v: SHIM_VERSION, entry: 'index.html', policy: { muted: false, speed: 1, paused: false, volume: 0.5 } })
+  const v = new env.FakeMedia('VIDEO')
+  env.media.push(v)
+  ok(env.sandbox.__mpwWebAudio.hooked() === true && env.sandbox.__mpwWebAudio.master() === 0.5, 'I2 种子里有 volume ⇒ 钩子装上且主音量=0.5')
+  v.volume = 0.5
+  eq(v.volume, 0.5, 'I2 作者读回自己的音量（不被主音量污染 —— 否则作者会把自己的值越写越小）')
+  eq(v.__volume, 0.25, 'I2 实际生效音量 = 作者值 × 宿主音量（官方 CEF 口径）')
+  // 宿主改音量（父页 op:policy 带 volume）→ 活实例立刻刷新
+  env.sandbox.__mpwWebControl({ mpw: SHIM_MSG, op: 'policy', volume: 0 })
+  eq(v.__volume, 0, 'I2 宿主把主音量调到 0 ⇒ 实际音量 0')
+  env.sandbox.__mpwWebControl({ mpw: SHIM_MSG, op: 'policy', volume: 1 })
+  eq(v.__volume, 0.5, 'I2 宿主调回 1 ⇒ 回落成作者值 0.5')
+  eq(v.muted, false, 'I2 未静音策略下作者的元素不被静音（muted 语义未变）')
+
+  // I3 `new Audio()` 不进 DOM：包构造器登记活实例，主音量变化也要覆盖到
+  const a = new env.sandbox.Audio('bgm.mp3')   // 走 shim 包的构造器（模拟作者 `new Audio()`）
+  a.volume = 1
+  env.sandbox.__mpwWebControl({ mpw: SHIM_MSG, op: 'policy', volume: 0.25 })
+  eq(a.volume, 1, 'I3 new Audio() 的作者音量读回仍是 1')
+  eq(a.__volume, 0.25, 'I3 new Audio()（不进 DOM）也被主音量覆盖')
+
+  // I4 静音语义不变：作者主动 muted 的元素不因"宿主音量>0"被解开
+  const own = new env.FakeMedia('AUDIO')
+  own.muted = true
+  env.media.push(own)
+  env.sandbox.__mpwWebControl({ mpw: SHIM_MSG, op: 'policy', muted: false, volume: 1 })
+  eq(own.muted, true, 'I4 作者自己静音的元素保持静音（不越权）')
+
+  // I5 宿主侧音频状态：默认仍静音（用户第 6 项的硬要求）+ 语义归一
+  const rep0 = mediaAudioReport(MEDIA_AUDIO_DEFAULTS)
+  ok(rep0.muted === true && rep0.audible === false, 'I5 宿主默认档：muted=true ⇒ audible=false（默认仍静音）')
+  eq(mediaAudioPatchForEntry(MEDIA_AUDIO_DEFAULTS), null, 'I5 默认档不下发音量给网页壁纸帧（种子里连 volume 键都不出现）')
+  const on = normalizeMediaAudio({ muted: false, volume: 0.4 }, MEDIA_AUDIO_DEFAULTS)
+  ok(on.explicit === true && mediaAudioReport(on).audible === true, 'I5 显式打开 ⇒ audible=true（主机/UI 调 setMuted(false) 的等价路径）')
+  eq(mediaAudioReport(normalizeMediaAudio({ pause: true }, on)).audible, false, 'I5 pause() ⇒ audible=false')
+  eq(mediaAudioReport(normalizeMediaAudio({ volume: 0 }, on)).audible, false, 'I5 volume=0 ⇒ audible=false（音量 0 不算有声）')
+  eq(normalizeMediaAudio({ volume: 9 }, on).volume, 1, 'I5 volume 夹到 [0,1]（不把 9 塞进播放器）')
+  eq(normalizeMediaAudio({ volume: -3 }, on).volume, 0, 'I5 负值夹到 0')
+  const reset = normalizeMediaAudio({ reset: true }, on)
+  ok(reset.muted === true && reset.explicit === false && mediaAudioReport(reset).audible === false, 'I5 reset ⇒ 回默认档（muted=true / explicit=false）')
+  eq(mediaAudioReport(normalizeMediaAudio({ hasAudio: true }, on)).hasAudio, true, 'I5 hasAudio 可由客户端上报（宿主如实回报）')
+  eq(mediaAudioPatchForEntry(on).volume, 0.4, 'I5 显式档下发给帧的音量 = 0.4')
+}
+
+/* ══════════════════ J. ①(WP-1) CSP 判定与 HTML 源级改写（宿主纯函数）══════════════════ */
+console.log('\n== J. ①(WP-1) CSP 阻塞判定（照抄上游）+ HTML 源级 file:/// 改写 ==')
+{
+  ok(hasBlockingCsp('<meta http-equiv="Content-Security-Policy" content="default-src \'self\'; script-src \'self\'">') === true, 'J1 script-src 无 unsafe-inline ⇒ 挡 inline shim（判定 true）')
+  ok(hasBlockingCsp("<meta http-equiv='Content-Security-Policy' content=\"script-src 'self'\">") === true, 'J1 单引号属性写法也认（上游同款正则）')
+  ok(hasBlockingCsp('<meta http-equiv="Content-Security-Policy" content="script-src \'self\' \'unsafe-inline\'">') === false, 'J1 unsafe-inline ⇒ 不挡（判定 false）')
+  ok(hasBlockingCsp('<meta http-equiv="Content-Security-Policy" content="script-src *">') === false, 'J1 通配 * ⇒ 不挡')
+  ok(hasBlockingCsp('<meta http-equiv="Content-Security-Policy" content="default-src \'self\'">') === false, 'J1 没有 script-src 指令 ⇒ 不判（保守，不误伤可注入页面）')
+  ok(hasBlockingCsp('<html><head><meta charset="utf-8"></head></html>') === false, 'J1 无 CSP 页面 ⇒ false')
+
+  const rw = rewriteWebFileUrlsInHtml('<img src="file:///files/a b.png"><a href=\'file:///x/y.htm\'>x</a><video poster="file:///p.jpg"></video><div style="background:url(file:///img/c.png)"></div><img src="https://cdn.example/d.png">', { basePath: '/api/mpkg-wallpaper/custom-folder/W1/' })
+  ok(rw.count === 4, 'J2 改了 4 处（src/href/poster/url()），非 file: 的 https 不动（count=' + rw.count + '）')
+  ok(rw.html.indexOf('src="/api/mpkg-wallpaper/custom-folder/W1/files/a%20b.png"') > 0, 'J2 空格被编码（不产生坏 URL）')
+  ok(rw.html.indexOf("href='/api/mpkg-wallpaper/custom-folder/W1/x/y.htm'") > 0, 'J2 保留原引号风格')
+  ok(rw.html.indexOf('url(/api/mpkg-wallpaper/custom-folder/W1/img/c.png)') > 0, 'J2 style 里的 url(file:///…) 也改写')
+  ok(rw.html.indexOf('https://cdn.example/d.png') > 0, 'J2 非 file: URL 原样')
+  const abs = rewriteWebFileUrlsInHtml('<img src="file:///Users/me/a.png"><img src="file:///C:/x/b.png"><img src="file:///">')
+  eq(abs.count, 0, 'J2 绝对系统路径/盘符/空 file:/// 一律不改（映射不了就不猜）')
+  const noScript = rewriteWebFileUrlsInHtml('<script>var p="file:///files/a.png";</script>')
+  eq(noScript.count, 0, 'J2 **不碰 script 文本**（作者写 `\'file:///\'+v` 的合成由 shim 运行时钩子负责，源级乱改会破坏作者逻辑）')
+  const none = rewriteWebFileUrlsInHtml('<img src="a.png">')
+  ok(none.count === 0 && none.html === '<img src="a.png">', 'J2 无 file: ⇒ 逐字节原样（零回归）')
+
+  ok(webStoreFromQuery('/x/index.html?mpwshim=1').on === true && webStoreFromQuery('/x/index.html?mpwshim=1').persist === true, 'J3 ?mpwshim=1 ⇒ 存储 facade 默认开 + 持久化')
+  ok(webStoreFromQuery('/x/index.html?mpwshim=1&mpwstore=0').on === false, 'J3 ?mpwstore=0 ⇒ 关（负面对照入口）')
+  ok(webStoreFromQuery('/x/index.html?mpwshim=1&mpwstore=mem').on === true && webStoreFromQuery('/x/index.html?mpwshim=1&mpwstore=mem').persist === false, 'J3 ?mpwstore=mem ⇒ 只内存不落盘')
+  ok(webStoreFromQuery('/x/index.html').on === false, 'J3 无 mpwshim ⇒ 不涉及（旧 URL 零回归）')
+  ok(webPolicyFromQuery('/x/index.html?mpwshim=1').volume === undefined, 'J3 默认策略里**没有** volume 键（默认路径对象形状逐字节不变）')
+  eq(webPolicyFromQuery('/x/index.html?mpwshim=1&mpwvol=0.3').volume, 0.3, 'J3 URL 显式给 mpwvol 才出现 volume 键')
+  // 种子：不传 extras ⇒ 与改动前逐字节一致（硬编码参考串）
+  eq(buildSeedScript({ muted: true, speed: 1, paused: false }, 'index.html'),
+    'window.__mpwWebSeed={"v":1,"entry":"index.html","policy":{"muted":true,"speed":1,"paused":false}};',
+    'J3 默认种子脚本与改动前**逐字节一致**（关掉新能力 = 旧行为）')
+  const seeded = buildSeedScript({ muted: true, speed: 1, paused: false }, 'index.html', { wall: 'abc123', store: { id: 'abc123', url: WEB_STORE_ROUTE, persist: true, snap: {} } })
+  ok(/"wall":"abc123"/.test(seeded) && /"url":"\/api\/mpkg-wallpaper\/web-store"/.test(seeded), 'J3 extras 才追加 wall/store（含回写 URL）')
+}
+
 /* ══════════════════ F. 洁净度（无 GPL 代码 / 无跨仓硬路径） ══════════════════ */
 console.log('\n== F. 洁净度：插件不含任何 GPL 代码/派生物 ==')
 {
@@ -804,7 +1002,262 @@ console.log('\n== G. 宿主路由端到端：真注入 / 无标记零回归 / CO
   const collRows = (scanJson.files || []).filter((f) => f.name === 'coll')
   eq(collRows.length, 2, 'G7 纯 .mpkg 收藏夹 → 2 条 folderMpkg（旧行为保留）')
   ok(collRows.every((r) => r.folderMpkg === true), 'G7 folderMpkg 标记在位')
+
+  /* ══════════════ K. ①(WP-1) 宿主媒体音频控制 + 帧内存储路由（端到端）══════════════ */
+  console.log('  -- K. ①(WP-1) /media-audio（用户第 6 项）+ /web-store（存储 facade 落点）')
+  const parse = (r) => { try { return JSON.parse(r.text) } catch { return {} } }
+  const audioUrl = '/api/mpkg-wallpaper/media-audio'
+
+  // K1 默认档：**默认仍静音**（用户第 6 项硬要求）
+  const a0 = parse(await call(audioUrl))
+  ok(a0.ok === true && a0.muted === true && a0.volume === 1 && a0.playing === true, 'K1 默认档 muted=true / volume=1 / playing=true')
+  eq(a0.audible, false, 'K1 默认档 audible=false（**默认仍静音**，除非宿主显式打开）')
+  eq(a0.explicit, false, 'K1 默认档 explicit=false（宿主没接管音频）')
+
+  // K2 setMuted(false)：宿主显式打开 ⇒ 有声
+  const a1 = parse(await call(audioUrl, { method: 'POST', body: JSON.stringify({ muted: false }) }))
+  ok(a1.muted === false && a1.audible === true && a1.explicit === true, 'K2 setMuted(false) ⇒ muted=false / audible=true / explicit=true')
+
+  // K3 setMediaVolume(v)：夹取 + 音量 0 不算有声
+  const a2 = parse(await call(audioUrl, { method: 'POST', body: JSON.stringify({ volume: 0 }) }))
+  ok(a2.volume === 0 && a2.audible === false, 'K3 setMediaVolume(0) ⇒ audible=false（音量 0 不算有声）')
+  const a3 = parse(await call(audioUrl, { method: 'POST', body: JSON.stringify({ volume: 7 }) }))
+  ok(a3.volume === 1 && a3.audible === true, 'K3 setMediaVolume(7) ⇒ 夹到 1（不把 7 塞进播放器）')
+
+  // K4 pause()/play()：播放控制
+  const a4 = parse(await call(audioUrl, { method: 'POST', body: JSON.stringify({ pause: true }) }))
+  ok(a4.playing === false && a4.audible === false, 'K4 pause() ⇒ playing=false / audible=false')
+  const a5 = parse(await call(audioUrl, { method: 'POST', body: JSON.stringify({ play: true }) }))
+  ok(a5.playing === true && a5.audible === true, 'K4 play() ⇒ playing=true / audible=true')
+
+  // K5 宿主是权威且可落盘复核（UI 线可直接读这个文件/接口，不需要我们做 UI）
+  const audioFile = path.join(home, '.dsh-mpkg-wallpaper', 'media-audio.json')
+  const persisted = (() => { try { return JSON.parse(fs.readFileSync(audioFile, 'utf8')) } catch { return {} } })()
+  ok(persisted.muted === false && persisted.volume === 1 && persisted.playing === true, 'K5 状态落盘（重启后宿主口径不变；文件 = DATA_DIR/media-audio.json）')
+
+  // K6 宿主显式接管 ⇒ 网页壁纸帧的种子带 muted/volume（音频交给宿主）
+  const injAudio = await call(entry + '?mpwshim=1&mpwmute=1&mpwspeed=1&mpwpause=0', { origin: 'null' })
+  ok(/"muted":false/.test(injAudio.text) && /"volume":1/.test(injAudio.text), 'K6 宿主接管后种子下发 muted/volume（帧内按宿主音量合成）')
+
+  // K7 回默认档 ⇒ 种子里**不出现** volume（负面对照：默认路径逐字节回旧行为）
+  const back = parse(await call(audioUrl, { method: 'POST', body: JSON.stringify({ reset: true }) }))
+  eq(back.audible, false, 'K7 reset ⇒ 回默认档（audible=false）')
+  const injDefault = await call(entry + '?mpwshim=1&mpwmute=1&mpwspeed=1&mpwpause=0', { origin: 'null' })
+  // 注意：断言必须只看**种子 JSON**——注入体里还有整份 shim 源码，它自己就含 "volume" 字样
+  const seedJson = (/window\.__mpwWebSeed=(\{.*?\});/.exec(injDefault.text) || [])[1] || ''
+  ok(seedJson && seedJson.indexOf('"volume"') < 0, 'K7 默认档种子里没有 volume 键（关掉时零回归）')
+  ok(/"policy":\{"muted":true,"speed":1,"paused":false\}/.test(seedJson), 'K7 默认档 policy 形状与改动前一致')
+
+  // K8 存储路由：写入 / 读回 / 壁纸间隔离 / 非法键 / 超大值 / CORS
+  const storeUrl = '/api/mpkg-wallpaper/web-store'
+  const s1 = parse(await call(storeUrl, { method: 'POST', origin: 'null', body: JSON.stringify({ w: 'wallA', k: 'theme', v: 'dark' }) }))
+  ok(s1.ok === true, 'K8 /web-store 写入 ok')
+  const s2 = parse(await call(storeUrl + '?w=wallA', { origin: 'null' }))
+  eq((s2.store || {}).theme, 'dark', 'K8 读回同一壁纸的键')
+  const s3 = parse(await call(storeUrl + '?w=wallB'))
+  eq(Object.keys(s3.store || {}).length, 0, 'K8 壁纸间隔离（不同 wallId 互不可见）')
+  const s4 = await call(storeUrl, { method: 'POST', body: JSON.stringify({ w: '../etc', k: 'x', v: 'y' }) })
+  eq(s4.status, 400, 'K8 非法 wallId ⇒ 400（存储键不许带路径/穿越）')
+  const s5 = parse(await call(storeUrl, { method: 'POST', body: JSON.stringify({ w: 'wallA', k: 'big', v: 'x'.repeat(WEB_STORE_MAX_VALUE + 1) }) }))
+  ok(s5.ok === false && s5.error === 'too large', 'K8 单值超限被拒（不落半截值）')
+  const s6 = await call(storeUrl + '?w=wallA', { origin: 'null' })
+  eq(s6.headers['access-control-allow-origin'], 'null', 'K8 Origin:null（沙箱帧）⇒ ACAO: null（帧内 facade 才写得进）')
+  const s7 = await call(storeUrl, { method: 'OPTIONS', origin: 'null' })
+  eq(s7.status, 204, 'K8 OPTIONS ⇒ 204（预检兜底；实际请求用 text/plain 不触发预检）')
+  // 落盘是 debounce 的（防止作者每帧写 localStorage 时打爆磁盘）⇒ 这里等一个节拍再看文件
+  await new Promise((r) => setTimeout(r, 600))
+  const storeFile = path.join(home, '.dsh-mpkg-wallpaper', 'web-store.json')
+  const storeOnDisk = (() => { try { return JSON.parse(fs.readFileSync(storeFile, 'utf8')) } catch { return null } })()
+  ok(!!storeOnDisk && ((storeOnDisk.wallA || {}).store || {}).theme === 'dark', 'K8 存储落盘在 DATA_DIR（debounce 后仍会写；重启后仍在）')
+
+  // K9 已存快照进种子：帧内 facade 首帧就能读到（作者设置面板刷新不丢）
+  const wallId = webWallId('custom', 'web-wall', 'index.html')
+  await call(storeUrl, { method: 'POST', origin: 'null', body: JSON.stringify({ w: wallId, k: 'scale', v: '1.5' }) })
+  const injStore = await call(entry + '?mpwshim=1&mpwmute=1&mpwspeed=1&mpwpause=0', { origin: 'null' })
+  ok(injStore.text.indexOf('"scale":"1.5"') > 0 && injStore.text.indexOf('"wall":"' + wallId + '"') > 0, 'K9 已存键进种子（帧内 localStorage.getItem 首帧即命中）')
+
+  // K10 ?mpwstore=0：不装 facade + 种子与旧版的差异**只有** store:false 一个字段
+  const injOff = await call(entry + '?mpwshim=1&mpwstore=0', { origin: 'null' })
+  ok(/"store":false/.test(injOff.text), 'K10 ?mpwstore=0 ⇒ 种子里显式 store:false（关掉存储 facade）')
+  ok(injOff.text.indexOf('"wall"') < 0, 'K10 关掉时不带 wall（不泄露存储隔离键）')
+  const legacySeed = buildSeedScript({ muted: true, speed: 1, paused: false }, 'index.html')
+  const offSeed = (/window\.__mpwWebSeed=(\{.*?\});/.exec(injOff.text) || [])[1] || ''
+  eq(offSeed.replace(',"store":false', ''), legacySeed.replace(/^window\.__mpwWebSeed=/, '').replace(/;$/, ''), 'K10 关掉时的种子 = 旧种子字面量 + 唯一一个 store:false（最小差异，可机器核对）')
+
+  // K11 CSP：自带 CSP 挡 inline script 的入口 ⇒ 不注入、原样返回 + x-mpw-shim-skipped:csp 留痕
+  const cspDir = path.join(customRoot, 'web-csp')
+  fs.mkdirSync(cspDir, { recursive: true })
+  const cspHtml = '<!DOCTYPE html><html><head><meta http-equiv="Content-Security-Policy" content="default-src \'self\'; script-src \'self\'"><script src="app.js"></script></head><body>csp</body></html>'
+  fs.writeFileSync(path.join(cspDir, 'index.html'), cspHtml)
+  const cspRes = await call('/api/mpkg-wallpaper/custom-folder/web-csp/index.html?mpwshim=1', { origin: 'null' })
+  eq(cspRes.text, cspHtml, 'K11 CSP 页面响应体与磁盘逐字节一致（不注入必被拒的 inline shim）')
+  eq(cspRes.headers['x-mpw-shim-skipped'], 'csp', 'K11 留痕 x-mpw-shim-skipped: csp（诊断可判"为什么没有 shim"）')
+
+  // K12 HTML 里写死的 file:///：源级改写（运行时钩子够不到的形态）
+  const srcDir = path.join(customRoot, 'web-src')
+  fs.mkdirSync(srcDir, { recursive: true })
+  const srcHtml = '<!DOCTYPE html><html><head><script src="app.js"></script></head><body><img src="file:///files/a.png" style="background:url(file:///img/b.png)"></body></html>'
+  fs.writeFileSync(path.join(srcDir, 'index.html'), srcHtml)
+  const srcRes = await call('/api/mpkg-wallpaper/custom-folder/web-src/index.html?mpwshim=1', { origin: 'null' })
+  ok(srcRes.text.indexOf('src="/api/mpkg-wallpaper/custom-folder/web-src/files/a.png"') > 0, 'K12 源级改写：HTML 属性里的 file:/// → 同源路径（解析器产出的属性也覆盖到）')
+  ok(srcRes.text.indexOf('url(/api/mpkg-wallpaper/custom-folder/web-src/img/b.png)') > 0, 'K12 源级改写：style 里的 url(file:///…) 也改')
+  const srcPlain = await call('/api/mpkg-wallpaper/custom-folder/web-src/index.html')
+  eq(srcPlain.text, srcHtml, 'K12 无 mpwshim 标记 ⇒ 一个字节都不改（源级改写只在注入路径上）')
+
   try { fs.rmSync(home, { recursive: true, force: true }) } catch {}
+}
+
+/* ══════════════════ L. ①(WP-1) 真语料计数（决定"我们必须实现哪些 API"）══════════════════ */
+console.log('\n== L. ①(WP-1) 真语料：web 类壁纸的 WE API 计数 + 文档表同步 + sha256 ==')
+const CORPUS_APIS = [
+  ...SHIM_API_NAMES,
+  'applyUserProperties', 'applyGeneralProperties', 'setPaused',
+  'userDirectoryFilesAddedOrChanged', 'userDirectoryFilesRemoved',
+]
+const CORPUS_SIGNALS = ['localStorage', 'sessionStorage', 'indexedDB', 'AudioContext', 'new Audio(', 'file:///']
+const CORPUS_NON_API = ['wallpaperAudioListener', 'wallpaperSettings', '__weh', '$mediaThumbnail', '$mediaProperties', 'wallpaperRegisterMediaListener']
+const CORPUS_TEXT_RE = /\.(html?|xhtml|js|mjs|cjs|json|css|txt|xml|vue|svelte)$/i
+const CORPUS_SKIP = new Set(['node_modules', '.git', 'dist', 'build', '.cache'])
+
+/** 真语料扫描（有界：深度 6 / 每张壁纸最多 400 个文本文件 / 单文件 ≤4MB 才读）。
+ *  判定用**生产实现** detectWallpaperDir（不重写一份判定，免得量的是另一套规则）。 */
+function scanWebCorpus(root) {
+  const listFiles = (dir, depth, out) => {
+    if (depth > 6 || out.length > 400) return
+    let ents = []
+    try { ents = fs.readdirSync(dir, { withFileTypes: true }) } catch { return }
+    for (const e of ents) {
+      if (e.name.startsWith('.')) continue
+      const p = path.join(dir, e.name)
+      if (e.isDirectory()) { if (!CORPUS_SKIP.has(e.name)) listFiles(p, depth + 1, out) }
+      else if (e.isFile() && CORPUS_TEXT_RE.test(e.name)) out.push(p)
+    }
+  }
+  const dirs = []
+  const find = (d, depth) => {
+    let ents = []
+    try { ents = fs.readdirSync(d, { withFileTypes: true }) } catch { return }
+    if (ents.some((x) => x.name === 'project.json')) dirs.push(d)
+    if (depth >= 4) return
+    for (const e of ents) if (e.isDirectory() && !CORPUS_SKIP.has(e.name) && !e.name.startsWith('.')) find(path.join(d, e.name), depth + 1)
+  }
+  for (const e of fs.readdirSync(root, { withFileTypes: true })) if (e.isDirectory()) find(path.join(root, e.name), 0)
+  const apis = {}, signals = {}, nonApi = {}, entries = []
+  const bump = (bag, id, hits) => { bag[id] = bag[id] || { hits: 0, walls: 0 }; bag[id].hits += hits; bag[id].walls++ }
+  for (const dir of dirs) {
+    let det = null
+    try { det = detectWallpaperDir(dir) } catch { continue }
+    if (det.kind !== WEB_KIND.WEB || !det.entry) continue
+    const files = []
+    listFiles(dir, 0, files)
+    let sha = ''
+    try { sha = crypto.createHash('sha256').update(fs.readFileSync(path.join(dir, det.entry))).digest('hex') } catch { sha = '' }
+    const hits = {}
+    for (const f of files) {
+      let src = ''
+      try { if (fs.statSync(f).size > 4 * 1024 * 1024) continue; src = fs.readFileSync(f, 'utf8') } catch { continue }
+      for (const id of [...CORPUS_APIS, ...CORPUS_SIGNALS, ...CORPUS_NON_API]) {
+        const n = src.split(id).length - 1
+        if (n > 0) hits[id] = (hits[id] || 0) + n
+      }
+    }
+    for (const id of CORPUS_APIS) if (hits[id]) bump(apis, id, hits[id])
+    for (const id of CORPUS_SIGNALS) if (hits[id]) bump(signals, id, hits[id])
+    for (const id of CORPUS_NON_API) if (hits[id]) bump(nonApi, id, hits[id])
+    entries.push({ id: path.relative(root, dir), entry: det.entry, sha256: sha })
+  }
+  const sortObj = (o) => Object.fromEntries(Object.entries(o).sort((a, b) => b[1].hits - a[1].hits || (a[0] < b[0] ? -1 : 1)))
+  entries.sort((a, b) => (a.id < b.id ? -1 : 1))
+  return { root: path.basename(root), walls: entries.length, apis: sortObj(apis), signals: sortObj(signals), nonApi: sortObj(nonApi), entries }
+}
+
+/** 插件缓存里的 mpkg 容器：只读**头部有界字节**数条目名（不整包读；本机 5 个容器里有 331MB 的）。 */
+function scanMpkgCache(dir) {
+  const out = { files: 0, entries: 0, html: 0, js: 0 }
+  let names = []
+  try { names = fs.readdirSync(dir).filter((f) => f.toLowerCase().endsWith('.mpkg')) } catch { return out }
+  for (const f of names) {
+    out.files++
+    let fd = null
+    try {
+      fd = fs.openSync(path.join(dir, f), 'r')
+      const buf = Buffer.alloc(2 * 1024 * 1024)
+      const got = fs.readSync(fd, buf, 0, buf.length, 0)
+      const b = buf.subarray(0, got)
+      let pos = 0
+      const vl = b.readUInt32LE(pos); pos += 4 + vl
+      const total = b.readUInt32LE(pos); pos += 4
+      for (let i = 0; i < total; i++) {
+        const nl = b.readUInt32LE(pos); pos += 4
+        const name = b.toString('utf8', pos, pos + nl); pos += nl + 8
+        out.entries++
+        if (/\.(x?html?)$/i.test(name)) out.html++
+        else if (/\.m?js$/i.test(name)) out.js++
+      }
+    } catch { /* 头部读不到就按已统计的算 */ } finally { if (fd !== null) { try { fs.closeSync(fd) } catch { /* 忽略 */ } } }
+  }
+  return out
+}
+
+const CORPUS_ROOT = process.env.MPW_ROOT ? path.join(process.env.MPW_ROOT, 'allwallpaper') : path.join(ROOT, '..', 'allwallpaper')
+const CORPUS_MPKG_DIR = path.join(os.homedir(), '.dsh-mpkg-wallpaper')
+const corpus = fs.existsSync(CORPUS_ROOT) ? scanWebCorpus(CORPUS_ROOT) : null
+const mpkgCache = scanMpkgCache(CORPUS_MPKG_DIR)
+
+if (process.argv.includes('--corpus-json')) {
+  // 给文档用：把下面这段 JSON 贴进 docs/WEB-WALLPAPER.md 的 MPW-CORPUS-COUNTS 区块
+  console.log(JSON.stringify({ corpus, mpkgCache }, null, 2))
+  process.exit(0)
+}
+
+/** 文档里的语料计数区块（人读是表，机器读是这段 JSON；两边必须一致 ⇒ 防文档漂移） */
+function readCorpusDocBlock() {
+  let doc = ''
+  try { doc = read('docs/WEB-WALLPAPER.md') } catch { return null }
+  const m = /<!-- MPW-CORPUS-COUNTS:BEGIN -->([\s\S]*?)<!-- MPW-CORPUS-COUNTS:END -->/.exec(doc)
+  if (!m) return null
+  const j = /```json\s*([\s\S]*?)```/.exec(m[1])
+  if (!j) return null
+  try { return JSON.parse(j[1]) } catch { return null }
+}
+{
+  if (!corpus) {
+    console.log('  (跳过：本机无语料 ' + CORPUS_ROOT + '；设 MPW_ROOT 或把 allwallpaper/ 放在仓库同级）')
+    ok(true, 'L0 语料不在位 ⇒ 跳过计数断言（不假装通过；doc 区块仍需存在）')
+  } else {
+    ok(corpus.walls >= 1, 'L1 真语料里判定出 web 类壁纸 ' + corpus.walls + ' 张')
+    // 逐 API：有命中的**必须**我们有实现（这就是"必须实现哪些"的直接依据）
+    for (const [api, st] of Object.entries(corpus.apis)) {
+      ok(WEB_SHIM_SOURCE.indexOf(api) >= 0, `L2 语料命中 ${api}（${st.hits} 次 / ${st.walls} 张）⇒ 已实现`)
+    }
+    // 反向：0 命中的官方 API **不删**（跨语料通用性；上游 42 张语料里 Media*Listener 有 2 张命中）
+    for (const api of SHIM_API_NAMES) ok(WEB_SHIM_SOURCE.indexOf(api) >= 0, 'L2 官方 API 全量在位：' + api)
+    // 语料给出的"为什么需要新能力"的证据
+    ok((corpus.signals['localStorage'] || { walls: 0 }).walls >= 4, 'L3 localStorage 命中的壁纸数 ≥4（本机实测 4/8；⇒ 存储 facade 不是凭空加的：不透明源下访问即抛 SecurityError）')
+    ok((corpus.signals['file:///'] || { walls: 0 }).walls >= 1, 'L3 file:/// 命中的壁纸数 ≥1（⇒ 文件 URL 改写 + 源级改写有真语料依据）')
+    ok(((corpus.signals['new Audio('] || { walls: 0 }).walls + (corpus.signals['AudioContext'] || { walls: 0 }).walls) >= 1, 'L3 帧内音频（new Audio/AudioContext）命中的壁纸数 ≥1（⇒ 主音量有真语料依据）')
+    ok(mpkgCache.files === 0 || mpkgCache.html === 0, 'L4 插件缓存 mpkg 容器里的 web 条目数 = ' + mpkgCache.html + '（扫了 ' + mpkgCache.files + ' 个容器 / ' + mpkgCache.entries + ' 条目）⇒ 缓存语料对本项无输入（不假装有）')
+
+    const docBlock = readCorpusDocBlock()
+    ok(!!docBlock, 'L5 文档含机器可读的语料计数区块（MPW-CORPUS-COUNTS）')
+    if (docBlock) {
+      const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
+      ok(same(docBlock.corpus.apis, corpus.apis), 'L5 文档 API 计数表与实测**逐项一致**（不一致 ⇒ 语料变了：重跑 node tools/web-wallpaper-test.mjs --corpus-json 并更新 docs）')
+      ok(same(docBlock.corpus.signals, corpus.signals), 'L5 文档信号计数（localStorage/file:/// 等）与实测逐项一致')
+      eq(docBlock.corpus.walls, corpus.walls, 'L5 文档 web 壁纸张数与实测一致')
+      ok(same(docBlock.corpus.entries.map((e) => [e.id, e.entry, e.sha256]), corpus.entries.map((e) => [e.id, e.entry, e.sha256])),
+        'L5 文档登记的入口 sha256 与真树逐一相同（真语料取指纹证据；语料被改动 ⇒ 本条变红是"语料变了"而不是代码 bug）')
+      eq(docBlock.mpkgCache.html, mpkgCache.html, 'L5 文档里 mpkg 缓存的 web 条目数与实测一致')
+    }
+    // 非 WE 官方标识符的判定（"0 命中且上游也没实现 ⇒ 不写代码"的反面：语料里有，但那是作者自己的东西）
+    for (const [id, st] of Object.entries(corpus.nonApi)) {
+      ok(SHIM_API_NAMES.indexOf(id) < 0, `L6 ${id}（语料 ${st.hits} 次 / ${st.walls} 张）不是 WE API ⇒ 不进 API 名单（作者自有符号/打包产物）`)
+    }
+  }
+  // 文档"未实现/不需要"一节必须列出 0 命中且上游也没实现的项（不许只写在回复里）
+  const doc = (() => { try { return read('docs/WEB-WALLPAPER.md') } catch { return '' } })()
+  ok(/^#{2,3}[^\n]*未实现\s*\/\s*不需要/m.test(doc), 'L7 文档有「未实现/不需要」一节（0 命中且上游也没实现的东西写在里面，不写代码）')
+  for (const k of ['$mediaThumbnail', 'indexedDB', 'wallpaperRegisterMediaListener']) ok(doc.indexOf(k) >= 0, 'L7 文档写明不实现：' + k)
 }
 
 console.log(`\n结果: ${pass} 通过, ${fail} 失败`)
