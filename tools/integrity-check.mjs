@@ -13,6 +13,8 @@
 //      repository/homepage/bugs 的仓库名 ↔ LICENSE 首行 ↔ README 无旧包名残留
 //   ⑨ **发布包内容清单**（`npm pack --dry-run --json`，历史踩坑：`files:["lib"]` 会把
 //      `lib/client.js.bak-*` 这类备份一起打进包；新同事加的 lib/*.js 是否真的进包也靠它证明）
+//       + ①(P-127) 发布面**有意排除**清单的双向断言：liquid-glass 的 10 个路径**不在**包里（负向模式生效），
+//         但它们**在仓库里一个都不能少**（宿主 `/lg` 路由运行期读它们）—— 详见 docs/PUBLISH-SURFACE-LIQUID-GLASS.md
 //       + tools/check.sh 的步数编号自洽（分母一致 / 序号连续）
 // 只读：不修改任何文件（`npm pack --dry-run` 不落盘）。
 import fs from 'node:fs'
@@ -97,20 +99,43 @@ ok(/^MIT License\b/m.test(read('LICENSE') || ''), 'LICENSE 首行为 "MIT Licens
 ok(!/we-scene-renderer/.test(readmeAll), '★ README(中/英) 不残留旧包名 we-scene-renderer')
 ok(!/we-scene-renderer/.test(JSON.stringify(pkg)), '★ package.json 不残留旧包名 we-scene-renderer')
 
+/* ①(P-127) 发布面**有意排除**清单（`package.json.files` 负向模式；仓库内必须**保留**）：
+ *   `lib/liquid-glass/**`（9 文件）+ `lib/liquid-glass-bundle.js` = 10 文件 / 236 517 B。
+ *   为什么排除：客户端 0 调用方（`lgModule` 只声明从未赋值）、产物可由保留源逐字节重建
+ *   （sha256 db50361c…）、且它们是本包**唯一** vendored 第三方代码 —— 不分发 ⇒ MIT 署名义务面消失。
+ *   为什么**留在仓库**：宿主 `/api/mpkg-wallpaper/lg/<file>.js` 路由运行期 `readFileSync` 读它们
+ *   （`lib/index.js:3304`，活路径），`tools/liquid-demo/` 演示页也挂这一份；删文件 ≠ 移出发布面。
+ *   台账与判据：`docs/PUBLISH-SURFACE-LIQUID-GLASS.md`（P-127）、`README.md` 的"不随包发布"一节。 */
+const PACK_EXCLUDED_BY_DESIGN = [
+  'lib/liquid-glass-bundle.js',
+  ...['geometry', 'index', 'material', 'renderer', 'shaders', 'v2', 'v2-geometry', 'v2-material', 'v2-shaders']
+    .map((n) => `lib/liquid-glass/${n}.js`),
+]
+
 console.log('\n== ⑨ 发布包内容清单（npm pack --dry-run --json）==')
-let packPaths = null
+let packPaths = null, packFiles = null
 try {
   const raw = execFileSync('npm', ['pack', '--dry-run', '--json'], { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 180000 })
   const arr = JSON.parse(raw)
-  packPaths = ((Array.isArray(arr) ? arr[0] : arr).files || []).map((f) => f.path)
+  packFiles = (Array.isArray(arr) ? arr[0] : arr).files || []
+  packPaths = packFiles.map((f) => f.path)
   ok(packPaths.length > 0, '拿到包清单（' + packPaths.length + ' 个文件）')
+  console.log(`  发布面（npm 报的未压缩字节）: ${packPaths.length} 个文件 / ${packFiles.reduce((s, f) => s + (f.size || 0), 0)} B`)
 } catch (e) {
   ok(false, 'npm pack --dry-run --json 可执行', String((e && e.message) || e).slice(0, 140))
 }
 if (packPaths) {
+  // ①(P-127) 有意排除的 10 个路径若混进包 = 负向模式失效（npm `files` 的 `!` 语义变了）⇒ 判红
+  const leaked = PACK_EXCLUDED_BY_DESIGN.filter((p) => packPaths.includes(p))
+  ok(leaked.length === 0, `★ liquid-glass 的 ${PACK_EXCLUDED_BY_DESIGN.length} 个路径**不在**发布面（files 负向模式生效 ⇒ 不分发 vendored 第三方码，署名义务面消失）`, '漏进包: ' + leaked.join(', '))
+  // 但**仓库内必须还在**：宿主 /lg 路由是活路径（lib/index.js:3304 readFileSync），删文件 ≠ 移出发布面
+  const lgKept = PACK_EXCLUDED_BY_DESIGN.filter((p) => fs.existsSync(path.join(ROOT, p)))
+  ok(lgKept.length === PACK_EXCLUDED_BY_DESIGN.length, `★ 但仓库内 ${PACK_EXCLUDED_BY_DESIGN.length} 个文件**一个都不能少**（宿主 /lg 路由 + liquid-demo 运行期读它们）`, '缺: ' + PACK_EXCLUDED_BY_DESIGN.filter((p) => !fs.existsSync(path.join(ROOT, p))).join(', '))
   const runtimeJs = fs.readdirSync(path.join(ROOT, 'lib')).filter((f) => f.endsWith('.js')).sort()
-  const missing = runtimeJs.filter((f) => !packPaths.includes('lib/' + f))
-  ok(missing.length === 0, `★ lib/ 全部 ${runtimeJs.length} 个运行时 js 进包（含本轮新增）`, '缺: ' + missing.join(', '))
+  // 有意排除的 `lib/*.js` 不参与"必须进包"的期望（其余运行时 js 一个都不许被排除）
+  const expectedInPack = runtimeJs.filter((f) => !PACK_EXCLUDED_BY_DESIGN.includes('lib/' + f))
+  const missing = expectedInPack.filter((f) => !packPaths.includes('lib/' + f))
+  ok(missing.length === 0, `★ lib/ 全部 ${expectedInPack.length} 个运行时 js 进包（不含 ①(P-127) 有意排除的 1 个：liquid-glass-bundle.js）`, '缺: ' + missing.join(', '))
   for (const f of ['lib/index.js', 'lib/client.js', 'lib/pkg-extract.js', 'lib/web-wallpaper.js', 'lib/web-interaction.js']) {
     ok(packPaths.includes(f), '★ 运行时文件在包内: ' + f)
   }

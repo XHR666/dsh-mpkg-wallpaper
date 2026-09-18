@@ -71,7 +71,7 @@
 - 基于 CSS `backdrop-filter` 的半透明 + 模糊 + 边缘高光（**不再是 WebGL 折射版**——WebGL 液态玻璃已在 v3.6.0 移除，见下）。分四个开关：
   - **lgTest（测试模式）**：只保留壁纸 + 悬浮 + 布局，不覆盖任何 DSH token（否则背景读半透明会让聊天框透明无模糊）
   - **lgComposer / lgSidebar / lgHeader**：分别给聊天气泡区、侧边栏、标题栏加液态玻璃叠加层（侧边栏因设置弹窗渲染层级限制，只能做半透明 + 边缘高光，**不能加 backdrop-filter**，否则会把设置弹窗压缩进侧边栏——历史踩坑）
-- **历史说明**：早期版本用的是 WebGL 真折射（`lib/liquid-glass/` 库 + `liquid-glass-bundle.js` 107KB）；因不稳定且体积大，v3.6.0 已删掉 WebGL 运行时，改用纯 CSS 版。`lib/liquid-glass/*.js`、`liquid-glass-bundle.js` 仍在仓库并**随包发布**（`files: ["lib"]`），**客户端已无任何引用**，但**宿主端那条静态托管路由是活路径**（`/api/mpkg-wallpaper/lg/<file>.js` 命中时真的 `readFileSync` 读 `lib/liquid-glass/<file>`），`tools/liquid-demo/` 的演示页也改走同一条挂载（P-122）。`tools/liquid-demo/` 只留在仓库、**不进发布包**（`files` 白名单不含 `tools/`）。⇒ 它们**不是死文件**，删与否属发布面决定（复核见 `docs/LIQUID-GLASS-DEDUP.md`）。
+- **历史说明**：早期版本用的是 WebGL 真折射（`lib/liquid-glass/` 库 + `liquid-glass-bundle.js` 107KB）；因不稳定且体积大，v3.6.0 已删掉 WebGL 运行时，改用纯 CSS 版。`lib/liquid-glass/*.js`、`liquid-glass-bundle.js` **仍在仓库、但已移出发布面**（`files` 负向模式 `!lib/liquid-glass/**` + `!lib/liquid-glass-bundle.js` ⇒ **不进 npm 包**，P-127）：**客户端已无任何引用**（`lgModule` 只声明、从未赋值），但**宿主端那条静态托管路由仍是活路径**（`/api/mpkg-wallpaper/lg/<file>.js` 命中时真的 `readFileSync` 读 `lib/liquid-glass/<file>`；仓库内开发/演示照旧），`tools/liquid-demo/` 的演示页也走同一条挂载（P-122）。`tools/liquid-demo/` 只留在仓库、**不进发布包**（`files` 白名单不含 `tools/`）。⇒ 它们**不是死文件**；**移出发布面 ⇒ 不再分发这 10 个文件 ⇒ MIT 署名义务面随之消失**，但仓库内**一个不少**、仍如实登记 10 个 sha256（`THIRD-PARTY.md` §1.3；发布面数字与判据见 `docs/PUBLISH-SURFACE-LIQUID-GLASS.md` P-127）。
 
 **🎬 镜头与画面**
 - 镜头缩放（10–2000%）与平移、画面亮度（50–150%）、轻度锐化、Deep diving 背景框
@@ -541,8 +541,8 @@ dsh-mpkg-wallpaper/
 │   ├── web-interaction.js # 网页壁纸交互（第 11 条）：坐标换算/事件整形/交互模式状态机/舞台契约（MIT，自写；语义参照 webwallgl）
 │   ├── client.js     # 浏览器端：mpkg 解析 + 设置页 + 背景 DOM + 虚化体系 + 壁纸库 + 时间变化/网页设置 + 播放控制/省电
 │   ├── pkg-extract.js# scene.pkg 静态帧/图层提取（PKG+LZ4+TEX，MIT，来自 elysia395）
-│   ├── liquid-glass/ # 液态玻璃 WebGL 库（**遗留**：客户端无引用，宿主仍托管 `/lg` 路由，v3.6.0 已改 CSS 版）
-│   ├── liquid-glass-bundle.js # 液态玻璃打包产物（107KB，**客户端无引用**；可由保留源逐字节重建，sha256 db50361c…）
+│   ├── liquid-glass/ # 液态玻璃 WebGL 库（**遗留 · 不进发布包**：客户端无引用，宿主仍托管 `/lg` 路由，v3.6.0 已改 CSS 版）
+│   ├── liquid-glass-bundle.js # 液态玻璃打包产物（107KB，**不进发布包**；客户端无引用，可由保留源逐字节重建，sha256 db50361c…）
 │   └── THIRD-PARTY.md # 第三方来历/洁净室记录与许可归属（**随包发布**，MIT 侧署名）
 ├── tools/            # 门禁/测试/基准脚本 + lg 构建/内联脚本 + liquid-demo 演示页（供开发者）
 │                     # 音频扫描：audio-scan-bench.mjs（耗时表）/ audio-scan-test.mjs（规格断言 · 不整包解压 · 缓存）
@@ -562,8 +562,8 @@ dsh-mpkg-wallpaper/
 ├── README.md         # 本文件（中文）
 └── README.en.md      # 英文说明
 ```
-> 注：`lib/liquid-glass/`、`lib/liquid-glass-bundle.js` 因 `files: ["lib"]` 仍会打进 npm 包，但**客户端不再引用**（WebGL 已在 v3.6.0 移除，改用 CSS 版）；宿主仍保留 `/api/mpkg-wallpaper/lg` 托管路由（无调用方）。本地备份 `lib/client.js.bak-*` 已被 `files` 负向模式（`!lib/**/*.bak*`）排除，**不进发布包**，由 `tools/integrity-check.mjs` 第 ⑨ 节机器断言把关。
-> `dist/` 为什么**不入库**：它是 `lib/*.js` 的纯派生物（内联产物），与被跟踪源码逐字节重复；两次构建 sha256 逐字节相同（`tools/bundle-equivalence-test.mjs` 第②节机器断言），入库只会制造"改了 lib 忘了重跑 bundle"的漂移。对照：`lib/liquid-glass-bundle.js` **入库**是因为它历史上曾是**运行期输入**（由 `tools/inline-lg-bundle.mjs` 把 base64 写进 `lib/client.js` 的模板常量）——⚠ **2026-09-18 实测该链路已失效**：`lib/client.js` 里 `LG_BUNDLE_B64`/`LG_BUNDLE_SRC` 常量**都不存在**（全文 `B64` 仅 1 处，是注释），两个 inline 工具现在跑会报「缺少占位区」；因此它当前**既不被客户端引用、也不再是运行期输入**，只是随 `files: ["lib"]` 打进包，且可由保留源**逐字节重建**（`node tools/build-lg-bundle.mjs` ⇒ sha256 与入库那份相同）。`dist/` 也不在 `files` 白名单 ⇒ npm 包不夹带。
+> 注：`lib/liquid-glass/`、`lib/liquid-glass-bundle.js` **已移出发布面**（`files` 负向模式 `!lib/liquid-glass/**` + `!lib/liquid-glass-bundle.js`，P-127 ⇒ **不进 npm 包**，实测发布面 22 文件/1 626 235 B → 12 文件/1 389 781 B），但**仓库内一个不少**、**客户端不再引用**（WebGL 已在 v3.6.0 移除，改用 CSS 版）；宿主仍保留 `/api/mpkg-wallpaper/lg` 托管路由（活路径、无调用方；本机开发/演示照旧，从 npm 安装的副本上按设计返回 404）。本地备份 `lib/client.js.bak-*` 同样由 `files` 负向模式（`!lib/**/*.bak*`）排除，**不进发布包**；两者都由 `tools/integrity-check.mjs` 第 ⑨ 节**双向**机器断言把关（"不在发布面" + "仓库内不能少"）。
+> `dist/` 为什么**不入库**：它是 `lib/*.js` 的纯派生物（内联产物），与被跟踪源码逐字节重复；两次构建 sha256 逐字节相同（`tools/bundle-equivalence-test.mjs` 第②节机器断言），入库只会制造"改了 lib 忘了重跑 bundle"的漂移。对照：`lib/liquid-glass-bundle.js` **入库**是因为它历史上曾是**运行期输入**（由 `tools/inline-lg-bundle.mjs` 把 base64 写进 `lib/client.js` 的模板常量）——⚠ **2026-09-18 实测该链路已失效**：`lib/client.js` 里 `LG_BUNDLE_B64`/`LG_BUNDLE_SRC` 常量**都不存在**（全文 `B64` 仅 1 处，是注释），两个 inline 工具现在跑会报「缺少占位区」；因此它当前**既不被客户端引用、也不再是运行期输入**，只是**留在仓库**（P-127 起**不再进包**），且可由保留源**逐字节重建**（`node tools/build-lg-bundle.mjs` ⇒ sha256 与入库那份相同）。`dist/` 也不在 `files` 白名单 ⇒ npm 包不夹带。
 
 ## 致谢
 

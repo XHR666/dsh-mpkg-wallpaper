@@ -10,6 +10,8 @@
     "!lib/**/*.bak*",
     "!lib/**/*.tmp*",
     "!lib/**/*.orig",
+    "!lib/liquid-glass/**",
+    "!lib/liquid-glass-bundle.js",
     "icon.svg",
     "cordis.patch.yml",
     "README.md",
