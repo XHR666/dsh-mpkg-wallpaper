@@ -110,3 +110,38 @@ GitHub 侧（可选，但方式四的用户需要它）：
   裸 `.mjs` 没有包元数据 ⇒ 不会加载客户端半。详见 README「方式四」表。
 - 本机默认 registry 是 npmmirror 镜像这件事**只影响发布命令**；`npm view`/`npm pack --dry-run` 都只是读本地
   或读 registry，不写远端。
+
+---
+
+## 6. 3.7.3 发布与发布后验证记录（2026-09-18，主对话串行执行）
+
+**发布命令**（官方 registry；本机默认 registry 是 npmmirror 镜像，**不带 `--registry` 会走镜像**）：
+```bash
+cd /root/Desktop/DSHarea/dsh-mpkg-wallpaper
+node tools/integrity-check.mjs                       # 65 通过 / 0 失败（含唯一一次 npm pack --dry-run）
+bash tools/check.sh                                  # 12 步全绿 RC=0（第 9 步起无头 Firefox，须串行）
+npm publish --registry=https://registry.npmjs.org/   # + dsh-mpkg-wallpaper@3.7.3
+bash /root/Desktop/DSHarea/update-plugin.sh          # 同步进 DSH + 逐文件 md5 校验
+```
+
+**发布后验证（从 registry 拉回真实 tarball 逐项核对，不是只看 metadata）**：
+```
+npm pack dsh-mpkg-wallpaper@3.7.3 --registry=https://registry.npmjs.org/   → 467 488 B
+解包文件数 = 12（改前 22 ⇒ liquid-glass 10 文件已按 files 负向模式排除）
+与仓库源逐文件 md5：一致 12 / 不一致 0 / 仓库缺 0
+密钥与本机路径扫描（_authToken / 私钥头 / ghp_ / sk- / /root/Desktop / /storage/emulated）：0 命中
+liquid-glass 相关文件：0（确认未随包）
+exports 映射 {".":"./lib/index.js","./client":"./lib/client.js"} → 目标文件全部存在
+node -e "import('./lib/index.js')" → 加载成功，导出 __mpwTest, apply, inject
+node --check lib/client.js → OK
+运行期依赖 lib/{index,client,pkg-extract,web-wallpaper,web-interaction}.js + THIRD-PARTY.md + LICENSE 全在
+```
+**registry 侧**：`latest = 3.7.3`，`fileCount = 12`，`unpackedSize = 1 398 847 B`，发布时间 `2026-09-18T15:18:38Z`。
+
+**本次发布内容**（对应提交）：发售面移出 liquid-glass（`bf342cb` P-127）、退役 `glassWindow` 死文案（`b631e7b` P-128）、
+新增 pre-commit（`2c3a293` P-129）、`client.js` 拆分评估（`600346a` P-130）、版本号提升（`2997804`）。
+**默认行为零变化**：`lib/client.js` 默认档产物在本轮逐字节未变（P-128 有 8 个上下文的 sha256 对拍）。
+
+**仍未证实**：①真机观感（液态玻璃折射、`bsCompat` 默认开之后的悬浮适配）**仍需用户在自己设备上确认**；
+②`dist/dsh-mpkg-wallpaper.bundle.mjs`（方式四单文件 bundle）本轮重建并跑了等价性对拍（38/0），但**未随 npm 包发布**
+（`dist/` 被 `.gitignore` 忽略，按设计不入库）。
