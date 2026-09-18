@@ -343,22 +343,38 @@ localStorage.setItem(k,v) → 内存立即生效 → 400ms debounce → POST /ap
 
 ```
 宿主舞台（.mpw-webInteract，仅交互模式显示）
-  pointermove/down/up、wheel、keydown/up、blur  →  lib/web-interaction.js 整形
-  →  窗口坐标 → iframe 内 client 像素（含祖先缩放，见 clientPointInFrame）
-  →  frame.contentWindow.postMessage({mpw:"mpw:web", op:"pointer"|"wheel"|"key"|"blur"})
+  pointermove/down/up/cancel、touchstart/move/end/cancel、wheel、keydown/up、blur  →  lib/web-interaction.js 整形
+  →  窗口坐标 → iframe 内 client 像素（含祖先缩放，见 clientPointInFrame；指针与触摸**同一口径**）
+  →  frame.contentWindow.postMessage({mpw:"mpw:web", op:"pointer"|"touch"|"wheel"|"key"|"blur"})
   →  帧内 shim：elementFromPoint 命中派发 + over/out/enter/leave 链 + click 由 down/up 边缘合成
+               +（①WP-2）op:"touch" → 帧内触摸代理 W.__mpwTouchPush 派发**真 TouchEvent**
                + 文本输入（原生 value setter + input 事件）+ 暂停期间丢弃
 ```
 
+**①(WP-2 2026-09-19) 触摸链（用户点名「带触控功能 / 点特定区域触发动作」）**：
+
+| 环节 | 做法 | 落点 |
+|---|---|---|
+| 父页采集 | `touchstart/move/end/cancel`（capture+passive）与 `pointercancel`；舞台加 `touch-action:none;user-select:none`（不写就被浏览器手势接管 ⇒ 半途 `pointercancel`、作者卡在按下态） | `lib/client.js`（`onTouch`/`onCancel`/舞台 CSS 块） |
+| 协议 | 新 op `'touch'`：`{phase:'start'\|'move'\|'end'\|'cancel', x, y, inside, touches[], changed[], count, mods}`；`touches`=屏上全部触点、`changed`=本条消息涉及的触点（DOM 语义），每点带 `id/x/y/inside/rx/ry/force`；坐标逐点换算、坏坐标整点丢弃、列表有上限 | `lib/web-interaction.js` 的 `touchMsg()` / `touchPointInFrame()` |
+| 帧内派发 | 触摸代理（自执行 IIFE，挂 `window.__mpwTouchPush`，**与 shim 同一次求值**装入）：隐式捕获（move/end 发给 touchstart 命中的元素）、三个列表类数组化（可索引 + `.length` + `.item(i)`）、`cancelable:true`；**三级构造阶梯** —— ① `new TouchEvent` ② `document.createEvent("TouchEvent")`+`initTouchEvent`（位置签名→字典签名） ③ 普通 `Event` + 自有属性补三个列表 | `lib/web-interaction.js` 的 `WEB_TOUCH_FRAME_SOURCE`；接线在 `lib/web-wallpaper.js`（`op === "touch"` 一行 + 模板内 `${WEB_TOUCH_FRAME_SOURCE}`） |
+| 点按等效 | 真机上浏览器对同一根手指**同时**发 `pointer*`（喂 click/drag）与 `touch*`（喂 TouchEvent），两条通道各喂各自的监听器、互不重复（我们从不监听 compat `mouse*`） | `lib/client.js` 的 `send()` |
+| 拖拽修复 | 指针消息**每次都带 `buttons` 位掩码**：旧实现移动消息不带掩码 ⇒ 帧内看到「1→0 跳变」⇒ 拖拽第一帧就派发 `pointerup`+`click`（真机表现为「拖不动 / 一拖就点」，静默无报错） | `lib/web-interaction.js` 的 `pointerMsg()`；回归 G4 + 变异 `move-buttons-dropped` |
+| 右键/中键 | 协议已通（`buttons` 位掩码 1/2/4 + `button` 序号 0/1/2 原样下发，**不伪造成左键**）；帧内旧 shim 只消费 bit0（照抄上游口径）⇒ 右键的帧内合成仍是**待接线**项 | `pointerMsg()`；回归 G3 |
+
 - **入口**：右下角常驻小按钮「交互」（只在 web 壁纸时出现）；`?mpwinteract=1|full|off` 可强制；
   设置项 `webInteraction`（`localStorage` 的 `dsh.mpkg-wallpaper.v2`）可选 `off|pointer|full`。
-- **两档**：`pointer`（缺省；指针 + 滚轮，**不注入键盘**）与 `full`（+ 键盘与文本输入）。
+- **两档**：`pointer`（缺省；指针 + 滚轮 + 触摸，**不注入键盘**）与 `full`（+ 键盘与文本输入）。
   默认 pointer 的理由：键盘注入会吞掉用户的方向键/输入，而"只是看看壁纸动画"是绝大多数场景。
 - **坐标**：窗口 `clientX/clientY`（视口坐标，**不是** pageX/pageY）→ 帧内像素；
   祖先 CSS transform 的缩放用 `帧显示宽/帧内部视口宽` 补偿（与参考实现同款处理）。
+  换算口径里**不出现** `devicePixelRatio`（DPR 只影响位图，不影响事件坐标；断言 G9/G13）。
 - **滚轮**：delta 原样透传（与视口尺寸无关，不做缩放换算）；同时发现代 `wheel` 与 legacy
   `mousewheel`（`wheelDelta = -deltaY*1.2`，与真实 Chromium 同号）——只发一路会有真实壁纸完全无反应。
 - **键盘**：只发 `keydown/keyup`（+可输入元素上的文本注入）；`button:-1` 哨兵、修饰键掩码同指针通道。
+- **真语料依据（本机 `allwallpaper/`，8 张 web）**：`touchstart/move/end/cancel` **5/8**（与 `mousedown/mouseup` 同频）、
+  `click` 4/8、`pointerdown/up/move` 3/8、`contextmenu` 3/8、`mouseover/out` 3/8、`keydown` 3/8。
+  读者的两种写法都要支持：`changedTouches.item(0)`（spine-webgl 运行时）与 `changedTouches[i]`+`.length`（pixi）。
 
 ### 11.3 安全边界（必须写清 + 有断言）
 
@@ -378,6 +394,19 @@ localStorage.setItem(k,v) → 内存立即生效 → 400ms debounce → POST /ap
 1. **CSS `:hover` / `:active` 点不亮**：由浏览器 hit-test 驱动，合成事件无法触发。
    代价：纯 CSS hover 动画的壁纸在交互模式下样式不变。可行的替代是作者用 JS hover 分支
    （`mouseenter` 等已被我们合成），但改不了作者的 CSS。
+   **①(WP-2) 结论（把三条路都走完再下判断，不是没试）**：
+   ① **注入帧内小脚本也没用**：`:hover`/`:active` 不是 DOM 属性，是**浏览器自己的命中测试结果**；
+      脚本能改 class/内联样式，但改不了"指针是否真的停在这个元素上"这个事实。
+   ② **`elementFromPoint` + 直接调作者 handler 更不行**：绕过了事件语义（`pointer-events:none`、
+      `disabled`、冒泡/取消、作者按 `event.target` 分支的逻辑全失效），且 `:active` 连"调用"的对象都没有。
+   ③ **唯一真解 = 原生透传（未实现，设计如下）**：交互模式下把壁纸层临时抬到宿主界面之上
+      （`.mpw-bgWrap` 提 z-index）并给 `iframe` 开 `pointer-events:auto`，让**真指针**落进帧内 ——
+      这样 `:hover`/`:active`/`isTrusted`/触摸/拖拽/滑块全部原生可用。
+      **为什么这一轮不做**：① 无浏览器/无触屏环境**无法验证**（用户明令不要开浏览器），
+      不做"没验证就宣称能用"的功能；② 它会改变安全边界 —— 帧拿到**真键盘焦点**后父页看不到按键，
+      现有的"拦下 Ctrl+R/F5/Tab"这条保护会失效，退出只能靠按钮 + idle/maxAge 超时。
+      要做的话必须同时给出：真机验证清单（hover 生效、Esc 退出仍可靠、焦点是否进帧）、
+      失败回退开关（`?mpwinteract=native|inject`）、以及"帧获得焦点后父页快捷键保护失效"的显式告知。
 2. **`allow-same-origin` 不会为交互放开**：需要"帧内 localStorage / 同源 fetch 带凭据 / 读宿主 DOM"
    的交互（Live2D 类设置面板）仍走**兼容模式**（同源，等价改动前行为），代价写在 §3 与 §12.1。
 3. **指针锁 / 全屏 / 下载 / 弹窗**：需要 `allow-pointer-lock`={`allow-popups`} 等额外沙箱位的交互
@@ -385,6 +414,15 @@ localStorage.setItem(k,v) → 内存立即生效 → 400ms debounce → POST /ap
 4. **真·键盘焦点**：我们派发的是合成事件，作者若依赖浏览器原生焦点（`document.activeElement`
    由用户点击产生、`:focus-visible` 样式）只能拿到部分语义 —— 合成事件会让 `activeElement` 变成
    被点击的元素（浏览器自己做的），但 `:focus-visible` 仍可能不亮。
+5. **`isTrusted` 恒为 `false`**（①WP-2 明确口径）：合成的 Pointer/Mouse/Touch 事件都不是用户代理产生的
+   ⇒ 判 `event.isTrusted` 的作者脚本分支拿不到"真"分支。口径：**不去伪造**（`isTrusted` 是只读的
+   浏览器事实，`Object.defineProperty` 硬盖成 `true` 只会骗过作者脚本、把"合成"这件事藏起来，
+   反而让作者更难排查）；代价是极少数按 `isTrusted` 过滤的库（如某些手势库的"可信输入"校验）
+   在交互模式下不响应 —— 需要它们就得上第 1 条的"原生透传"。
+6. **帧内 `contextmenu`（右键菜单）暂不可达**（①WP-2）：交互模式下父页会吞掉右键菜单（防宿主菜单盖在壁纸上），
+   而帧内旧指针机制只合成左键（bit0）⇒ 自定义右键菜单的作者在交互模式下收不到 `contextmenu`。
+   协议侧已把 `buttons` 位掩码（1 左 / 2 右 / 4 中）与 `button` 序号原样送进帧内（断言 G3），
+   帧内消费属于 WP-1 的指针机制，登记为**待接线**。
 
 ### 11.5 与参考实现的差异（同一件事的不同做法）
 
@@ -394,6 +432,9 @@ localStorage.setItem(k,v) → 内存立即生效 → 400ms debounce → POST /ap
 | 帧沙箱 | `allow-scripts allow-same-origin`（测试台同源） | 只要 `allow-scripts`（不透明源） |
 | 键盘注入 | 无（只做指针/滚轮） | 有（`full` 档，含文本输入 + 快捷键白名单） |
 | 指针锁 | 兼容集里有 `allow-pointer-lock` | 不给（合成事件不需要） |
+| **触摸注入** | **完全没有**（`renderer/src/web.ts` 与 `renderer/src/web-shim.js` 全文 0 处 `touch*`；`webPointerToClient` 只处理指针/滚轮） | `op:'touch'` + 帧内真 TouchEvent（隐式捕获 / 三列表类数组 / 三级构造阶梯）。**上游无照抄对象 ⇒ 本块全部自研**（MIT 允许照抄，此处无对象可抄） |
+| 指针按键 | 只消费 `buttons` bit0（左键） | 父页送完整 DOM 位掩码（1/2/4）+ `button` 序号 + `pointerType/pointerId/isPrimary/pressure`（帧内旧机制仍只消费 bit0，高位是加法） |
+| 拖拽语义 | 父页每次推送都带当前掩码 ⇒ 拖拽正常 | 本轮修复：移动消息也带掩码（此前会"1→0 跳变"⇒ 拖拽第一帧派发 `pointerup`+`click`） |
 
 ## 12. 已知限制
 
@@ -409,8 +450,11 @@ localStorage.setItem(k,v) → 内存立即生效 → 400ms debounce → POST /ap
    （可视化类壁纸会对着自己的 BGM 抖动，看起来"能用"但结论是错的）⇒ 宁可留空并在 UI/文档说明。
 3. **媒体（曲目/封面/进度）通道**：协议与回放已实现，但插件尚未接入系统媒体会话（SMTC / MPRIS）数据源，
    当前只有作者自己触发的事件才会到达；不能显示"正在播放"的网页壁纸属预期。
-4. **指针交互**：已由第 11 条的交互模式解决（默认关闭；开启后指针/滚轮/键盘可达帧内）。
-   仍不可达的是 CSS `:hover`/`:active`（合成事件固有边界）与"不点交互按钮就想直接操作"的用法。
+4. **指针 / 触摸交互**：已由第 11 条的交互模式解决（默认关闭；开启后指针/滚轮/触摸/键盘可达帧内；
+   触屏上单指拖动与多指序列都能到作者脚本，且舞台 `touch-action:none` 保证手势不被浏览器抢走）。
+   仍不可达的是 CSS `:hover`/`:active` 与 `isTrusted:true`（合成事件固有边界；唯一真解是"原生透传"，
+   设计与代价见 §11.4 第 1/5 条）、帧内 `contextmenu`（协议已通、帧内待接线，§11.4 第 6 条）、
+   以及"不点交互按钮就想直接操作"的用法（默认关闭是有意的安全边界）。
 5. **`file:///` 改写覆盖不到的地方**（**①WP-1 后已收窄**）：静态 HTML 里写死的 `src|href|poster="file:///…"`
    与 `url(file:///…)` 现在由**宿主源级改写**覆盖（§6，K12 断言），`el.src`/`style.background`/`setAttribute`
    由运行时钩子覆盖。**仍未覆盖**：① `innerHTML`/`insertAdjacentHTML` 里拼出来的 `file:///` 字符串
