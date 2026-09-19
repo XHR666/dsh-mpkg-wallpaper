@@ -174,3 +174,49 @@ db50361cfd3d860602ddc2ff8bd1b6567ff01f471df1eccb60b3bcbfbbb0cd08  lib/liquid-gla
 | 未引入 | 没有新增任何 npm 依赖；没有 vendored 任何上游文件；没有引入 GPL-2.0-only 项目的任何代码 |
 
 ---
+
+## 6. ①(NP-1 2026-09-19) Now playing 组件：**Bencho（MIT）逐行移植**（含注释原文）
+
+> 用户第 1 条要求「now playing 挂载到 dsh 设置上面 有一个开关启用是否挂载 左边栏收起就隐藏」。
+> 组件本体不是本仓库原创：它是 **Bencho** 的 "Now playing"，用户已确认来源与许可（**MIT**，
+> `bencho.dev/licence`），并明确要求**连注释一起保留** ——
+> 用户原话：「它们解释了这些数字为什么是这个值，也是这份代码值得照抄而不是重写的主要原因」。
+> 本节是那次移植的**完整登记**（照 §5 的格式，逐项写清"抄了什么、为什么抄、哪些不是抄的"）。
+
+| 项 | 内容 |
+|---|---|
+| 移植的文件 | `lib/now-playing-math.js`（纯数学，零 DOM）、`lib/now-playing.js`（组件 + 侧栏挂载控制器） |
+| 上游项目 | **Bencho** 的 "Now playing"（上游文件：`Sound.tsx` + 随附样式表；任务书给出的是第 48–967 行 TSX / 969–1344 行 CSS） |
+| 上游许可 | **MIT**（`bencho.dev/licence`）。用户已确认；本包自身也是 MIT（比上游不更严） |
+| 移植方式 | **逐行移植，注释原文保留**（上游那些"为什么不是弹簧""为什么宽度不变""为什么圆角是关系不是旋钮"的注释全部留在两份源文件里，位置对应到它们解释的那个常量/函数） |
+| 复制量 | 数学 + 组件 + 那张样式表的**组件部分**（`.snd *` 那一族，类名改成 `mpw_np_`）。上游同文件里的 Sound-board / 曲库页区块（`.snd-wake/.snd-grid/.snd-key/.snd-num/.snd-name/.sfx-wall`）**未移植**（不是这个组件） |
+| 许可正文 | MIT（与 `LICENSE` 同文；上游版权归其作者 Bencho，本包不主张该组件版权） |
+| 本仓库自写的部分（**不是抄的**） | ① 侧栏挂载控制器：宿主 slot/锚点三级降级链、单实例守卫、观察者生命周期、**左侧栏收起判据与阈值**（§5，宿主常量 56/264 量出来的）；② 自绘图标（不留 `lucide-react` 依赖）；③ 14 个 Bencho token 到 `--dsw-*` 的**本地映射**；④ 数据接入四情形与"做不到"清单（`docs/NOW-PLAYING-DSH.md` §4）；⑤ 生成区内联工具 + 全套门禁 |
+| 与上游的逐项差异 | `docs/NOW-PLAYING-DSH.md` §2.2（10 项，含"心形不渲染""第三键换成音量""播放/暂停不是图标而是那对八点四边形"） |
+| ⚠ **反向纪律（本轮重点）** | `we-scene-demo/demo/now-playing/**` 是 **GPL-3.0-or-later**。它**只被读来核对数学**，**一行都没有拷进本包**（`../docs/COPYING-RULES.md` §2.2「GPL 永不进插件」）。核对面：本包两份源里 0 处来自该仓的标识符、注释文字、常量组织顺序 |
+| ⚠ **反向纪律 · 复核更正（2026-09-19 收尾，原文保留在上行）** | 上面那句"**0 处**来自该仓的标识符、注释文字"**实测不成立**，已换成**方向性判据**。实测：注释行（≥25 字符、空白归一）本包 600 行里 **349 行**与那份逐字相同；代码标识符（≥8 字符）本包 199 个里 **29 个**相同。**为什么必然重合**：那份自己的 `README.md` 与 `NowPlaying.tsx` 头注释都写「**注释逐字保留**」——它和本包是**同一个 MIT 原件（Bencho）的两份移植**，重合的是 `(^1.5 puts it at 0.63)`、`0 → zeta ~0.85, heavy, arrives without a ring` 这类**上游原句**；把"必然重合"当"0 命中"是不可满足的伪判据。**换成的判据（只查"那份独有的东西有没有被搬过来"）**：它相对原件只有 4 处改动（它自己列的）——① 导出名 `Sound`→`NowPlaying`；② 数学抽成 `now-playing-math.mjs`；③ `COVER` 指向它自己的图；④ `stroke` prop 取代全局 `[data-stroke="on"]`。逐条实测本包：① 导出 **`createNowPlaying`**（组件内部函数名确实叫 `NowPlaying`，通用功能名，**如实记同名**）；③ `COVER`=**当前壁纸缩略图**；④ 自绘图标、**无** `lucide-react`（该串全文 1 处、**代码里 0 处**，只在"没有引它"的注释里），代码里的 `stroke` 只有 SVG 标准属性 `stroke:"currentColor"`（2 处），**不存在**它的 `stroke` prop 设计；② **同形**（都另存了一个数学文件）⇒ 这一条**无法用形态区分**，如实记为"分法相同、命名与动机不同"。逐项见 `docs/NOW-PLAYING-DSH.md` §7.5.1 更正① |
+| 台账 | `../docs/COPYING-RULES.md` §4 第 13 条 |
+| 机器断言 | `tools/now-playing-test.mjs` 的 A 组（生成区与源**逐字节**一致）、B 组（开关默认关 ⇒ 零注入零观察者 + 产物逐字节纯追加）、C 组（24 条数学值）、D/E 组（收起判据 / 挂载顺序 / 单实例）、F 组（4 组变异自证）。本文件 §6 的存在由 `tools/now-playing-test.mjs` 之外的**人工复核**保证：`THIRD-PARTY.md` 与 `../docs/COPYING-RULES.md` 两处都能查到本节与第 13 条 |
+| 未引入 | 没有新增任何 npm 依赖（**没有**装 `lucide-react`）；没有 vendored 任何上游文件（上游是粘贴源码，不是包）；没有引入任何 GPL/无许可项目的代码 |
+
+### 6.1 ①(NP-1) 落账（2026-09-19 收尾轮实测）
+
+`sha256sum` 原样。**本表不含** `THIRD-PARTY.md` 与 `docs/NOW-PLAYING-DSH.md`：
+它们**承载这张表**，写进去就是自指（写完哈希就变）。`../docs/COPYING-RULES.md` 在**仓外**
+（工作区根的 `docs/`，不是 git 仓库、不入 npm 包）⇒ 无法提交，只记本轮那次写入的版本备查。
+
+| 文件 | 字节 | sha256 |
+|---|---|---|
+| `lib/now-playing.js` | 50401 | `67cdcf496e0dc2d0789115281d1732fcbfd8b0ea8d6a2cf049a11178ad181ca9` |
+| `lib/now-playing-math.js` | 30996 | `a47226d0c7da495ff33b0c52e649b8c5293bf9eec649a525e3d80a4052d79791` |
+| `lib/client.js` | 969898 | `c7949b83282212c9a435d8c78fe6e181d05c989a559d721b4ccaaf44c50fa374` |
+| `tools/build-now-playing.mjs` | 6316 | `83629aa07811ee2aef8e889779c7ad6548069ed4ffdca681383ec22daee6f1d1` |
+| `tools/now-playing-test.mjs` | 40400 | `0f909260667774ba0c1cdb19126a6cc2b29b3887824fb46244eda8d4c83f9ad2` |
+| `tools/check.sh` | 18466 | `62b0896f4dda26901d8d55580123987423ccdfb5bc2b9f21ffe500fc54108351` |
+| `tools/token-namespace-test.mjs` | 25987 | `3c66234b4566bdc5515d03a8801a745de3319677bacff89e4bc22d43916f8ded` |
+| （仓外，非 git）工作区根 `docs/COPYING-RULES.md` | 47283 | `19fd4367e777da4df3401cfb05316d510b309b31d39eade7c04cac5d282610a5` |
+
+提交哈希：见 `docs/NOW-PLAYING-DSH.md` §8.2（本仓模式：先提交代码，再由**第二次「文档落账」提交**
+把哈希写进去；落账提交**自身**的哈希无法写进自己 ⇒ `git log -1 -- THIRD-PARTY.md`）。
+
+---

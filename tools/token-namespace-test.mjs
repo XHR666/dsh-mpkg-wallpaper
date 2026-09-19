@@ -241,9 +241,10 @@ function fingerprint(css, state = 'gated') {
   return out
 }
 
-function buildAllWith(clientFile, cases) {
+function buildAllWith(clientFile, cases, casesFile) {
   const out = path.join(os.tmpdir(), 'mpw-token-emit-' + process.pid + '-' + Math.random().toString(36).slice(2) + '.json')
-  const r = spawnSync(process.execPath, [fileURLToPath(import.meta.url), '--emit', clientFile, '--json', out], { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 })
+  const r = spawnSync(process.execPath, [fileURLToPath(import.meta.url), '--emit', clientFile, '--json', out]
+    .concat(casesFile ? ['--cases', casesFile] : []), { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 })
   if (r.status !== 0) throw new Error('emit 子进程失败：' + ((r.stderr || r.stdout || '').split('\n').slice(-6).join(' ')))
   const arr = JSON.parse(fs.readFileSync(out, 'utf8'))
   try { fs.rmSync(out, { force: true }) } catch { /* 删不掉也不抛 */ }
@@ -252,7 +253,15 @@ function buildAllWith(clientFile, cases) {
 if (process.argv.includes('--emit')) {
   const file = argOf('--emit', clientPath)
   const jsonOut = argOf('--json', '')
-  const caseList = buildCases(fs.readFileSync(file, 'utf8'))
+  /* ①(NP-1) before/after 必须用**同一份**用例表：`--cases <json>` 由父进程下发。
+     为什么必须下发：`buildCases()` 的布尔清单是从源码里的 `const boolFields` 抠出来的，
+     而 before 文件（`git show HEAD:lib/client.js`）**没有**这一轮新加的那个键 ⇒
+     子进程若按 before 自己重建用例表就会少 N 条（N = 本轮新增的开关数），
+     长度对不上 → 报"emit 结果条数与组合数不一致"，把"新增一个开关"误判成产物漂移。
+     这不是放宽判据：**用例表本来就该由 after（当前产物）定义**，before 只是同一批设置下的对照；
+     真正要比的"四表面生效值"判据一条没少。 */
+  const casesArg = argOf('--cases', '')
+  const caseList = casesArg ? JSON.parse(fs.readFileSync(casesArg, 'utf8')) : buildCases(fs.readFileSync(file, 'utf8'))
   const loaded = loadPlugin({ clientPath: file, settings: {}, quiet: true })
   if (loaded.applyErrors.length) { console.error('apply() 报错：' + loaded.applyErrors.slice(0, 2).join(' | ')); process.exit(1) }
   if (typeof globalThis.__mpwBuildCss !== 'function') { console.error('未暴露 __mpwBuildCss'); process.exit(1) }
@@ -279,8 +288,11 @@ console.log(`before = ${beforeArg ? beforePath : 'git ' + fromGit + ':lib/client
 
 const src = fs.readFileSync(afterPath, 'utf8')
 const cases = buildCases(src)
-const before = buildAllWith(beforePath, cases)
-const after = buildAllWith(afterPath, cases)
+/* ①(NP-1) 同一份用例表下发给两个 emit 子进程（见 --cases 处的长注释） */
+const casesFile = path.join(tmpRoot, 'cases.json')
+fs.writeFileSync(casesFile, JSON.stringify(cases))
+const before = buildAllWith(beforePath, cases, casesFile)
+const after = buildAllWith(afterPath, cases, casesFile)
 if (before.length !== cases.length || after.length !== cases.length) { console.error('✗ emit 结果条数与组合数不一致'); process.exit(1) }
 console.log(`设置组合 ${cases.length} 组 · before ${before.length} / after ${after.length}\n`)
 

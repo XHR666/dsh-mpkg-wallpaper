@@ -27,6 +27,21 @@ node tools/panel-smoke.mjs || fail=1
 node tools/dir-picker-test.mjs || fail=1
 # P-66（2026-09-15）：①渲染错误边界（catch 里引用 try 块内 const h → 真因被吞）②zh/en 字典键对齐
 node tools/panel-fixes-test.mjs || fail=1
+# ①(NP-1 2026-09-19 用户第 1 条「now playing 挂载到 dsh 设置上面 有一个开关启用是否挂载
+#   左边栏收起就隐藏」) Now playing：
+#   · 形态：源 lib/now-playing.js + lib/now-playing-math.js **逐字节内联**进 lib/client.js 的生成区
+#     （宿主只下发 exports["./client"] 一个文件 ⇒ 相对 require 线上必挂；形态依据
+#      docs/CLIENT-JS-SPLIT-ASSESSMENT.md §3(A)，该文档要求必须配"生成物与源一致"的门禁）；
+#   · 判据：生成区无漂移 / 开关**默认关**⇒零注入零观察者且产物逐字节纯追加 /
+#     挂载点在「设置」入口之前（宿主 slot 优先 + 两级降级锚点，兜底必须留日志）/
+#     左侧栏宽度 < 96px（宿主收起轨道恰好 56px、展开下限 264px）⇒ data-mpw-np-hidden；
+#   · 分辨力自证：阈值判据 / 开关默认值 / 单实例守卫 / 生成区漂移 四组变异各自必红。
+#   设计与"做不到"清单：docs/NOW-PLAYING-DSH.md
+#   生成区漂移门禁有**两条独立实现**，都常驻在这一步里：下面这条是生成器自己复算整块生成区并核对；
+#   紧跟的那份是从产物里把两份源的正文抠出来逐字节比（A2/A3/A4/A5）。两条都要 ——
+#   前者防"生成器与产物不一致"，后者防"产物里的正文被人手改过"。
+node tools/build-now-playing.mjs --check || fail=1
+node tools/now-playing-test.mjs || fail=1
 # ①(2026-09-18) 「开关必须真的接线」审计（功能静默无效这一类的通用判据）：
 #   来历是真事故：「配色」(accent) 与「深底文字可读增强」(aquaTextEnhance) 两段 CSS 被一起
 #   包在 `if (aquaOn(section))` 里 ⇒ 只开这两个开关时规则根本不生成（开关能点、没效果、不报错）。
