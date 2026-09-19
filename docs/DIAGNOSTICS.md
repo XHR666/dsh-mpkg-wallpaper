@@ -63,16 +63,24 @@
 | 层 | 上限 | 在哪 | 超出时 |
 | --- | --- | --- | --- |
 | 客户端单份 payload | **512 KB**（`MPW_DIAG_MAX_BYTES`） | `lib/client.js` 的 `mpwDiagFit()` | 先删可选段（`groups`/`thumbSources`），仍超 ⇒ 截断超长字符串字段（**保字段名**，值加 `…[truncated]`），并写 `truncated:{reason:"payload-over-cap",capBytes,…}` |
-| 宿主请求体 | 8 MB | `lib/index.js` 的 `/diag` 路由（超了直接 `req.destroy()`） | 连接被丢弃 ⇒ 客户端走下载兜底 |
+| 宿主请求体 | 8 MB（`DIAG_BODY_MAX`） | `lib/index.js` 的 `/diag` 路由 | **413 + JSON 说明**（`{ok:false,error:"diag payload 超过上限 … 字节（未落盘）"}`）⇒ 客户端按失败处理、走下载兜底；超限载荷**一个字节都不落盘** |
 | 宿主 diag 目录 | **50 个** + **32 MB**（`DIAG_KEEP`/`DIAG_MAX_BYTES`） | `lib/index.js` 的 `pruneDiagDir()`：启动清一次 + 每次写入前后各一次 | **最旧先删**（按文件名里的 epoch），并打一行日志说明删了几个/释放多少；只认 `diag-<数字>.json`，不碰同目录其它文件 |
 
 `tools/diag-subsystem-test.mjs` 的 C 段直接调 `__mpwTest.pruneDiagDir` / `limits`（**不重写一份清理逻辑**）断言：
 数量上限、字节上限、最旧先删、非 `diag-*.json` 不受影响、出厂默认值 50/32MB（静态断言，防被 env 覆盖掩盖）。
 
+**超限语义由 `tools/host-body-limit-test.mjs` 单独钉住**（真 HTTP，10 断言 + 变异自证）：
+正常档 200 且**落盘字节逐字相同**；超限 ⇒ **413 + JSON 说明**（旧实现是 `req.destroy()` = 先掐连接再写响应，
+客户端只看到 `ECONNRESET`，"如实回状态码"这条口径在超限路上从来没成立过）、超限**不落盘**、紧接的正常档仍 200；
+跨源（`Origin: null`）的 `/custom-scene-thumb` 超限同样 413 **且带 CORS 头**；变异自证 = 把守卫改回
+`req.destroy()` ⇒ 客户端拿不到 413（实测 `status=0 err=ECONNRESET`）。
+⚠ 另一个坑写在实现注释里：**别用 `req.pause()`**（请求体没读完 ⇒ `end` 永不触发 ⇒ 请求挂死，实测 curl 卡满 25s）。
+
 ## 5. 判据怎么跑（都是单文件秒级）
 
 ```bash
 node tools/diag-subsystem-test.mjs     # 41 条断言 + 4 条变异自证（约 1.5s）
+node tools/host-body-limit-test.mjs    # 10 条断言 + 变异自证：宿主 POST 接收端超限 ⇒ 413（真 HTTP，约 1s）
 node tools/switch-wiring-test.mjs      # 开关接线审计（含 accent/aquaTextEnhance 解耦的双向判据）
 ```
 

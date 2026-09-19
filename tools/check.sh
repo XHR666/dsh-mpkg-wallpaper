@@ -86,6 +86,10 @@ node tools/switch-wiring-test.mjs || fail=1
 #   客户端单份字节上限 + 宿主 diag 目录"数量 + 合计字节"双上限、最旧先删（都直接调真实现断言）。
 #   字段表/怎么发/落在哪/上限：docs/DIAGNOSTICS.md
 node tools/diag-subsystem-test.mjs || fail=1
+# ①(2026-09-20 同类缺陷一并修) 宿主两个 POST 接收端的**超限语义**（真 HTTP + 变异自证）：
+#   超限 ⇒ **413 + JSON 说明**（旧实现 `req.destroy()` ⇒ 客户端只看到 ECONNRESET）、超限**不落盘**、
+#   跨源（`Origin: null`）也带 CORS 头能读到原因；判据有没有分辨力由"改回 req.destroy() 必红"自证。
+node tools/host-body-limit-test.mjs || fail=1
 # ⓪(2026-09-16 两个真机 bug 的回归门禁)：
 #   bug① 右侧「轮次导航条」(.eGxaPq_*/--dsw-alias-border-l4) 不被我们的样式/token 覆盖弄透明；
 #   bug② 标题栏磨砂注入链（假 DOM：注入 + 内联样式 + 半透明底 + 宿主标记 + 诊断 reason + 回退开关）。
