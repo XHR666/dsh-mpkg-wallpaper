@@ -769,7 +769,23 @@ console.log('\n== P. C2 音频审计（play/volume/muted/Audio/AudioContext + is
   ok('P5 审计面覆盖 play/volume/muted/Audio/AudioContext/decodeAudioData', /P\.play = function/.test(src) && /\["muted", "volume"\]/.test(src) && /new-Audio/.test(src) && /AudioContext/.test(src) && /decodeAudioData/.test(src))
   ok('P6 可听转换（!paused && !muted && volume>0）立刻把**审计窗口**POST 到 /diag（下一次"响"在磁盘上就有证据）',
     /const audible = !!\(rec\.el && rec\.paused === false && rec\.muted === false && Number\(rec\.volume\) > 0\)/.test(src)
-    && /trigger: audible \? "audible-playback"/.test(src) && /window: list\.slice\(-12\)/.test(src))
+    && /trigger: muteOnAudible \? "mute-on-but-audible"/.test(src)
+    && /audible \? "audible-playback"/.test(src) && /window: list\.slice\(-12\)/.test(src))
+  /* ①(2026-09-20 用户点名「静音状态下还是突然冒出来的声音」) 把那次投诉**变成判据**：
+     设置项 `mute === true`（面板写着静音）而元素却处在可听状态 ⇒ 必须单独一个 trigger 报上来，
+     而不是混在泛化的 "audible-playback" 里（后者在设置本来就"不静音"时也会报，指认不了现场）。 */
+  ok('P6b **静音设置开着却可听**是独立的可疑判据（trigger=mute-on-but-audible，同时带 `np.mute` 与可听状态两个事实）',
+    /const muteOnAudible = !!\(rec\.np && rec\.np\.mute === true && audible\)/.test(src)
+    && /\|\| muteOnAudible/.test(src))
+  ok('P6c 审计能装进**同源子帧**（壁纸帧有自己的 HTMLMediaElement.prototype，主窗口打补丁对它完全无效）',
+    /function mpwAuditPatchWin\(win\)/.test(src) && /mpwAuditPatchWin\(win\.frames\[i\]\)/.test(src)
+    && /win\.__mpwAuditedWin/.test(src) && /setInterval\(mpwAuditScanFrames, 1000\)/.test(src))
+  ok('P6d WebAudio **出声那一刻**有钩子（Live2D 角色语音走 AudioBufferSourceNode.start，不碰 <audio> 标签）',
+    /webaudio-start/.test(src) && /AudioBufferSourceNode/.test(src) && /audioctx-resume/.test(src))
+  ok('P6e 每条记录带**窗口归属**（`win.top/url/foreign`）：跨源帧如实标 foreign，不假装"没有声音"',
+    /function mpwAuditWin\(win\)/.test(src) && /foreign: url === "cross-origin"/.test(src) && /win: mpwAuditWin\(win\)/.test(src))
+  ok('P6f 声源归属指纹（ours / whale-widget / frame / other）写进记录，指认"这声音是谁放的"',
+    /owner: \(\(\) => \{/.test(src) && /whale-widget/.test(src) && /"ours"/.test(src))
   ok('P7 `?npaudit=0` 可完全关掉（零开销逃生门）', /get\("npaudit"\) !== "0"/.test(src))
   // 媒体卸载点审计：切离视频档必须 pause（只 removeAttribute('src') 不会停播）
   ok('P8 showImageEl 切离视频档时先 pause 再清 src/load（规范：移除 src 不会停止播放）', /if \(!video\.paused\) video\.pause\(\)[\s\S]{0,120}video\.removeAttribute\("src"\); if \(video\.load\) video\.load\(\)/.test(src))

@@ -5,7 +5,7 @@
 > （`node tools/integrity-check.mjs`）。这份文件把**发布前置**、**确切命令**、**发布后验证**和
 > **回滚**钉死成可复制的步骤 —— 照着跑就行，不靠记忆。
 >
-> 状态（2026-09-20 02:0x 实测）：本地 `package.json` = **3.9.0**；npm 官方 registry 上 `latest` = **3.8.2**
+> 状态（2026-09-20 03:0x 实测）：本地 `package.json` = **3.9.1**；npm 官方 registry 上 `latest` = **3.9.0**
 > ⇒ 本地 > 已发布 ⇒ 可以直接发（发包前**必须**重跑第 1 节全部命令）。历史：3.8.0 → 3.8.1 → 3.8.2 → **3.9.0**。
 >
 > （下面这一段是 2026-09-19 的原始状态记录，保留以便对照当时的判断过程）
@@ -357,7 +357,7 @@ $ git tag -a v3.8.2 && git push origin v3.8.2          ⇒ [new tag] v3.8.2
 | `npm view … dist-tags` / `@3.9.0 version license` | `{ latest: '3.9.0' }` / `3.9.0` / `MIT`（发布后约 2 分钟可见） |
 | 真下载 `npm pack dsh-mpkg-wallpaper@3.9.0` | **15 个文件**：`lib/` 8 个运行时 + `cordis.patch.yml`、`icon.svg`、`package.json`、`README.md`、`README.en.md`、`THIRD-PARTY.md`、`LICENSE` |
 | 包内 `package.json` | `version 3.9.0` / `files` 12 条 / `dsh.{icon,bundle,client}` 齐 |
-| 包内敏感面 | `lib/client.js` 里 `/root/`、`/storage/emulated` **0 命中** |
+| 包内敏感面 | `lib/client.js` 里**三条本机路径前缀各 0 命中**（工作区前缀 / 设备共享存储前缀 / Termux 私有目录前缀；判据即 `tools/secret-scan-test.mjs` 的三条正则） |
 | profile 同步 | `bash update-plugin.sh` ⇒ **13 个文件 md5 全部一致**（含 `lib/` 子目录；无需重启 dsh，刷新页面即可） |
 | 真机复跑（同步后的 3.9.0） | `tools/np-pause-persist-live-probe.mjs --watch 25` ⇒ 见下方"3.9.0 发布后真机复跑" |
 | git tag | `v3.9.0` 已推送（`ef48cb3`） |
@@ -375,3 +375,29 @@ $ git tag -a v3.8.2 && git push origin v3.8.2          ⇒ [new tag] v3.8.2
 **已知边界**：服务端两处改动（`lib/index.js` 的文档类 404 用 HTML + 三条 scene 路由 404 化；`lib/web-wallpaper.js` 的
 `probeCaps`）**要等 dsh 进程重启**才生效（ESM 模块缓存，patch 热重载不重新 import）；本机 headless Firefox 无 WebGL，
 沙箱档"画面是否正确"只能人眼；NP-5 的"点暂停 → 刷新 → 30s 采样"已由新增真机探针覆盖（11 PASS/0 FAIL）。
+
+
+## 发布记录：3.9.1（2026-09-20）
+
+**为什么发**：3.9.0 之后补了一轮**审计能力**（用户点名「静音状态下还是突然冒出来的声音，必须彻查出来」的研究产物）——
+不发的话用户刷新拿到的还是旧审计，下一次"响"仍然抓不到来源。
+
+| 面 | 内容 |
+| --- | --- |
+| 审计扩容 | `mpwAuditPatchWin(win)`：钩子可装进**任意窗口**并对同源子帧递归安装（每秒重扫，上限 60 次）；新增 **WebAudio 出声钩子**（`AudioBufferSourceNode`/`OscillatorNode`/`ConstantSourceNode` 的 `start()`、`audioctx-resume`） |
+| 记录扩容 | 每条带 `win{top,url,foreign}`（跨源帧如实标 `foreign`）与 `el.owner`（`ours` / `whale-widget` / `frame` / `other`） |
+| 新判据 | `trigger:"mute-on-but-audible"` —— **静音设置开着却可听**立刻 POST `/diag`（旧判据只有泛化的 `audible-playback`，指认不了"静音却出声"这个组合） |
+| 新工具 | `tools/audio-source-hunt-live-probe.mjs`（真机守候 + `--whale` 因果判定 + `--selftest` 7 条判据分辨力自证） |
+| 新文档 | `docs/AUDIO-SOURCES.md` —— 声音归属排查：证据链、复现命令、三种消音做法、诚实边界 |
+
+**结论（用户第 1 问的答复）**：那段声音 = **第三方 `dsh-whale-widget` 的 UI 音效**
+（`new Audio('/dsh-whale/sound/{press,release}.mp3')`，`pointerdown` **捕获阶段**触发、`vol=1`、不读我们的 `mute`），
+本插件自己的元素在 300s / 945 拍守候里**一次都没可听**。详见 `docs/AUDIO-SOURCES.md`。
+
+**发布前置读数**：`bash tools/check.sh` ⇒ **全部通过 ✓（12/12）**；`tools/wallpaper-lifecycle-test.mjs` ⇒ **177 通过 / 0 失败**
+（P6/P6b–P6f 六条新断言钉住审计扩容与"静音却可听"判据）；`node tools/integrity-check.mjs` ⇒ 72/0；
+`node tools/secret-scan-test.mjs` ⇒ 干净（本批曾被它抓到一次：`docs/RELEASE.md` 里**照抄了**那三条本机路径前缀，
+已改成"三条前缀各 0 命中"的措辞 —— 门禁是对的，文档不该带操作环境字面量）。
+
+**发布后验证**：`npm view … dist-tags` ⇒ `latest=3.9.1`；tarball 仍 **15 个文件**；`update-plugin.sh` ⇒ 13 文件 md5 一致；
+真机复跑 `tools/audio-source-hunt-live-probe.mjs --sec 20 --whale` ⇒ **7 PASS / 0 FAIL**（H5/H6 抓到鲸鱼那两条记录）。
