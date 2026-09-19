@@ -46,6 +46,14 @@ const ok = (name, cond, detail) => {
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'mpw-lifecycle-'))
 
+/* 夹具用的"库根/自定义目录"从脚本位置推导（`<DSHAREA>/dsh-mpkg-wallpaper` ⇒ `<DSHAREA>`），
+   可用 `MPW_ROOT` 覆盖 —— 与 tools/settings-persist-test.mjs 同一口径；
+   **仓库里不写本机绝对路径**（integrity-check 的 `host-workspace-path` 判据 + secret-scan）。 */
+const WS_ROOT = process.env.MPW_ROOT || path.resolve(repoRoot, '..')
+const LIB_ROOT = path.join(WS_ROOT, 'allwallpaper', 'dd')
+const CUSTOM_DIR = path.join(LIB_ROOT, '3580207945')
+const OTHER_CUSTOM_DIR = path.join(WS_ROOT, 'allwallpaper', 'wallpaperE', '小鸟游星野')
+
 const { loadPlugin } = await import('./_stub.mjs')
 const SESSION_GUARDS = ['__mpwClientLoaded', '__mpwRegistered', '__mpwBsVerAt', '__mpwGlobalWired',
   '__mpwInlineWatcher', '__mpwStyleWatch', '__mpwBuildCss', '__mpwSectionTest', '__mpwNpTest',
@@ -217,11 +225,11 @@ function boot (opts = {}) {
    ══════════════════════════════════════════════════════════════════════════════════ */
 console.log('\n== A. ② 换档成套重写（不属于新选择的源字段必须显式清空）==')
 {
-  const { L } = boot({ settings: { customDirPath: '/root/Desktop/DSHarea/allwallpaper/dd' } })
+  const { L } = boot({ settings: { customDirPath: LIB_ROOT } })
   ok('A0 钩子可用', !!L && typeof L.switchPatchFull === 'function')
   const web = L.switchPatchFull({ webUrl: 'host:?custom=1&folder=3580207945&file=index.html&shim=1', mpkgKey: 'custom|3580207945', converted: 'web', source: 'index.html', mpkgName: '星野(中秋)' })
   ok('A1 web 档：image/sceneKey 被显式清空（null = 删除语义）', web.image === null && web.sceneKey === null, JSON.stringify({ image: web.image, sceneKey: web.sceneKey }))
-  ok('A2 web 档：srcRoot=custom + srcDirPath 记下来源目录', web.srcRoot === 'custom' && web.srcDirPath === '/root/Desktop/DSHarea/allwallpaper/dd', web.srcRoot + ' / ' + web.srcDirPath)
+  ok('A2 web 档：srcRoot=custom + srcDirPath 记下来源目录', web.srcRoot === 'custom' && web.srcDirPath === LIB_ROOT, web.srcRoot + ' / ' + web.srcDirPath)
   const media = L.switchPatchFull({ image: 'host:?token=小鸟游星野01_04&index=0', mpkgKey: 'custommpkg|小鸟游星野01_04.mpkg', converted: 'mp4', source: 'bgcs_abydos03.mp4' })
   ok('A3 容器/媒体档：webUrl/sceneKey 被显式清空（真机残留的那一条）', media.webUrl === null && media.sceneKey === null, JSON.stringify({ webUrl: media.webUrl, sceneKey: media.sceneKey }))
   ok('A4 容器档：srcRoot=container、srcDirPath=null', media.srcRoot === 'container' && media.srcDirPath === null, media.srcRoot + ' / ' + String(media.srcDirPath))
@@ -266,14 +274,14 @@ console.log('\n== B. ② 挂载裁决 mpwPickMount（残留 webUrl 不许抢先�
    ══════════════════════════════════════════════════════════════════════════════════ */
 console.log('\n== C. ② 形状跟着条目来源（custom / library / container 三类唯一形状）==')
 {
-  const { L } = boot({ settings: { customDirPath: '/root/Desktop/DSHarea/allwallpaper/dd' } })
+  const { L } = boot({ settings: { customDirPath: LIB_ROOT } })
   const libWeb = L.sourceFieldsFor({ srcRoot: 'library', ltoken: 'abc123', kind: 'web', file: 'index.html', title: '库里的 web 档' })
   ok('C1 库条目 ⇒ ltoken= + web=1（绝不出现 custom=1&folder=）', libWeb.webUrl === 'host:?ltoken=abc123&web=1&file=index.html&shim=1' && libWeb.mpkgKey === 'library|abc123', String(libWeb.webUrl))
   const libScene = L.sourceFieldsFor({ srcRoot: 'library', ltoken: 'abc123', kind: 'scene', file: 'scene.pkg' })
   ok('C2 库场景 ⇒ ltoken= + scene=1', libScene.image === 'host:?ltoken=abc123&file=scene.pkg&scene=1', String(libScene.image))
   const cusWeb = L.sourceFieldsFor({ srcRoot: 'custom', folder: '3580207945', kind: 'web', file: 'index.html' })
   ok('C3 自定义目录条目 ⇒ custom=1&folder=&file=', cusWeb.webUrl === 'host:?custom=1&folder=3580207945&file=index.html&shim=1' && cusWeb.mpkgKey === 'custom|3580207945/index.html', String(cusWeb.webUrl))
-  ok('C4 自定义条目记下来源目录（srcDirPath）', cusWeb.srcDirPath === '/root/Desktop/DSHarea/allwallpaper/dd', String(cusWeb.srcDirPath))
+  ok('C4 自定义条目记下来源目录（srcDirPath）', cusWeb.srcDirPath === LIB_ROOT, String(cusWeb.srcDirPath))
   const box = L.sourceFieldsFor({ srcRoot: 'container', token: '小鸟游星野01_04', index: 0, file: '小鸟游星野01_04.mpkg', entryName: 'bgcs_abydos03.mp4', isMp4: true, title: '小鸟游星野01_04.mpkg' })
   ok('C5 容器条目 ⇒ token= + index=（不出现 folder=）', box.image === 'host:?token=%E5%B0%8F%E9%B8%9F%E6%B8%B8%E6%98%9F%E9%87%8E01_04&index=0' && box.mpkgKey === 'custommpkg|小鸟游星野01_04.mpkg', String(box.image))
   ok('C6 形状分类器：三类各自认得出来', L.srcShapeOf('host:?ltoken=x&web=1') === 'library' && L.srcShapeOf('host:?token=x&index=0') === 'container' && L.srcShapeOf('host:?custom=1&folder=x&file=y') === 'custom', [L.srcShapeOf('host:?ltoken=x&web=1'), L.srcShapeOf('host:?token=x&index=0'), L.srcShapeOf('host:?custom=1&folder=x&file=y')].join('/'))
@@ -367,7 +375,7 @@ console.log('\n== F. ② 「清除壁纸」必须成套清空 + 层卸载 + 不�
     converted: 'mp4', image: 'host:?token=t&index=0', fromMpkg: true,
     webUrl: 'http://127.0.0.1:8899/?pkgurl=http%3A%2F%2F127.0.0.1%3A3080%2Fapi%2Fmpkg-wallpaper%2Fraw%3Fcustom%3D1%26folder%3D3326873240%26file%3Dscene.pkg&embed=1',
     sceneKey: 'scene|http://127.0.0.1:3080/api/mpkg-wallpaper/raw?custom=1&folder=3326873240&file=scene.pkg',
-    enabled: true, customDirPath: '/root/Desktop/DSHarea/allwallpaper/wallpaperE/小鸟游星野',
+    enabled: true, customDirPath: OTHER_CUSTOM_DIR,
   }
   const { loaded, L } = boot({ settings: MIXED })
   // 渲染面板取到真 clearBg：桩 React 直接调用组件即可
@@ -694,6 +702,124 @@ console.log('\n== N. C 切页：默认暂停+静音，且 hidden 期间我们自
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════════
+   O. C3 换档即断开旧音源（"切掉了还在放它的声音"的真凶）
+   ══════════════════════════════════════════════════════════════════════════════════ */
+console.log('\n== O. C3 换档：旧音源必须被硬归零（不依赖 fetch 成功）==')
+{
+  const OLD = { enabled: true, npNowPlaying: true, mute: false, npVolume: 60, npLinkWallpaper: true, converted: 'mp4', image: 'host:?custom=1&folder=3580207945&file=a.mp4', mpkgKey: 'custom|3580207945', source: 'a.mp4' }
+  const NEW = { enabled: true, npNowPlaying: true, mute: false, npVolume: 60, npLinkWallpaper: true, converted: 'mp4', image: 'host:?token=t&index=0', mpkgKey: 'custommpkg|x.mpkg', source: 'a.mp4' }
+  const { L } = boot({ settings: OLD })
+  const NP = globalThis.__mpwNpTest
+  await sleep(80)
+  if (NP && NP.seedTracks) NP.seedTracks(OLD, [{ path: 'assets/bgm.mp3', mime: 'audio/mpeg', size: 1000 }], 'dir')
+  const au = L.ensureAudio()
+  ok('O1 夹具：旧档有曲目清单（tracks）', !!NP && !!NP.trackList(OLD), JSON.stringify(NP && NP.trackList(OLD)))
+  if (au) {
+    // 夹具要有真 pause/play/load（否则 `pause()` 抛错 ⇒ `paused` 不会翻，属夹具缺口不是实现缺口）
+    au.setAttribute('src', '/api/mpkg-wallpaper/custom-folder/3580207945/assets/bgm.mp3')
+    au.paused = false; au.muted = false
+    au.pause = () => { au.paused = true }
+    au.play = () => { au.paused = false; return { catch () {} } }
+    au.load = () => {}
+  }
+  L.applyNowPlaying(OLD)
+  const st0 = L.npSource()
+  ok('O2 旧档身份 = tracks|custom|3580207945，且我们的 <audio> 在播', st0 && st0.kind === 'tracks' && st0.audioPaused === false, JSON.stringify(st0))
+  // 切到"无清单的容器档"（真机现场：npScanUrl 为空 ⇒ 旧写法直接 return）
+  L.writePartial(NEW)
+  L.applyNowPlaying(NEW)
+  await sleep(60)
+  const st1 = L.npSource()
+  ok('O3 切到无清单档后：身份变了（container ⇒ none/video）', st1 && st1.id !== st0.id, JSON.stringify(st1))
+  ok('O4 **旧 <audio> 必须已暂停且 src 已断**（修前：继续在放 ⇒ 用户"切掉了还在响"）', st1 && st1.audioPaused === true && !st1.audioSrc, JSON.stringify(st1))
+  ok('O5 审计里留下归零记录（可归因）', JSON.stringify(L.audit()).indexOf('audio-reset') >= 0, JSON.stringify(L.audit().slice(-2)))
+  // 防御：即使 fetch 成功那条路没走到（无扫描 URL），也不能把旧源留着
+  const g2 = boot({ settings: NEW })
+  const NPause = g2.L.ensureAudio()
+  if (NPause) {
+    NPause.setAttribute('src', '/x.mp3'); NPause.paused = false; NPause.muted = false
+    NPause.pause = () => { NPause.paused = true }
+    NPause.play = () => { NPause.paused = false; return { catch () {} } }
+    NPause.load = () => {}
+  }
+  g2.L.applyNowPlaying(NEW)
+  await sleep(40)
+  const st2 = g2.L.npSource()
+  ok('O6 无清单档上重放：`npScanUrl` 为空那条 return 也收口（旧源不会漏网）', st2 && st2.audioPaused === true && !st2.audioSrc, JSON.stringify(st2))
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════
+   P. C2 音频审计：把"谁在什么时候放的声音"留痕（含已从 DOM 摘除但仍在播）
+   ══════════════════════════════════════════════════════════════════════════════════ */
+console.log('\n== P. C2 音频审计（play/volume/muted/Audio/AudioContext + isConnected + 栈）==')
+{
+  const { L } = boot({ settings: { enabled: true, npNowPlaying: true, mute: false } })
+  ok('P1 审计缺省装好（`?npaudit=0` 才关）', L.auditOn() === true)
+  // 造一个"已从 DOM 摘除但仍在播"的元素（用户现场第一嫌疑）
+  const el = mkNode('audio', 'ghostMedia'); el.id = 'ghost'
+  el.paused = false; el.muted = false; el.volume = 0.33
+  el.currentTime = 12.5
+  Object.defineProperty(el, 'isConnected', { configurable: true, get: () => false })
+  const rec = L.auditPush('play', el, { detachedPlaying: true })
+  ok('P2 审计记录了"已摘除但仍在播"的元素（isConnected=false 显式标出）', rec && rec.el && rec.el.connected === false && rec.paused === false, JSON.stringify(rec))
+  ok('P3 记录里有调用栈摘要 + 当时状态（muted/volume/currentTime/hidden/np 设置）',
+    typeof rec.who === 'string' && rec.muted === false && rec.volume === 0.33 && rec.currentTime === 12.5 && 'hidden' in rec && !!rec.np, JSON.stringify(rec).slice(0, 240))
+  ok('P4 环形缓冲有界（≤200 条）且可疑计数可查', (() => { for (let i = 0; i < 260; i++) L.auditPush('play', el, {}); const list = L.audit(); const all = window.__mpwAudioAudit.list; return all.length <= 200 && (window.__mpwAudioAudit.suspicious || 0) >= 1 })(), 'len=' + window.__mpwAudioAudit.list.length + ' suspicious=' + window.__mpwAudioAudit.suspicious)
+  const src = fs.readFileSync(clientPath, 'utf8')
+  ok('P5 审计面覆盖 play/volume/muted/Audio/AudioContext/decodeAudioData', /P\.play = function/.test(src) && /\["muted", "volume"\]/.test(src) && /new-Audio/.test(src) && /AudioContext/.test(src) && /decodeAudioData/.test(src))
+  ok('P6 可听转换（!paused && !muted && volume>0）立刻把**审计窗口**POST 到 /diag（下一次"响"在磁盘上就有证据）',
+    /const audible = !!\(rec\.el && rec\.paused === false && rec\.muted === false && Number\(rec\.volume\) > 0\)/.test(src)
+    && /trigger: audible \? "audible-playback"/.test(src) && /window: list\.slice\(-12\)/.test(src))
+  ok('P7 `?npaudit=0` 可完全关掉（零开销逃生门）', /get\("npaudit"\) !== "0"/.test(src))
+  // 媒体卸载点审计：切离视频档必须 pause（只 removeAttribute('src') 不会停播）
+  ok('P8 showImageEl 切离视频档时先 pause 再清 src/load（规范：移除 src 不会停止播放）', /if \(!video\.paused\) video\.pause\(\)[\s\S]{0,120}video\.removeAttribute\("src"\); if \(video\.load\) video\.load\(\)/.test(src))
+  ok('P9 无源清空路径也 pause + load', /if \(video\.load\) video\.load\(\)/.test(src) && (src.match(/video\.pause\(\)/g) || []).length >= 2)
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════
+   Q. C4 首次手势前一律 muted（不许"加载后若干秒自己变可听"）+ 联动关＝只控声音
+   ══════════════════════════════════════════════════════════════════════════════════ */
+console.log('\n== Q. C4 起播时机可预期（手势前恒 muted）+ 联动关的"只控声音" ==')
+{
+  const FIX = { enabled: true, npNowPlaying: true, mute: false, npVolume: 33, npLinkWallpaper: true, converted: 'mp4', image: 'host:?custom=1&folder=f&file=a.mp4', mpkgKey: 'custom|f', source: 'a.mp4' }
+  const { L } = boot({ settings: FIX })
+  const video = L.video()
+  if (video) {
+    video.paused = true; video.muted = true; video.src = '/api/mpkg-wallpaper/media?token=t&index=0'
+    video.play = () => { video.paused = false; return { catch () {} } }
+    video.pause = () => { video.paused = true }
+  }
+  ok('Q1 夹具：mute=false 的设置下，**没有手势** ⇒ npWantMuted() 仍为 true（修前：`applyVideoMute` 会按设置翻成可听）',
+    L.gestureSeen() === false && L.wantMuted() === true, 'gestureSeen=' + L.gestureSeen() + ' wantMuted=' + L.wantMuted())
+  ok('Q2 可判定状态：`window.__mpwNpSoundAllowedBy` 在手势前为空', (() => { try { return !window.__mpwNpSoundAllowedBy } catch (e) { return true } })())
+  L.gestureUnlock('test-card')
+  ok('Q3 手势/卡片显式操作 ⇒ 解除（此后按设置走：mute=false ⇒ 可听）',
+    L.gestureSeen() === true && L.wantMuted() === false, 'gestureSeen=' + L.gestureSeen() + ' wantMuted=' + L.wantMuted())
+  // 联动关＝只控声音（video 档）
+  const off = Object.assign({}, FIX, { npLinkWallpaper: false })
+  L.writePartial({ npLinkWallpaper: false })   // 真机上这个开关经 commit 落进 section（否则 60ms 后的延迟重放会按旧值对齐）
+  L.applyNowPlaying(off)
+  const m = globalThis.__mpwNpTest.resolve(off)
+  ok('Q4 联动关 + 视频档：canPlay=true（能控声音）/ canSeek=false + 副标题"只切换这条音轨的声音"',
+    m.canPlay === true && m.canSeek === false && String(m.byline) === 'np.note.linkOffSoundOnly', JSON.stringify({ canPlay: m.canPlay, canSeek: m.canSeek, byline: m.byline }))
+  if (video) { video.muted = false; video.paused = false; video.__plays = 0 }
+  L.transport('pause', off)
+  await sleep(30)
+  ok('Q5 联动关 + 卡片暂停 ⇒ 只静音（muted=true）且画面继续（paused=false、play() 未被调）',
+    !!video && video.muted === true && video.paused === false && (video.__plays || 0) === 0, JSON.stringify({ muted: video && video.muted, paused: video && video.paused, plays: video && video.__plays }))
+  L.transport('play', off)
+  await sleep(30)
+  ok('Q6 联动关 + 卡片播放 ⇒ 取消静音（muted=false），画面依旧不被 play() 动', !!video && video.muted === false && (video.__plays || 0) === 0, JSON.stringify({ muted: video && video.muted, plays: video && video.__plays }))
+  // 联动开 ⇒ 整体暂停/播放（画面 + 声音）
+  L.writePartial({ npLinkWallpaper: true })
+  L.applyNowPlaying(FIX)
+  if (video) { video.paused = false; video.__plays = 0 }
+  L.transport('pause', FIX)
+  await sleep(30)
+  ok('Q7 联动开 + 卡片暂停 ⇒ 整体暂停（paused=true，画面与声音一起停）', !!video && video.paused === true, JSON.stringify({ paused: video && video.paused }))
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════
    K. 变异自证
    ══════════════════════════════════════════════════════════════════════════════════ */
 const MUTATIONS = [
@@ -711,6 +837,13 @@ const MUTATIONS = [
   { id: 'arm-probe-ignores-okfalse', expect: 'G', why: '验活只看 r.ok（不看 {ok:false}）⇒ 真机那条 404 的 JSON 不再被判不可用', mut: (s) => s.replace("if (body && body.ok === false) return rec({ ok: false, status: status, url: u, error: String(body.error || \"\").slice(0, 120) });", '') },
   { id: 'sandbox-fallback-unconditional', expect: 'H', why: '降级判据退化成"任何错误都降级"⇒ 沙箱隔离价值被一次无关报错换掉', mut: (s) => s.replace("return /SecurityError|sandbox|opaque|not allowed|denied|Failed to construct 'Worker'|Blocked|insecure|Operation is insecure/i.test(msg);", 'return true;') },
   { id: 'card-pause-does-not-gate-frame', expect: 'I', why: '帧内归属不再看"卡片暂停"（修前 NP-3 形态）⇒ 卡片暂停后壁纸 BGM 继续响（真机第 ④ 条）', mut: (s) => s.replace('if (npCardPaused) return true;\n\t\t\t\treturn npAudioOwns();', 'return npAudioOwns();') },
+  /* C3 的两道防线（换档硬归零 + 早退收口）互为兜底：只拆一道仍然不红 = 设计如此；
+     变异必须把两道一起退回（= 修前的完整形态）才算有分辨力。 */
+  { id: 'unmuted-before-gesture', expect: 'Q', why: '去掉"手势前恒 muted"（修前形态）⇒ 加载后若干秒自己从 muted 翻成可听（真机 48/48 拍的可听播放）', mut: (s) => s.replace('if (!npGestureSeen) return true;', '') },
+  { id: 'link-off-freezes-whole-video', expect: 'Q', why: '联动关退回"整体暂停/禁用"（被用户判为 bug 的旧口径）⇒ 用户"关闭状态下暂停播放用不了"', mut: (s) => s.replace('} else if (vid && !link) {', '} else if (false) {') },
+  { id: 'source-change-keeps-old-audio', expect: 'O', why: '换档硬归零与早退收口**一起**退回（修前形态）⇒ 上一张壁纸的 <audio> 继续放（用户："切掉了还在放他的声音"）', mut: (s) => s.replace('if (npSrcIdPrev !== null && idNow !== npSrcIdPrev) npAudioHardReset("source-changed:" + npSrcIdPrev + "->" + idNow);', '').replace('if (npAudio && (!npAudio.paused || npAudio.getAttribute("src"))) npAudioHardReset("no-scan-url");', '') },
+  { id: 'audit-detached-flag-dropped', expect: 'P', why: '审计不再标 `connected:false`（"已摘除仍在播"抓不到）⇒ 以后同类问题又只能靠猜', mut: (s) => s.replace('connected: el.isConnected !== false,', 'connected: true,') },
+  { id: 'video-teardown-no-pause', expect: 'P', why: '切离视频档退回"只 removeAttribute(src)"（规范：不会停止播放）⇒ 隐藏但仍在响', mut: (s) => s.replace('try { if (!video.paused) video.pause() } catch (e) {}\n\t\t\ttry { video.removeAttribute("src"); if (video.load) video.load() } catch (e) {}', 'try { video.removeAttribute("src") } catch (e) {}') },
   { id: 'hidden-retry-not-gated', expect: 'N', why: '起播闸门去掉 hidden 条件（修前形态）⇒ 被节流的重试定时器在后台把音频拉起来（真机"过一会儿又响一下"）', mut: (s) => s.replace('if (wallUserPaused || powPaused || npUserPausedOf(video) || mpwHiddenAudioBlock()) {', 'if (wallUserPaused || powPaused || npUserPausedOf(video)) {') },
   /* C 的两道闸是**互为兜底**的（applyNowPlaying 那条跳过 + npPrimePlay 内部闸），任一条单独生效就够
      ⇒ 变异必须把两道一起拆掉才是"修前的完整形态"（否则拆一道仍然不红，那是设计如此，不是假绿）。 */

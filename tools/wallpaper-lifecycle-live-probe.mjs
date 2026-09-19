@@ -34,9 +34,11 @@ const OUT = arg('out', '/tmp/mpw-lifecycle')
 const AUTHORITY = arg('authority', '127.0.0.1:3080')
 const SETTINGS_JSON = arg('settings', path.join(os.homedir(), '.dsh-mpkg-wallpaper', 'settings.json'))
 const CUSTOMDIR_JSON = arg('customdir', path.join(os.homedir(), '.dsh-mpkg-wallpaper', 'custom-dir.json'))
-const LIB_ROOT = arg('lib-root', '/root/Desktop/DSHarea/allwallpaper/dd')
-const WEB_FOLDER = arg('web-folder', '3580207945')      // 用户测的那张：L2D 碧蓝档案 8K … 星野(中秋)
+/* 库根：`--lib-root` > `$MPW_ROOT/allwallpaper/dd` > 从插件仓位置推导（`<DSHAREA>/allwallpaper/dd`）。
+   **不写本机绝对路径**（integrity-check `host-workspace-path` + secret-scan 判据）。 */
 const PLUGIN = path.resolve(import.meta.dirname, '..')
+const LIB_ROOT = arg('lib-root', path.join(process.env.MPW_ROOT || path.resolve(PLUGIN, '..'), 'allwallpaper', 'dd'))
+const WEB_FOLDER = arg('web-folder', '3580207945')      // 用户测的那张：L2D 碧蓝档案 8K … 星野(中秋)
 const STORE = 'dsh.mpkg-wallpaper.v2'
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -141,6 +143,7 @@ const ok = (c, label, extra = '') => { if (c) { pass++; console.log('PASS ' + la
 const skipped = (label, why) => { skip++; console.log('SKIP ' + label + '  — ' + why) }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
+const WATCH = Number(arg('watch', 0))   // --watch <秒>：无交互长窗口观测（家长口径 ≥180s）
 const browser = await firefox.launch({ headless: true })
 const setCustomDir = async (dir) => {
   const r = await fetch('http://' + AUTHORITY + '/api/mpkg-wallpaper/custom-dir', {
@@ -522,6 +525,40 @@ try {
       (gated ? 'gated=有 ' : 'gated=无 ') + 'noActiveVideo=' + noActiveVideo + ' ops=' + JSON.stringify(hiddenSamples && hiddenSamples.ops.slice(-3)))
     fs.writeFileSync(path.join(OUT, 'state-preview-audio.json'), JSON.stringify({ withPanel, paused, resumed, linkTest, vis }, null, 1))
     await page.screenshot({ path: path.join(OUT, 'preview-web.png') })
+    await page.close()
+  }
+  /* ── 长窗口观测：无交互窗口内任何"可听播放"都算红（≥3–5 分钟；后台节流周期量级） ── */
+  if (WATCH > 0) {
+    console.log('\n=== 长窗口观测（' + WATCH + 's，每 5s 一拍；用户无任何操作）===')
+    const sec = Object.assign({}, baseSec, { enabled: true, npNowPlaying: true })
+    writeSettings(sec)
+    const { page } = await newPage(ctx, Object.assign({}, sec, { __mpwLocalAt: Date.now() + 60000 }))
+    await page.waitForTimeout(2000)
+    const samples = []
+    const t0 = Date.now()
+    while ((Date.now() - t0) / 1000 < WATCH) {
+      samples.push(await page.evaluate(() => {
+        const g = (el) => (el ? { id: el.id || "", cls: String(el.className || "").slice(0, 40), connected: el.isConnected !== false, paused: !!el.paused, muted: !!el.muted, volume: typeof el.volume === "number" ? Number(el.volume.toFixed(2)) : null, t: Number((el.currentTime || 0).toFixed(2)), src: String(el.getAttribute && el.getAttribute("src") || "").slice(0, 40) } : null)
+        const L = window.__mpwLifecycleTest
+        const aud = (window.__mpwAudioAudit && window.__mpwAudioAudit.list || []).filter((r) => r && r.paused === false && r.muted === false && Number(r.volume) > 0)
+        return {
+          at: Date.now(), visibility: (() => { try { return document.visibilityState } catch (e) { return null } })(),
+          video: g(document.getElementById("mpw-bgVideo")), audio: g(L && L.audio ? L.audio() : null),
+          frame: g(document.querySelector("#mpw-bgWrap iframe.mpw-webFrame")),
+          audibleAudits: aud.length, lastAudible: aud.length ? aud[aud.length - 1] : null,
+          ops: L && L.ops ? L.ops().slice(-2) : [],
+        }
+      }))
+      await page.waitForTimeout(5000)
+    }
+    const bad = samples.filter((x) => (x.video && x.video.paused === false && x.video.muted === false && x.video.volume > 0)
+      || (x.audio && x.audio.paused === false && x.audio.muted === false && x.audio.volume > 0))
+    ok(bad.length === 0, 'W-1 ' + WATCH + 's 无交互窗口内没有任何一拍是"可听播放"（video/audio 且 !muted && volume>0）',
+      '采样 ' + samples.length + ' 拍；可疑 ' + bad.length + ' 拍' + (bad.length ? '：' + JSON.stringify(bad.slice(0, 2)) : ''))
+    const audBad = samples.filter((x) => x.audibleAudits > 0)
+    ok(audBad.length === 0, 'W-2 审计里也没有"可听播放"记录（同一窗口的独立计数面）',
+      '有可听审计的拍数 ' + audBad.length + (audBad.length ? '；最后一条=' + JSON.stringify(audBad[audBad.length - 1].lastAudible).slice(0, 240) : ''))
+    fs.writeFileSync(path.join(OUT, 'state-watch.json'), JSON.stringify(samples, null, 1))
     await page.close()
   }
 } finally {

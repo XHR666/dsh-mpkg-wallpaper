@@ -325,6 +325,66 @@ npPrimePlay 是唯一起播入口，它的闸门只有 wallUserPaused / powPause
 
 ---
 
+## 8.5 C2/C3 音频审计 + 「换档即断开旧音源」（用户 00:14 现场）
+
+### C3 换档硬归零（**先落这条**：它是"切掉了还在放它的声音"的真凶级漏洞）
+
+修前代码链：
+
+```
+npFetchTracks:7206  const url = npScanUrl(scope);
+npFetchTracks:7207  if (!url) return;                       // 容器档/无目录档：直接 return
+npFetchTracks:7210  if (npMediaCache.key === key && npMediaCache.data) return   // 缓存命中：也 return
+npFetchTracks:7243  try { if (npAudio) { npAudio.pause(); npAudio.removeAttribute("src"); } } catch {}
+                    // ↑ 只在 fetch **成功**的 .then 里
+npDropAudio()      只在"NP 开关被关掉"那一条路上被调用
+⇒ 从"有曲目清单且在播"的档切到"无清单的档"（容器视频档）时，上一张壁纸的 `<audio>` **继续在放**
+```
+
+修法：单一事实源 + 切换即归零（**不依赖任何 fetch 成功**）
+
+* `npSourceKind(s)` ⇒ `video | tracks | frame | none`（当前音源的唯一口径）；
+* `npSourceId(s)` = 类别 + 清单作用域键；`applyNowPlaying` **入口**比对上一轮，身份变了就先
+  `npAudioHardReset()`（`pause()` + 去掉 `src` + `muted=true` + `load()`）；
+* `npFetchTracks` 的两条"直接 return"（无扫描 URL / 缓存命中）也各自收口（第二道防线）；
+* 判据（O 组）：夹具"上一源 tracks 且在播" ⇒ 切到无清单档 ⇒ 断言 `npAudio.paused===true && src 已断`；
+  变异把**两道防线一起**退回 ⇒ O 组必红（两道互为兜底，只拆一道仍不红是设计如此）。
+
+### C2 音频审计（`?npaudit=0` 关；默认常开）
+
+Hook 面：`HTMLMediaElement.prototype.play`、`volume`/`muted` setter、`Audio` 构造、
+`AudioContext/webkitAudioContext` 构造与 `decodeAudioData`，以及我们自己的
+`npPrimePlay` / `npApplyMute` / `npApplyVolume` / `npEnsureAudio` / `npDropAudio` / `npAudioHardReset`。
+每条记录：`{t, kind, who(栈前 3 帧), el{tag,id,cls,connected,src摘要,hasSrcAttr}, muted, volume, paused,
+currentTime, hidden, np{on,link,mute}}`，写进**有界环形**（≤200 条，`window.__mpwAudioAudit`）。
+
+**自动上报（用户"什么都没动又响了"的下一次，磁盘上就有证据）**：命中"可疑"即 POST `/diag`
+一条 `audio-audit`（含 `trigger` + **审计窗口最近 12 条** + `visibility`）；"可疑"的定义 =
+**可听播放转变**（`!paused && !muted && volume>0`）∨ 元素已从 DOM 摘除却仍在播
+（`isConnected=false` 显式标出）∨ hidden 期间的 play/取消静音。节流 5s/条。
+诊断落点由宿主 `/diag` 决定（本机 `/root/.dsh-mpkg-wallpaper/diag-<ts>.json`）。
+
+**哪些声源不受 `mute` 管**（家长要求的清单，本轮已核对）：
+
+| 声源 | 受 `mute` 管？ | 说明 |
+| --- | --- | --- |
+| 壁纸 `<video>`（容器/库/自定义视频档） | ✅ | `applyVideoMute()`（NP-4 接线） |
+| 我们自己的 `<audio>`（目录曲目档） | ✅ | `npApplyMute()` |
+| 同源 web 帧内的 `<video>/<audio>` | ✅ | `applyWebMute()` 直控元素 |
+| **跨源 web 帧**（`:8899/?pkgurl=…` 渲染器 / 不透明源沙箱） | ⚠️ 只能发意图 | `frame.muted` + shim `policy{muted}` / `op:pause`；作者用 **WebAudio** 或自绘播放器时**压不住**（已如实记 `data-mpw-np-sound`） |
+| **已从 DOM 摘除但仍在播的元素** | ❌ 修前完全不在覆盖面 | 规范：`remove()`/`removeChild()` **不会**停止播放；本轮已修 `showImageEl`（切离视频档先 `pause()`+`load()`）并加了 `isConnected` 审计 |
+| `AudioContext`/`Audio` 直出（作者自己 new 的） | ❌ | 审计已 hook 构造与 `decodeAudioData`（能抓来源），但**没有**静音它们的通用手段（浏览器不提供"全局静音"）⇒ 只能靠"换档即断开 + hidden 闸门 + 审计定位" |
+| 隐藏但仍在播的壁纸 `<video>` | 修前 ❌ | 现在 hidden 时强制 `muted=true` + `pause()`（C 条） |
+
+### 长窗口观测（判据口径，家长更正后）
+
+**不做**"刷新后 10s"的专项断言（用户已说明"刷新即响"只是碰巧）。
+正确口径：**在用户没有任何操作的时间窗内，任何一拍出现"在播且 `muted=false && volume>0`"都算红**，
+窗口 ≥ 3–5 分钟（后台节流/定时器周期量级）；另加"**切档后 30s**"窗口（对应 C3 的早退嫌疑）。
+探针里对应 `--watch <秒>`（每 5s 一拍，记录 `visibilityState`/元素身份/`isConnected`/`muted`/`volume`/`currentTime`）。
+
+---
+
 ## 9. 同类审计（用户要求："查这类 bug 会不会衍生出其他 bug"）
 
 每条给"是否有 / 在哪 / 判据"。**结论：这一类（源字段残留 + 形状错配 + 错误页被当素材）在本轮

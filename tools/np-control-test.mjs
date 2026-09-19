@@ -373,12 +373,29 @@ console.log('\n== D. ② 「播放/暂停同时控制壁纸」联动开关（默
   G.video.paused = true
   G.T.transport('play', Object.assign({}, SEC_VIDEO, { npLinkWallpaper: false }))
   await settle()
-  ok('D4 联动关 + 视频档（唯一声源就是壁纸本身）⇒ 播放键**不碰**壁纸：`play()` 一次都没被调',
+  /* ⚠ 语义变更（2026-09-20，用户裁定，见 docs/WALLPAPER-LIFECYCLE.md §8）：
+     旧口径 = "联动关 ⇒ 视频档的播放键直接禁用（canPlay=false）"；
+     用户实测它是坏的：「关闭状态下它的暂停播放用不了 …… 我在暂停状态下把开关关闭，那这个壁纸就不能动起来」
+     ⇒ 新口径 = **卡片只控声音**：联动关时播放/暂停 = 取消静音/静音那条音轨（**画面继续动**），
+       所以 canPlay 恒 true、canSeek 仍 false，副标题改写成"只切换这条音轨的声音"。
+     判据同步替换（旧断言断言的是被用户判为 bug 的行为）：`play()` 仍然一次都不许被调（画面不动），
+     但 `muted` 必须真的翻转。 */
+  ok('D4 联动关 + 视频档 ⇒ 播放键**仍然不碰画面**：`play()` 一次都没被调',
     G.video.__plays === 0, 'plays=' + G.video.__plays)
   const mOff = G.T.resolve(Object.assign({}, SEC_VIDEO, { npLinkWallpaper: false }))
-  ok('D5 联动关 + 视频档 ⇒ canPlay/canSeek 如实为 false（不假装按得动）+ 副标题写明是哪一条挡住的',
-    mOff.canPlay === false && mOff.canSeek === false && String(mOff.byline) === 'np.note.linkOff',
+  ok('D5 联动关 + 视频档 ⇒ canPlay=true（**能控声音**）/ canSeek=false（进度条仍属画面）+ 副标题写"只切换声音"',
+    mOff.canPlay === true && mOff.canSeek === false && String(mOff.byline) === 'np.note.linkOffSoundOnly',
     JSON.stringify({ canPlay: mOff.canPlay, canSeek: mOff.canSeek, byline: mOff.byline }))
+  // D5b：暂停 = 静音那条音轨（画面继续动）；播放 = 取消静音
+  G.video.muted = false; G.video.paused = false
+  G.T.transport('pause', Object.assign({}, SEC_VIDEO, { npLinkWallpaper: false }))
+  await settle()
+  ok('D5b 联动关 + 卡片暂停 ⇒ **只静音**（video.muted=true）且**画面继续**（paused=false）',
+    G.video.muted === true && G.video.paused === false, JSON.stringify({ muted: G.video.muted, paused: G.video.paused }))
+  G.T.transport('play', Object.assign({}, SEC_VIDEO, { npLinkWallpaper: false }))
+  await settle()
+  ok('D5c 联动关 + 卡片播放 ⇒ 取消静音（video.muted=false），画面依旧不被 play() 动',
+    G.video.muted === false && G.video.__plays === 0, JSON.stringify({ muted: G.video.muted, plays: G.video.__plays }))
   ok('D6 联动关**不影响我们自己的播放器**（目录音轨档的 canPlay 仍为 true —— "只影响声音"）',
     (() => {
       const H = freshPlugin({ settings: Object.assign({}, SEC_WEB, { npLinkWallpaper: false }) })
