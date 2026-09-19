@@ -61,6 +61,15 @@ node tools/np-media-test.mjs || fail=1
 #   拖动影响壁纸还是只影响声音、清单能不能真取到字节、借宽借谁的像素）—— 界面看着对是判不出来的，
 #   必须对着真实元素 / 真实 URL / 真实矩形断言。11 组变异各自必红。根因/读数：docs/NOW-PLAYING-DSH.md §7.8
 node tools/np-control-test.mjs || fail=1
+# ②①③④⑤⑥(2026-09-20 真机修复轮) 壁纸**生命周期**门禁：换档成套重写（残留 webUrl 不许抢先武装）/
+#   挂载裁决 / URL 形状跟着条目来源（custom|library|container 三类唯一形状）/"当前壁纸"预览候选链
+#   （web 档不再空白）/ 弹层容器不得被我们打成侧栏（设置面板被压缩进左栏那条，真机读数 800→254px）/
+#   「清除壁纸」真的清空且不复活（驱动**真 clearBg**）/ 武装前验活（宿主明确 {ok:false} ⇒ 不给 iframe
+#   渲染错误页）/ 沙箱档被浏览器策略挡住时一次性降级兼容档 / 卡片暂停真的压住帧内音频 /
+#   切页静音（powPauseHidden 新默认 + 迁移）/ 交互音与角色语音不进播放器清单（纯分类器 + 依据）/
+#   联动开关关闭的语义（关＝不碰壁纸、开＝按卡片状态对齐）。13 组变异各自必红。
+#   真机读数与同类审计：docs/WALLPAPER-LIFECYCLE.md
+node tools/wallpaper-lifecycle-test.mjs || fail=1
 # ①(2026-09-18) 「开关必须真的接线」审计（功能静默无效这一类的通用判据）：
 #   来历是真事故：「配色」(accent) 与「深底文字可读增强」(aquaTextEnhance) 两段 CSS 被一起
 #   包在 `if (aquaOn(section))` 里 ⇒ 只开这两个开关时规则根本不生成（开关能点、没效果、不报错）。

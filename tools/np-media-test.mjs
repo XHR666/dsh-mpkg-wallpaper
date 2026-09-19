@@ -699,7 +699,9 @@ const MUTS = [
     id: 'audio-scope-loses-custom-mpkgkey', expect: 'A', file: 'client',
     why: '①(NP-3) 删掉 mpkgKey="custom|<folder>" 这条作用域（旧写法只认 folderName）⇒ 自定义目录里的'
       + 'web 壁纸永远拉不到清单（真机 bug②：目录里的音频没接到控件）',
-    mut: (s) => s.replace("			let m = /^custom\\|(.+)$/.exec(key);\n			if (m) return { mode: \"custom\", folder: String(m[1]).split(\"/\")[0], src: \"mpkgKey\" };", ""),
+    /* ②(2026-09-20) 作用域构造点改成"目录名判据 + customScope()"（folder 必须是目录名）⇒
+       变异注入点跟着改：删掉 `custom|<folder>` 那一条（语义与旧断言完全一致：删掉即拉不到清单）。 */
+    mut: (s) => s.replace("			let m = /^custom\\|(.+)$/.exec(key);\n			if (m) return customScope(String(m[1]).split(\"/\")[0], \"mpkgKey\");", ""),
   },
   {
     id: 'mute-only-writes-setting', expect: 'D', file: 'client',
