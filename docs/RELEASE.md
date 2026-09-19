@@ -372,9 +372,14 @@ $ git tag -a v3.8.2 && git push origin v3.8.2          ⇒ [new tag] v3.8.2
 2. `npPaused` 是**新键**（默认 `false` = 播放）⇒ 老用户升级后行为与升级前一致（不会突然变暂停）。
 3. 超限语义变化只影响**病态载荷**（>8MB 的 diag / >3MB 的首帧）：从"连接被掐"变成"413 + 说明"，正常档逐字节不变。
 
-**已知边界**：服务端两处改动（`lib/index.js` 的文档类 404 用 HTML + 三条 scene 路由 404 化；`lib/web-wallpaper.js` 的
-`probeCaps`）**要等 dsh 进程重启**才生效（ESM 模块缓存，patch 热重载不重新 import）；本机 headless Firefox 无 WebGL，
-沙箱档"画面是否正确"只能人眼；NP-5 的"点暂停 → 刷新 → 30s 采样"已由新增真机探针覆盖（11 PASS/0 FAIL）。
+**已知边界**：服务端改动**要等 dsh 进程重启**才生效（ESM 模块缓存，`cordis.patch.yml` 的热重载只重载客户端）——
+截至 3.10.0 累计四处：①`lib/index.js` 的文档类 404 用 HTML；②三条 scene 路由 404 化；③`lib/web-wallpaper.js` 的
+`probeCaps`；④**本版的三条媒体会话路由**（`/media-session`、`/media-control`、`/media-art`）。
+**真机实测（2026-09-20 03:5x，3.10.0 已同步但 dsh 未重启）**：客户端侧新代码已在跑
+（`window.__mpwSystemMedia = {available:false, reason:"fetch:HTTP 404"}`，连续失败即降速 ⇒ 不刷屏），
+而宿主那三条路由在真进程里仍是 **404**（旧模块）⇒ **重启 dsh 后**才会变成 200 并如实回 `available:false / no-session-bus`。
+宿主侧代码本身的正确性由 `tools/media-session-wiring-test.mjs`（真 HTTP + 真进程内注册）24/0 覆盖。
+本机 headless Firefox 无 WebGL，沙箱档"画面是否正确"只能人眼；NP-5 的"点暂停 → 刷新 → 30s 采样"已由真机探针覆盖（11 PASS/0 FAIL）。
 
 
 ## 发布记录：3.9.1（2026-09-20）
