@@ -733,3 +733,189 @@ slot 刚渲染时的 **prelim 值**，这次没复现到）—— 也就是说�
 
 **落账值（①(NP-2)）**：第 1 次提交 = `d072858a48e9e99f7371c3db23b629d88e86daba`（= `d072858`）。
 第 2 次（**本行所在的「文档落账」提交**）= `git log -1 -- docs/NOW-PLAYING-DSH.md`。
+
+
+---
+
+## 7.7 ①(NP-3 2026-09-19)「壁纸声音」这一批真机 bug：根因 / 修法 / 判据 / 诚实清单
+
+> 本节是**追加**（§7.1–§7.6 与 §8 原文一行未删）。所有"真机读数"来自 `tools/np-media-live-probe.mjs`
+> （新写的探针，用自签 Cookie + headless Firefox 打开 `:3080`），开跑前/修好后各跑一次：
+> **修前 16 PASS / 22 FAIL，修后 45 PASS / 0 FAIL**（截图 4 张，见 §7.7.6）。
+> "无浏览器读数"来自 `tools/np-media-test.mjs`（新门禁：**82 通过 / 0 失败**，含 **12 组变异自证**）
+> 与 `tools/now-playing-test.mjs`（**83 通过 / 0 失败**，含 7 组变异）。
+
+### 7.7.0 这一批 bug 的**共同形状**（先说结论，后面逐条给证据）
+
+八条现场症状里有六条落在**同一个模式**上：**"我们以为在控 A，其实 A 不是当前那张壁纸的东西"**。
+
+| 层 | 具体错在哪 | 后果（用户视角） |
+|---|---|---|
+| 媒体源判定 | `#mpw-bgVideo` 这个 `<video>` 在页面加载时就建好了，**任何壁纸类型下都在 DOM 里**（不用视频时 `display:none`、没有 `src`）；旧实现按选择器命中它就当成"当前媒体" | web 壁纸下：播放键控空壳（点了没反应）、静音键读空壳的 `muted`（恒 true）⇒"点播放没用 / 展开看着在播点不动 / 声音控制打不开、一直静音" |
+| 音轨清单路由 | 自定义目录的壁纸**不写 `folderName`**（web 壁纸是 `mpkgKey="custom|<folder>"`、视频/场景是 `image="host:?custom=1&folder=…"`）；旧实现只认 `folderName`/`mpkgKey` 两种形态，拼出 `library-scene-audio?ltoken=custom|…` ⇒ 宿主 404 | 目录里那首 `backgroundmuisc.mp3` **从来没接到控件**（清单恒 0 条） |
+| apply 路径 | `applyFromStorageInner()` 的 **web 分支提前 `return`**（`:3945`），把共享尾里的 `applyNowPlaying(section)` 整段跳过 | 刷新/切到 web 壁纸后控件**根本不挂**（探针 np=0）；即使挂着也永远不按当前壁纸刷新 |
+| CSS 产物 | `buildCss()` 的 `if (!hasImage)` 提前 `return` 忘了拼 `__npCss`（NP 段只在函数末尾那条 return 上） | section 少 `image`/`webUrl` 时（无壁纸、或"只有宿主 settings.json"的半残档）**NP 整份样式丢失**：`.mpw_np_*` 全变 static ⇒ 传输键掉到卡片外面、点不到 |
+| 布局量宽 | 贴合缩放量的是"侧栏列"，而 `[class*="sidebarCol"]` 在真机上**不止一处**（右栏/dock 同类名）⇒ 量到 280 而我们的容器只有 256；且 `.mpw_np` 没有确定宽度 ⇒ grid 把 `width:auto` 夹到区域宽（232），`scale()` 的原点量的是被夹过的盒子中心 | 卡片右缘伸出容器可视区 **10.9px**（悬浮效果下更明显）⇒"音乐卡片有一部分被切掉" |
+| 标记（播放/暂停那两个四边形） | 形状由**展开进度** `p` 驱动（旧 `tq = 1 - p`），不是播放状态 | 收起态恒画播放三角、展开态恒画暂停双条 —— 两种状态各有一半时间在说谎 |
+
+**三条不是"我们算错"而是"根本没接线"的**：
+① `video.muted` 从建 DOM 那刻被写死 `true`，此后**再没有任何代码**按 `mute` 设置给它赋值
+（用户当前那张 mp4 实测 `ffprobe`：h264 + **aac 音轨**、20.0s ⇒ 声音一直都在，只是永远静音）；
+② 静音键只 `saveSection({mute})`，**不落到任何元素**；
+③ 宿主侧栏/ slot 出口晚渲染（NP-2 量到过 ~8s）时旧写法只打一行 warn 就 `return`，**不装观察者、不重试**。
+
+### 7.7.1 逐条：现场 → 根因（文件:行）→ 修法 → 修前/修后真机读数
+
+行号是**取证时**的快照（`lib/client.js` 修前 15437 行 / `lib/now-playing.js` 修前 994 行），改动后会漂移，按函数名定位。
+
+| # | 现场（用户原话的意思） | 根因（文件:行，修前） | 修法 | 修前真机读数 | 修后真机读数 |
+|---|---|---|---|---|---|
+| 1 | 导入 **video 类 MPKG** 音频无法播放 | ①`lib/client.js:1154` `video.muted = true` 硬编码、全仓无第二处给视频元素赋 `muted`；②NP 的音量键只写设置（`lib/client.js:5291`） | 新增 `applyVideoMute()`（`lib/client.js`，被 `showVideoEl`/`showVideoEdge`/`npApplyMute` 调用）：设置项 `mute` 真正管住视频元素；NP 静音键改成"写设置 **+** 落元素" | 探针 A2 档：`video.muted=true`、设置点了也不变（旧 B3/B4 FAIL） | `A7 mozHasAudio=true` / `A8 canVolume=true` / `B4 点一次 ⇒ 元素 muted=false` |
+| 1b | 视频壁纸到底**有没有音轨** | 不是猜的：`ffprobe -show_entries stream=codec_type` 用户那张 `dd/3582362359/Mid-Autumn Hoshino.mp4` ⇒ `0,h264,video` + `1,aac,audio,20.015s`；目录扫描 `custom-scene-audio?folder=3582362359` ⇒ `count:0`（音轨在**容器里**，不在目录里） | 浏览器侧如实显示：`npVideoAudio()` 读 `mozHasAudio`/`audioTracks`，**明确 false** 时副标题写"该视频没有音轨"并把静音键禁用；**判断不了**（null）就不禁用 | — | `A7` 直读 `mozHasAudio=true`；无音轨分支由 `np-media-test` B3/B3b/B3c 三条夹具钉住 |
+| 2 | 导入 **web 类壁纸**音频无法播放，**音频文件就在文件目录下面** | `lib/client.js:5229` web 分支直接 `return`（不拉清单）+ `:5257 npFetchTracks` 只认 `folderName`/裸 `mpkgKey` ⇒ `custom\|<folder>` 拼成 library 路由 404 | 新增 `npAudioScope()`（认 `folderName` / `mpkgKey=custom\|` / `custommpkg\|` / `library\|` / `webUrl`/`image` 里的 `folder=`、`ltoken=`）+ `npTrackUrl()`（走宿主 `/raw`，路径只取 basename）；web 壁纸也拉清单 | `E2 np=0`、`E3 audio=null`（修前连控件都没有） | `E3` 出现 `<audio data-mpw-np-audio>`，`src=…/raw?custom=1&folder=3646392375&file=backgroundmuisc.mp3`（`duration=104.05s`）；`E4` 曲名 = `backgroundmuisc.mp3` |
+| 2b | 那些音频文件是**给谁播的** | 实测：`grep -c backgroundmuisc 3646392375/index_*.js` = **0**（壁纸自己的脚本一次都没引用它）⇒ 它只是躺在目录里，本来谁都不放 | 由**我们自己的 `<audio>`** 放（不自动播放：浏览器自动播放策略 + "不替用户按播放"） | — | `E6 点播放 ⇒ currentTime 1.81s`（真的推进，`readyState=4`、`error=null`） |
+| 3 | 上一首/下一首切换是乱的 | 旧实现**根本没有上一首/下一首**：左边那个键是"回到开头"（`lib/now-playing.js` `onRestart` → `vid.currentTime = 0`），且 `npResolveMedia` 对任何类型都报不出曲目清单 | 传输行改成 **上一首 / 播放暂停 / 下一首 /（卡片里）音量静音**；`npStepTrack(±1)` 按**清单顺序**环形切换 | 修前 `D1` 只有一个可点非播放键（`["取消静音"]`），`F1–F4` 全 FAIL | `F2 下一首 ⇒ 2.wav.ogg`、`F3 上一首 ⇒ 1-1.wav.ogg`、`F4 第 1 条再上一首 ⇒ 环形回 BGM.wav`（清单顺序逐条对） |
+| 4 | **小卡片（收起）**状态点播放键没用，默认锁在暂停 | 同一个"空壳 video"根因：web 壁纸下 `play()` 落在没有 `src` 的 `#mpw-bgVideo` 上（浏览器拒播，`paused` 不动） | `npActiveVideo()` 三档判据（有 `src` + 不是 `display:none` + 当前 section 确实是视频类）；web 壁纸改成控**我们自己的 `<audio>`** | 修前 `C1 paused true → true`（点了没动） | `C1 paused true → false`（收起态真的翻转）；web 档 `E6 currentTime` 推进 |
+| 5 | **展开模式**下默认在播放状态，无法暂停 | 标记形状由展开进度驱动（`lib/now-playing.js:512-517` 旧 `tq = 1 - p`）⇒ 展开态恒画暂停双条，"看着在播"；点击又落在空壳上 | `PlayMark` 改成由 **`mark`**（播放状态自己的 0→1 自停补间）驱动形状；`p` 只管尺寸/位置；控制器 `tweenMark()` | 修前 `C2/C5` 形状一模一样（`M6.50 4.00L13.25 8.00…` → 同串） | `C2/C5` 两态都能看到形状随状态变（`M6.00 4.00L10.00…` ↔ `M6.50 4.00L13.25…`） |
+| 6 | 声音控制**打不开**，一直是静音状态 | ①空壳 video 的 `muted` 恒 true；②静音键只写设置不落元素；③"视频有没有音轨"要等 `loadedmetadata`，插件 apply 那刻 `mozHasAudio` 还是 false 且**没人重解** ⇒ 静音键永久 disabled | `npApplyMute()`（写设置 + 落 video/audio/帧内 + 宿主 `/media-audio` 上报）；新增 `npWatchVideo()` 接 `loadedmetadata/durationchange/play/pause/volumechange/timeupdate` 重解；顺带把视频进度/时长接上 | 修前 `A8 canVolume=false`（键是灰的）、`B3 mute=true`、`B4 元素 muted=true` | `A8 canVolume=true`、`B3 mute=false`、`B4 元素 muted=false`（`frame.muted=false` 同步） |
+| 7 | 只有一个"上一首"，点它会把壁纸重载一下 | 旧"回到开头"直接改当前媒体的 `currentTime`（视频壁纸=画面跳回开头，用户读成"重载"）；传输动作原本就不该碰壁纸 | 上一首/下一首只切**我们的播放器**的曲目；判据钉住"iframe 元素身份 + src + 媒体 `loadstart/emptied` + 宿主 `/diag` 的 `mount` 信标"四项全不变 | 修前 `D2` 已 PASS（旧实现确实没改 iframe src），**但用户看到的是视频跳回开头** | `D2`/`E7`/`F5` 三条：点传输键全程 iframe 同一个、src 同、0 个 `loadstart`、0 条 mount 信标 |
+| 8 | 开了**悬浮效果**时音乐卡片有一部分被切掉 | ①`buildCss` 的 `!hasImage` 早退漏 `__npCss`（整份样式丢失）；②贴合缩放量错列（280 vs 容器 256）＋`.mpw_np` 无确定宽度（grid 夹成 232，`scale` 原点偏右 14px）；③web 壁纸分支连 `data-mpw-float` 门控都跳过 | ①两条 return 共用 `__npCss`；②`measureAvailWidth()` 量**我们自己的容器** + CSS `width:260px; max-width:none; margin-inline: calc((100% - 260px)/2)`；③web 分支补 `data-mpw-float` | 修前 `G3 越界 right 10.9px`（card `35.03→266.95`，容器可视区 `24→256`） | 修后 `G3 四边都在内`（card `37.03→242.95`＝可用宽 205.92、fit 按容器算） |
+| 9 | 新要求：开关**默认开**，但**不抢位** | 默认值是 `false`（`lib/client.js` 的 `DEFAULT_NP_NOW_PLAYING`）；让位逻辑不存在 | 默认改 `true`；新增 `occupantOf()`（放行"我们自己的节点/宿主 slot 出口与自有格子/实质空节点"，其余算占用者）＋ `data-mpw-np-yield` ＋ 一行可读 warn；**挂载前 + 挂载后（MutationObserver，`subtree:true`）都判**；占用者走了再回来 | 修前 `H1 np=0`（默认不挂）、`H3 yield=null` | `H1 np=1`（键被删掉也挂）、`H2/H3` 外来 div ⇒ 撤下 + `yield=foreign-occupant`、`H4` 不重建、`H5` 外来者走了回来、`H6` 挂载前就占用 ⇒ 不挂 |
+| 10 | 声音 UI 落点：用**方案 (b)**（复用 NP 控件下半部那条传输出） | — | 不新增设置项：**传输行 = 上一首/播放暂停/下一首 + 卡片里的音量静音**，进度/时长用既有 rail+clock | — | 截图 `01-expanded.png`：曲名/副标题/rail（`0:08 / −3:25`）/四键全在卡片内 |
+| — | 附带抓到（不在用户清单里，但同一形状） | `applyFromStorageInner` 的 web 分支早退把 `applyNowPlaying` 与 `data-mpw-float` 门控一起跳过 | 两处都补上（见 §7.7.0 表） | 修前切 web 壁纸后 `np=0`、`float=false` | `E2 np=1`、`G1 float=true` |
+
+### 7.7.2 判据（无浏览器，全部可复现）
+
+```bash
+node tools/np-media-test.mjs          # 新增：82 通过 / 0 失败（12 组变异自证），~7s
+node tools/now-playing-test.mjs       # 既有：83 通过 / 0 失败（7 组变异）
+node tools/np-media-test.mjs --no-mutations   # 主体 70 条
+```
+
+* **`tools/np-media-test.mjs`（新，10 组断言 + 12 组变异）**：A 作用域与两条宿主路由（含真机那串
+  `custom|3646392375`）/ B 数据源判定（空壳 video 不算源 · 无音轨如实显示 · 清单分支与 `canPrev/canNext`）/
+  C 播放与换曲落点（顺序 + 环形 + 单条禁用 + 视频落 video + **全程不碰壁纸**）/ D 静音落点（设置 + video +
+  audio + 帧内元素 + "我们在放音时帧内强制静音防叠音"）/ E 让位（挂载前占用 ⇒ 不挂 · 挂载后插入 ⇒ 撤下且
+  不重建 · 空 div 与宿主自有格子不误判 · **锚点后出现 ⇒ 自动挂上**）/ F 标记（p 与播放状态解耦 · 传输行
+  语义 · disabled 语义 · 补间自停）/ H web 路径不许跳过 apply（NP 与 `data-mpw-float`）/ I 卡片几何
+  （`.mpw_np` 宽度 = `math.W` 且溢出均分 · fit 按容器实测宽度）。
+* **变异自证 12 组**（改回旧写法 ⇒ 指定那一组必红）：`mark-driven-by-morph-again`(F) ·
+  `hidden-shell-video-accepted-again`(B) · `audio-scope-loses-custom-mpkgkey`(A) · `mute-only-writes-setting`(D) ·
+  `yield-check-removed`(E) · `anchor-watch-removed`(E) · `web-path-skips-np-apply`(H) ·
+  `web-path-skips-float-attr`(H) · `np-card-width-unpinned`(I) · `np-card-centering-removed`(I) ·
+  `np-fit-measures-wrong-column`(I) · `prev-next-collapse-to-restart`(C)。
+* **改了语义的既有断言（不是放宽）**：`now-playing-test.mjs` 的
+  B1（默认值 `false` → **`true`**，按新要求）、B8/B10（夹具改成**显式** `npNowPlaying:false`，因为默认已经是开）、
+  B6（改成"控制器造出来没人 `setEnabled` ⇒ 零注入"，与默认值无关）、B11（桩 DOM 无锚点 ⇒ 不注入）、
+  D11（贴合缩放改成由**容器**宽度驱动）、F 的 `single-instance-guard-removed`（幂等守卫现在有两处，
+  要一起打掉才复现）、`switch-default-flipped-to-true` → `switch-default-flipped-to-false`。
+  **断言只增不减**：`now-playing-test` 68 → **83**，另有新文件 82 条；覆盖面只增。
+* **新钩子**（生产不引用，测试/真机排障用）：`globalThis.__mpwNpTest`
+  （`scope/scanUrl/trackUrl/activeVideo/videoAudio/resolve/transport/audio/load/idx/seedTracks/apply/...`）
+  与 `window.__mpwNpCtlSeq`（控制器单例计数：>1 就是"造了两份"的第一现场）。
+* **`tools/check.sh`**：新门禁挂在**第 2 步**（`now-playing-test.mjs` 之后），照 MEDIA-SESSION.md §6.4 的同一条
+  惯例 —— 追加一行、零重编号。
+
+### 7.7.3 真机探针：`tools/np-media-live-probe.mjs`（新）
+
+用法与副作用（探针头部写全了，这里摘要）：
+
+```bash
+node tools/np-media-live-probe.mjs --out /tmp/np-media     # 需要 :3080 + 已同步插件
+node tools/np-media-live-probe.mjs --selftest              # 判据自证：8 PASS / 0 FAIL，不起浏览器、不写设置
+```
+
+* **会写用户设置，结束时逐字节复原**：为了验"默认开"要把 `npNowPlaying` 这个键**删掉**；为了验
+  "web 壁纸目录自带音频"要临时切到 web 壁纸（`3646392375`）；为了验悬浮裁切要临时开 `float`。
+  开头快照 localStorage + `<DATA_DIR>/settings.json`，结尾写回并 `R1` 断言 `mpkgKey` 已还原。
+* **判据 45 条**：A 挂载与媒体源判定（4）· A2 完整视频壁纸档（4：video 有 src/可见、kind=video、
+  `mozHasAudio=true`、canVolume）· B 静音真落元素（4）· C 收起/展开两态播放键真的翻转 `paused`
+  且标记形状随状态变（6）· D 传输键不 remount（2，四项证据）· E web 目录音频被列出 + 播放
+  （`currentTime` 真的推进）+ 不改 iframe（7）· F 上一首/下一首按清单顺序 + 环形（5）·
+  G 悬浮态四边不越界（3，实测 rect）· H 默认开 + 让位夹具（6）· Z 本插件相关 pageerror 0 条 ·
+  R 设置复原（1）。
+* **两态 + 两张场景截图**：`01-expanded.png`（展开卡片）· `02-collapsed.png`（收起）·
+  `03-web-audio.png`（web 壁纸目录音频）· `04-float-expanded.png`（悬浮开启）。
+* **判据分辨力自证**（`--selftest`，8 条）：`rectClipped` 的四种越界/次像素边界、`stepIndex` 的顺序与环形、
+  `remountViolations` 的四项证据（真 remount 必须全被报出来）。
+
+### 7.7.4 "让位"的夹具判据（新要求第 9 条）
+
+| 夹具 | 期望 | 谁断言 | 实测 |
+|---|---|---|---|
+| 槽里**先有**一个外来 `<div>` | 我们不挂 | 无浏览器 `E1`（`occupantOf` 挂载前路径）＋ 真机 `H6`（走真实 `setEnabled` 挂载路径） | `E1 nodes=0`；`H6 np=0 yield=foreign-occupant` |
+| 挂载后**外来元素插进来** | 我们撤下，且**不重建** | `E6/E6b/E7`（改后两拍仍是 0）＋ 真机 `H2/H3/H4`（等 1.8s 再抽一拍） | `E7 nodes=0`；`H2 np=0`、`H4 np=0`（1.8s 后仍是 0） |
+| 外来元素**移走** | 我们回来（让位不是单向的），状态属性清掉 | `E4` ＋ 真机 `H5` | `E4 nodes=1 yield=null`；`H5 np=1 yield=null` |
+| 槽里只有**我们自己的** slot div / 宿主自有格子 / 空 div | 不算占用者（不误伤宿主） | `E8`（空 div）· `E9`（`footActions`/`settingsArea`）· `E5`（干净槽） | 三条都 `nodes=1 yield=null` |
+| `data-mpw-np-yield` 可查询 | 属性写在**我们自己的 slot div** 上（没有就退回侧栏根） | `E2` ＋ 真机 `H3` | `foreign-occupant` |
+| 观察面 | MutationObserver 必须 `subtree:true`（slot 出口在侧栏根**里面**，只看直接孩子永远看不到抢位） | `E7b`（断言 `observe()` 的选项） | `{childList:true, subtree:true}` |
+
+### 7.7.5 门禁尾行（原样）
+
+```
+== F. 分辨力自证：7 组变异必须各自让**指定那一组**变红（副本在 mkdtemp，真树不动）==
+结果: 83 通过, 0 失败
+✓ Now playing 门禁通过：生成区无漂移 + 开关默认开（显式关仍零注入；无壁纸路径也带 NP 段） + 挂载在设置入口之前 + 左侧栏收起即隐藏 + 单实例
+
+== G. 分辨力自证：12 组变异必须各自让**指定那一组**变红（副本在 mkdtemp，真树不动）==
+结果: 82 通过, 0 失败
+✓ NP 声音接线门禁通过：清单作用域/数据源判定/播放落点/静音落点/让位/标记状态 —— 全部有判据，且各有变异自证
+```
+
+真机探针（修后，`--out /tmp/np-media-final`）：
+
+```
+── 汇总：PASS=45 FAIL=0  截图 /tmp/np-media-final/01-expanded.png 02-collapsed.png 03-web-audio.png 04-float-expanded.png
+```
+
+### 7.7.6 修前/修后真机读数（逐条对照，原样）
+
+| 组 | 修前 | 修后 |
+|---|---|---|
+| A/A2 | `kind:video`（**空壳**：`src="" display:none muted=true`）；`A8 canVolume=false` | `kind=video`（真壁纸：`src=…/Mid-Autumn%20Hoshino.mp4` `display=""`）；`A7 mozHasAudio=true`、`A8 canVolume=true` |
+| B | `B3 mute=true`、`B4 元素 muted=true` | `B3 mute=false`、`B4 元素 muted=false`（frame 同步 false） |
+| C | `C1 paused true→true`（没动）、`C2/C5` 形状不变 | `C1 true→false`、`C4 false→true`、`C2/C5` 形状随状态变 |
+| D | `D1 ["取消静音"]`（没有上/下一首） | `D1/D1b` 视频档 `["静音"]`（上/下一首如实 disabled）；web 档见 F |
+| E | `E2 np=0`、`E3 audio=null`（连控件都没有） | `E2 np=1`、`E3` `<audio>` 就位、`E6 currentTime=1.81s` |
+| F | `F1–F4` 全 FAIL（没有清单概念） | `F1–F4` 全 PASS（清单顺序 + 环形） |
+| G | `G3 越界 right 10.9px` | `G3 四边都在内`（card `37.03→242.95`） |
+| H | `H1 np=0`、`H3 yield=null`、`H6 yield=null` | `H1 np=1`、`H2–H6` 让位夹具全 PASS |
+| Z | 22 条 FAIL 里有 2 条是宿主/壁纸自身 pageerror 造成的假红 | 判据收窄到"本插件相关 0 条"，壁纸自身 10 条如实列出（见 §7.7.7 第 3 条） |
+
+截图：`/tmp/np-media-final/01-expanded.png`（展开卡片：曲名/副标题/rail `0:08 −3:25`/四键）·
+`02-collapsed.png`（收起：三键）· `03-web-audio.png`（web 壁纸目录音频已接）· `04-float-expanded.png`（悬浮态不裁切）。
+
+### 7.7.7 诚实清单（做不到的 / 只能人眼看的 / 没复现的）
+
+1. **web 壁纸"帧内那份声音"的播放/暂停**：我们只做到**静音**（`mute` 设置 → `frame.muted` + 帧内
+   `audio/video` 元素 + shim `policy` op）。真正控帧内那份声音的播放/暂停需要帧内元素可达或 shim 扩展，
+   本轮**不做**；界面上这种情况如实写"网页壁纸声音"并 `canPlay=false`（不假装能暂停 WebAudio）。
+2. **我们放的音轨 vs 壁纸自己放同一首**：目录里那首若被壁纸自己的脚本也播了，会叠音。已做的防护：
+   我们的播放器**在放音时强制静音帧内**（`npAudioOwns()` → `applyWebMute` → `frame.muted=true`）。
+   用户现场那个 `backgroundmuisc.mp3` 恰好是**孤儿文件**（壁纸脚本 0 引用），所以观察不到叠音；
+   "壁纸自己也播"的组合**没有真机样例可验**（未证）。
+3. **宿主/壁纸自身脚本的 pageerror**：探针跑的时候稳定有 10 条（`can't access property "install", t is undefined`、
+   `set src ... HTMLScriptElement`、`rawcanvas is null`、`me_ani_loadErr_other`、sandbox 下读 cookie 被拒），
+   **修前修后都在**、与本插件无关（判据已收窄到"栈里含 mpkg-wallpaper/mpw"的 0 条）。我没有去修它们
+   （不在本任务范围）。
+4. **音量是"静音开关"，不是 0..1 细调**：既有通道只有 `mute` 布尔（设置项 + `/media-audio`），本轮未新增
+   音量数值通道（要动 `web-interaction.js`/宿主契约，属禁区）。UI 上就是那颗静音/取消静音键。
+5. **视频壁纸没有上一首/下一首**（单个媒体，没有曲目清单）：两个侧键**如实 disabled**，不是"点了没反应"。
+6. **卡片里的第四个键（音量/静音）只在展开态出现**：收起态传输行是按 **88px 三键行**定位的
+   （`now-playing-math.js` 的 `opsX(0)=206`，而 `opsX` 由门禁 C23 钉住），硬塞第四键会溢出右边距。
+   所以"取消静音"需要先把卡片展开 —— 这是设计取舍，不是坏键（`B1` 判据断言了展开态确有 4 键）。
+7. **只能人眼看的**：卡片外观/动画的观感（形状过弯好不好看、磨砂与背景的对比）、
+   悬浮态下与 better-sidebar 底部面板的视觉叠压。截图 4 张可人眼复核，但不构成机器判据。
+8. **没能复现的一条**：用户说"点上一首会把**壁纸视频重载**一下"。修前修后的探针读数都显示传输键
+   **没有**改 iframe src、没有 `loadstart/emptied`、没有 mount 信标（`D2` 修前就 PASS）。
+   最接近的解释是：旧"回到开头"键把**视频壁纸**的 `currentTime` 归零、画面跳回开头，被读成"重载"
+   —— 但那发生在视频档，用户当时说的是 web 档，**这一点我没能复现**（如实记在这里）。
+9. **半残档（`mpkgKey` 在、`image`/`webUrl` 都没了）**：真机上用户的 section 就是这种形态
+   （探针开局读数：`image` 缺失 ⇒ 壁纸层被 `display:none`、NP 拿到"无源"）。我**只修了**"这种情况下
+   NP 样式整份丢失"（`!hasImage` 路径漏 `__npCss`）；**壁纸选择字段为什么会丢**不在本任务范围，
+   建议单独一条线查（它会让用户"看不到壁纸"）。
+10. **`lib/index.js` 一行未动**（媒体会话 `/media-session` 等路由本轮**没有**新增）：本批 bug 全部落在
+    壁纸自身的声音上，不需要宿主新路由（详见 docs/MEDIA-SESSION.md §6 的边界）。`/raw` 的
+    `content-type: application/octet-stream` 对音频的兼容性实测在 Firefox 下可用（`E3/E6`
+    `readyState=4`、`currentTime` 推进）；另做了一次"失败即 blob 兜底重试（带上扫描到的 mime，≤32MB）"
+    的保险（`npAudioError`），本机没触发过它。

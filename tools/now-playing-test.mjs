@@ -295,11 +295,16 @@ function makeCtl(doc, win, opts) {
   return { mod, ctl, renders: () => rendered }
 }
 
-/* ══════════════════════ B. 开关默认关 ⇒ 零注入 / 零观察者 ══════════════════════ */
-console.log('\n== B. 开关默认关（DEFAULT_NP_NOW_PLAYING）⇒ 零注入 / 零观察者 / 产物零规则 ==')
+/* ══════════ B. 开关默认**开**（①(NP-3) 新要求）⇒ 默认档就接线；关档仍零注入零观察者 ══════════
+   ①(NP-3 2026-09-19) 语义变更（用户裁定，不是放宽）：
+     · 默认值从 false 改成 **true**（"NP 开关默认改成开"）；
+     · 于是"关 ⇒ 零注入"那几条判据的**夹具**必须显式写 `npNowPlaying: false`（以前靠默认值），
+       而"默认档 ⇒ 真的挂上"变成新判据（B1b/B12）。
+   断言只增不减：B1 改判 true、B8/B10 的夹具改成显式关，新增 B1b/B12/B13。 */
+console.log('\n== B. 开关默认开（DEFAULT_NP_NOW_PLAYING=true）⇒ 默认档接线；显式关仍零注入 ==')
 {
-  ok('B1 源码里的默认值是 false（改 true 必须让本组变红）',
-    /const DEFAULT_NP_NOW_PLAYING = false;/.test(clientSrc),
+  ok('B1 源码里的默认值是 true（改回 false 必须让本组变红）',
+    /const DEFAULT_NP_NOW_PLAYING = true;/.test(clientSrc),
     (clientSrc.match(/const DEFAULT_NP_NOW_PLAYING = [^;]+;/) || ['<未找到>'])[0])
   ok('B2 npNowPlaying 已登记进 boolFields（否则接线审计与导入净化都会漏掉它）',
     /const boolFields = \[[^\]]*"npNowPlaying"\]/.test(clientSrc))
@@ -317,11 +322,12 @@ console.log('\n== B. 开关默认关（DEFAULT_NP_NOW_PLAYING）⇒ 零注入 / 
     ok('B5 关 ⇒ 0 个观察者、0 次 rAF（构造数 = 0，不是"装了再断"）',
       win.__counts.resize === 0 && win.__counts.mutation === 0 && win.__counts.raf === 0,
       JSON.stringify(win.__counts))
-    /* 连开关都不碰（默认档整条路都不跑）—— 这才是 apply 默认路径的真实形态 */
+    /* 控制器**自己不会**自动挂载：开关的落点是 apply 路径（applyNowPlaying → setEnabled）。
+       所以"造出来但不 setEnabled"必须零注入零观察者 —— 这一条与默认值无关，永远成立。 */
     const doc2 = makeDoc(); buildSidebar(doc2, { width: 280 })
     const win2 = makeWin()
     makeCtl(doc2, win2)
-    ok('B6 默认档（开关一次都不碰）⇒ 依然零注入零观察者',
+    ok('B6 控制器造出来但没人调 setEnabled ⇒ 零注入零观察者（挂载只由开关落点驱动）',
       doc2.querySelectorAll('[data-mpw-now-playing]').length === 0 && win2.__counts.resize === 0 && win2.__counts.mutation === 0,
       JSON.stringify(win2.__counts))
   }
@@ -334,9 +340,10 @@ console.log('\n== B. 开关默认关（DEFAULT_NP_NOW_PLAYING）⇒ 零注入 / 
     else if (typeof globalThis.__mpwBuildCss !== 'function') ok('B7 产物的 buildCss 可跑（apply 无错）', false, '未暴露 __mpwBuildCss')
     else {
       ok('B7 产物的 buildCss 可跑（apply 无错）', true)
-      const off = String(globalThis.__mpwBuildCss({ image: true, enabled: true }) || '')
+      const off = String(globalThis.__mpwBuildCss({ image: true, enabled: true, npNowPlaying: false }) || '')
       const on = String(globalThis.__mpwBuildCss({ image: true, enabled: true, npNowPlaying: true }) || '')
-      ok('B8 开关关 ⇒ 产物里 0 处 [data-mpw-now-playing] / .mpw_np_ 规则',
+      const dflt = String(globalThis.__mpwBuildCss({ image: true, enabled: true }) || '')
+      ok('B8 开关**显式关** ⇒ 产物里 0 处 [data-mpw-now-playing] / .mpw_np_ 规则',
         off.indexOf('data-mpw-now-playing') < 0 && off.indexOf('.mpw_np_') < 0,
         '关档里 NP 命中 ' + (off.split('data-mpw-now-playing').length - 1) + ' 次')
       ok('B9 开关开 ⇒ 产物里出现 NP 规则（开关真的接线了）',
@@ -346,9 +353,26 @@ console.log('\n== B. 开关默认关（DEFAULT_NP_NOW_PLAYING）⇒ 零注入 / 
       ok('B10 NP 规则是**纯追加**：开档 − NP 段 == 关档（逐字节）',
         !!NP_CSS && on.split(NP_CSS).join('') === off,
         '开 ' + on.length + ' 字节 / 关 ' + off.length + ' 字节 / NP 段 ' + (NP_CSS || '').length)
-      ok('B11 默认档 DOM 里 0 个 NP 节点（走真实 apply 路径，桩 DOM 全树扫描）',
+      ok('B11 桩 DOM 里 0 个 NP 节点（桩没有宿主侧栏锚点 ⇒ 不注入，也不崩）',
         (() => { let n = 0; walk(globalThis.document.documentElement, (x) => { if (x.hasAttribute && x.hasAttribute('data-mpw-now-playing')) n++ }); return n === 0 })(),
         '桩 DOM 全树 0 命中')
+      /* ①(NP-3) 新判据：默认档（section 里**没有**这个键）必须走"开"这条产物路径 */
+      ok('B1b 默认档（section 里没有 npNowPlaying 键）⇒ 产物里就有 NP 规则（默认开真的生效）',
+        dflt.indexOf('data-mpw-now-playing') >= 0 && dflt.split(NP_CSS || '\u0000').join('') === off,
+        '默认档 ' + dflt.length + ' 字节；与显式关档 ' + (dflt === off ? '相同' : '不同'))
+      /* ①(NP-3) 真机 bug 的产物级判据：**没有壁纸**（无 image/webUrl）时，buildCss 走的是
+         `if (!hasImage)` 那条提前 return —— 它以前忘了拼 __npCss ⇒ NP 控件整份样式丢失
+         （真机现场：用户的 section 正是"mpkgKey 还在、image 没了"这种半残档）。 */
+      {
+        const onNoImg = String(globalThis.__mpwBuildCss({ npNowPlaying: true }) || '')
+        const offNoImg = String(globalThis.__mpwBuildCss({ npNowPlaying: false }) || '')
+        ok('B12 **无壁纸**（无 image/webUrl）那条 return 路径也必须带 NP 段（真机"控件没样式"的根因）',
+          onNoImg.indexOf('data-mpw-now-playing') >= 0 && onNoImg.indexOf('.mpw_np_box') >= 0,
+          '无壁纸 + 开：NP 命中 ' + (onNoImg.split('data-mpw-now-playing').length - 1) + ' 次；长度 ' + onNoImg.length)
+        ok('B13 无壁纸路径上 NP 段同样是**纯追加**（开 − NP 段 == 关，逐字节）',
+          !!NP_CSS && onNoImg.split(NP_CSS).join('') === offNoImg,
+          '无壁纸：开 ' + onNoImg.length + ' / 关 ' + offNoImg.length + ' / NP 段 ' + (NP_CSS || '').length)
+      }
       built = { off, on }
     }
   } catch (e) { ok('B7 产物的 buildCss 可跑（apply 无错）', false, String(e && e.message || e)) }
@@ -482,9 +506,14 @@ console.log('\n== D. 左侧栏收起判据（宽度 < 阈值 / 宿主自己的�
       return h && veto
     })())
   const insp = ctl.inspectCollapse()
-  ok('D11 贴合缩放：280 宽 ⇒ fit=1（256 可用 < 260 也只缩 0.98 级别，不是 1 也合规）；56 宽 ⇒ 夹在下限 0.5',
-    insp.fit <= 1 && insp.fit >= 0.5 && (() => { sb.col.__w = 56; const f = ctl.inspectCollapse().fit; sb.col.__w = 280; return f === 0.5 })(),
-    'fit@280=' + insp.fit)
+  /* ①(NP-3) 口径变更（真机根因，不是放宽）：贴合缩放量的是**我们自己那个容器**的宽度，
+     不是"侧栏列"—— 真机上 `[class*="sidebarCol"]` 不止一处（右栏/dock 同类名），
+     命中的可能是另一列（280），于是 fit 算成 0.985、卡片比可用宽度宽 24px、右缘被切 10.9px。
+     原来这条断言是拿 `sb.col.__w` 驱动 fit 的 ⇒ 现在要改容器宽度才驱动得动。 */
+  ok('D11 贴合缩放量**容器**宽度并夹在 [0.5,1]：容器 280 ⇒ fit≤1；容器 56 ⇒ 夹到下限 0.5'
+    + '［①(NP-3) 语义更正：原来量的是侧栏列，真机上会量错列］',
+    insp.fit <= 1 && insp.fit >= 0.5 && (() => { box.__w = 56; const f = ctl.inspectCollapse().fit; box.__w = 280; return f === 0.5 })(),
+    'fit@容器280=' + insp.fit + ' 容器宽=' + insp.width + ' 列宽=' + insp.colWidth)
   ctl.setEnabled(false)
 }
 
@@ -702,16 +731,29 @@ const MUTS = [
     mut: (s) => s.replace('settleTimer = win.setTimeout(() => { settleTimer = 0; evaluate(); }, 0);', 'settleTimer = 0;'),
   },
   {
-    id: 'switch-default-flipped-to-true',
+    id: 'switch-default-flipped-to-false',
     expect: 'B',
-    why: '把开关默认值改回 true（= 默认就往用户侧栏里注入 DOM + 装观察者）',
-    mut: (s) => s.replace('const DEFAULT_NP_NOW_PLAYING = false;', 'const DEFAULT_NP_NOW_PLAYING = true;'),
+    why: '①(NP-3) 把开关默认值改回 false（= 默认档不挂控件、不拼 NP 段，"默认开"这条要求失效）',
+    mut: (s) => s.replace('const DEFAULT_NP_NOW_PLAYING = true;', 'const DEFAULT_NP_NOW_PLAYING = false;'),
   },
   {
     id: 'single-instance-guard-removed',
     expect: 'E',
-    why: '删掉"已经开着就只重锚、不重建容器"的守卫（= 重复开关会叠出第二个容器）',
-    mut: (s) => s.replace('if (enabled) { ensureAnchored(); evaluate(); return api; }', 'if (false) { ensureAnchored(); evaluate(); return api; }'),
+    why: '删掉"已经挂着就绝不再建第二个容器"的幂等守卫（= 重复开关/宿主重渲染会叠出第二个容器）。'
+      + '①(NP-3) 注：这条守卫现在在 tryMount() 的首行（setEnabled 那边也还留着一层），'
+      + '所以要打的是 tryMount 里那一条 —— 只删 setEnabled 那层已经打不红了（两处都幂等）。',
+    /* 两处幂等守卫**都要**打掉才复现得了（这就是"两处都幂等"的含义：只删一处，另一处仍然挡住）
+       —— 变异失败本身也是一条信息：删掉任一处都不会叠节点。 */
+    mut: (s) => s.replace('    function tryMount() {\n      if (container) return false;', '    function tryMount() {\n      if (false) return false;')
+      .replace('if (enabled) { ensureAnchored(); evaluate(); return api; }', 'if (false) { ensureAnchored(); evaluate(); return api; }'),
+  },
+  {
+    id: 'np-css-dropped-on-no-image-path',
+    expect: 'B',
+    why: '①(NP-3) 把"无壁纸"那条 return 上的 NP 段删掉（= 真机 bug 原样：section 少了 image/webUrl 时'
+      + '控件整份样式丢失、传输键掉到卡片外点不到；真机上用户的档正是这种半残档）',
+    mut: (s) => s.replace('return emitSurfaceTokens(css + buildUiCss(section, false)) + __npCss;',
+      'return emitSurfaceTokens(css + buildUiCss(section, false));'),
   },
   {
     id: 'generated-region-drifted',
@@ -721,7 +763,7 @@ const MUTS = [
   },
 ]
 if (!NO_MUT && !ONLY_JSON) {
-  console.log('\n== F. 分辨力自证：6 组变异必须各自让**指定那一组**变红（副本在 mkdtemp，真树不动）==')
+  console.log('\n== F. 分辨力自证：7 组变异必须各自让**指定那一组**变红（副本在 mkdtemp，真树不动）==')
   const GROUPS = {
     A: /✗ A\d/,
     B: /✗ B\d/,
@@ -752,5 +794,6 @@ cleanup()
 if (!ONLY_JSON) {
   console.log(`\n结果: ${pass} 通过, ${fail} 失败`)
   if (fail) { console.error('✗ Now playing 门禁未通过'); process.exit(1) }
-  console.log('✓ Now playing 门禁通过：生成区无漂移 + 开关默认关零注入 + 挂载在设置入口之前 + 左侧栏收起即隐藏 + 单实例')
+  console.log('✓ Now playing 门禁通过：生成区无漂移 + 开关默认开（显式关仍零注入；无壁纸路径也带 NP 段）'
+    + ' + 挂载在设置入口之前 + 左侧栏收起即隐藏 + 单实例')
 }

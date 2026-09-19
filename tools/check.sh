@@ -48,6 +48,13 @@ node tools/panel-fixes-test.mjs || fail=1
 #   前者防"生成器与产物不一致"，后者防"产物里的正文被人手改过"。
 node tools/build-now-playing.mjs --check || fail=1
 node tools/now-playing-test.mjs || fail=1
+# ①(NP-3 2026-09-19) Now playing 的**声音接线**（数据源判定 / 音轨清单路由 / 播放落点 / 静音落点 /
+#   让位）：数据源只认"当前真的在放"的那个媒体（页面里那个隐藏空壳 #mpw-bgVideo 不算）；
+#   清单作用域认 mpkgKey="custom|<folder>"（自定义目录的 web 壁纸没有 folderName —— 旧写法拼成
+#   library 路由 ⇒ 404 ⇒ 目录里的音频永远接不上）；上一首/下一首按清单顺序（不是"回到开头"）；
+#   静音写设置**并且**落到 video/audio/帧内元素；宿主同一位置已有别的插件的元素 ⇒ 不挂/撤下且不重建
+#   （data-mpw-np-yield）。12 组变异自证各自必红。设计与根因：docs/NOW-PLAYING-DSH.md §7.7
+node tools/np-media-test.mjs || fail=1
 # ①(2026-09-18) 「开关必须真的接线」审计（功能静默无效这一类的通用判据）：
 #   来历是真事故：「配色」(accent) 与「深底文字可读增强」(aquaTextEnhance) 两段 CSS 被一起
 #   包在 `if (aquaOn(section))` 里 ⇒ 只开这两个开关时规则根本不生成（开关能点、没效果、不报错）。
