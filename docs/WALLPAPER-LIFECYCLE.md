@@ -7,6 +7,18 @@
 > 归属口径：**服务端不可达（`:8899/:8901/:8902` 看门狗死过）与插件自身 bug 分开记** ——
 > 本文件只记插件/宿主代码的缺陷；"服务端当时挂了"导致的 8899 connection refused 与黑屏已由主对话重启三服务解决，不计入本批。
 
+**最终读数**（提交 `84c6ffc` 之后、`update-plugin.sh` 同步完）：
+
+* `bash tools/check.sh` ⇒ **12/12 全绿**（`全部通过 ✓ 下一步：bash update-plugin.sh`）；
+* `node tools/wallpaper-lifecycle-test.mjs` ⇒ **133 通过 / 0 失败**（含 **15 组变异自证**，每组按期望变红）；
+* `node tools/wallpaper-lifecycle-live-probe.mjs`（真机 `:3080`）⇒ **31 PASS / 0 FAIL / 1 SKIP**；
+  `--selftest` ⇒ 13/13；跑前跑后 `settings.json` / `custom-dir.json` **逐字节一致=true**。
+  SKIP = ③-2c（帧内能力自证）：宿主进程里的 `lib/web-wallpaper.js` 还是改动前那一份
+  （ESM 模块缓存；`dsh` 重启后该项会变 PASS，见 §10.1）。
+* 探针的**已知抖动**（工具侧，不是被测行为）：宿主设置弹窗 + 我们那一节是懒渲染，
+  headless 下偶发"等不到 `.mpw_wallThumb`/`.mpw_reset`" ⇒ 已加轮询 + 兜底再点标签；
+  若某次跑出现该类 FAIL，先看探针日志里的"警告：等不到 …"再判。
+
 判据全部常驻门禁：
 
 | 门禁 | 位置 | 覆盖 |

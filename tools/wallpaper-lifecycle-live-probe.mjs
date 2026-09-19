@@ -401,7 +401,12 @@ try {
       haveThumb = await waitFor(page, '.mpw_wallThumb', 8000)
     }
     if (!haveThumb) console.log('      警告：等不到 .mpw_wallThumb（我们那一节没渲染）')
-    await page.waitForTimeout(1200)
+    // 预览图是 loading=lazy：等它真的解码出像素再读（否则读到 naturalWidth=0 是**读数时机**问题）
+    await page.waitForFunction(() => {
+      const im = document.querySelector('.mpw_wallThumb img')
+      return !!(im && im.naturalWidth > 0)
+    }, null, { timeout: 15000 }).catch(() => {})
+    await page.waitForTimeout(600)
     const withPanel = await readState(page)
     ok(!!withPanel.thumbSrc, '①-1 预览框有候选 src（修前：web 档候选为空）', String(withPanel.thumbSrc).slice(0, 110))
     ok(withPanel.thumbNatural > 0, '①-2 预览图**真的加载出像素**（naturalWidth>0）', 'naturalWidth=' + withPanel.thumbNatural + ' src=' + String(withPanel.thumbSrc).slice(0, 80))
@@ -475,6 +480,46 @@ try {
     })
     ok(vis && vis.after && vis.after.paused === true, '⑤-1 页面隐藏 ⇒ 省电/礼仪暂停生效（我们与帧内音频一起停）', JSON.stringify(vis && vis.after))
     ok(vis && vis.restored && vis.restored.paused === false, '⑤-2 回到可见 ⇒ 按原状态续播', JSON.stringify(vis && vis.restored))
+    /* C：hidden 期间**连续采样**，并要求"没有任何一次采样看到正在播"；
+       同时抓 `__mpwNpOps` 轨迹，看被节流的重试有没有试图起播（有 ⇒ 必须是 gated）。 */
+    const hiddenSamples = await page.evaluate(async () => {
+      const L = window.__mpwLifecycleTest
+      if (!L) return null
+      const out = []
+      try { Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }) } catch (e) {}
+      try { document.dispatchEvent(new Event('visibilitychange')) } catch (e) {}
+      for (let i = 0; i < 3; i++) {
+        await new Promise((r) => setTimeout(r, 900))
+        const v = L.video(); const a = L.audio()
+        out.push({
+          t: i, visibility: document.visibilityState, block: L.hiddenAudioBlock(), pow: L.powState().paused,
+          videoPaused: v ? !!v.paused : null, videoMuted: v ? !!v.muted : null,
+          audioPaused: a ? !!a.paused : null, npSound: (() => { try { return window.__mpwNpFrameSound || null } catch (e) { return null } })(),
+        })
+      }
+      /* 主动把"被节流的定时器"会打的那几条**重试/补起播**路径打一遍（确定性）：
+         `applyNowPlaying` 的补起播 + `npPrimePlay`（真机上这两条由 48ms/60ms 延迟重放、
+         源补挂 1.2s 复核、转码轮询 10s 等被节流的定时器发起）⇒ 轨迹里必须留下 gated/skipped:hidden。
+         ⚠ 这里**不**用 transport('play')：那是"用户点卡片"，隐藏时点不到，不属本条的怀疑面。 */
+      try { L.applyNowPlaying(L.read()) } catch (e) {}
+      try { if (window.__mpwNpTest && window.__mpwNpTest.primePlay) window.__mpwNpTest.primePlay(L.read()) } catch (e) {}
+      await new Promise((r) => setTimeout(r, 500))
+      const ops = L.ops()
+      try { delete document.hidden } catch (e) {}
+      try { document.dispatchEvent(new Event('visibilitychange')) } catch (e) {}
+      return { out, ops }
+    })
+    const anyPlaying = hiddenSamples && hiddenSamples.out.some((x) => x.videoPaused === false || x.audioPaused === false)
+    ok(hiddenSamples && !anyPlaying, 'C-1 hidden 期间连续 3 次采样：壁纸 video / 我们的 audio **没有任何一次在播**（修前"过一会儿又响一下"）',
+      JSON.stringify(hiddenSamples && hiddenSamples.out))
+    const gated = hiddenSamples && JSON.stringify(hiddenSamples.ops).match(/gated|skipped:hidden/)
+    /* C-2 的两种成立形态（都算可归因，但必须写清是哪一种）：
+       ① 轨迹里出现 `gated`/`skipped:hidden` —— 有活跃的壁纸视频、重试路径真的被闸住（视频档形态，见无浏览器 N 组）；
+       ② 本次夹具是 **web 档**（帧内媒体、父页没有活跃 `<video>`）⇒ 这两条重试路径在本档上**本来就无事可做**
+          （`npActiveVideo()===null`、清单已缓存）⇒ C-2 由 C-1 的实采样 + N 组的视频档判据覆盖。 */
+    const noActiveVideo = !!(await page.evaluate(() => { try { const v = window.__mpwLifecycleTest && window.__mpwLifecycleTest.video(); return !(v && v.getAttribute('src')) } catch (e) { return false } }))
+    ok(!!gated || noActiveVideo, 'C-2 hidden 期间的起播尝试要么被闸住（轨迹 gated）、要么本档没有可起播的父页媒体（web 档：父页无活跃 <video>）',
+      (gated ? 'gated=有 ' : 'gated=无 ') + 'noActiveVideo=' + noActiveVideo + ' ops=' + JSON.stringify(hiddenSamples && hiddenSamples.ops.slice(-3)))
     fs.writeFileSync(path.join(OUT, 'state-preview-audio.json'), JSON.stringify({ withPanel, paused, resumed, linkTest, vis }, null, 1))
     await page.screenshot({ path: path.join(OUT, 'preview-web.png') })
     await page.close()
