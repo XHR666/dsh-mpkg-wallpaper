@@ -45,7 +45,7 @@ npm whoami --registry=https://registry.npmjs.org                              # 
 ## 2. 发布前一分钟清单（逐条命令，按顺序）
 
 ```bash
-cd /root/Desktop/DSHarea/dsh-mpkg-wallpaper
+cd <DSHAREA>/dsh-mpkg-wallpaper
 
 # ① 改号（唯一需要人工的一步；改完 npm 包的数字会变，必须重跑 ②③）
 #    把 package.json 的 "version": "3.7.3" 改成 "3.8.0"
@@ -77,7 +77,7 @@ npm publish --registry=https://registry.npmjs.org/
 mkdir -p /tmp/relcheck && (cd /tmp/relcheck && npm pack dsh-mpkg-wallpaper@3.8.0 --registry=https://registry.npmjs.org/)
 
 # ⑧ 同步进本机 profile（脚本在工作区根、不在本仓库；整 lib/ + 6 顶层文件 + 逐文件 md5 校验 + patch 热重载）
-bash /root/Desktop/DSHarea/update-plugin.sh
+bash <DSHAREA>/update-plugin.sh
 
 # ⑨ 用户侧更新（方式一）：dsh plugin --profile web update dsh-mpkg-wallpaper → 重启 dsh web → 浏览器 Ctrl+F5
 ```
@@ -192,9 +192,9 @@ node tools/secret-scan-test.mjs
 | 模式 | 出货文件命中 | 逐条判定 |
 | --- | --- | --- |
 | `npm_` | **0** | — |
-| `/root/` | **0** | — |
-| `/storage/emulated` | **0** | — |
-| `/data/data/com.termux` | **0** | — |
+| 本机工作区路径 | **0** | — |
+| 设备共享存储根（Android shared storage） | **0** | — |
+| Termux 私有目录 | **0** | — |
 | `token` | **411** | **全部白名单（设计 token，不是凭据）**：`lib/client.js` 250 / `lib/index.js` 105 / `README.en.md` 20 / `README.md` 18 / `lib/now-playing.js` 11 / `lib/pkg-extract.js` 6 / `THIRD-PARTY.md` 1。逐个抽样看：全是 CSS 变量语义（`--dsw-*` / `--mpw-np-*` / `host token` / `token 覆盖`）与 `now-playing.js` 的 `NP_ROOT_COLLAPSED_TOKEN = "collapsed"`、`classHas(el, token)` 这类**标识符**。 |
 | `secret` | **1** | **假阳性**：`lib/index.js:2705` `const SANDBOX_TOKEN_SECRET = crypto.randomBytes(32);` —— **宿主每次启动随机生成**、不落盘、不是字面量凭据。 |
 | `_authToken` / `authToken=` / `Bearer ` / `PRIVATE KEY` / `ghp_` / `AKIA…` / `password=` / `api_key=` | **各 0** | — |
@@ -204,12 +204,12 @@ node tools/secret-scan-test.mjs
 | 模式 | 全仓命中 | 判定 |
 | --- | --- | --- |
 | `npm_` | **1**：`tools/secret-scan-test.mjs:57` | **扫描器自身模式字面量** `/\bnpm_[A-Za-z0-9]{36}\b/`（要求 36 位，故不自指命中）。**不是泄漏**，且 `tools/` 不入包。 |
-| `/root/` | **12**，全在 `tools/**` | 分两类：**①检测模式本身** 6 条（`integrity-check.mjs:8/61/63/162`、`secret-scan-test.mjs:97`——后两条刻意把 `'/root/Desktop/' + 'DSHarea'` 拆成片段以免自指）；**②开发机真实默认路径** 6 条（`_stub.mjs:199`、`panel-smoke.mjs:141`、`hdr-probe.mjs:14`、`better-sidebar-compat-test.mjs:291`、`dir-picker-probe.mjs:261/266`、`bs-bottom-panel-probe.mjs:51`）。**②确实是本机路径，但**：`tools/**` **不入 npm 包**（`files` 白名单里没有）、且它们是 `DSH` 标准路径（`/root/.dsh/…`）而非个人标识；`hdr-probe.mjs:14` 那条只是**提到** `/root/.dsh/.credentials.yaml` 这个路径，**没有**任何凭据内容。判定 = **隐私面白名单（研发工具，不入包）**，非泄漏。 |
-| `/storage/emulated` | **0** | — |
-| `/data/data/com.termux` | **0** | — |
+| 本机工作区绝对路径 | **12**，全在 `tools/**` | 分两类：**①检测模式本身** 6 条（`integrity-check.mjs:8/61/63/162`、`secret-scan-test.mjs:97`——后两条刻意把 把一个本机工作区绝对路径拆成片段以免自指）；**②开发机真实默认路径** 6 条（`_stub.mjs:199`、`panel-smoke.mjs:141`、`hdr-probe.mjs:14`、`better-sidebar-compat-test.mjs:291`、`dir-picker-probe.mjs:261/266`、`bs-bottom-panel-probe.mjs:51`）。**②确实是本机路径，但**：`tools/**` **不入 npm 包**（`files` 白名单里没有）、且它们是 `DSH` 标准路径（`/root/.dsh/…`）而非个人标识；`hdr-probe.mjs:14` 那条只是**提到** `/root/.dsh/.credentials.yaml` 这个路径，**没有**任何凭据内容。判定 = **隐私面白名单（研发工具，不入包）**，非泄漏。 |
+| 设备共享存储根（Android shared storage） | **0** | — |
+| Termux 私有目录 | **0** | — |
 
 > 为什么 `/root/.dsh/…` 没被本仓门禁判红：`integrity-check` ⑩ 与 `secret-scan-test` 的本机路径模式
-> 只针对 **本机工作区绝对路径 `/root/Desktop/DSHarea`** + 设备共享存储 + Termux 私有目录三种；
+> 只针对 **本机工作区绝对路径**（`<DSHAREA>`）+ 设备共享存储 + Termux 私有目录三种；
 > `/root/.dsh/…` 是**每台机器都一样的 DSH 标准路径**，按设计不拦（⑩ 三轮全绿）。
 
 **结论：真泄漏 0 条；白名单/文档示例 411 + 6 + 2 + 1 条；需要动作的 0 条。**
@@ -259,7 +259,7 @@ npm deprecate dsh-mpkg-wallpaper@3.8.0 "原因 + 建议升到 3.8.1" --registry=
 #   然后改 package.json.version = 3.8.1 → 重跑 §2 的 ②③ → npm publish
 
 # 方式 D（本机开发档回退）：profile 副本是从**仓库源码**同步的
-git checkout <上一个 good 提交> && bash /root/Desktop/DSHarea/update-plugin.sh
+git checkout <上一个 good 提交> && bash <DSHAREA>/update-plugin.sh
 ```
 
 **还没发布之前要撤回**（= 只想取消这次发布）：什么都不用做 —— 包没上 registry，`npm dist-tag` 也无从谈起；

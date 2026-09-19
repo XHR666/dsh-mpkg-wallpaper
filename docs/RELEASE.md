@@ -95,7 +95,7 @@ dsh plugin --profile relcheck add dsh-mpkg-wallpaper@<新版号>   # base-backed
 
 # 本机开发档：发布后把仓库源码同步进**用户的 web profile**（整 lib/ + 6 个顶层文件 + 逐文件 md5 校验 + 触发 patch 热重载）
 # 注意：这个脚本在**工作区根**、不在本仓库内（它硬编码了本机绝对路径 ⇒ 不该入库）
-bash /root/Desktop/DSHarea/update-plugin.sh                                   # ⇒ 同步完成并校验通过：N 个文件 md5 全部一致
+bash <DSHAREA>/update-plugin.sh                                   # ⇒ 同步完成并校验通过：N 个文件 md5 全部一致
 ```
 
 ### 3.1 三种装载方式与"发布后各自怎么更新"（照 README「安装」节核对过，2026-09-19）
@@ -130,7 +130,7 @@ GitHub 侧（可选，但方式四的用户需要它）：
   npm dist-tag add dsh-mpkg-wallpaper@3.7.3 latest --registry=https://registry.npmjs.org
   npm view dsh-mpkg-wallpaper dist-tags --registry=https://registry.npmjs.org   # 复核
   ```
-- 本机开发档回退：`bash /root/Desktop/DSHarea/update-plugin.sh` 是从**仓库源码**同步的，
+- 本机开发档回退：`bash <DSHAREA>/update-plugin.sh` 是从**仓库源码**同步的，
   所以把仓库 `git checkout` 回上一个 good 提交再跑它一次即可（profile 副本会跟着回到旧版）。
 - 包内文件发错（如夹带备份）：只能补丁版；机器闸门 `tools/integrity-check.mjs` 第 ⑨ 节就是为这个历史坑加的。
 
