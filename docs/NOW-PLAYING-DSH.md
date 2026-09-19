@@ -629,6 +629,11 @@ slot 刚渲染时的 **prelim 值**，这次没复现到）—— 也就是说�
 
 ### 8.1 sha256（`sha256sum` 原样，2026-09-19 收尾轮）
 
+⚠ **这是 ①(NP-1) 收尾轮那一刻的快照，不是 HEAD 的值**：其中 **5 个文件**在 ①(NP-2)（真机复核，§7.6/§8.4）
+改过 ⇒ 现在的工作区值与它们**不同**（不是漂移）。要复算本表：`git show bf538fa:<文件> | sha256sum`。
+**已逐条复核**：本表 7 行全部等于 `bf538fa` 里对应 blob 的 sha256（7/7）；
+§8.4 那张 6 行全部等于 `d072858` 的 blob（6/6）。
+
 **本表不含** `docs/NOW-PLAYING-DSH.md` 与 `THIRD-PARTY.md`：它们**承载这张表**，写进去就是自指
 （写完哈希就变）。`../docs/COPYING-RULES.md` 在**仓外**（工作区根的 `docs/`，不是 git 仓库、不入包）
 ⇒ 无法提交，只记本轮那次写入的版本备查。
@@ -717,6 +722,9 @@ slot 刚渲染时的 **prelim 值**，这次没复现到）—— 也就是说�
 | `tools/check.sh` | 19149 | `b2b285027c454d86dd6382fadb812357aa5802331a0dcb8cf4a485140544af4d` |
 | `tools/np-sidebar-live-probe.mjs`（新增） | 19000 | `bc5650b1723486ba597ce236ab53ce5b896d279c8fa76389ba0a47a64490eb5a` |
 | （仓外）`we-scene-demo/docs/PATCHES.md` 的 P-155 条目 | — | 未提交（原因见上） |
+
+**复核**：本表 6 行（含探针）**逐条**等于 `d072858` 里对应 blob 的 sha256（6/6，含
+`git show d072858:tools/np-sidebar-live-probe.mjs | sha256sum`）。
 
 | 提交 | 内容 | 哈希 |
 |---|---|---|
