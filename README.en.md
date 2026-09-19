@@ -6,25 +6,124 @@
 
 Adds background wallpapers to the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) Web UI (`dsh web`): **Wallpaper Engine `.mpkg` parsing, Steam Workshop folders, video/web/image wallpapers, time-of-day switching for Time Variation wallpapers, a full-screen blur system, theme colours and glass surfaces, a local wallpaper library, scheduled rotation, a Now playing widget and one-click update**. Almost every appearance detail is adjustable.
 
-> Version scope: this document describes the implementation shipped as **`3.8.0`** in `package.json`. The publish surface is **14 files** (`lib/` runtime files + `icon.svg`, `cordis.patch.yml`, `README.md`, `README.en.md`, `THIRD-PARTY.md`, `LICENSE`); `lib/liquid-glass/**`, `lib/liquid-glass-bundle.js`, `dist/`, `tools/` and `docs/` never enter the npm package (`package.json:8-21`).
+> Version scope: this document describes the implementation shipped as **`3.8.2`** in `package.json`. The publish surface is **15 files** (`lib/` runtime files + `package.json`, `icon.svg`, `cordis.patch.yml`, `README.md`, `README.en.md`, `THIRD-PARTY.md`, `LICENSE`; measured with `npm pack --dry-run`: 15 files / 2,078,187 B unpacked); `lib/liquid-glass/**`, `lib/liquid-glass-bundle.js`, `dist/`, `tools/` and `docs/` never enter the npm package (`package.json:8-21`). The only default that changed this round: **`npNowPlaying` off → on** (see [What changed in this version](#what-changed-in-this-version)).
 
 ---
 
-## What changed in this version
+## Download · Install
 
-Current version = **3.8.0** in `package.json`. Release prerequisites, commands and rollback live in [`docs/RELEASE.md`](docs/RELEASE.md); this round's change list is in [`docs/RELEASE-READY-3.8.0.md`](docs/RELEASE-READY-3.8.0.md); the root causes and on-device readings for Now playing / wallpaper sound are in [`docs/NOW-PLAYING-DSH.md`](docs/NOW-PLAYING-DSH.md) §7.7.
+The plugin is published on npm (`dsh-mpkg-wallpaper`). Four ways to load it — pick one from this table, then read its section:
 
-- **Now playing is on by default and yields its slot**: the `npNowPlaying` setting is **on by default** (`DEFAULT_NP_NOW_PLAYING` in `lib/client.js`), still in the *Wallpaper* tab directly under the existing `mute` toggle (`toggleRow(t("npNowPlaying"), …)` in `lib/client.js`). **Turning it off is still zero injection** — no DOM, no observers, not a single NP rule in the `buildCss` output (group B of `tools/now-playing-test.mjs`). Being on by default requires **yielding**: when another plugin has already injected an element into the same host slot we do not mount (or we retract) and leave a queryable state `data-mpw-np-yield` (`occupantOf()` in `lib/now-playing.js`; judged both before and after mounting, and it comes back once the occupant leaves). The component itself is a **line-by-line port of Bencho's "Now playing" (MIT)** with the upstream comments kept verbatim (attribution in `THIRD-PARTY.md` §6); pure math and component are split into `lib/now-playing-math.js` / `lib/now-playing.js` and **inlined byte-for-byte** into the `MPW-NP-GEN-START/END` region of `lib/client.js` by `tools/build-now-playing.mjs`, guarded by two independent drift gates. Mounting and collapse criteria: see [Now playing widget](#now-playing-widget).
-- **Wallpaper sound is actually wired up**: the data source only accepts the media element that is **really playing right now** (the hidden shell `#mpw-bgVideo` exists in the DOM under **every** wallpaper type, and the old implementation treated the first selector match as "the current media") ⇒ a video wallpaper's play/pause/mute land on the real element (the **`mute` switch now really reaches the element — unmuting really produces sound**; the old code hard-coded `video.muted = true` and never assigned it from the setting again); audio files that **really exist** in the wallpaper folder play through our own `<audio>` (the scope accepts `mpkgKey="custom|<folder>"`; the old code only accepted `folderName`, so a web wallpaper in a custom folder always built a library route and got a 404) ⇒ **previous/next follow the track-list order and wrap around**, instead of "restart"; for a web wallpaper's in-frame sound only **mute** is a real channel (`canPlay=false` is reported honestly — we do not pretend we can pause in-frame WebAudio); while our player is playing, the frame is force-muted so the same track cannot play twice.
-- **The card is no longer clipped in floating mode**: fit-scaling now measures **our own container** (the old code measured `[class*="sidebarCol"]`, and that class name appears more than once on a real machine — it measured 280 while our container was 256), `.mpw_np` is pinned to `math.W` with the overflow shared evenly, and the web-wallpaper branch now applies the `data-mpw-float` gate and calls `applyNowPlaying()` (the old branch returned early, so after switching to a web wallpaper the widget was not mounted at all).
-- **Gate expansion**: `tools/now-playing-test.mjs` now reports **83 passed / 0 failed** (including 7 mutations); new `tools/np-media-test.mjs` (track-list scope / data-source decision / playback target / mute target / yielding / mark / the web path not skipping apply / card geometry — **82 passed / 0 failed**, including **12 mutation self-proofs**) is registered in step 2 of `tools/check.sh`; new on-device probe `tools/np-media-live-probe.mjs` (`:3080` + headless Firefox; 16 PASS / 22 FAIL before the fix → 45 PASS / 0 FAIL after, not part of the standing gate).
-- **Several on-device fixes**: Now playing no longer mistakes the expanded state for collapsed on the frame right after slot rendering (so the widget no longer disappears after a refresh) — the criterion is now **physical width first** with threshold `NP_COLLAPSE_MAX_W = 96`, and when an anchor appears late it watches the document and mounts itself; the play/pause quads are now driven by a **tween of the playback state itself** (they used to be driven by expand progress, so the collapsed state always drew a triangle and the expanded state always drew the two bars); the header-frost `ReferenceError` and the transparent right-side timeline rail (see [Historical ledger](#historical-ledger)); the `lgCss` block that never executed because of a TDZ error; `sessionFollow` that had a toggle but no reader; the folder picker scrolling back to the top.
-- **Capabilities from the previous round still on the same publish surface**: web-wallpaper rendering / API coverage (in-frame storage facade + host `/web-store`, master volume, source-level `file:///` rewriting, CSP injection skip, `/media-audio`) and web-wallpaper touch (`op:'touch'` with real `TouchEvent`s); the **host-side system media session adapter** `lib/media-session.js` (MPRIS / SMTC, **implemented but not wired up yet**, below).
-- **Gates and guardrails**: CSS matrix, style-scope guard, surface-token namespace equivalence, switch-wiring audit and the second-scale pre-commit hook (see the [historical ledger](#historical-ledger) and [Gates](#gates)).
+| Option | Who it is for | How to update | Client UI |
+|---|---|---|---|
+| 1 `dsh plugin add` (recommended) | the default choice; the market shows "installed" | `dsh plugin --profile web update …` | full |
+| 2 pnpm manual install | you manage the profile's dependency table yourself | same (through the dependency table) | full |
+| 3 Git clone | developers / offline / you want to edit the code | `git pull` | full |
+| 4 single-file bundle | offline emergencies; reusing the routes from a non-DSH host | regenerate and replace that `.mjs` | **host half only** |
 
-> Exactly one default changed, stated plainly: **`npNowPlaying` moved from off to on** (turning it off returns to zero injection; it yields automatically when another plugin already occupies the slot). Every other default is unchanged: `webInteraction` still defaults to `pointer`, and web-wallpaper sound is still muted by default (`mute` defaults to on).
+### Option 1: `dsh plugin add` (recommended, market-recognized)
+
+```bash
+dsh plugin --profile web add dsh-mpkg-wallpaper
+# restart dsh web, then Ctrl+F5 in the browser
+```
+
+### Option 2: pnpm manual install
+
+```bash
+pnpm --dir $DSH_HOME/profiles/<profile> add dsh-mpkg-wallpaper
+# restart dsh web, then Ctrl+F5
+```
+
+Same source as option 1, just without the `dsh plugin` wrapper.
+
+### Option 3: Git clone (developers / offline)
+
+```bash
+git clone https://github.com/XHR666/dsh-mpkg-wallpaper.git $DSH_HOME/profiles/<profile>/node_modules/dsh-mpkg-wallpaper
+# then register in the profile's cordis.patch.yml:
+#   - insert:
+#       - id: dsh-mpkg-wallpaper
+#         name: dsh-mpkg-wallpaper
+# restart to take effect
+```
+
+> Option 3 writes no dependency entry ⇒ the market does not show "installed" (display only, functionality unaffected).
+
+### Option 4: single-file bundle (offline / drop-in; **host half only**)
+
+Inline the host half into a self-contained ESM and register that:
+
+```bash
+cd /path/to/dsh-mpkg-wallpaper
+node tools/build-bundle.mjs          # output: dist/dsh-mpkg-wallpaper.bundle.mjs (measured 449,671 B / 439.1KB; the gate output is authoritative)
+node tools/build-bundle.mjs --check  # cross-check against the source: export surface / route table / ping JSON shape (20 assertions)
+node tools/bundle-equivalence-test.mjs  # the fuller equivalence gate (38 assertions; gate step 11)
+```
+
+Copy `dist/dsh-mpkg-wallpaper.bundle.mjs` anywhere (e.g. `~/.dsh/plugins/`), register it by **absolute path** in the profile's `cordis.patch.yml`, then restart `dsh web`:
+
+```yaml
+# $DSH_HOME/profiles/<profile>/cordis.patch.yml
+- insert:
+    - id: dsh-mpkg-wallpaper
+      name: /absolute/path/dsh-mpkg-wallpaper.bundle.mjs   # ← points at the .mjs file itself
+```
+
+**What this path loads and what it does not** (code and gate facts):
+
+| Item | Option 4 behaviour | Evidence |
+|---|---|---|
+| Host half (upload/Range streaming, scene extraction, audio lists, settings persistence, diag reporting — **41 routes**) | **Complete** (four host modules inlined; node builtins only) | route table identical `[41 entries]` |
+| `/api/mpkg-wallpaper/ping` | `{ok, version, betterSidebar, betterSidebarVersion}` key set identical to the source | `build-bundle.mjs --check` |
+| **Client half (settings panel / wallpaper layer / frost / Now playing)** | **Not loaded** — only the host export surface (`apply` / `inject` / `__mpwTest`) is present | DSH finds the client half **per package** (Loader entries declaring `dsh.client` → `exports["./client"]`); a bare `.mjs` has no package.json |
+| `GET /api/mpkg-wallpaper/lg/*` (legacy WebGL hosting route, no client caller) | **404** unless a `liquid-glass/` folder sits next to the bundle | the route resolves `liquid-glass/` from `import.meta.url` (`lib/index.js:3453`) |
+| `ping.version` | `null` when the parent directory has no `package.json` (version display only) | `new URL('../package.json', import.meta.url)` (`lib/index.js:1622`) |
+| "Check for updates / one-click update" | No companion `package.json` ⇒ `update-check` 500s and `update-apply` writes next to the bundle: **not recommended here** | `lib/index.js:1792-1860` |
+| Uninstall | Delete that `.mjs` and its line in `cordis.patch.yml` | — |
+
+> Conclusion: **option 4 is a degraded "host capability only" load** (handy offline, as an emergency path, or when reusing the routes from a non-DSH host); use options 1/2/3 for the full UI. The artifact is **not committed** (`dist/` is in `.gitignore`: it is a pure derivative of `lib/*.js`, two builds are byte-identical — section ② of `tools/bundle-equivalence-test.mjs`; generate it at release time and publish the hash).
+
+### Update
+
+```bash
+# options 1 / 2: through npm's latest tag
+dsh plugin --profile web update dsh-mpkg-wallpaper
+
+# option 3: inside the clone
+git pull
+
+# option 4: regenerate and replace that .mjs
+node tools/build-bundle.mjs
+```
+
+Every route ends the same way: restart `dsh web`, then press `Ctrl+F5`.
+
+### Uninstall
+
+Options 1/2/3: `dsh plugin --profile web remove dsh-mpkg-wallpaper`.
+Option 4: delete the `.mjs` and its line in `cordis.patch.yml`.
+Leftover data (optional cleanup): browser `localStorage['dsh.mpkg-wallpaper.v2']` and the host directory `~/.dsh-mpkg-wallpaper/` (`settings.json`, `web-store.json`, `media-audio.json`, uploaded mpkg files, transcode cache, `diag-*.json`).
+
+## 30-second quick start
+
+The shortest path from installed to wallpaper on screen — three steps.
+
+1. **Install and restart**: pick any option in the previous section, restart `dsh web`, press `Ctrl+F5`.
+2. **Open the panel**: left sidebar → Settings → *MPKG Wallpaper*.
+3. **Pick a wallpaper**, any one of:
+   - drop in an `.mpkg` file (video wallpapers play directly; scene wallpapers use the static frame / layer composite)
+   - choose a local image/video, or paste an image URL
+   - *Custom local wallpaper folder*: point it at any folder (the Steam `steamapps/workshop/content/431960` root works — every subfolder counts as one wallpaper)
+
+The defaults are already usable: master switch on, hybrid mode on, unified blur on (30px), Now playing mounted in the left sidebar.
+To fine-tune, three controls are enough to start: **Wallpaper → Frosted blur** (0–40), **Surface unify → Full-screen blur degree** (0–40), **Wallpaper → Lens zoom** (10–2000%).
+
+> If nothing happens, press **one-click diagnostics report** in the *Other* tab first (it downloads a JSON file when the host is unavailable), then take it to [Bug reports](#bug-reports).
 
 ## Core features
+
+This section groups features by **what you can perceive** (sources, time variation, blur, appearance, playback, library and rotation, safety, backup) rather than by code module.
 
 **📦 Wallpaper sources**
 - **Wallpaper Engine `.mpkg`**: the container is parsed in the browser (nothing is uploaded to a third party); video wallpapers play their embedded mp4 / video textures, scene wallpapers have their assets extracted, and **Time Variation** wallpapers pick the material for the current time slot
@@ -74,13 +173,15 @@ Current version = **3.8.0** in `package.json`. Release prerequisites, commands a
 
 ## Supported types and boundaries
 
+This section answers "does my material work, and how well"; the boundary list under the table explains why some things are out of reach.
+
 | Type | Status | What it can / cannot control |
 |---|---|---|
 | **mpkg (video)** | ✅ Full | Embedded mp4 / video textures play directly; mute, speed, pause, blur/zoom/brightness all adjustable |
-| **mpkg (scene)** | 🟡 Compromise | Container assets are extracted: static frame / layer composite / embedded video slots; **Live2D puppets, shaders and scripts are out of reach** (below) |
+| **mpkg (scene)** | 🟡 Compromise | Static frame / layer composite / embedded video slots; **Live2D puppets, shaders and scripts are out of reach** |
 | **Time Variation** | ✅ Multi-slot | Automatic switching + manual lock; only the current slot is extracted |
 | **Video (mp4/webm/mov/m4v)** | ✅ Full | Plays directly; fps/resolution caps require ffmpeg transcoding |
-| **Web (HTML)** | 🟡 Experimental | Sandboxed iframe + WE API shim; **Live2D-class wallpapers with read-only settings are editable**; external-SDK / heavily interactive ones are not adapted |
+| **Web (HTML)** | 🟡 Experimental | Sandboxed iframe + WE API shim; **Live2D-class settings are editable**; external-SDK / heavily interactive ones are not adapted |
 | **scene.pkg loose folder** | 🟡 Compromise | Same as mpkg scene wallpapers |
 | **preview.gif / image / animation** | ✅ Full | Falls back to the author's preview animation when a scene has nothing better (`lib/client.js:887`, `:12272`) |
 | **Application (exe)** | ❌ Excluded | Content detection yields `unknown/excluded-application`; never read, never executed (`lib/web-wallpaper.js:199`) |
@@ -93,9 +194,9 @@ Current version = **3.8.0** in `package.json`. Release prerequisites, commands a
 - Web wallpapers **cannot** reproduce CSS `:hover/:active`, `isTrusted:true`, in-frame `contextmenu` or pointer lock/fullscreen/download popups (inherent limits of synthetic events, `docs/WEB-WALLPAPER.md` §11.4)
 - Assets above 600MB work only in **hybrid mode**; browser-only mode additionally caps video textures at 250MB, images at 200MB and local image files at 100MB
 
-## Settings (7 tabs)
+## Settings reference (7 tabs)
 
-The tab order is fixed: `TAB_ORDER = ["source","wallpaper","appearance","unify","blur","other","liquid"]` (`lib/client.js:10730`), labelled **Background source / Wallpaper / Appearance / Surface unify / UI blur / Other / Liquid Glass (test)**.
+This is the **authoritative table of every setting**: each row = panel label + internal key + default + what it does + how to turn it off. The tab order matches the panel and is fixed: `TAB_ORDER = ["source","wallpaper","appearance","unify","blur","other","liquid"]` (`lib/client.js:10730`), labelled **Background source / Wallpaper / Appearance / Surface unify / UI blur / Other / Liquid Glass (test)**.
 
 ### 1. Background source (source)
 
@@ -117,7 +218,8 @@ Contains the *Wallpaper picture* and *Power saving* sub-sections.
 | Label | Key | Default | Purpose | Off / rollback |
 |---|---|---|---|---|
 | Mute (web wallpapers) | `mute` | on | Web-wallpaper audio; off lets the wallpaper make sound | off |
-| **Now playing (above Settings in the sidebar)** | `npNowPlaying` | **on** | Mounts an expandable player in the left sidebar (its transport row is the wallpaper-sound control: previous / play-pause / next, plus mute inside the card); **off is still zero injection**; it yields and writes `data-mpw-np-yield` when another plugin has injected an element into the same slot | off / restore defaults |
+| **Now playing (above Settings in the sidebar)** | `npNowPlaying` | **on** | Left-sidebar player whose transport row controls wallpaper sound. **Off = zero injection**; yields to another plugin (`data-mpw-np-yield`) | off / restore defaults |
+| Play/pause also controls the wallpaper | `npLinkWallpaper` | on | Now playing's play/pause and position also drive the wallpaper itself; off = only this plugin's player (when the wallpaper media is the only source the controls are **honestly disabled**) | off |
 | Horizontal flip (mirror) | `flipX` | off | Mirrors the wallpaper horizontally | off |
 | Vertical flip (mirror) | `flipY` | off | Mirrors the wallpaper vertically | off |
 | Decode fps cap | `fpsCap` | unlimited | Host ffmpeg frame extraction when the source exceeds the cap (24/30/48/60) | "unlimited" |
@@ -214,19 +316,71 @@ These keys **exist and participate in the logic** but have no widget on the sett
 
 | Key | Default | Notes |
 |---|---|---|
-| `clock` / `clock24h` / `clockSec` / `clockDate` / `clockPos` / `clockSize` | off / on / off / off / `tr` / 40 | The clock is a **runtime compatibility item**: old configurations still render it, but the settings page has no toggle |
-| `bsAlpha` | off | better-sidebar panels follow the theme base colour; the CSS reads it, the panel has no widget |
-| `bsBottomAvoid` | off | A settled **deliberate no-op** (alignment belongs to better-sidebar's own ResizeObserver) |
-| `newStyle` | off | Only changes settings-page widget looks (JS picks class names); never enters `buildCss` |
+| `clock` / `clock24h` / `clockSec` / `clockDate` / `clockPos` / `clockSize` | off / on / off / off / `tr` / 40 | Runtime compatibility item: old configurations still render the clock, the settings page has no toggle |
+| `bsAlpha` | off | better-sidebar panels follow the theme base colour (CSS reads it, no widget) |
+| `bsBottomAvoid` | off | A settled **deliberate no-op** (alignment belongs to better-sidebar's ResizeObserver) |
+| `newStyle` | off | Only changes settings-page widget looks; never enters `buildCss` |
 | `forceEnabled` | off | Runtime priority flag for forcing the feature back on past conflict detection |
-| `opacity` | 82 | The "panel opacity" slider was removed (unified blur uses `sidebarAlpha` instead); the value is still read (`lib/client.js:5887`, `:5981`) |
-| `aquaTintStrength` | 45 | How much of the wallpaper's dominant colour is mixed into panel tints; read at runtime (`lib/client.js:5575`), no widget |
-| `glassColor` / `glassAlpha` | empty / 12 | Leftovers from the early WebGL liquid glass: they only travel through backup export/import and "restore defaults", with **no widget and no reader** (`lib/client.js:11968`, `:11986`) |
-| `webInteraction` | `pointer` | Web-wallpaper interaction mode (`off`/`pointer`/`full`): **no panel widget**; use `?mpwinteract=…` or write the stored settings |
-| `sceneRendererUrl` | `http://127.0.0.1:8899/` | Scene-renderer address, overridable (`lib/client.js:3129-3132`) |
-| `glassWindow` | — | **Retired and deleted** (2026-09-19): no widget and no reader; its promised feature is covered by `settingsBlur` + `dialogBlur`/`popoverBlur`; zero leftovers in code and in both dictionaries |
+| `opacity` | 82 | The "panel opacity" slider was removed (unified blur uses `sidebarAlpha`); the value is still read |
+| `aquaTintStrength` | 45 | How much of the wallpaper colour is mixed into panel tints; read at runtime |
+| `glassColor` / `glassAlpha` | empty / 12 | Early WebGL liquid-glass leftovers: backup/restore only, **no widget and no reader** |
+| `webInteraction` | `pointer` | Web-wallpaper interaction mode (`off`/`pointer`/`full`); use `?mpwinteract=…` or write the stored settings |
+| `sceneRendererUrl` | `http://127.0.0.1:8899/` | Scene-renderer address, overridable |
+| `npVolume` | 100 | The **volume level** in the Now playing card (0..100, applied to the real element); the default profile **never writes element volume**, only your own change does |
+| `glassWindow` | — | **Retired and deleted** (2026-09-19): no widget, no reader; covered by `settingsBlur` + `dialogBlur`/`popoverBlur` |
+
+## Now playing and wallpaper sound
+
+This section covers **where the sidebar player mounts, what it shows and what it can control** — its source is the wallpaper's own sound.
+
+> Location convention: this section refers to the implementation by **symbol name** (`resolveAnchor` / `shouldHide` / `occupantOf` / `PlayMark` / `markYield` in `lib/now-playing.js`, `opsX` and friends in `lib/now-playing-math.js`, `npResolveMedia` / `npActiveVideo` / `npAudioScope` / `npApplyMute` / `applyNowPlaying` in `lib/client.js`) — **line numbers drift between versions; symbols are authoritative**. The shape is "source + generated inline": `lib/now-playing-math.js` + `lib/now-playing.js` are inlined byte-for-byte into the `MPW-NP-GEN-START/END` region of `lib/client.js` by `tools/build-now-playing.mjs`.
+
+- **Mount point**: the host slot `sidebar.footer.action` (the `createSlotAction` registration in `lib/client.js`: `id:"mpw-now-playing"`, `order:60`). When the slot is unavailable, `resolveAnchor()` falls back by mode: `slot` → `settings-slot` (before the host's settings cell) → `settings-area` (before `[class*="settingsArea"]`) → `foot` (first position in `[class*="footArea"]`); if none holds it **creates no node at all** and logs a `console.warn`. **A late anchor still gets mounted**: when no landing spot exists it watches the document and mounts itself as soon as the host's slot outlet renders (the old code only warned and returned, so after a wallpaper switch on a real machine the widget never came back).
+- **Yielding (the counterpart of being on by default)**: `occupantOf(container, mode, selfNode)` walks the container's children and lets three kinds through — our own nodes, host-owned nodes (the slot outlet / settings cell) and effectively empty nodes; the first remaining element counts as an **occupant** ⇒ we do not mount (before mounting) or we retract (after mounting, via `MutationObserver` with `subtree:true`), write `data-mpw-np-yield="foreign-occupant"` and log one readable warning; when the occupant leaves we come back. The criteria are **two-way**: neither our own nodes nor the host's cells may be misread as occupants.
+- **Hidden when the sidebar is collapsed**: `data-mpw-np-hidden` + CSS `display:none`. The criterion is **physical width first** (`shouldHide(width, hostCollapsed)`: a measured width ≥ `NP_COLLAPSE_MAX_W = 96` forbids hiding); host signals (slot `wide` / `data-sidebar-collapsed` / root class `collapsed`) are a fallback only when the width **cannot be measured**, and there is a **one-shot** re-check after the anchor moves. When space is tight the whole widget scales by `--mpw-np-fit = clamp(avail/260, 0.5, 1)`, where `avail` measures **our own container** (not `[class*="sidebarCol"]` — that class name appears more than once on a real machine).
+- **Shape**: one pill that expands into a card — artwork (the current wallpaper's thumbnail), title/byline, progress rail + clock and a full-card hit target. **Four keys when expanded**: previous / play-pause / next / mute-unmute; **three keys when collapsed** — the mute key appears with the card, because the collapsed transport row is positioned as an 88px three-key row at `opsX(0) = 206` and forcing a fourth key in would overflow the right padding. Expanding is a self-stopping 0→1 tween (no resident rAF); play/pause is **not a swapped icon** but the pair of eight-point quads, now shaped by a **tween of the playback state itself** (`mark`: 0 = paused, 1 = playing), while the morph progress `p` only drives size and position.
+- **Data sources** (`npResolveMedia`: **we only report what we actually know**):
+
+| Current wallpaper | What NP shows | What it can control |
+|---|---|---|
+| Video wallpaper (the `<video>` that is **really playing** right now) | Real playback state, duration and progress; when we know there is no audio track the byline says so | Play / pause / mute-unmute (no audio info ⇒ we do not guess, mute stays enabled); **no track list ⇒ previous/next honestly disabled** |
+| Audio files that **really exist** in the wallpaper folder (custom folder / library / scene folder) | File name + list index; progress and duration from the media element | Our own `<audio>`: play / pause / **previous · next step through the list in order and wrap around** (with only one track both side keys are disabled) / mute |
+| Web wallpaper (no separate audio file in the folder) | The byline says "web wallpaper sound" | **Mute is the only channel** (`canPlay=false`; we do not pretend we can pause in-frame WebAudio) |
+| No source (static image / list not there yet / scene without separate audio) | Idle state (title = nothing playing) | No "does nothing when clicked" buttons; pressing play produces a panel note plus one console line — **no fake actions** |
+
+- **Two new controls (NP-4)**: ① a **volume level** — the volume bar in the card, key `npVolume` (0..100), really applied to the element (the default profile **never writes element volume**, only your own change does); ② a **draggable position (seek)**. Both are governed by the switch below.
+- **"Play/pause also controls the wallpaper" (`npLinkWallpaper`, default on)**: on = the transport and the progress bar drive the wallpaper's own playback/position too (default on = byte-identical to the previous behaviour); off = only this plugin's own player is driven and the wallpaper media is **not touched at all**; when the wallpaper media is the only sound source the controls are **honestly disabled** and the byline says why (`np.note.linkOff`).
+- **What it cannot do** (listed explicitly, no fake actions; `docs/NOW-PLAYING-DSH.md` §7.7.7 and §7.8): there is no system media source (that is what `lib/media-session.js` is for, and it is not wired up yet); a web wallpaper's in-frame sound supports **mute only** — its own play/pause is out of reach; a video wallpaper has no previous/next; the **mute key only appears in the expanded state** (expand the card first to unmute — a geometry trade-off, not a broken key); the heart button is not rendered; no waveform, no keyboard shortcuts; audio inside a package (`scene.pkg`) **can be listed but not played** (`np.note.pkgListOnly`); the progress bar is draggable, but **honestly not draggable when the link switch is off or nothing is seekable** (`np.note.noseek`). The double-audio combination where "the wallpaper also plays the same track" **has no on-device sample to verify against** (the mitigation in place: the frame is force-muted while our player is playing).
+- **Rollback**: turn `npNowPlaying` off (or "Restore all defaults") ⇒ back to zero injection (no DOM, no observers, not a single NP rule in the output). Regression: `node tools/now-playing-test.mjs` (**83 passed / 0 failed**, including 7 mutations) + `node tools/np-media-test.mjs` (**82 passed / 0 failed**, including 12 mutation self-proofs; `--no-mutations` leaves 70 main assertions) — both registered in step 2 of `tools/check.sh`. On-device probes (need `:3080` + headless Firefox, not part of the standing gate): `node tools/np-sidebar-live-probe.mjs` (12 criteria) and `node tools/np-media-live-probe.mjs` (16 PASS / 22 FAIL before the fix → 45 PASS / 0 FAIL after).
+- **Attribution**: the component is a **line-by-line port of Bencho's "Now playing" (MIT)** with the upstream comments kept verbatim; the sidebar mount controller, yield criteria, self-drawn icons, token mapping, data wiring and gates are written here. Registered in `THIRD-PARTY.md` §6.
+
+## System media session (MPRIS / SMTC)
+
+This section covers the **host half** of "show what the system is playing": the capability matrix, the honest unavailable path, and the current wiring status.
+
+`lib/media-session.js` (1052 lines, MIT, written in this repository, no third-party code) is the **host half** of the "let Now playing show what the *system* is playing" chain. Contract: `createMediaSession({run, platform, env, now, timeoutMs, log})` → `{probe(), snapshot(), control(op,arg), stats(), lastProbe()}` (`lib/media-session.js:22-40`).
+
+**Capability matrix**
+
+| Platform | Channel | Adapters (by priority) | Metadata / state / position / artwork | Control |
+|---|---|---|---|---|
+| Linux / FreeBSD / OpenBSD | MPRIS over D-Bus (`org.mpris.MediaPlayer2.*`) | `playerctl` → `dbus-send` | One call returns 7 fields: `status / mpris:length / position / xesam:title / xesam:artist / xesam:album / mpris:artUrl` | `play` `pause` `playpause` `next` `prev` `seek` |
+| Windows 10/11 | SMTC (`GlobalSystemMediaTransportControlsSessionManager`) | `smtc` (`powershell.exe -NoProfile -NonInteractive`) | Real WinRT calls for properties / timeline / playback controls / thumbnail (as a base64 data URL) | Same ops (op and position passed as separate argv elements) |
+| macOS | — | — | ❌ Not implemented: `unsupported-platform`, **0 commands** | ❌ |
+| Anything else / no adapter | — | `none` | ❌ `not-installed` | ❌ |
+
+- **Shape**: the `snapshot` always has its 21 keys; unreadable values are empty/neutral (`duration`/`position` are milliseconds and `null` when unknown — it **never invents 0**); when `available:true`, `title` is non-empty (`lib/media-session.js:42-56`, `:220-244`).
+- **With no desktop session bus it reports unavailable honestly**: `probe()` really probes (`dbus-send --session ListNames`, falling back to `busctl --user list`) and returns `available:false / reason:'no-session-bus'` with a `detail` line such as "总线不可达（via dbus-send）：…" (`lib/media-session.js:684-706`, `:775-783`). This is **derived, not hard-coded** — a machine with no desktop environment (container/Termux) really takes this path.
+- **It never throws**: `snapshot()` / `control()` never reject; every failure is a return value whose `reason` is one of 15 values (`unsupported-platform / disabled-by-env / not-installed / no-session-bus / no-player / no-metadata / empty-output / unparsable / timeout / not-available / bad-op / bad-arg / bad-player / error`).
+- **Security**: command names and arguments are passed **separately** (argv arrays, never through `sh -c`); player names must match `/^[A-Za-z0-9_.-]{1,64}$/` or the result is `bad-player` with 0 commands; `op` is allow-listed and `seek` is bounded to `0..24h`; the timeout defaults to 800 ms (50–5000 ms); reads are single-flight with a global serial queue (at most one command at a time).
+- **Zero dependencies**: only `node:child_process`; `package.json` gained no dependency at all.
+- **Environment variables**: `MPW_MEDIA_ADAPTER` (pin an adapter), `MPW_MEDIA_PLAYER` (pin a player name), `MPW_MEDIA_TIMEOUT_MS`.
+
+⚠ **Wiring status (honest)**: the module is **not wired into the plugin yet** — `lib/index.js`, `lib/client.js` and `tools/build-bundle.mjs` do not import it, and there is no `/media-session` or `/media-control` host route, so **the Now playing widget still shows the wallpaper's own media, not a system player**. Host routes and UI display are planned in [`docs/MEDIA-SESSION.md`](docs/MEDIA-SESSION.md) §9/§10 but marked as not done. Gate: `node tools/media-session-test.mjs` (95 assertions = 89 main + 6 mutation self-proofs), **not part of `tools/check.sh`**.
 
 ## Diagnostics and troubleshooting
+
+Start here when something is wrong: one click sends state back to the local host, and individual diagnostics switches are only for narrowing things down.
 
 ### Plugin side (this plugin's own switches)
 
@@ -269,138 +423,38 @@ Two different numbers — do not mix them up:
 
 > These are **renderer** URL parameters, not plugin settings; the plugin only appends them to the scene iframe (`lib/client.js:13981-14000`, `lib/client.js:3163`). The panel copy and its offline mirror must match the `common` set of `diag-flags.json`, asserted by `tools/panel-smoke.mjs` (`tools/panel-smoke.mjs:316-372`).
 
-## System media session (MPRIS / SMTC)
+## Compatibility, limits and what it cannot do
 
-`lib/media-session.js` (1052 lines, MIT, written in this repository, no third-party code) is the **host half** of the "let Now playing show what the *system* is playing" chain. Contract: `createMediaSession({run, platform, env, now, timeoutMs, log})` → `{probe(), snapshot(), control(op,arg), stats(), lastProbe()}` (`lib/media-session.js:22-40`).
+This section gathers what environment and what sizes work, and what is out of reach. Per-type boundaries live in the previous section; the web-wallpaper and Now playing cannot-do lists live in their own sections.
 
-**Capability matrix**
+### Browser compatibility (measured reference)
 
-| Platform | Channel | Adapters (by priority) | Metadata / state / position / artwork | Control |
-|---|---|---|---|---|
-| Linux / FreeBSD / OpenBSD | MPRIS over D-Bus (`org.mpris.MediaPlayer2.*`) | `playerctl` → `dbus-send` | One call returns 7 fields: `status / mpris:length / position / xesam:title / xesam:artist / xesam:album / mpris:artUrl` | `play` `pause` `playpause` `next` `prev` `seek` |
-| Windows 10/11 | SMTC (`GlobalSystemMediaTransportControlsSessionManager`) | `smtc` (`powershell.exe -NoProfile -NonInteractive`) | Real WinRT calls for properties / timeline / playback controls / thumbnail (as a base64 data URL) | Same ops (op and position passed as separate argv elements) |
-| macOS | — | — | ❌ Not implemented: `unsupported-platform`, **0 commands** | ❌ |
-| Anything else / no adapter | — | `none` | ❌ `not-installed` | ❌ |
-
-- **Shape**: the `snapshot` always has its 21 keys; unreadable values are empty/neutral (`duration`/`position` are milliseconds and `null` when unknown — it **never invents 0**); when `available:true`, `title` is non-empty (`lib/media-session.js:42-56`, `:220-244`).
-- **With no desktop session bus it reports unavailable honestly**: `probe()` really probes (`dbus-send --session ListNames`, falling back to `busctl --user list`) and returns `available:false / reason:'no-session-bus'` with a `detail` line such as "总线不可达（via dbus-send）：…" (`lib/media-session.js:684-706`, `:775-783`). This is **derived, not hard-coded** — a machine with no desktop environment (container/Termux) really takes this path.
-- **It never throws**: `snapshot()` / `control()` never reject; every failure is a return value whose `reason` is one of 15 values (`unsupported-platform / disabled-by-env / not-installed / no-session-bus / no-player / no-metadata / empty-output / unparsable / timeout / not-available / bad-op / bad-arg / bad-player / error`).
-- **Security**: command names and arguments are passed **separately** (argv arrays, never through `sh -c`); player names must match `/^[A-Za-z0-9_.-]{1,64}$/` or the result is `bad-player` with 0 commands; `op` is allow-listed and `seek` is bounded to `0..24h`; the timeout defaults to 800 ms (50–5000 ms); reads are single-flight with a global serial queue (at most one command at a time).
-- **Zero dependencies**: only `node:child_process`; `package.json` gained no dependency at all.
-- **Environment variables**: `MPW_MEDIA_ADAPTER` (pin an adapter), `MPW_MEDIA_PLAYER` (pin a player name), `MPW_MEDIA_TIMEOUT_MS`.
-
-⚠ **Wiring status (honest)**: the module is **not wired into the plugin yet** — `lib/index.js`, `lib/client.js` and `tools/build-bundle.mjs` do not import it, and there is no `/media-session` or `/media-control` host route, so **the Now playing widget still shows the wallpaper's own media, not a system player**. Host routes and UI display are planned in [`docs/MEDIA-SESSION.md`](docs/MEDIA-SESSION.md) §9/§10 but marked as not done. Gate: `node tools/media-session-test.mjs` (95 assertions = 89 main + 6 mutation self-proofs), **not part of `tools/check.sh`**.
-
-## Now playing widget
-
-> Location convention: this section refers to the implementation by **symbol name** (`resolveAnchor` / `shouldHide` / `occupantOf` / `PlayMark` / `markYield` in `lib/now-playing.js`, `opsX` and friends in `lib/now-playing-math.js`, `npResolveMedia` / `npActiveVideo` / `npAudioScope` / `npApplyMute` / `applyNowPlaying` in `lib/client.js`) — **line numbers drift between versions; symbols are authoritative**. The shape is "source + generated inline": `lib/now-playing-math.js` + `lib/now-playing.js` are inlined byte-for-byte into the `MPW-NP-GEN-START/END` region of `lib/client.js` by `tools/build-now-playing.mjs`.
-
-- **Mount point**: the host slot `sidebar.footer.action` (the `createSlotAction` registration in `lib/client.js`: `id:"mpw-now-playing"`, `order:60`). When the slot is unavailable, `resolveAnchor()` falls back by mode: `slot` → `settings-slot` (before the host's settings cell) → `settings-area` (before `[class*="settingsArea"]`) → `foot` (first position in `[class*="footArea"]`); if none holds it **creates no node at all** and logs a `console.warn`. **A late anchor still gets mounted**: when no landing spot exists it watches the document and mounts itself as soon as the host's slot outlet renders (the old code only warned and returned, so after a wallpaper switch on a real machine the widget never came back).
-- **Yielding (the counterpart of being on by default)**: `occupantOf(container, mode, selfNode)` walks the container's children and lets three kinds through — our own nodes, host-owned nodes (the slot outlet / settings cell) and effectively empty nodes; the first remaining element counts as an **occupant** ⇒ we do not mount (before mounting) or we retract (after mounting, via `MutationObserver` with `subtree:true`), write `data-mpw-np-yield="foreign-occupant"` and log one readable warning; when the occupant leaves we come back. The criteria are **two-way**: neither our own nodes nor the host's cells may be misread as occupants.
-- **Hidden when the sidebar is collapsed**: `data-mpw-np-hidden` + CSS `display:none`. The criterion is **physical width first** (`shouldHide(width, hostCollapsed)`: a measured width ≥ `NP_COLLAPSE_MAX_W = 96` forbids hiding); host signals (slot `wide` / `data-sidebar-collapsed` / root class `collapsed`) are a fallback only when the width **cannot be measured**, and there is a **one-shot** re-check after the anchor moves. When space is tight the whole widget scales by `--mpw-np-fit = clamp(avail/260, 0.5, 1)`, where `avail` measures **our own container** (not `[class*="sidebarCol"]` — that class name appears more than once on a real machine).
-- **Shape**: one pill that expands into a card — artwork (the current wallpaper's thumbnail), title/byline, progress rail + clock and a full-card hit target. **Four keys when expanded**: previous / play-pause / next / mute-unmute; **three keys when collapsed** — the mute key appears with the card, because the collapsed transport row is positioned as an 88px three-key row at `opsX(0) = 206` and forcing a fourth key in would overflow the right padding. Expanding is a self-stopping 0→1 tween (no resident rAF); play/pause is **not a swapped icon** but the pair of eight-point quads, now shaped by a **tween of the playback state itself** (`mark`: 0 = paused, 1 = playing), while the morph progress `p` only drives size and position.
-- **Data sources** (`npResolveMedia`: **we only report what we actually know**):
-
-| Current wallpaper | What NP shows | What it can control |
+| Browser | Rating | Notes |
 |---|---|---|
-| Video wallpaper (the `<video>` that is **really playing** right now) | Real playback state plus duration/progress; when we positively know there is no audio track the byline says "this video has no audio track" | Play / pause / mute-unmute (when we cannot tell whether there is audio we **do not guess** and leave the mute key enabled); **there is no track list ⇒ previous/next are honestly disabled** |
-| Audio files that **really exist** in the wallpaper folder (custom folder / library / scene folder) | File name plus its index in the list; progress and duration come from the media element | Our own `<audio>`: play / pause / **previous · next step through the list in order and wrap around** (with only one track both side keys are disabled) / mute |
-| Web wallpaper (no separate audio file in the folder) | The byline says "web wallpaper sound" | **Mute is the only channel** (`canPlay=false`; we do not pretend we can pause in-frame WebAudio) |
-| No source (static image / list not there yet / scene without separate audio) | Idle state (title = nothing playing) | No "does nothing when clicked" buttons; pressing play produces a panel note plus one console line — **no fake actions** |
+| Chrome / Chromium (desktop) | ⭐⭐⭐ strong | Most complete: best `backdrop-filter` and `color-mix`, working `iframe.muted`, muted autoplay allowed |
+| Edge (desktop) | ⭐⭐⭐ strong | Video wallpapers use a **separate canvas path** (dodging Edge's floating toolbar, `lib/client.js:1464-1520`); some versions show a static first frame only |
+| Firefox | ⭐⭐ medium | Everything works (`backdrop-filter` 103+, transcode fallback for unsupported codecs); three deductions — see the note below |
+| Android WebView / mobile | ⭐⭐ weak-medium | Autoplay depends on the host WebView config; `getBattery` may be missing (guarded); for extreme combinations prefer a static image/GIF or turn blur off |
 
-- **What it cannot do** (listed explicitly, no fake actions; `docs/NOW-PLAYING-DSH.md` §7.7.7): there is no system media source (that is what `lib/media-session.js` is for, and it is not wired up yet); a web wallpaper's in-frame sound supports **mute only** — play/pause is out of reach; **volume is a mute switch, not 0..1 fine control** (the only existing channel is the `mute` boolean plus the host `/media-audio` contract); a video wallpaper has no previous/next; the **mute key only appears in the expanded state** (expand the card first to unmute — a geometry trade-off, not a broken key); the heart button is not rendered; no seeking, no waveform, no keyboard shortcuts. The double-audio combination where "the wallpaper also plays the same track" **has no on-device sample to verify against** (the mitigation in place: the frame is force-muted while our player is playing).
-- **Rollback**: turn `npNowPlaying` off (or "Restore all defaults") ⇒ back to zero injection (no DOM, no observers, not a single NP rule in the output). Regression: `node tools/now-playing-test.mjs` (**83 passed / 0 failed**, including 7 mutations) + `node tools/np-media-test.mjs` (**82 passed / 0 failed**, including 12 mutation self-proofs; `--no-mutations` leaves 70 main assertions) — both registered in step 2 of `tools/check.sh`. On-device probes (need `:3080` + headless Firefox, not part of the standing gate): `node tools/np-sidebar-live-probe.mjs` (12 criteria) and `node tools/np-media-live-probe.mjs` (16 PASS / 22 FAIL before the fix → 45 PASS / 0 FAIL after).
-- **Attribution**: the component is a **line-by-line port of Bencho's "Now playing" (MIT)** with the upstream comments kept verbatim; the sidebar mount controller, yield criteria, self-drawn icons, token mapping, data wiring and gates are written here. Registered in `THIRD-PARTY.md` §6.
+> **Firefox's three deductions**: ① `backdrop-filter` is slower than Chromium (several blurs at once drop frames on low-end machines); ② `iframe.muted` is unsupported ⇒ a web wallpaper with sound may have its first frame blocked by the autoplay policy; ③ `color-mix` needs 113+ (older versions fall back visually).
+> The source degrades for each browser (rAF fallback when `requestVideoFrameCallback` is missing, guards around `ResizeObserver`/`getBattery`, `.catch` on every `play()`, `backdrop-filter` detected with `CSS.supports` and degraded to opaque).
 
-## Installation
-
-The plugin is published on npm (`dsh-mpkg-wallpaper`). Four ways to load it:
-
-### Option 1: `dsh plugin add` (recommended, market-recognized)
-
-```bash
-dsh plugin --profile web add dsh-mpkg-wallpaper
-# restart dsh web, then Ctrl+F5 in the browser
-```
-
-Update: `dsh plugin --profile web update dsh-mpkg-wallpaper` (+ restart `dsh web` + Ctrl+F5). This resolves the `latest` tag.
-
-### Option 2: pnpm manual install
-
-```bash
-pnpm --dir $DSH_HOME/profiles/<profile> add dsh-mpkg-wallpaper
-# restart dsh web, then Ctrl+F5
-```
-
-Same source as option 1, just without the `dsh plugin` wrapper; updates go through the dependency table too.
-
-### Option 3: Git clone (developers / offline)
-
-```bash
-git clone https://github.com/XHR666/dsh-mpkg-wallpaper.git $DSH_HOME/profiles/<profile>/node_modules/dsh-mpkg-wallpaper
-# then register in the profile's cordis.patch.yml:
-#   - insert:
-#       - id: dsh-mpkg-wallpaper
-#         name: dsh-mpkg-wallpaper
-# restart to take effect
-```
-
-> Option 3 writes no dependency entry ⇒ the market does not show "installed" (display only, functionality unaffected); update with `git pull`.
-
-### Option 4: single-file bundle (offline / drop-in; **host half only**)
-
-Inline the host half into a self-contained ESM and register that:
-
-```bash
-cd /path/to/dsh-mpkg-wallpaper
-node tools/build-bundle.mjs          # output: dist/dsh-mpkg-wallpaper.bundle.mjs (measured 442,317 B / 432.0KB)
-node tools/build-bundle.mjs --check  # cross-check against the source: export surface / route table / ping JSON shape (20 assertions)
-node tools/bundle-equivalence-test.mjs  # the fuller equivalence gate (38 assertions; gate step 11)
-```
-
-Copy `dist/dsh-mpkg-wallpaper.bundle.mjs` anywhere (e.g. `~/.dsh/plugins/`), register it by **absolute path** in the profile's `cordis.patch.yml`, then restart `dsh web`:
-
-```yaml
-# $DSH_HOME/profiles/<profile>/cordis.patch.yml
-- insert:
-    - id: dsh-mpkg-wallpaper
-      name: /absolute/path/dsh-mpkg-wallpaper.bundle.mjs   # ← points at the .mjs file itself
-```
-
-**What this path loads and what it does not** (code and gate facts):
-
-| Item | Option 4 behaviour | Evidence |
-|---|---|---|
-| Host half (upload/Range streaming, scene extraction, audio lists, settings persistence, diag reporting — **41 routes**) | **Complete** (`lib/index.js` + `pkg-extract.js` + `web-wallpaper.js` + `web-interaction.js` all inlined; the only externals are node builtins) | `node tools/bundle-equivalence-test.mjs`: route table (kind + path) identical `[41 entries]` |
-| `/api/mpkg-wallpaper/ping` | `{ok, version, betterSidebar, betterSidebarVersion}` key set identical to the source | Same + `build-bundle.mjs --check` |
-| **Client half (settings panel / wallpaper layer / frost / Now playing)** | **Not loaded.** The single file only exposes the host export surface (`apply` / `inject` / `__mpwTest`) | The client half is discovered **per package** by the DSH client module system: it scans host Loader entries declaring `dsh.client` and resolves their `exports["./client"]`; a bare `.mjs` has no package.json ⇒ no `dsh.client` declaration |
-| `GET /api/mpkg-wallpaper/lg/*` (legacy WebGL hosting route, no client caller) | **404** unless a `liquid-glass/` folder sits next to the bundle; `cp -r lib/liquid-glass <bundle dir>/` makes it byte-identical to the source | The route locates `liquid-glass/` relative to `import.meta.url` (`lib/index.js:3453`); the gate asserts both layouts |
-| `ping.version` | `null` when the parent directory has no `package.json` (affects the version display only) | `new URL('../package.json', import.meta.url)` (`lib/index.js:1622`) |
-| "Check for updates / one-click update" | Without a companion `package.json`, `update-check` returns 500 and `update-apply` writes next to/above the bundle ⇒ **not recommended under option 4** | `lib/index.js:1792-1860` |
-| Uninstall | Delete that `.mjs` and its line in `cordis.patch.yml` | — |
-
-> Conclusion: **option 4 is a degraded "host capability only" load** (handy offline, as an emergency path, or when reusing the routes from a non-DSH host); use options 1/2/3 for the full UI. The artifact is **not committed** (`dist/` is in `.gitignore`: it is a pure derivative of `lib/*.js`, two builds are byte-identical — section ② of `tools/bundle-equivalence-test.mjs`; generate it at release time and publish the hash).
-
-### Uninstall
-
-Options 1/2/3: `dsh plugin --profile web remove dsh-mpkg-wallpaper`.
-Option 4: delete the `.mjs` and its line in `cordis.patch.yml`.
-Leftover data (optional cleanup): browser `localStorage['dsh.mpkg-wallpaper.v2']` and the host directory `~/.dsh-mpkg-wallpaper/` (`settings.json`, `web-store.json`, `media-audio.json`, uploaded mpkg files, transcode cache, `diag-*.json`).
-
-## Degraded behaviour without a Wallpaper Engine install (missing WE / non-Windows)
+### Without a Wallpaper Engine install (missing / non-Windows)
 
 A "WE install" means the Steam edition of Wallpaper Engine (appid **431960**). The host's `locateWallpaperEngine()` (`lib/index.js:303-327`) searches in this order: Windows registry `HKCU\Software\Valve\Steam\SteamPath` → common Steam directories → non-Windows Steam directories (macOS `~/Library/Application Support/Steam`, Linux/Android `~/.local/share/Steam`, WSL `/mnt/c/...`) → every library's `steamapps/libraryfolders.vdf` containing 431960 → and only accepts the one where `<library>/steamapps/common/wallpaper_engine/wallpaper32.exe` exists. **If nothing is found it returns `null`** and everything falls back:
 
 | Scenario | Real behaviour (with code location) |
 |---|---|
-| WE not installed (or `wallpaper32.exe` missing) | `GET /api/mpkg-wallpaper/steam-inventory` returns **200 `{ok:true, installDir:null, wallpapers:[]}`** (not an error, never a 500) — `lib/index.js:3120-3180` |
-| Clicking "Scan local library" | Empty list plus the banner "Wallpaper Engine install not found (requires Windows + Steam Wallpaper Engine)" (checks `!d.installDir`, `lib/client.js:8781`/`:11555`); an empty list also shows "No usable wallpapers found (or not a Windows environment)". **The scan itself does not fail** |
-| WE installed but none of the asset folders exist | Each root is checked for existence individually (`if (!existsSync(root)) return`) ⇒ the inventory is empty and the "install not found" banner does **not** appear (because `installDir` is non-null); the UI only shows the empty-list hint. **Not implemented**: there is no dedicated "WE installed but asset folders missing" message |
-| Non-Windows / mobile | Same as "WE not installed" (the registry branch returns null directly off win32); the Steam path candidates are plain strings and `existsSync` is simply false — no side effects |
-| WE playlists | Only when `installDir` exists and `config.json` parses; otherwise the client writes `rotSeeded:true` after the first scan and **stops re-seeding** (`lib/client.js:8782-8793`) so custom rotations are not overwritten |
-| **Still available without WE** | ① Choosing a folder manually (`/list-dirs` + `/custom-dir`); ② importing `.mpkg` directly (hybrid mode, no 600MB ceiling); ③ web/video wallpapers from a URL or local file; ④ scene extraction, audio lists, settings persistence and diag reporting do not depend on WE at all |
-| Host half entirely unavailable (option 4 missing / port closed) | The `/ping` probe fails ⇒ **browser-only mode**: the status line shows "Host unavailable — fell back to browser-only mode (600MB limit)" (`lib/client.js:10203`/`:11603`); assets above 600MB cannot be handled |
-| `ffmpeg` missing | `GET /api/mpkg-wallpaper/ffmpeg-check` returns **200 `{ok:true, found:false, source:null, path:null, version:null}`** (`lib/index.js:3245-3259`); the panel shows "not installed" and only starts the download chain after a click. Videos that can be decoded directly are never transcoded |
+| WE not installed (or `wallpaper32.exe` missing) | `steam-inventory` returns **200 `{ok:true, installDir:null, wallpapers:[]}`** — not an error, never a 500 (`lib/index.js:3120-3180`) |
+| Clicking "Scan local library" | Empty list plus the "install not found" banner (`lib/client.js:8781`/`:11555`) and the empty-list hint. **The scan itself does not fail** |
+| WE installed but no asset folders exist | Each root is checked individually ⇒ empty inventory, no banner; only the empty-list hint shows. **Not implemented**: no dedicated message |
+| Non-Windows / mobile | Same as "WE not installed" (the registry branch returns null off win32); no side effects |
+| WE playlists | Only when `installDir` exists and `config.json` parses; otherwise `rotSeeded:true` stops re-seeding (`lib/client.js:8782-8793`) |
+| **Still available without WE** | Manual folders, direct import, URL/local files, scene extraction and diagnostics all work without WE — itemised below |
+| Host half unavailable (option 4 missing / port closed) | The `/ping` probe fails ⇒ **browser-only mode** (`lib/client.js:10203`/`:11603`); assets above 600MB cannot be handled |
+| `ffmpeg` missing | `ffmpeg-check` → **200 `{ok:true, found:false, …}`**; the panel shows "not installed" and only downloads after a click; directly decodable videos are never transcoded |
+
+**Still available without WE**: ① choosing a folder manually (`/list-dirs` + `/custom-dir`); ② importing `.mpkg` directly (hybrid, no 600MB ceiling); ③ web/video wallpapers from a URL or local file; ④ scene extraction, audio lists, settings persistence and diag reporting.
 
 > In one line: **no WE install = one convenience channel (automatic local-library discovery) is missing**; the plugin still works. Every degradation is "empty inventory + explicit copy + the manual folder/upload paths stay open" — nothing fails silently and nothing returns a 500.
 
@@ -422,7 +476,15 @@ The plugin offers two paths:
 
 > The realistic route to full dynamics: **render externally to a video → use this plugin's video wallpaper feature** (record with the official WE client on Windows, with we-layerd on Linux, or with the Wallpaper Engine app on mobile).
 
+### Rendering feasibility: why a browser cannot do it
+
+- A complete scene (Live2D puppets included) can only be produced by the proprietary renderer: the Wallpaper Engine app's native library (embedded Chromium + proprietary puppet rendering). The open-source [we-layerd](https://github.com/Aromatic05/we-layerd) (Rust) bundles the official renderer but is **Linux Wayland only**
+- There is no mature WE scene renderer for the browser — **regardless of the operating system, no browser can render Live2D scenes directly**; the official renderer `.so` is a closed binary and cannot be compiled to WASM without source
+- The feasible path for this plugin: **external renderer iframe (preferred) + static-frame extraction + layer compositing + (Time Variation) mpkg-style slot switching**; when full dynamics are needed, use "render externally to a video → video wallpaper"
+
 ## Web wallpapers (experimental)
+
+This section covers how web (HTML) wallpapers load, how they are isolated, which settings are wired, and what is explicitly out of reach.
 
 - **Type detection is content-first, not declaration-first**: `detectWebWallpaperKind()` returns one of four states `web / scene / video / unknown`, and `general.type` in `project.json` is only a hint — a package that claims `web` but contains `scene.pkg` is treated as a **scene**, one that claims `scene`/`video` but only has `index.html` is treated as **web**, and `application/exe/app` always becomes `unknown/excluded-application` (`lib/web-wallpaper.js:163-207`)
 - **Two load modes** (chosen in the confirm dialog, recorded in the URL so a refresh keeps it):
@@ -441,6 +503,8 @@ The plugin offers two paths:
 
 ## Adjustable options and web-wallpaper settings wiring
 
+This section covers what the plugin can read and change among a wallpaper's own properties.
+
 - **mpkg wallpapers**: the project's own **adjustable options** are shown **read-only** in the collapsed "adjustable options" area of the *Wallpaper* tab (the browser only has the pre-rendered assets, so changing a value does not change the picture). They are there for comparison.
 - **Web wallpapers (partly wired, Live2D-class)**: web wallpapers that ship `loadJson.json` / a `SettingModel` now expose their settings in the **same collapsed area**: resolution (2k/4k/8k, takes effect after a reload), language (whatever the wallpaper offers), background-music and voice volume (live), and switches such as showing touch areas or text boxes. Changes are written into the wallpaper iframe's storage (in sandbox mode through the facade → `/web-store`) and take effect after a reload.
 - **Hiding the wallpaper's own settings panel**: these wallpapers carry a "settings" button in the top-right corner of the wallpaper that cannot be interacted with; the plugin hides it once the iframe loads so it does not cover the picture.
@@ -449,6 +513,8 @@ The plugin offers two paths:
 > These buttons appear only when the matching wallpaper settings structure is detected; plain images/videos and web wallpapers without settings show nothing.
 
 ## Performance and stability
+
+This section lists the **optimisations already in place and the numbers they bought**, and doubles as the reference when something feels slow or memory-hungry.
 
 - **mpkg header-only reads**: container parsing reads just the first 2MB (`lib/index.js:44`), so even an 834MB mpkg starts almost instantly
 - **The audio inventory does not wait for the whole package**: a `scene.pkg` keeps its directory table at the front ⇒ only the table plus 16 magic bytes per candidate entry are read (audio payloads never enter memory). `/custom-scene-audio` and `/library-scene-audio` return `{count,tracks:[…],stats}` directly, and `/raw` supports **Range/206**. Measured: reading whole packages 1.7–379 ms ⇒ index reads 1.3–6.9 ms cold / 0.4–0.9 ms warm
@@ -461,18 +527,9 @@ The plugin offers two paths:
 - **Transcode resource caps live in one place**: 12 artifacts / 512MB, concurrency 1, 30 s queue, 15 min per job, default downscale to 1920 wide, 1024MB memory admission (see the [historical ledger](#video-wallpaper-transcoding-verdict-and-resource-caps))
 - **Weak-device degradation**: heavy composites (full-screen `backdrop-filter` plus streaming video) are throttled overall; for extreme combinations prefer Edge or a desktop browser
 
-**🌐 Browser compatibility (measured reference)**
-
-| Browser | Rating | Notes |
-|---|---|---|
-| Chrome / Chromium (desktop) | ⭐⭐⭐ strong | Most complete: best `backdrop-filter` and `color-mix`, working `iframe.muted`, muted autoplay allowed |
-| Edge (desktop) | ⭐⭐⭐ strong | Video wallpapers take a **separate canvas render path** (to dodge Edge's floating toolbar, `lib/client.js:1464-1520`); some versions show only a static first frame (not blank, not a crash) |
-| Firefox | ⭐⭐ medium | Everything is supported (`backdrop-filter` 103+, automatic transcode fallback for unsupported codecs); three deductions: `backdrop-filter` is slower than Chromium, `iframe.muted` is unsupported (a web wallpaper with sound may have its first frame blocked by the autoplay policy), `color-mix` needs 113+ |
-| Android WebView / mobile | ⭐⭐ weak-medium | Autoplay policy depends on the host WebView configuration; `getBattery` may be missing (guarded and skipped); for extreme combinations prefer a static image/GIF or turn blur off |
-
-> The source degrades for each browser (rAF fallback when `requestVideoFrameCallback` is missing, guards around `ResizeObserver`/`getBattery`, `.catch` on every `play()`, `backdrop-filter` detected with `CSS.supports` and degraded to opaque).
-
 ## Security notes
+
+This section lists the plugin's network behaviour, data locations and isolation boundaries, for self-audit and compliance checks.
 
 - **No passive outbound network traffic by default**: the plugin never reaches out to the network on its own; everyday playback only talks to the local DSH host (`127.0.0.1`). The exceptions are all **explicitly user-triggered**: check-for-updates/one-click update contact GitHub (`raw.githubusercontent.com`, `api.github.com`), and the ffmpeg download contacts GitHub Releases / an npm binary mirror. In addition, **0.8 s after the settings panel opens a silent version check runs once** (it only lights the badge — no dialog, no download, no upload). Network image URLs typed by the user and resources loaded by a web wallpaper itself are external requests too.
 - **No sensitive content**: the source contains no paths, keys, tokens or personal information; `node tools/secret-scan-test.mjs` scans every tracked file (12 credential patterns, 3 local-path patterns) and must report 0 hits.
@@ -483,6 +540,8 @@ The plugin offers two paths:
 - **System media session module**: command names and arguments are passed separately (argv arrays, never through `sh -c`); player names, ops and seek ranges are validated, and anything invalid means 0 commands; timeouts are followed by `SIGKILL` (`lib/media-session.js:519-540`).
 
 ## Attribution and licence
+
+This section covers this package's own licence, the third-party attribution ledger that ships with it, and the "GPL never enters the plugin" boundary.
 
 - **This package is MIT** (`LICENSE`; the `license` field in `package.json` is `"MIT"`). Third-party provenance, clean-room records, per-item attribution and the "what was copied / why / what was not" ledger all live in **`THIRD-PARTY.md`** (**shipped with the package** — it carries the MIT attribution obligation).
 - **The only vendored third-party code** is `lib/liquid-glass/**` (the liquid-glass renderer library): **moved out of the publish surface by P-127** (`files` negative patterns `!lib/liquid-glass/**` + `!lib/liquid-glass-bundle.js`). **Every file is still in the repository** and all 10 sha256 digests are still registered (`THIRD-PARTY.md` §1.3). The host's `/api/mpkg-wallpaper/lg/*` hosting route is still a live path (on a hit it really reads `lib/liquid-glass/<file>`); on an npm-installed copy it returns 404 by design.
@@ -497,9 +556,11 @@ The plugin offers two paths:
 
 ## File structure
 
-```
+This section is a file-by-file map of the repository: what enters the npm package, what stays in the repository only, and why.
+
+```text
 dsh-mpkg-wallpaper/
-├── package.json      # version 3.8.0; dsh.bundle + dsh.client declarations; files allow-list = publish surface (14 files)
+├── package.json      # version 3.8.2; dsh.bundle + dsh.client declarations; files allow-list = publish surface (15 files)
 ├── cordis.patch.yml  # install declaration used by dsh plugin add
 ├── LICENSE           # MIT
 ├── THIRD-PARTY.md    # third-party provenance / clean-room records / licence attribution (shipped)
@@ -534,7 +595,9 @@ dsh-mpkg-wallpaper/
 > Exclusions: `lib/liquid-glass/**`, `lib/liquid-glass-bundle.js` and `lib/**/*.bak*` are excluded by `files` negative patterns; `tools/`, `docs/`, `dist/` and `package-lock.json` are not in the `files` allow-list. Section ⑨ of `tools/integrity-check.mjs` asserts **both directions**: "not in the publish surface" and "must still be present in the repository".
 > `lib/now-playing.js` / `lib/now-playing-math.js` use a **source + generated inline** shape: `tools/build-now-playing.mjs` inlines them byte-for-byte into the generated region of `lib/client.js`. Why this is necessary: the host serves the **one file** that `exports["./client"]` points at, so any relative `import/require` inside `lib/client.js` breaks module resolution in the browser (asserted by section ⑩ of `tools/integrity-check.mjs`). The price is a drift gate, so **two independent implementations** run permanently in step 2 of the gate.
 
-## Gates
+## Gates and guardrails
+
+This section is **how a change proves it did not break anything**: four commands to run, plus what each of the 12 gate steps checks.
 
 ```sh
 node tools/integrity-check.mjs     # 72 passed / 0 failed: files present, metadata, allow-list, no local paths, client self-containment
@@ -544,6 +607,19 @@ node tools/style-scope-guard.mjs   # the criterion is the last line "… OK / �
 ```
 
 The 12 steps of `tools/check.sh`: ① syntax ② panel smoke + P-66 + folder picker + wallpaper-layer visibility + persistence + NP (both drift gates, 83 assertions, plus the 82-assertion sound-wiring gate) ③ CSS matrix (all 512 combinations + 600 random + boundaries) ④ scene watchdog/debug params ⑤ sandbox and scene tokens + web-wallpaper shim + transcode resources ⑥ publish integrity self-check ⑦ audio-scan speed-up ⑧ scene video indexing ⑨ on-device replica A/B ⑩ better-sidebar compatibility ⑪ single-file bundle equivalence ⑫ style-scope guard + surface token namespace.
+
+## What changed in this version
+
+Current version = **3.8.2** in `package.json` (this release line: 3.8.0 → 3.8.1 → 3.8.2). Release prerequisites, commands and rollback live in [`docs/RELEASE.md`](docs/RELEASE.md); this round's change list is in [`docs/RELEASE-READY-3.8.0.md`](docs/RELEASE-READY-3.8.0.md); the root causes and on-device readings for Now playing / wallpaper sound are in [`docs/NOW-PLAYING-DSH.md`](docs/NOW-PLAYING-DSH.md) §7.7.
+
+- **Now playing is on by default and yields its slot**: the `npNowPlaying` setting is **on by default** (`DEFAULT_NP_NOW_PLAYING` in `lib/client.js`), still in the *Wallpaper* tab directly under the existing `mute` toggle (`toggleRow(t("npNowPlaying"), …)` in `lib/client.js`). Turning it off returns to zero injection (mechanism and criteria in [Now playing and wallpaper sound](#now-playing-and-wallpaper-sound)). Being on by default requires **yielding**: when another plugin has already injected an element into the same host slot we do not mount (or we retract) and leave a queryable state `data-mpw-np-yield` (`occupantOf()` in `lib/now-playing.js`; judged both before and after mounting, and it comes back once the occupant leaves). The component itself is a **line-by-line port of Bencho's "Now playing" (MIT)** with the upstream comments kept verbatim (attribution in `THIRD-PARTY.md` §6); pure math and component are split into `lib/now-playing-math.js` / `lib/now-playing.js` and **inlined byte-for-byte** into the `MPW-NP-GEN-START/END` region of `lib/client.js` by `tools/build-now-playing.mjs`, guarded by two independent drift gates. Mounting and collapse criteria: see [Now playing and wallpaper sound](#now-playing-and-wallpaper-sound).
+- **Wallpaper sound is actually wired up**: the data source only accepts the media element that is **really playing right now** (the hidden shell `#mpw-bgVideo` exists in the DOM under **every** wallpaper type, and the old implementation treated the first selector match as "the current media") ⇒ a video wallpaper's play/pause/mute land on the real element (the **`mute` switch now really reaches the element — unmuting really produces sound**; the old code hard-coded `video.muted = true` and never assigned it from the setting again); audio files that **really exist** in the wallpaper folder play through our own `<audio>` (the scope accepts `mpkgKey="custom|<folder>"`; the old code only accepted `folderName`, so a web wallpaper in a custom folder always built a library route and got a 404) ⇒ **previous/next follow the track-list order and wrap around**, instead of "restart"; for a web wallpaper's in-frame sound only **mute** is a real channel (`canPlay=false` is reported honestly — we do not pretend we can pause in-frame WebAudio); while our player is playing, the frame is force-muted so the same track cannot play twice.
+- **The card is no longer clipped in floating mode**: fit-scaling now measures **our own container** (the old code measured `[class*="sidebarCol"]`, and that class name appears more than once on a real machine — it measured 280 while our container was 256), `.mpw_np` is pinned to `math.W` with the overflow shared evenly, and the web-wallpaper branch now applies the `data-mpw-float` gate and calls `applyNowPlaying()` (the old branch returned early, so after switching to a web wallpaper the widget was not mounted at all).
+- **Gate expansion**: `tools/now-playing-test.mjs` now reports **83 passed / 0 failed** (including 7 mutations); new `tools/np-media-test.mjs` (track-list scope / data-source decision / playback target / mute target / yielding / mark / the web path not skipping apply / card geometry — **82 passed / 0 failed**, including **12 mutation self-proofs**) is registered in step 2 of `tools/check.sh`; new on-device probe `tools/np-media-live-probe.mjs` (`:3080` + headless Firefox; 16 PASS / 22 FAIL before the fix → 45 PASS / 0 FAIL after, not part of the standing gate).
+- **Several on-device fixes**: Now playing no longer mistakes the expanded state for collapsed on the frame right after slot rendering (so the widget no longer disappears after a refresh) — the criterion is now **physical width first** with threshold `NP_COLLAPSE_MAX_W = 96`, and when an anchor appears late it watches the document and mounts itself; the play/pause quads are now driven by a **tween of the playback state itself** (they used to be driven by expand progress, so the collapsed state always drew a triangle and the expanded state always drew the two bars); the header-frost `ReferenceError` and the transparent right-side timeline rail (see [Historical ledger](#historical-ledger)); the `lgCss` block that never executed because of a TDZ error; `sessionFollow` that had a toggle but no reader; the folder picker scrolling back to the top.
+- **3.8.1 / 3.8.2: the second on-device Now playing batch (NP-4)** — start-up order (the old code unmuted *before* `play()`, i.e. an audible autoplay attempt the browser refuses and the code swallowed), being stopped by browser policy (a muted start resolves, then unmuting gets the element stopped outright), a **new volume level** (0..100, applied to the real element) and a **draggable position (seek)**, a **new "Play/pause also controls the wallpaper" switch (`npLinkWallpaper`, default on = byte-identical to the previous behaviour)**, a larger floating card, and an honest "can it play" classification for track lists. Deliverable contract: **sound is guaranteed after the first user gesture** (when policy stops the element it falls back to muted to keep the picture and records `window.__mpwNpSoundBlocked`). See the 3.8.1/3.8.2 records in [`docs/RELEASE.md`](docs/RELEASE.md) and [`docs/NOW-PLAYING-DSH.md`](docs/NOW-PLAYING-DSH.md) §7.8.
+- **Capabilities from the previous round still on the same publish surface**: web-wallpaper rendering / API coverage (in-frame storage facade + host `/web-store`, master volume, source-level `file:///` rewriting, CSP injection skip, `/media-audio`) and web-wallpaper touch (`op:'touch'` with real `TouchEvent`s); the **host-side system media session adapter** `lib/media-session.js` (MPRIS / SMTC, **implemented but not wired up yet**, below).
+- **Gates and guardrails**: CSS matrix, style-scope guard, surface-token namespace equivalence, switch-wiring audit and the second-scale pre-commit hook (see the [historical ledger](#historical-ledger) and [Gates](#gates-and-guardrails)).
 
 ## Historical ledger
 
@@ -651,14 +727,9 @@ MPW_SKIP_PRECOMMIT=1 git commit -m …   # one-off bypass (script-level explicit
 
 ## Bug reports
 
-When reporting an issue, please include:
+Attach these and an issue can usually be diagnosed in one round:
+
 - The **original .mpkg or workshop folder** (required to reproduce)
 - The result of one "one-click diagnostics report" (*Other* tab → one-click report; a JSON file is downloaded automatically when the host is unavailable)
 - Browser console output (F12 → Console), if any
 - Your DSH version and platform (Windows / Linux / mobile)
-
-## Rendering feasibility research
-
-- A complete scene (Live2D puppets included) can only be produced by the proprietary renderer: the Wallpaper Engine app's native library (embedded Chromium + proprietary puppet rendering). The open-source [we-layerd](https://github.com/Aromatic05/we-layerd) (Rust) bundles the official renderer but is **Linux Wayland only**
-- There is no mature WE scene renderer for the browser — **regardless of the operating system, no browser can render Live2D scenes directly**; the official renderer `.so` is a closed binary and cannot be compiled to WASM without source
-- The feasible path for this plugin: **external renderer iframe (preferred) + static-frame extraction + layer compositing + (Time Variation) mpkg-style slot switching**; when full dynamics are needed, use "render externally to a video → video wallpaper"
