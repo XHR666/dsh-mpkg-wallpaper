@@ -99,7 +99,6 @@ if (isMain) {
   const compSrc = fs.readFileSync(COMP, 'utf8').replace(/\n$/, '')
   const client = fs.readFileSync(CLIENT, 'utf8')
   const body = buildRegionBody(mathSrc, compSrc)
-  const before = client.length
   const next = applyRegion(client, body)
   if (next === client) {
     console.log('✓ Now playing 生成区已是最新（' + body.length + ' 字符）')
@@ -110,6 +109,10 @@ if (isMain) {
     process.exit(1)
   }
   fs.writeFileSync(CLIENT, next)
+  /* 单位更正（①(NP-2)）：原先把 `String.length` 标成"字节"——那对中文是错的
+     （一个汉字 3 字节、length 只算 1）。两个数都给，各自标对。 */
+  const bytes = (s) => Buffer.byteLength(s, 'utf8')
   console.log('✓ 已刷新 lib/client.js 的 Now playing 生成区：' + body.length + ' 字符'
-    + '（client.js ' + before + ' → ' + next.length + ' 字节）')
+    + '（client.js ' + bytes(client) + ' → ' + bytes(next) + ' 字节 / '
+    + client.length + ' → ' + next.length + ' 字符）')
 }

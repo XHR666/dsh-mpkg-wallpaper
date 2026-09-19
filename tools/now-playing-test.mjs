@@ -11,14 +11,17 @@
 //   因为宿主只下发 exports["./client"] 那**一个**文件）—— 生成物与源漂移是这类形态的经典坑
 //   （docs/CLIENT-JS-SPLIT-ASSESSMENT.md §3(A) 明文要求配一条"生成物与源一致"的门禁）。
 //
-// 判据（6 组，全部无浏览器、假 DOM）：
+// 判据（7 组，全部无浏览器、假 DOM）：
 //   A. 生成区与源**逐字节一致**（漂移门禁）+ 生成区确实在 buildCss 之前、只暴露 CSS/工厂两个名字
 //   B. 开关**默认关** ⇒ 零注入（DOM 里 0 个 [data-mpw-now-playing]）+ 零观察者 + 产物里 0 行 NP 规则
 //   C. 数学：两端 / 边界 / 同心圆角（corner 0/16/32）/ swell 峰值位置 / goo 两端为 0 / 八点四边形
-//   D. 侧栏宽度 < 阈值 ⇒ data-mpw-np-hidden；恢复宽度 ⇒ 移除；宿主自己的信号优先
+//   D. 侧栏宽度 < 阈值 ⇒ data-mpw-np-hidden；恢复宽度 ⇒ 移除；量不到宽度时宿主信号兜底
 //   E. 挂载点在「设置」入口**之前**（文档序断言）+ 重复开关/重复挂载只有一个容器 + 兜底锚点会留日志
-//   F. 分辨力自证（RED-if-reverted）：4 组变异各自必须让**指定那一组**变红
+//   F. 分辨力自证（RED-if-reverted）：6 组变异各自必须让**指定那一组**变红
 //      （在 mkdtemp 副本里做，真树不动；夹具 < 1MB）
+//   G. **真机复核回归**（探针 tools/np-sidebar-live-probe.mjs 抓到的 bug）：物理宽度优先于宿主信号
+//      （256px 展开态不许被 wide=false 藏起来）+ slot 出口后出现重锚的那一刻不许翻转 hidden
+//      + 搬动那一帧量到的异常几何不许粘住（一次性补判）。根因与时间线见 docs/NOW-PLAYING-DSH.md §7.6
 //
 // 用法: node tools/now-playing-test.mjs [--client <path>] [--no-mutations] [--json-only]
 import fs from 'node:fs'
@@ -429,8 +432,9 @@ console.log('\n== D. 左侧栏收起判据（宽度 < 阈值 / 宿主自己的�
   ok('D2 纯判据 shouldHide：宽度 < 阈值 ⇒ 收起；≥ 阈值 ⇒ 展开',
     ctl.shouldHide(56, false) === true && ctl.shouldHide(95.9, false) === true
     && ctl.shouldHide(96, false) === false && ctl.shouldHide(280, false) === false)
-  ok('D3 宿主自己的状态优先：即使量到很宽，宿主说收起就是收起',
-    ctl.shouldHide(280, true) === true)
+  ok('D3 宿主信号只在**量不到宽度**时生效（NaN+宿主说收起 ⇒ 隐藏；NaN+宿主没说 ⇒ 可见）'
+    + '［①(NP-2) 语义更正：原来写"宿主状态优先、宽度是兜底"，真机 bug 见 G 组］',
+    ctl.shouldHide(NaN, true) === true && ctl.shouldHide(NaN, false) === false)
   ok('D4 量不到宽度（NaN/undefined）⇒ **不隐藏**（宁可露出来，也不要一次量不到就永久消失）',
     ctl.shouldHide(NaN, false) === false && ctl.shouldHide(void 0, false) === false)
   function doc0() { const d = makeDoc(); buildSidebar(d, { width: 280 }); return d }
@@ -451,12 +455,32 @@ console.log('\n== D. 左侧栏收起判据（宽度 < 阈值 / 宿主自己的�
   for (const cb of win.__resizeCbs.slice()) cb([{ target: sb.col }])
   ok('D7 宽度恢复 280 + 宿主标记撤掉 ⇒ data-mpw-np-hidden 被移除',
     !!(box && !box.hasAttribute('data-mpw-np-hidden')))
-  ok('D8 只靠**宿主状态**也能隐藏（宽度不参与：280 宽 + collapsed 属性 ⇒ 隐藏）',
-    (() => { sb.frame.setAttribute('data-sidebar-collapsed', 'true'); ctl.evaluate(); const h = box.hasAttribute('data-mpw-np-hidden'); sb.frame.removeAttribute('data-sidebar-collapsed'); ctl.evaluate(); return h && !box.hasAttribute('data-mpw-np-hidden') })())
+  ok('D8 宿主 collapsed 属性 + **量不到宽度** ⇒ 隐藏（宿主信号在最需要它的场合仍然生效）'
+    + '［①(NP-2) 语义更正：旧写法是"280 宽 + 属性 ⇒ 隐藏"，那正是真机 bug 的形状，已挪到 G1 反向断言］',
+    (() => {
+      const realRect = sb.col.getBoundingClientRect
+      sb.col.getBoundingClientRect = () => null          /* 量不到 ⇒ 只剩宿主信号 */
+      sb.frame.setAttribute('data-sidebar-collapsed', 'true'); ctl.evaluate()
+      const h = box.hasAttribute('data-mpw-np-hidden')
+      sb.frame.removeAttribute('data-sidebar-collapsed'); ctl.evaluate()
+      const u = !box.hasAttribute('data-mpw-np-hidden')
+      sb.col.getBoundingClientRect = realRect
+      return h && u
+    })())
   ok('D9 只靠**宽度**也能隐藏（宿主属性/类都不给：56 宽 ⇒ 隐藏）',
     (() => { const w = sb.col.__w; sb.col.__w = 56; ctl.evaluate(); const h = box.hasAttribute('data-mpw-np-hidden'); sb.col.__w = w; ctl.evaluate(); return h && !box.hasAttribute('data-mpw-np-hidden') })())
-  ok('D10 侧栏根的 collapsed 类（CSS-modules 本地名子串）也算宿主信号',
-    (() => { sb.root.className = 'hHd-Xa_root hHd-Xa_collapsed'; ctl.evaluate(); const h = box.hasAttribute('data-mpw-np-hidden'); sb.root.className = 'hHd-Xa_root'; ctl.evaluate(); return h && !box.hasAttribute('data-mpw-np-hidden') })())
+  ok('D10 侧栏根的 collapsed 类（CSS-modules 本地名子串）也算宿主信号 —— 同样只在量不到宽度时生效',
+    (() => {
+      const realRect = sb.col.getBoundingClientRect
+      sb.col.getBoundingClientRect = () => null
+      sb.root.className = 'hHd-Xa_root hHd-Xa_collapsed'; ctl.evaluate()
+      const h = box.hasAttribute('data-mpw-np-hidden')
+      sb.col.getBoundingClientRect = realRect                     /* 量得到：280 宽 ⇒ 类不再能藏它 */
+      ctl.evaluate()
+      const veto = !box.hasAttribute('data-mpw-np-hidden')
+      sb.root.className = 'hHd-Xa_root'; ctl.evaluate()
+      return h && veto
+    })())
   const insp = ctl.inspectCollapse()
   ok('D11 贴合缩放：280 宽 ⇒ fit=1（256 可用 < 260 也只缩 0.98 级别，不是 1 也合规）；56 宽 ⇒ 夹在下限 0.5',
     insp.fit <= 1 && insp.fit >= 0.5 && (() => { sb.col.__w = 56; const f = ctl.inspectCollapse().fit; sb.col.__w = 280; return f === 0.5 })(),
@@ -485,8 +509,17 @@ console.log('\n== E. 挂载点在「设置」入口之前 + 重复开关只有�
     if (name.indexOf('E1') === 0) {
       ok('E1b 首选路径把容器放进宿主 slot 出口**内部**（位置由宿主给，不动它的结构）',
         box.parentNode === sb.slot && ctl.inspect().anchorMode === 'slot', ctl.inspect().anchorMode)
-      ok('E1c 宿主 slot 的 wide 直接当收起信号（最权威，不用猜）',
-        (() => { ctl.setHostCollapsed(true); const h = box.hasAttribute('data-mpw-np-hidden'); ctl.setHostCollapsed(false); const u = !box.hasAttribute('data-mpw-np-hidden'); ctl.setHostCollapsed(null); return h && u })())
+      ok('E1c 宿主 slot 的 wide 已接线（**量不到宽度**时它决定隐藏；量得到时以物理宽度为准，见 G 组）',
+        (() => {
+          const realRect = sb.col.getBoundingClientRect
+          sb.col.getBoundingClientRect = () => null
+          ctl.setHostCollapsed(true); const h = box.hasAttribute('data-mpw-np-hidden')
+          ctl.setHostCollapsed(false); const u = !box.hasAttribute('data-mpw-np-hidden')
+          ctl.setHostCollapsed(null)
+          sb.col.getBoundingClientRect = realRect
+          ctl.evaluate()
+          return h && u
+        })())
     }
     ctl.setEnabled(false)
   }
@@ -563,13 +596,110 @@ console.log('\n== E. 挂载点在「设置」入口之前 + 重复开关只有�
   }
 }
 
+/* ══════════ G. 真机复核回归：物理宽度优先 + 重锚那一刻不许翻转 hidden ══════════
+   来历（真机探针 tools/np-sidebar-live-probe.mjs 抓到，主对话跑的）：
+     第二次加载（开关已开）时的时间线 ——
+       t≈2000ms np=true  hidden=false anchor=settings-slot（容器落在降级锚点，可见）
+       t≈8000ms np=true  hidden=TRUE  anchor=slot inSlot=true（宿主 slot 出口**终于**渲染出来，
+                 组件重锚进 slot 的那一刻，宿主交下来的 wide=false 把 256px 展开的侧栏判成收起）
+     用户视角 =「刷新后控件自己消失」，而且之后没有事件再来纠正 ⇒ 隐藏**粘住**。
+   本组就是那条时间线的无浏览器复刻：三档判据 + 重锚不翻转 + 异常几何不粘住。 */
+console.log('\n== G. 真机复核回归（物理宽度优先；slot 后出现重锚的那一刻不许翻转 hidden）==')
+{
+  const W = 256   /* 真机读数：展开态栏宽 256px（宿主收起恰好 56px，阈值 96px） */
+  function doc0() { const d = makeDoc(); buildSidebar(d, { width: W }); return d }
+  const { ctl } = makeCtl(doc0(), makeWin())
+  ok('G1 宿主说收起（wide=false）+ 实测栏宽 256px ⇒ **不隐藏**（物理事实优先 = 真机 bug 的判据）',
+    ctl.shouldHide(W, true) === false && ctl.shouldHide(280, true) === false,
+    'shouldHide(256,true)=' + ctl.shouldHide(W, true) + ' shouldHide(280,true)=' + ctl.shouldHide(280, true))
+  ok('G2 宿主说展开 / 或这版宿主压根没给（wide=true / 缺省）+ 256px ⇒ 不隐藏',
+    ctl.shouldHide(W, false) === false)
+  ok('G3 真的窄了（56px）⇒ 隐藏 —— 宿主说什么都一样（宽度自己够判）',
+    ctl.shouldHide(56, true) === true && ctl.shouldHide(56, false) === true && ctl.shouldHide(95.9, true) === true)
+  ok('G4 量不到宽度时才轮到宿主信号（NaN+收起 ⇒ 隐藏；NaN+宿主没说 ⇒ 可见）',
+    ctl.shouldHide(NaN, true) === true && ctl.shouldHide(NaN, false) === false)
+}
+{
+  /* G5/G6：复刻真机时间线 —— 组件先落在降级锚点（`[data-slot="sidebar.settings"]`），
+     slot 出口**晚一步**才被宿主渲染出来 ⇒ setSlotNode() + setHostCollapsed(true)（= 交下来
+     wide=false）⇒ ensureAnchored() 把容器搬进 slot。**搬完 hidden 必须仍然是 false。** */
+  const doc = makeDoc()
+  const sb = buildSidebar(doc, { width: 256 })
+  sb.slot.remove()                                  /* 真机 t≈2000ms：slot 出口还没渲染 */
+  const win = makeWin(); const { ctl } = makeCtl(doc, win)
+  ctl.setEnabled(true)
+  const box = doc.querySelector('[data-mpw-now-playing]')
+  const anchorBefore = ctl.inspect().anchorMode
+  const visibleBefore = !!box && !box.hasAttribute('data-mpw-np-hidden')
+  /* 真机 t≈8000ms：宿主把 slot 出口插进 footerActions，并把我们的 div 挂上去 */
+  const slot = doc.createElement('div')
+  slot.className = 'mpw_np_slot'
+  slot.setAttribute('data-slot', 'sidebar.footer.action')
+  slot.setAttribute('data-mpw-np-slot', '')
+  sb.actions.appendChild(slot)
+  ctl.setSlotNode(slot)
+  ctl.setHostCollapsed(true)                        /* 真机那一帧交下来的就是 wide=false */
+  ctl.ensureAnchored()
+  const insp = ctl.inspectCollapse()
+  ok('G5 降级锚点 ⇒ slot 后出现 ⇒ 重锚进 slot（复刻真机那一帧）',
+    anchorBefore === 'settings-slot' && insp && ctl.inspect().anchorMode === 'slot' && box.parentNode === slot
+    && visibleBefore,
+    anchorBefore + ' → ' + ctl.inspect().anchorMode + ' / 重锚前可见=' + visibleBefore)
+  ok('G6 重锚那一刻**不许翻转 hidden**（wide=false + 256px ⇒ 仍可见）',
+    !box.hasAttribute('data-mpw-np-hidden') && ctl.inspectCollapse().hidden === false,
+    'hidden=' + ctl.inspectCollapse().hidden + ' width=' + ctl.inspectCollapse().width
+    + ' hostWide=' + ctl.inspectCollapse().hostWide)
+  await new Promise((r) => setTimeout(r, 10))       /* 让一次性补判跑完，再确认一次 */
+  ok('G6b 补判之后仍然可见（4 秒后真机也不会自己消失；这一条对应探针 L6 的"任何时刻"口径）',
+    !box.hasAttribute('data-mpw-np-hidden') && ctl.inspectCollapse().settlePending === false,
+    'settlePending=' + ctl.inspectCollapse().settlePending)
+  ctl.setEnabled(false)
+}
+{
+  /* G7/G8：搬动那一帧量到**异常几何**（0 宽：DOM 正在变）⇒ 一次性补判必须纠正，不许粘住。
+     真机同类形状：决策发生在宿主渲染中的那一帧，之后没有事件再来 ⇒ 隐藏永久粘住。 */
+  const doc = makeDoc(); const sb = buildSidebar(doc, { width: 256 })
+  const win = makeWin(); const { ctl } = makeCtl(doc, win)
+  const realRect = sb.col.getBoundingClientRect
+  let bad = true
+  sb.col.getBoundingClientRect = () => (bad
+    ? { x: 0, y: 0, width: 0, height: 200, top: 0, left: 0, right: 0, bottom: 200 }
+    : realRect.call(sb.col))
+  ctl.setEnabled(true)
+  const box = doc.querySelector('[data-mpw-now-playing]')
+  const hiddenAtMount = !!box && box.hasAttribute('data-mpw-np-hidden')
+  bad = false                                        /* 宿主渲染稳定 ⇒ 几何恢复 256px */
+  await new Promise((r) => setTimeout(r, 10))        /* flush 一次性补判（setTimeout(0)） */
+  ok('G7 量到异常几何（0 宽）那一帧的隐藏决定**不许粘住**：补判必须纠正回可见',
+    hiddenAtMount === true && !box.hasAttribute('data-mpw-np-hidden'),
+    '挂载时 hidden=' + hiddenAtMount + ' 补判后 hidden=' + box.hasAttribute('data-mpw-np-hidden'))
+  ctl.setEnabled(false)
+  ok('G8 一次性补判不是常驻 rAF、关掉后无残留（raf 计数仍为 0；live* 全归零）',
+    win.__counts.raf === 0 && win.__counts.liveResize === 0 && win.__counts.liveMutation === 0
+    && win.__counts.liveRaf === 0,
+    JSON.stringify(win.__counts))
+}
+
 /* ══════════════════════ F. 分辨力自证（RED-if-reverted） ══════════════════════ */
 const MUTS = [
   {
     id: 'threshold-reverted-to-always-expanded',
     expect: 'D',
-    why: '把"宽度 < 阈值 ⇒ 收起"改成"宽度 < 1 ⇒ 永远展开"（= 收起时组件不隐藏，用户第 3 条要求失效）',
-    mut: (s) => s.replace('return width < NP_COLLAPSE_MAX_W;', 'return width < 1;'),
+    why: '把"量到窄栏（< 阈值）⇒ 收起"改成永不收起（= 收起时组件不隐藏，用户第 3 条要求失效）',
+    mut: (s) => s.replace('if (measurable) return true;', 'if (false) return true;'),
+  },
+  {
+    id: 'host-signal-beats-width-restored',
+    expect: 'G',
+    why: '把"物理宽度优先"改回**旧写法**（宿主说收起就收起）⇒ 真机 bug 复现：'
+      + '256px 展开态被 wide=false 写成 hidden（这就是探针 L6 抓到的那条）',
+    mut: (s) => s.replace('if (measurable && width >= NP_COLLAPSE_MAX_W) return false;', 'if (false) return false;'),
+  },
+  {
+    id: 'settle-reevaluation-removed',
+    expect: 'G',
+    why: '删掉搬动后的一次性补判 ⇒ 搬动那一帧量到的异常几何会**粘住**（真机表现为控件永久消失）',
+    mut: (s) => s.replace('settleTimer = win.setTimeout(() => { settleTimer = 0; evaluate(); }, 0);', 'settleTimer = 0;'),
   },
   {
     id: 'switch-default-flipped-to-true',
@@ -591,13 +721,14 @@ const MUTS = [
   },
 ]
 if (!NO_MUT && !ONLY_JSON) {
-  console.log('\n== F. 分辨力自证：4 组变异必须各自让**指定那一组**变红（副本在 mkdtemp，真树不动）==')
+  console.log('\n== F. 分辨力自证：6 组变异必须各自让**指定那一组**变红（副本在 mkdtemp，真树不动）==')
   const GROUPS = {
     A: /✗ A\d/,
     B: /✗ B\d/,
     C: /✗ C\d/,
     D: /✗ D\d/,
     E: /✗ E\d/,
+    G: /✗ G\d/,
   }
   for (const m of MUTS) {
     const mutated = m.mut(clientSrc)

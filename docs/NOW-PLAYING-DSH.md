@@ -15,6 +15,7 @@
 ① 组件挂进宿主**官方附加 slot** `sidebar.footer.action`（它的出口结构上就在「设置」入口**正前方**；slot 不可用时按三级降级锚点插到设置入口之前，再不行退到底部组第一位并**留日志**）；
 ② 设置项 `npNowPlaying`（「壁纸设置」tab，默认 **false**）控制是否挂载 —— **关 ⇒ 零 DOM、零观察者、产物里零行 NP 规则**（三条都有断言）；
 ③ 左侧栏收起 ⇒ 组件自己加 `data-mpw-np-hidden`（`display:none`）。判据**优先**用宿主自己的状态（slot 的 `wide` → AppFrame 的 `data-sidebar-collapsed` → 侧栏根的 `collapsed` 类），**兜底**用实测宽度 < **96px**（宿主收起轨道恰好 56px、展开下限 264px —— 见 §5）。
+⟶ **①(NP-2) 复核更正（真机 bug，§7.6）**：这一条的**优先级反了**，已改成"**物理宽度优先**（量到 ≥96px 就不隐藏）、宿主状态只在**量不到宽度**时兜底"。真机上出现过"宿主 `wide=false` + 实测 256px 展开"的矛盾组合，旧写法让控件在展开的侧栏里把自己藏了。
 
 **数据接入是"能做才做、做不到就说"**：视频壁纸那条音轨**真能控**（播放/暂停/进度/音量，走页面里真实存在的 `<video>`）；场景壁纸自带的音轨**只显示不控**（播放它的是场景渲染器，插件没有那条通道，扫描结果里也没有时长）；网页壁纸的声音走**既有**「静音」设置 + 宿主 `/media-audio` 契约；没有源就是空闲态，点播放**不做假动作**（面板一行字 + console 一行）。完整清单见 §4.4。
 
@@ -29,6 +30,7 @@
 | `lib/client.js` | **接线**：生成区内联 + `buildCss` 追加 + 设置项 + i18n + `boolFields`/`BACKUP_FIELDS` + `applyNowPlaying()` + slot 注册 | 同上 |
 | `tools/build-now-playing.mjs` | **生成器**：把上面两份源**逐字节**写进 `lib/client.js` 的生成区；`--check` 只核对不写 | 新增 |
 | `tools/now-playing-test.mjs` | **常驻门禁**：68 条断言 + 4 组变异自证；已接进 `tools/check.sh` 第 2 步 | 新增 |
+| `tools/np-sidebar-live-probe.mjs` | **真机探针**（要用 `:3080` + headless Firefox ⇒ **不进常驻门禁**）：L0–L8 + ①(NP-2) 的 L5b/L6b/L6c + 时间线诊断 + `--selftest`（无浏览器判据自证） | 新增 |
 | `docs/NOW-PLAYING-DSH.md` | 本文 | 新增 |
 | `THIRD-PARTY.md` §6 | Bencho 的 MIT 归属（许可义务） | 修改 |
 | `../docs/COPYING-RULES.md` §4 #13 | 跨仓借鉴台账 | 修改 |
@@ -232,6 +234,9 @@ DSH 页面里就存在那个 `<video>`（壁纸本体）。控制器读它的 `p
 ## 5. 左侧栏收起的判据与阈值
 
 ### 5.1 优先用宿主自己的状态（三级）
+⟶ **①(NP-2) 复核更正（真机 bug，§7.6）**：这一节的小标题与下表**只在"量不到物理宽度"时成立**。
+真机上出现过"宿主 `wide=false` + 实测 256px 展开"的矛盾组合 ⇒ 判据已改成**物理宽度优先**（§7.6.3 三档），
+宿主这三级信号降为**兜底**。下表本身（信号从哪来）没有变。
 
 | 级 | 信号 | 出处 |
 |---|---|---|
@@ -302,6 +307,8 @@ DSH 页面里就存在那个 `<video>`（壁纸本体）。控制器读它的 `p
 ### 7.1 名字/断言数
 
 `tools/now-playing-test.mjs`：**68 条断言**（`--no-mutations` 时 64 条 + 变异段 4 条），
+⟶ ①(NP-2 2026-09-19 真机复核后)：**79 条**（`--no-mutations` 时 **73** 条 + 变异段 **6** 条）——
+新增 G 组 9 条（§7.6.5），另在 D/E 组各补 1 条（语义更正后的反面断言）。**没有删任何一条断言**。
 无浏览器、假 DOM（自建的那一小撮 DOM 语义 + 假 `window` 记账观察者/raf）。
 接在 `tools/check.sh` **第 2 步**里（**没有**新增步骤 ⇒ 12 步的分母不变）。
 
@@ -313,6 +320,7 @@ DSH 页面里就存在那个 `<video>`（壁纸本体）。控制器读它的 `p
 | D 收起判据 | 11 | 阈值 96 / 纯判据四态 / 宿主状态优先 / NaN 不隐藏 / 端到端出现与移除 / 只靠宽度 / 只靠宿主 / 贴合缩放 |
 | E 顺序与单实例 | 10 → **12**（复核更正②，§7.5.1） | 三条锚点路径的**文档序**都在设置入口之前 / 首选路径进 slot 内部 / slot 的 `wide` 生效 / 兜底留 warn / 锚点全丢不注入 + warn / 连开 4 次只 1 个 / 开关可反复 / 被挤掉自动插回 / 关后观察者归零 / 无源时播放键 disabled |
 | F 变异自证 | 4 | 见 §7.3 |
+| **G 真机复核回归** | **9**（①(NP-2) 新增，§7.6.5） | 物理宽度优先三档（256/280/56/NaN）/ 重锚进 slot 那一刻不许翻转 hidden / 异常几何不许粘住 / 补判不占 rAF |
 
 ### 7.2 常驻命令（贴实际输出）
 
@@ -323,7 +331,7 @@ $ node tools/now-playing-test.mjs
 ✓ Now playing 门禁通过：生成区无漂移 + 开关默认关零注入 + 挂载在设置入口之前 + 左侧栏收起即隐藏 + 单实例
 ```
 
-### 7.3 RED-if-reverted（4 组变异，各自必须让**指定那一组**变红）
+### 7.3 RED-if-reverted（4 组变异 → ①(NP-2) 复核后 **6 组**，各自必须让**指定那一组**变红）
 
 变异注入到 `mkdtemp` 副本（`--client <copy> --no-mutations`），**真树不动**，夹具 < 1MB：
 
@@ -341,6 +349,8 @@ $ node tools/now-playing-test.mjs
 | `switch-default-flipped-to-true` | `DEFAULT_NP_NOW_PLAYING = false` → `true` | **B** | 默认就往用户侧栏里注入 DOM + 装观察者 |
 | `single-instance-guard-removed` | 删掉"已经开着就只重锚"的守卫 | **E** | 重复开关叠出第二个容器 |
 | `generated-region-drifted` | 往生成区塞一个空格 | **A** | 形态 (A) 的经典坑：生成物与源静默漂移 |
+| **`host-signal-beats-width-restored`**（①(NP-2) 新增） | 把"物理宽度优先"改回旧写法（宿主说收起就收起） | **G** | 真机 bug 复现：256px 展开态被 `wide=false` 写成 hidden（探针 L6 抓到的那条） |
+| **`settle-reevaluation-removed`**（①(NP-2) 新增） | 删掉锚点搬动后的一次性补判 | **G** | 搬动那一帧量到的异常几何会**粘住**（真机表现为控件永久消失） |
 
 ### 7.4 本轮**改过**的既有门禁（必须说明，不能偷偷放宽）
 
@@ -481,6 +491,95 @@ $ node tools/now-playing-test.mjs
 
 ---
 
+### 7.6 真机复核更正（2026-09-19 · ①(NP-2)）—— 探针抓到一条**真 bug**，已修
+
+> §9 第 1 条写着"真机外观与位置未验"。**主对话把它验了**：真 `:3080` + 自签 Cookie + headless Firefox，
+> 走真 GUI 路径（侧栏「设置」→ 设置页「壁纸引擎背景」→ 面板「壁纸设置」tab → 点那一行的开关）。
+> 首轮 **8 PASS / 0 FAIL**（开关打开 ⇒ 恰好 1 个节点、文档序在「设置」之前、收起后带 hidden、0 pageerror）。
+> **但第二次加载（开关已经是开的）抓到一条真 bug。** 探针已固化进仓：`tools/np-sidebar-live-probe.mjs`
+> （**不进**常驻门禁 —— 它要用户 DSH 在跑 + 浏览器；它的判据本身有无浏览器自证：`--selftest`）。
+
+#### 7.6.1 真机时间线（原样读数）
+
+```
+t≈800ms : np=false（开关已开，但组件还没挂）
+t≈2000ms: np=true  hidden=false anchor=settings-slot inSlot=false colW=256   ← 正常可见
+t≈4000ms: np=true  hidden=false anchor=settings-slot inSlot=false colW=256   ← 仍可见
+t≈8000ms: np=true  hidden=TRUE  anchor=slot          inSlot=true  colW=256   ← ✗ 一挪进宿主官方 slot 就自己藏了
+```
+
+关键三点：**栏宽 256px（展开）**、宿主**没有**收起（`data-mpw-sidebar-root` 不带 collapsed、AppFrame 没有
+`data-sidebar-collapsed`）、`hidden` 是在**重锚进 `sidebar.footer.action` 的那一帧**被写上的。
+而且写上去之后**没有下一次事件**来纠正它 ⇒ 用户视角就是"刷新后控件自己消失，直到下次状态变化"。
+
+#### 7.6.2 根因（两条同时成立才出这个 bug）
+
+1. **判据的优先级写反了**：原文（§5.1 与代码注释）写"宿主自己的状态**优先**、它是权威；宽度阈值是兜底"
+   ⇒ `hostSaysCollapsed()` 只要拿到 `ownerProps.wide=false` 就直接判"收起"，**根本不看** 256px 的实测栏宽。
+   而 `wide` 是**派生值**（SidebarRoot 的 `wide = !collapsed || !settled`），在 slot 刚渲染的那一帧可以是
+   prelim 的；96px 与 256px 相差 168px，物理宽度在这条带上不会说谎。
+2. **决策发生在宿主正在渲染的那一帧，而且错了就粘住**：`data-mpw-np-hidden` 是 JS 一次性写上的属性，
+   之后只有 `ResizeObserver`（只在尺寸**变化**时回调）与 `MutationObserver`（只看侧栏根的 childList）
+   能再触发 `evaluate()` —— 那一帧之后两者都没有再响 ⇒ 错的决定永久生效。
+
+#### 7.6.3 修法（按模块语义，不是打补丁）
+
+**① 判据改成三档：物理宽度优先，宿主信号降为"量不到宽度时的兜底"**
+
+| 档 | 条件 | 结果 | 为什么 |
+|---|---|---|---|
+| ① | 量到宽度 **≥ 96px** | **不隐藏**（宿主说收起也不隐藏） | 96 与最小展开宽 264 之间有 **168px 硬余量** ⇒ 这么宽不可能是收起态。**这一条就是真机 bug 的判据** |
+| ② | 量到宽度 **< 96px** | 隐藏 | 宽度自己够判（宿主收起恰好 56px），不需要宿主配合 |
+| ③ | **量不到**宽度（`NaN` / 元素已脱离文档） | 才看宿主信号（`wide` / `data-sidebar-collapsed` / 根上的 `collapsed` 类）；宿主也没说 ⇒ 不隐藏 | 真量不到时宿主信号比瞎猜强；§5.2 那条"宁可露出来"的口径保留 |
+
+**② 锚点搬动 / slot 生命周期事件之后补一次重判**（`scheduleSettle()`）：
+一次性 `setTimeout(…, 0)`、自停、`stopObservers()` 里清掉 —— **不是**常驻 rAF、不改观察者数量、
+不占 `liveRaf` 记账（G8 断言 `raf` 计数仍为 0）。它保证"搬动那一帧量到的几何"不会变成终局。
+**③ 量宽加一道守卫**：元素已脱离文档时不量（脱离文档的节点恒为 0 宽，而 `0 < 96 ⇒ 隐藏` 是同一类形状的坑）。
+
+#### 7.6.4 因此**改了语义**的既有断言（逐条说明为什么不是放宽）
+
+| 断言 | 原文（§7.5 之前的写法） | 现在 | 为什么这么改 |
+|---|---|---|---|
+| D3 | "宿主自己的状态**优先**：即使量到很宽，宿主说收起就是收起"（`shouldHide(280,true)===true`） | 宿主信号只在**量不到宽度**时生效（`shouldHide(NaN,true)===true`） | 旧写法就是真机 bug 的形状本身；留着它等于把 bug 固化成期望 |
+| D8 | "只靠宿主状态也能隐藏（**280 宽** + collapsed 属性 ⇒ 隐藏）" | "宿主 collapsed 属性 + **量不到宽度** ⇒ 隐藏" | 同上：把"宿主信号有效"这件事移到它真正该生效的档（量不到宽度） |
+| D10 | 根上的 `collapsed` 类 + 280 宽 ⇒ 隐藏 | 类 + 量不到宽度 ⇒ 隐藏；量得到 280 宽 ⇒ **不隐藏** | 同上 |
+| E1c | "slot 的 `wide` **直接**当收起信号（最权威）" | "slot 的 `wide` 已接线（**量不到宽度**时决定隐藏）" | 接线一条没丢，只是不再是"最权威" |
+
+**没有放宽任何阈值**：`NP_COLLAPSE_MAX_W=96`、宿主常量 56/264、`NaN ⇒ 不隐藏`、单实例、零注入、
+文档序、兜底留 warn —— 一条都没动。断言数 **68 → 79**（新增 G 组 9 条 + 既有组 2 条），
+变异组 **4 → 6**（新增两组都指向 G 组，见 §7.6.5）。判据的**覆盖面只增不减**。
+
+#### 7.6.5 可复现的无浏览器判据（G 组 + 变异 + 探针 selftest）
+
+| 判据 | 内容 |
+|---|---|
+| **G1** | 宿主说收起（`wide=false`）+ 实测 **256px** ⇒ **不隐藏**（`shouldHide(256,true)===false`，280 同理） |
+| **G2** | 宿主说展开 / 或这版宿主压根没给（`wide=true` / 缺省）+ 256px ⇒ 不隐藏 |
+| **G3** | 真的窄了（56px / 95.9px）⇒ 隐藏 —— 宿主说什么都一样 |
+| **G4** | 量不到宽度时才轮到宿主信号（`NaN`+收起 ⇒ 隐藏；`NaN`+没说 ⇒ 可见） |
+| **G5** | 复刻真机那一帧：先落降级锚点 `[data-slot="sidebar.settings"]` ⇒ slot 出口**后出现** ⇒ `setSlotNode()` + `setHostCollapsed(true)`（= 交下来 `wide=false`）⇒ `ensureAnchored()` 搬进 slot |
+| **G6 / G6b** | 搬完 `hidden` **仍是 false**；补判跑完（`settlePending=false`）后**仍然** false |
+| **G7** | 搬动那一帧量到**异常几何（0 宽）** ⇒ 隐藏决定**不许粘住**：补判必须纠正回可见（挂载时 hidden=true ⇒ 补判后 false） |
+| **G8** | 一次性补判不是常驻 rAF、关掉后无残留（`raf` 计数 0、`live*` 全归零） |
+| **变异 ①** | `host-signal-beats-width-restored`：把判据改回旧写法（宿主说收起就收起）⇒ **G 组必红**（复现真机 bug） |
+| **变异 ②** | `settle-reevaluation-removed`：删掉搬动后的一次性补判 ⇒ **G 组必红**（异常几何粘住） |
+| **探针 selftest** | `node tools/np-sidebar-live-probe.mjs --selftest` ⇒ **4 PASS / 0 FAIL**（合成三条时间线：真机 bug 形状必须被判据抓到、修好的形状 0 违规、真收起 56px 不算违规、开关关着不算违规）—— **不起浏览器、不写设置、不签 Cookie** |
+
+#### 7.6.6 修后**还没验**的（诚实清单）
+
+1. **修好之后真机还没复跑**：请主对话跑 `node tools/np-sidebar-live-probe.mjs --out /tmp/np-live`
+   ⇒ 要求全 PASS（新增 L5b/L6b/L6c：等 slot 真的渲染出来再断言、时间线任何一拍都不许 hidden、
+   之后 1.5s 内不许"自己冒出来"）。探针这轮加了诊断字段（`slotWide` / `frameCollapsed` /
+   `rootCollapsed` / 时间线），复跑输出的**时间线**就是这次的"修后读数"。
+2. **`wide` 的真机取值**只在探针输出里（我们 slot div 上的 `data-mpw-np-wide`）；本轮的"wide=false"是
+   从"重锚那一刻 hidden 被写上"**反推**的 —— 修后复跑会把它变成直接读数（时间线里那一栏）。
+3. **过渡期多停留一会儿**：折叠/展开的 0.15s 过渡期间，宽度还没跨过 96px ⇒ 组件会晚一点点才隐藏/出现。
+   这是"物理优先"的代价，**没有**给过渡期做特判（特判会引入第二套判据）。
+4. 探针**不进**常驻门禁（要用户 DSH + 浏览器）；`--selftest` 是它的无浏览器半边。
+
+---
+
 ## 8. 台账（日期 / 文件 / sha256 / 提交）
 
 （sha256 见本次交付回复与 `THIRD-PARTY.md` §6；文件清单见 §1 表。）
@@ -527,7 +626,6 @@ $ node tools/now-playing-test.mjs
 第 2 次（**本行所在的「文档落账」提交**）= `git log -1 -- docs/NOW-PLAYING-DSH.md`（写完才有哈希 ⇒ 无法自指）。
 
 ### 8.3 提交后复跑（新文件进入 tracked ⇒ 被"只扫 tracked"的门禁覆盖）
-
 `tools/secret-scan-test.mjs` 与 `tools/integrity-check.mjs` **只扫 tracked 文件**，本轮新文件在提交前
 对它们是**盲区**（这正是发布准备提交 `b66bae6` 记下的那个坑）。所以提交后**又复跑一次**：
 本包 7 个新/改文件的路径都在扫描面内，判据是 **0 命中**（凭据 0 / 本机绝对路径 0）；
@@ -547,6 +645,9 @@ $ node tools/now-playing-test.mjs
 1. **真机外观与位置未验**（本轮禁浏览器）：需要主对话用 X11 打开 `http://127.0.0.1:3080`，
    设置 → 找 `Now playing` 开关 → 打开 → 看侧栏「设置」上方是否出现控件、点开是否展开成卡片、
    收起侧栏是否隐藏。清单见本次交付回复 §⑪。
+   ⟶ **①(NP-2) 复核**：这一条**已经验了一半**（主对话用真机探针跑了真 GUI 路径：恰好 1 个节点、
+   文档序在「设置」之前、收起后 hidden、0 pageerror）—— 但**抓出一条真 bug 并修了**（§7.6），
+   修后**还需要复跑一次探针**才算验完。控件"长什么样/点开成不成卡片"仍然只有截图，没有人眼复核结论。
 2. **`slot` 的 `wide` 是否真的传到我们的组件**：宿主源码里 `renderSlot("sidebar.footer.action", { wide })`
    是明写的，slot 目录也标了 `ownerProps: { wide: boolean }`，但本轮**没能真机确认**。
    所以收起判据是三级 + 宽度兜底（§5.1）—— 即使 `wide` 没到，宽度那条也能工作。
@@ -566,3 +667,30 @@ $ node tools/now-playing-test.mjs
    描边 before alpha=0 → after 0.26；rail 反色晕 `rgba(255,255,255,0.55) 0 0 0 1px`、几何仍 2px）。
    ⚠ **注意它验的是"宿主顶栏/时间线条复刻"那条老链，不是 Now playing 本身** ——
    本节第 1 条（`http://127.0.0.1:3080` 真机看侧栏「设置」上方那个控件、开关、收起隐藏）**仍未验**。
+7. **①(NP-2) 复核后的状态（2026-09-19）**：第 1 条已由主对话验了一半（真机探针，见 §7.6），
+   并**抓出一条真 bug**（重锚进 slot 那一刻把自己藏了）—— 已修 + 配无浏览器判据。
+   **修后真机未复跑**；`slot` 的 `wide` 现在有了直接读数通道（探针时间线里的 `slotWide`）。
+   第 2、3 条（`wide` 是否真到、260px 观感）仍然只有"源码 + 截图"，没有人眼结论。
+
+### 8.4 ①(NP-2) 那一轮的落账（2026-09-19 真机复核后）
+
+同 §8.1 的口径：**不含**承载本表的两个文档；`we-scene-demo/docs/PATCHES.md` 的 **P-155** 条目
+（插件侧登记）**不在本仓**、且那份文件的工作区里有其它并行线的未提交段落 ⇒ 本条**不提交**它，
+只在本表登记"编号与文件"备查。
+
+| 文件 | 字节 | sha256 |
+|---|---|---|
+| `lib/now-playing.js` | 53248 | `a7862994665ef94f42bef7b5b0aa1335a4234a6273c8f1bbdbb5f0226902fd2a` |
+| `lib/client.js` | 972745 | `dbfb3d133165d349e464250cb4683410c953e4a7d5c8154cc448ed9bcc0db5b0` |
+| `tools/now-playing-test.mjs` | 48628 | `474238d2eff8a4791f138e1049cbf2d10a609ca6dbb5025a48599f4bd4ddf659` |
+| `tools/build-now-playing.mjs` | 6596 | `7ab00750d84b3d31f116fe2082f0e6f07e800730af6c438c3443c79e88fa99d0` |
+| `tools/check.sh` | 19149 | `b2b285027c454d86dd6382fadb812357aa5802331a0dcb8cf4a485140544af4d` |
+| `tools/np-sidebar-live-probe.mjs`（新增） | 19000 | `bc5650b1723486ba597ce236ab53ce5b896d279c8fa76389ba0a47a64490eb5a` |
+| （仓外）`we-scene-demo/docs/PATCHES.md` 的 P-155 条目 | — | 未提交（原因见上） |
+
+| 提交 | 内容 | 哈希 |
+|---|---|---|
+| 第 1 次（代码 + 门禁 + 探针 + 文档） | `lib/now-playing.js`、`lib/client.js`（生成区重算）、`tools/now-playing-test.mjs`、`tools/build-now-playing.mjs`、`tools/check.sh`、`tools/np-sidebar-live-probe.mjs`、`docs/NOW-PLAYING-DSH.md` | 见下方"落账值" |
+| 第 2 次（**文档落账**） | 把第 1 次的哈希写进本节 | `git log -1 -- docs/NOW-PLAYING-DSH.md` |
+
+**落账值（①(NP-2)）**：第 1 次提交 = `__COMMIT_NP2__`（第 2 次提交写入这里）。
