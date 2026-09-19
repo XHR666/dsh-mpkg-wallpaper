@@ -5,16 +5,23 @@
 > （`node tools/integrity-check.mjs`）。这份文件把**发布前置**、**确切命令**、**发布后验证**和
 > **回滚**钉死成可复制的步骤 —— 照着跑就行，不靠记忆。
 >
-> 状态（2026-09-17）：本地 `package.json` = **3.7.2**；npm 官方 registry 上 `latest` = **3.7.1**
-> （`npm view dsh-mpkg-wallpaper dist-tags --registry=https://registry.npmjs.org` ⇒ `{"latest":"3.7.1"}`）
-> ⇒ 3.7.2 是一次**待发布**的版本。**是否发布由用户拍板；未确认前不要执行第 2 节。**
+> 状态（2026-09-19 12:37 实测）：本地 `package.json` = **3.7.3**；npm 官方 registry 上 `latest` = **3.7.3**
+> （`npm view dsh-mpkg-wallpaper dist-tags --registry=https://registry.npmjs.org` ⇒ `{ latest: '3.7.3' }`）
+> ⇒ **本地版本号 == 已发布版本号 ⇒ 现在直接 `npm publish` 必然 403**
+> （`cannot publish over the previously published versions: 3.7.3`）。**必须先 bump 版本号**（见第 0 节），
+> 是否发布仍由用户拍板；未确认前不要执行第 2 节。
 
 ## 0. 版本号是否要动
 
 - 规则：`package.json.version` 必须**严格大于**官方 registry 上的 `latest`（否则 `npm publish` 直接 403）。
-- 现状：`3.7.2 > 3.7.1` ⇒ **保持不变**（无任何证据要求改号；本轮只加了工具/文档/测试，未改运行时行为）。
-- 若在发布前又改了 `lib/*.js`：那属于行为变更 ⇒ 视改动性质决定 3.7.3 或 3.8.0，并**重跑第 1 节全部命令**
-  （含 bundle 产物哈希，见第 3 节）。
+- 现状（2026-09-19 实测）：registry 已有 `…3.7.0, 3.7.1, 3.7.2, 3.7.3`，`latest = 3.7.3`；本地 `package.json`
+  与**已发布的 3.7.3 逐字节相同**（md5 相同、均 1 736 B）⇒ **bump 是发布的前置条件，不是可选项**。
+- **建议 bump 到 `3.8.0`**：本轮 WP-1（网页壁纸渲染/API 覆盖）/ WP-2（触摸链）在 3.7.3 之后新增能力，
+  NP-1（Now playing 挂侧栏）还带来**新的设置键 `npNowPlaying`** ⇒ 按 semver「加功能 = minor」，
+  且与本仓先例一致（`3.5.x → 3.6.0 → 3.7.0` 都是功能轮走 minor）。
+  *（若用户决定**扣下 NP-1**、只发 WP-1+WP-2 这两条对既有网页壁纸的补全，则 `3.7.4` 也说得通——
+  但两条都是**用户可见的新交互能力**，minor 更如实。）*
+- 改号位置：只改 `package.json.version` 一处；改完**必须重跑第 1 节全部命令**（`npm pack` 的数字会变）。
 
 ## 1. 发布前置（逐条跑，全绿才谈第 2 节）
 
@@ -51,16 +58,17 @@ npm whoami --registry=https://registry.npmjs.org
 git status --porcelain
 ```
 
-期望值（2026-09-17 实测，供比对）：
+期望值（**2026-09-19 发布准备轮实测**，供比对；标注「未重跑」的行是上一轮的数字，别当成今天验过）：
 
 | 检查 | 期望 |
 | --- | --- |
-| `bash tools/check.sh` | `全部通过 ✓`（退出码 0）。步数以当时 `grep -c 'step "' tools/check.sh` 为准：本项交付时 11 步（**第 11 步 = 单文件 bundle 等价性**），随后"样式作用域护栏"那条线把门禁扩到 12 步（第 12 步）。**2026-09-17 本轮 12 步实测：第 1–11 步全绿；第 12 步因 `docs/STYLE-SCOPE-GUARD.md` 账本指针失配而红（该线 WIP，与本项无关）** |
-| `node tools/integrity-check.mjs` | `结果: 61 通过, 0 失败` + `✓ 插件完整性自检通过（配合 tools/check.sh 的 N 步门禁一起看）`（N 自动取自 check.sh，当前 12） |
-| `npm pack --dry-run --json` | **22 个文件**；解包 **1.48MB**；tarball **491.8KB**；异常项 **(无)**（2026-09-17 本轮实测；`lib/client.js` 仍在被另一条线改，字节数会随客户端改动漂移，**文件数与异常项判据不变**） |
-| 包内必需文件 | `lib/**`（15 个运行时 js 全在）、`icon.svg`、`cordis.patch.yml`、`README.md`、`README.en.md`、`THIRD-PARTY.md`、`LICENSE`、`package.json` |
-| 包内**不得**出现 | `*.bak*`（如 `lib/client.js.bak-20260907`）、`tools/`、`docs/`、`screenshots/`、`dist/`、个人绝对路径、凭据字面量 |
-| bundle 产物 | `dist/dsh-mpkg-wallpaper.bundle.mjs`，字节数与 sha256 见 `tools/probe-out/bundle-manifest.json` |
+| `bash tools/check.sh` | `全部通过 ✓`（退出码 0），共 **12 步**（`grep -c 'step "' tools/check.sh` = 13 个标签 / 分母 12，`integrity-check` ⑨b 会断言自洽）。**本轮未重跑**（第 9 步起要无头 Firefox，本轮硬约束「不起浏览器」）；上一轮 3.7.3 发布时 12 步全绿 RC=0。 |
+| `node tools/integrity-check.mjs` | **`结果: 72 通过, 0 失败`** + `✓ 插件完整性自检通过（配合 tools/check.sh 的 12 步门禁一起看）`，RC=0（2026-09-19 本轮实测；含内部那一次 `npm pack --dry-run`。条数会随断言增加而上抬，**0 失败**才是判据） |
+| `node tools/secret-scan-test.mjs` | `✓ 敏感信息扫描干净：凭据 0 命中、本机绝对路径 0 命中、白名单无腐烂条目`，RC=0（2026-09-19 本轮实测，扫 99 个 tracked 文件 / 12 条凭据模式 / 3 条本机路径模式 / 2 条白名单全部仍命中） |
+| `npm pack --dry-run --json` | **14 个文件**；解包 **1 660 391 B**（1.583 MB）；tarball **562 640 B**（549.5 KB）；异常项 **(无)**（2026-09-19 本轮实测。比已发布的 3.7.3 多 **2 个文件 / +261 544 B**，差值逐文件自洽，见 `docs/RELEASE-READY-3.8.0.md` §3） |
+| 包内必需文件 | `lib/**`（**7 个运行时 js 全在**：`index/client/pkg-extract/web-wallpaper/web-interaction/now-playing/now-playing-math`；不含 P-127 有意排除的 `liquid-glass-bundle.js`）、`icon.svg`、`cordis.patch.yml`、`README.md`、`README.en.md`、`THIRD-PARTY.md`、`LICENSE`、`package.json` |
+| 包内**不得**出现 | `*.bak*`（如 `lib/client.js.bak-20260907`）、`lib/liquid-glass/**`（10 文件，P-127 有意排除）、`tools/`、`docs/`、`screenshots/`、`dist/`、个人绝对路径、凭据字面量 |
+| bundle 产物 | `dist/dsh-mpkg-wallpaper.bundle.mjs`，字节数与 sha256 见 `tools/probe-out/bundle-manifest.json`（**本轮未重建**；`dist/` 不入库、不随 npm 包发布） |
 
 ## 2. 发布命令（一行；**用户确认后**才执行）
 
@@ -77,18 +85,34 @@ cd <仓库根> && npm publish --registry=https://registry.npmjs.org
 ## 3. 发布后验证
 
 ```bash
-npm view dsh-mpkg-wallpaper version --registry=https://registry.npmjs.org      # ⇒ 3.7.2
-npm view dsh-mpkg-wallpaper dist-tags --registry=https://registry.npmjs.org     # ⇒ {"latest":"3.7.2"}
+# 把 <新版号> 换成发布时用的号（已发布的是 3.7.3；下一版见第 0 节建议）
+npm view dsh-mpkg-wallpaper version --registry=https://registry.npmjs.org      # ⇒ <新版号>
+npm view dsh-mpkg-wallpaper dist-tags --registry=https://registry.npmjs.org     # ⇒ { latest: '<新版号>' }
 # 真装一遍（另建临时 profile，别动用户的 web profile）
-dsh plugin --profile relcheck add dsh-mpkg-wallpaper@3.7.2   # base-backed 初始化临时 profile + 安装
+dsh plugin --profile relcheck add dsh-mpkg-wallpaper@<新版号>   # base-backed 初始化临时 profile + 安装
 # 若要从内置模板起一个全新 profile：`--from-default-profile` 是 **boot** 旗标（不是 plugin 子命令）：
 #   dsh --profile relcheck --from-default-profile web
+
+# 本机开发档：发布后把仓库源码同步进**用户的 web profile**（整 lib/ + 6 个顶层文件 + 逐文件 md5 校验 + 触发 patch 热重载）
+# 注意：这个脚本在**工作区根**、不在本仓库内（它硬编码了本机绝对路径 ⇒ 不该入库）
+bash /root/Desktop/DSHarea/update-plugin.sh                                   # ⇒ 同步完成并校验通过：N 个文件 md5 全部一致
 ```
+
+### 3.1 三种装载方式与"发布后各自怎么更新"（照 README「安装」节核对过，2026-09-19）
+
+| 方式 | 装法 | 发布后怎么拿到新版 | 备注 |
+| --- | --- | --- | --- |
+| 一（推荐） | `dsh plugin --profile web add dsh-mpkg-wallpaper` | `dsh plugin --profile web update dsh-mpkg-wallpaper` + 重启 `dsh web` + 浏览器 Ctrl+F5 | 市场可识别「已安装」；解析 `latest` 标签 |
+| 二 | `pnpm --dir <profile> add dsh-mpkg-wallpaper`（手动装依赖） | 同上（走依赖表） | 与方式一同源，只是不经 `dsh plugin` 包装 |
+| 三 | GitHub 克隆（开发者 / 离线） | `git pull`（**不写依赖表**） | 市场不显示「已安装」，仅影响显示、不影响功能 |
+| （四） | 单文件 bundle（**只装宿主端**） | 重新下载 `dist/dsh-mpkg-wallpaper.bundle.mjs` | 客户端半不会加载（裸 `.mjs` 无 `dsh.client` 包元数据）；**不建议**配「一键更新」用（`update-check` 无伴生 `package.json` 时 500） |
+
+卸载（一/二/三）：`dsh plugin --profile web remove dsh-mpkg-wallpaper`
 
 GitHub 侧（可选，但方式四的用户需要它）：
 
 1. `node tools/build-bundle.mjs` 生成 `dist/dsh-mpkg-wallpaper.bundle.mjs`；
-2. 建 release（tag = `v3.7.2`），**附上该 .mjs**，并在 release 说明里贴
+2. 建 release（tag = `v<新版号>`，本仓已有 tag 到 `v3.7.1`；**3.7.2/3.7.3 未打 tag**），**附上该 .mjs**，并在 release 说明里贴
    `tools/probe-out/bundle-manifest.json` 里的 `bytes` / `sha256`（用户可自行复算：
    `sha256sum dist/dsh-mpkg-wallpaper.bundle.mjs`）；
 3. 用户侧更新：`dsh plugin --profile web update dsh-mpkg-wallpaper` → 重启 `dsh web` → 浏览器 Ctrl+F5。
@@ -96,9 +120,18 @@ GitHub 侧（可选，但方式四的用户需要它）：
 ## 4. 回滚 / 出问题怎么办
 
 - **不要** `npm unpublish`（24h 限制 + 会破坏已装用户的 lockfile）。
-- 小问题：立刻发补丁版（3.7.3），并在 README「安装」处保留旧版安装方式说明。
-- 严重问题：`npm deprecate dsh-mpkg-wallpaper@3.7.2 "原因 + 建议版本"`，同时让用户把 profile 里
-  的依赖钉回 `3.7.1`（`"dsh-mpkg-wallpaper": "3.7.1"` 后 `pnpm --dir $DSH_HOME/profiles/web install`）。
+- 小问题：立刻发补丁版（`<新版号>+1`），并在 README「安装」处保留旧版安装方式说明。
+- 严重问题：`npm deprecate dsh-mpkg-wallpaper@<新版号> "原因 + 建议版本"`，同时让用户把 profile 里
+  的依赖钉回**上一个已知good版本（当前 = `3.7.3`）**（`"dsh-mpkg-wallpaper": "3.7.3"` 后
+  `pnpm --dir $DSH_HOME/profiles/web install`）。
+- **只回退 dist-tag（不动包内容）**：把 `latest` 指回旧版，装默认档的新用户就不会拿到坏版本
+  （已升级的用户仍停在坏版本，需要上面那条"钉版本"）：
+  ```bash
+  npm dist-tag add dsh-mpkg-wallpaper@3.7.3 latest --registry=https://registry.npmjs.org
+  npm view dsh-mpkg-wallpaper dist-tags --registry=https://registry.npmjs.org   # 复核
+  ```
+- 本机开发档回退：`bash /root/Desktop/DSHarea/update-plugin.sh` 是从**仓库源码**同步的，
+  所以把仓库 `git checkout` 回上一个 good 提交再跑它一次即可（profile 副本会跟着回到旧版）。
 - 包内文件发错（如夹带备份）：只能补丁版；机器闸门 `tools/integrity-check.mjs` 第 ⑨ 节就是为这个历史坑加的。
 
 ## 5. 未证实 / 边界（诚实记录，发布前若涉及需人工确认）
@@ -145,3 +178,63 @@ node --check lib/client.js → OK
 **仍未证实**：①真机观感（液态玻璃折射、`bsCompat` 默认开之后的悬浮适配）**仍需用户在自己设备上确认**；
 ②`dist/dsh-mpkg-wallpaper.bundle.mjs`（方式四单文件 bundle）本轮重建并跑了等价性对拍（38/0），但**未随 npm 包发布**
 （`dist/` 被 `.gitignore` 忽略，按设计不入库）。
+
+---
+
+## 3.7.3 → 下一版（待用户点头）
+
+> 本节是**下一版**的发布说明草稿 + 回退开关，供用户过目。**版本号尚未改动**（`package.json` 仍是 `3.7.3`
+> = 已发布版本），建议见第 0 节。范围 = `2997804..HEAD` 的 8 个提交（WP-1 / WP-2 / 密钥加固 / 门禁）**加上
+> 尚未提交的 NP-1**（`lib/now-playing*.js` + `lib/client.js` 生成区 + `docs/NOW-PLAYING-DSH.md`，另一条线收尾中）。
+
+### 一、WP-1：网页壁纸渲染 / API 覆盖（用户可见）
+
+| 变化 | 用户看到什么 | 依据 |
+| --- | --- | --- |
+| 帧内存储 facade + 宿主 `/web-store` | 网页壁纸（尤其 Live2D / Spine 类，靠 `localStorage` 存 `SettingModel`）的设置**刷新后不再丢** | `docs/WEB-WALLPAPER.md` §5.4；`web-store` 在 3.7.3 包内 0 命中 → 本轮新增 |
+| 主音量 = 宿主音量 × 作者音量 | 壁纸自己调音量不再把宿主音量顶掉 | 提交 `6ce20e6` |
+| HTML **源级** `file:///` 改写 | 静态 HTML 里写死的 `src|href|poster="file:///…"` 与 `url(file:///…)` 也能加载本地素材 | 同上；`docs/WEB-WALLPAPER.md` §6（K12 断言） |
+| CSP 跳过注入 | 带 CSP 的网页壁纸不再因 shim 注入失败而整块不工作 | 提交 `6ce20e6` |
+| 宿主 `/media-audio` 音频控制契约 | 曲目/封面/进度/播放控制通道打通（**默认仍静音**） | `docs/WEB-WALLPAPER.md` §13 |
+
+**回退开关**：存储 facade 的替代路径是网页壁纸确认弹窗里的「**兼容模式（同源）**」（真·同源 storage，
+仅建议对可信来源用；沙箱是默认档）；音频侧默认就是静音的，不动 `mute` 开关即可。
+
+**已知限制**（不改）：①音频频谱**仍为空**——不伪造，因为 WE 的频谱语义是**系统音频**，拿壁纸自己的声音当频谱是语义造假；
+②媒体通道已实现但**未接系统媒体会话（SMTC / MPRIS）**⇒ 不能显示"系统正在播放"；③`innerHTML` 里拼出来的 `file:///`
+不覆盖（本机语料 0 命中，故不实现）；④绝对系统路径（`C:`/`Users/…`）映射不了，属设计如此。
+
+### 二、WP-2：网页壁纸触控（用户可见）
+
+- **变化**：触屏上单指拖动 / 多指序列能真正到达作者脚本（帧内**真 `TouchEvent`**，`postMessage` 的 `op:'touch'` 协议）；
+  修掉"拖拽被当成点击"。`op:'touch'` 在 3.7.3 包内 **0 命中** ⇒ 确认是本轮新增。
+- **回退开关**：设置项 **`webInteraction`** = `off`（存 `"off"` / `"full"`），或 URL 强制 `?mpwinteract=off`（也接受 `0`）。
+- **默认档没变**：`mpwWebIxMode()` 缺省返回 **`pointer`**（点击/滚轮可达帧内，**不注入键盘**——键盘会吞掉用户方向键）。
+  这个默认值**在已发布的 3.7.3 里就存在**（`mpwWebIxMode` 3.7.3 命中 4 次）⇒ **本轮不是默认行为变更**，
+  老用户不动设置则体感只有"触屏能拖了"。
+- **已知限制**：①CSS `:hover` / `:active` 与 `isTrusted:true` **不可达**（合成事件的固有边界，唯一真解是原生透传）；
+  ②帧内 `contextmenu` 协议已通、帧内待接线；③"不点交互按钮就想直接操作"做不到——默认档是有意的安全边界。
+
+### 三、NP-1：Now playing 挂侧栏（用户可见；**仍在本轮收尾**）
+
+- **变化**：左侧栏出现 **Now playing 面板**（挂载点、插入顺序都有 DOM 契约断言，见 `docs/NOW-PLAYING-DSH.md` §3）。
+- **开关**：键名 **`npNowPlaying`**，**默认 `false`**；落点在「壁纸设置」tab 紧挨既有 `mute` 开关下方；
+  随导出/导入备份走（已登记 `BACKUP_FIELDS` + `boolFields`），「恢复默认」回到 `false`。
+  **关 ⇒ 零注入**：全树 0 个 `[data-mpw-now-playing]`，`ResizeObserver`/`MutationObserver`/`rAF` **构造数都是 0**
+  （不是"装了再断"，B4/B6/B11 断言）。
+- **数据接入的四种情形**：视频类壁纸自带音轨 → **真能控**；场景/自定义壁纸自带音轨 → **只显示、不控**；
+  网页壁纸 → 走既有静音设置 + 宿主 `/media-audio`；无源（静态图/无音轨）→ 空闲态。
+- **回退开关**：把 `npNowPlaying` 关掉（或「恢复默认」）⇒ 回到零注入。
+- **已知限制**：DSH 里**没有系统媒体源** ⇒ 它显示的是**壁纸自己的音轨**，不是"手机上正在放的音乐"；
+  场景/自定义壁纸那条只显示不控。
+
+### 四、这一版对老用户的**默认行为**影响（自查结论）
+
+发布面 14 个文件里，**6 个与已发布的 3.7.3 逐字节相同**（含 `package.json`、`LICENSE`、`README×2`、
+`icon.svg`、`cordis.patch.yml`、`lib/pkg-extract.js`）；变化的 5 个是
+`lib/client.js` / `lib/index.js` / `lib/web-interaction.js` / `lib/web-wallpaper.js` / `THIRD-PARTY.md`，
+另加 2 个新文件 `lib/now-playing{,-math}.js`。三条新能力里 **WP-2 与 NP-1 都是"默认档不变"**
+（`webInteraction` 缺省 `pointer` 是 3.7.3 既有行为；`npNowPlaying` 默认关且零注入），
+WP-1 是既有网页壁纸链路的**能力补全**（默认仍静音）。⇒ **未发现需要用户改设置才能保持原样的项**；
+但真机观感（触屏手势是否被浏览器抢走、面板在窄侧栏下的排版）**仍需用户在自己设备上确认**。
+
