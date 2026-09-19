@@ -90,6 +90,10 @@ node tools/diag-subsystem-test.mjs || fail=1
 #   超限 ⇒ **413 + JSON 说明**（旧实现 `req.destroy()` ⇒ 客户端只看到 ECONNRESET）、超限**不落盘**、
 #   跨源（`Origin: null`）也带 CORS 头能读到原因；判据有没有分辨力由"改回 req.destroy() 必红"自证。
 node tools/host-body-limit-test.mjs || fail=1
+# ①(MEDIA-1 接线 2026-09-20) 系统媒体会话**接线**：宿主三路由（21 键透传 / op 白名单 / 封面只服务当前快照的
+#   玩家）+ 客户端补充路径（同步 npResolveMedia 不动 / 自适应轮询 2s↔30s / available:false 不接管 /
+#   封面走代理 / 传输改道带能力位）+ 本机诚实降级（无会话总线 ⇒ available:false + reason）。
+node tools/media-session-wiring-test.mjs || fail=1
 # ⓪(2026-09-16 两个真机 bug 的回归门禁)：
 #   bug① 右侧「轮次导航条」(.eGxaPq_*/--dsw-alias-border-l4) 不被我们的样式/token 覆盖弄透明；
 #   bug② 标题栏磨砂注入链（假 DOM：注入 + 内联样式 + 半透明底 + 宿主标记 + 诊断 reason + 回退开关）。

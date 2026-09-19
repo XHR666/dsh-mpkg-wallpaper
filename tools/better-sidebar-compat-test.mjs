@@ -111,15 +111,17 @@ console.log('\n== A. host /ping 的 betterSidebarVersion（DSH_HOME=' + home + '
 console.log('\n== B. 变异用例：把函数名改回与局部变量同名（复现真因）⇒ 必须变红 ==');
 {
   const mut = mkTmp('mpw-bs-mut-');
-  // 只复制 index.js 与它的相对依赖（lib/liquid-glass/ 是目录，本机 cpSync 会 EINVAL；
-  // 且变异只发生在 index.js，复制整个 lib 没有必要）。
-  // ①(WP-1 2026-09-19) 依赖表要跟着源码走：`lib/web-wallpaper.js` 现在**相对 import** 了
-  //   `./web-interaction.js`（①WP-2 把帧内触摸代理接进 shim）⇒ 少复制一个文件就是
-  //   ERR_MODULE_NOT_FOUND（本夹具曾在 check.sh 第 10 步整段变红）。判据 = `lib/index.js` 的
-  //   相对依赖闭包；改源码的相对依赖时**这里要同步**（tools/bundle-equivalence-test.mjs 的模块表同理）。
+  /* ①(2026-09-20 结构化修法) **整目录复制 `lib/` 里的普通文件**，不再手抄"相对依赖清单"。
+     为什么改：手抄清单已经腐烂三次 —— 本轮给 `lib/index.js` 加 `import './media-session.js'`
+     （系统媒体会话接线）时又漏了它 ⇒ ERR_MODULE_NOT_FOUND、check.sh 第 10 步整段变红。
+     同一类坑在本仓已出现三处（本文件 / `tools/host-body-limit-test.mjs` / `tools/bundle-equivalence-test.mjs`
+     的模块表），所以这里改成**闭包自动成立**：目录里有什么就复制什么（只跳过子目录，
+     本机 `cpSync` 对 `lib/liquid-glass/` 会 EINVAL）。`lib/index.js` 引用的相对模块必然在这个集合里。 */
   fs.mkdirSync(path.join(mut, 'lib'), { recursive: true });
-  for (const f of ['index.js', 'pkg-extract.js', 'web-interaction.js', 'web-wallpaper.js']) {
-    fs.copyFileSync(path.join(ROOT, 'lib', f), path.join(mut, 'lib', f));
+  for (const f of fs.readdirSync(path.join(ROOT, 'lib'))) {
+    const srcPath = path.join(ROOT, 'lib', f);
+    if (!fs.statSync(srcPath).isFile()) continue;   // 目录（liquid-glass/）跳过
+    fs.copyFileSync(srcPath, path.join(mut, 'lib', f));
   }
   fs.copyFileSync(path.join(ROOT, 'package.json'), path.join(mut, 'package.json'));
   const f = path.join(mut, 'lib', 'index.js');

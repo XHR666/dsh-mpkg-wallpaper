@@ -6,7 +6,7 @@
 
 给 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) Web 界面（`dsh web`）添加背景壁纸的插件：**Wallpaper Engine `.mpkg` 解析、Steam 创意工坊目录、视频/网页/图片壁纸、时间变化壁纸的多时段切换、整屏虚化体系、主题色与玻璃外观、本地壁纸库、定时轮换、Now playing 控件、一键更新**。外观细节几乎全部可调。
 
-> 版本口径：本文件描述的是 `package.json` 里 **`3.9.1`** 这一版实现。发布面共 **15 个文件**（`lib/` 8 个运行时文件 + `package.json`、`icon.svg`、`cordis.patch.yml`、`README.md`、`README.en.md`、`THIRD-PARTY.md`、`LICENSE`；`npm pack --dry-run` 实测 15 文件 / unpacked 2 088 240 B）；`lib/liquid-glass/**`、`lib/liquid-glass-bundle.js`、`dist/`、`tools/`、`docs/` 都不进 npm 包（`package.json:8-21`）。本轮的默认档变化：**`npNowPlaying` 关 → 开**（3.8.0 起）与 **`powPauseHidden` 关 → 开**（3.9.0 起，只迁移"从没设过"的存量档；详见[这一版新增/变更](#这一版新增变更)）。
+> 版本口径：本文件描述的是 `package.json` 里 **`3.10.0`** 这一版实现。发布面共 **15 个文件**（`lib/` 8 个运行时文件 + `package.json`、`icon.svg`、`cordis.patch.yml`、`README.md`、`README.en.md`、`THIRD-PARTY.md`、`LICENSE`；`npm pack --dry-run` 实测 15 文件 / unpacked 2 088 240 B）；`lib/liquid-glass/**`、`lib/liquid-glass-bundle.js`、`dist/`、`tools/`、`docs/` 都不进 npm 包（`package.json:8-21`）。本轮的默认档变化：**`npNowPlaying` 关 → 开**（3.8.0 起）与 **`powPauseHidden` 关 → 开**（3.9.0 起，只迁移"从没设过"的存量档；详见[这一版新增/变更](#这一版新增变更)）。
 
 ---
 
@@ -560,7 +560,7 @@ node tools/build-bundle.mjs
 
 ```text
 dsh-mpkg-wallpaper/
-├── package.json      # 版本 3.9.1；dsh.bundle + dsh.client 声明；files 白名单 = 发布面（15 文件）
+├── package.json      # 版本 3.10.0；dsh.bundle + dsh.client 声明；files 白名单 = 发布面（15 文件）
 ├── cordis.patch.yml  # 插件安装声明（dsh plugin add 使用）
 ├── LICENSE           # MIT
 ├── THIRD-PARTY.md    # 第三方来历/洁净室记录与许可归属（随包发布）
@@ -610,7 +610,7 @@ node tools/style-scope-guard.mjs   # 判据是末行「… OK / … ALLOWLISTED 
 
 ## 这一版新增/变更
 
-当前版本 = `package.json` 的 **3.9.1**（本轮发布线 3.8.0 → 3.8.1 → 3.8.2 → 3.9.0 → **3.9.1**）。发布前置/命令/回滚见 [`docs/RELEASE.md`](docs/RELEASE.md)，本轮改动清单见 [`docs/RELEASE-READY-3.8.0.md`](docs/RELEASE-READY-3.8.0.md)，Now playing / 壁纸声音的根因与真机读数见 [`docs/NOW-PLAYING-DSH.md`](docs/NOW-PLAYING-DSH.md) §7.7。
+当前版本 = `package.json` 的 **3.10.0**（本轮发布线 3.8.0 → 3.8.1 → 3.8.2 → 3.9.0 → 3.9.1 → **3.10.0**）。发布前置/命令/回滚见 [`docs/RELEASE.md`](docs/RELEASE.md)，本轮改动清单见 [`docs/RELEASE-READY-3.8.0.md`](docs/RELEASE-READY-3.8.0.md)，Now playing / 壁纸声音的根因与真机读数见 [`docs/NOW-PLAYING-DSH.md`](docs/NOW-PLAYING-DSH.md) §7.7。
 
 - **Now playing 默认挂载 + 会让位**：设置项 `npNowPlaying` **默认开**（`lib/client.js` 的 `DEFAULT_NP_NOW_PLAYING`），仍在「壁纸设置」tab、紧挨既有 `mute` 下方（`lib/client.js` 的 `toggleRow(t("npNowPlaying"), …)`）。关掉即回到零注入（机制与判据见 [Now playing 与壁纸声音](#now-playing-与壁纸声音)）。默认开的前提是**礼让**：宿主同一位置已经有别的插件注入的元素时不挂/撤下，并留一个可查询状态 `data-mpw-np-yield`（`lib/now-playing.js` 的 `occupantOf()`；挂载前与挂载后都判，占用者走了再回来）。组件本体是 **Bencho 的 "Now playing"（MIT）逐行移植**（注释原文保留，归属见 `THIRD-PARTY.md` §6）；纯数学与组件拆成 `lib/now-playing-math.js` / `lib/now-playing.js`，由 `tools/build-now-playing.mjs` **逐字节内联**进 `lib/client.js` 的 `MPW-NP-GEN-START/END` 生成区，配两道漂移门禁（生成器自比 + 产物反抠比对）。挂载与收起判据见 [Now playing 与壁纸声音](#now-playing-与壁纸声音)。
 - **壁纸声音真的接线**：数据源只认**当前真的在放**的那个媒体元素（页面里那个隐藏空壳 `#mpw-bgVideo` 在**任何壁纸类型下都在 DOM 里**，旧实现按选择器命中它就当"当前媒体"）⇒ 视频壁纸的播放/暂停/静音落在真实元素上（**`mute` 开关真的落到元素上：关掉静音就真的出声**，旧写法把 `video.muted` 写死 `true`，之后再没有代码按设置赋值）；壁纸目录里**真实存在**的音频文件由我们自己的 `<audio>` 播（作用域认 `mpkgKey="custom|<folder>"`，旧写法只认 `folderName` ⇒ 自定义目录里的 web 壁纸永远拼成 library 路由 404）⇒ **上一首/下一首按清单顺序环形切换**，不再是"回到开头"；web 壁纸帧内那份声音只有**静音**这一条真通道（`canPlay=false`，如实显示，不假装能暂停帧内 WebAudio）；我们放音时帧内被强制静音（防同一首放两遍）。
@@ -633,7 +633,7 @@ node tools/style-scope-guard.mjs   # 判据是末行「… OK / … ALLOWLISTED 
   **宿主超限语义**：两个 POST 接收端超限从"先掐连接"改成 **413 + JSON 说明**（旧行为客户端只看到 ECONNRESET）。
   真机读数、根因链与 10 条诚实清单见 [`docs/WALLPAPER-LIFECYCLE.md`](docs/WALLPAPER-LIFECYCLE.md)；发布记录见 [`docs/RELEASE.md`](docs/RELEASE.md)。
 - **3.8.1 / 3.8.2：Now playing 第二次真机批次（NP-4）** —— 起播顺序（旧写法先取消静音再 `play()`，等于一次有声自动播放 ⇒ 被浏览器拒绝且被吞掉）、被浏览器策略停住（muted 起播 resolve 后取消静音，元素被直接停住）、**新增音量电平**（0..100，落到真实元素）与**可拖动进度（seek）**、**新增「播放/暂停同时控制壁纸」开关（`npLinkWallpaper`，默认开 = 与改动前逐字节同行为）**、悬浮态卡片放大、音轨清单的"能不能播"如实分类。可交付口径：**首次用户手势后必定出声**（被策略停住时退回 muted 保画面并记 `window.__mpwNpSoundBlocked`）。详见 [`docs/RELEASE.md`](docs/RELEASE.md) 的 3.8.1/3.8.2 发布记录与 [`docs/NOW-PLAYING-DSH.md`](docs/NOW-PLAYING-DSH.md) §7.8。
-- **仍在同一发布面上的前一轮能力**：网页壁纸渲染 / API 覆盖（帧内存储 facade + 宿主 `/web-store`、主音量、源级 `file:///` 改写、CSP 跳过注入、`/media-audio`）与网页壁纸触控（`op:'touch'` 真 `TouchEvent`）；系统媒体会话的**宿主端适配器** `lib/media-session.js`（MPRIS / SMTC，**已实现、尚未接线**，见下文）。
+- **仍在同一发布面上的前一轮能力**：网页壁纸渲染 / API 覆盖（帧内存储 facade + 宿主 `/web-store`、主音量、源级 `file:///` 改写、CSP 跳过注入、`/media-audio`）与网页壁纸触控（`op:'touch'` 真 `TouchEvent`）；系统媒体会话的**宿主端适配器** `lib/media-session.js`（MPRIS / SMTC）**已接线**：宿主 `GET /media-session`（21 键快照）/`POST /media-control`（六个 op，能力位先判）/`GET /media-art`（`file://` 封面代理），客户端 `npSystemMedia*` 自适应轮询（有系统媒体 2s、本机无会话总线 30s）⇒ 卡片显示**真实系统曲目/封面/进度**，本机如实 `available:false / no-session-bus`（接线判据 `tools/media-session-wiring-test.mjs` 24 断言 + 3 变异）。
 - **门禁与护栏**：CSS 组合矩阵、样式作用域护栏、表面 token 命名空间等价性、开关接线审计、秒级 pre-commit（见[历史台账](#历史台账)与「[判据](#判据与门禁)」）。
 
 ## 历史台账

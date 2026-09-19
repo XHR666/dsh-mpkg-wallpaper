@@ -5,7 +5,7 @@
 > （`node tools/integrity-check.mjs`）。这份文件把**发布前置**、**确切命令**、**发布后验证**和
 > **回滚**钉死成可复制的步骤 —— 照着跑就行，不靠记忆。
 >
-> 状态（2026-09-20 03:0x 实测）：本地 `package.json` = **3.9.1**；npm 官方 registry 上 `latest` = **3.9.0**
+> 状态（2026-09-20 03:5x 实测）：本地 `package.json` = **3.10.0**；npm 官方 registry 上 `latest` = **3.9.1**
 > ⇒ 本地 > 已发布 ⇒ 可以直接发（发包前**必须**重跑第 1 节全部命令）。历史：3.8.0 → 3.8.1 → 3.8.2 → **3.9.0**。
 >
 > （下面这一段是 2026-09-19 的原始状态记录，保留以便对照当时的判断过程）
@@ -401,3 +401,22 @@ $ git tag -a v3.8.2 && git push origin v3.8.2          ⇒ [new tag] v3.8.2
 
 **发布后验证**：`npm view … dist-tags` ⇒ `latest=3.9.1`；tarball 仍 **15 个文件**；`update-plugin.sh` ⇒ 13 文件 md5 一致；
 真机复跑 `tools/audio-source-hunt-live-probe.mjs --sec 20 --whale` ⇒ **7 PASS / 0 FAIL**（H5/H6 抓到鲸鱼那两条记录）。
+
+
+## 发布记录：3.10.0（2026-09-20 · MEDIA-1 **接线**）
+
+**为什么是 minor**：这不是修 bug，而是把**早就实现却没接线**的系统媒体会话接上 —— 用户可见的新能力
+（NP 卡片显示**真实系统曲目/封面/进度**，卡片按钮控系统播放器），按 semver「加功能 = minor」取 **3.10.0**。
+
+| 面 | 内容 |
+| --- | --- |
+| 宿主三条路由 | `GET /media-session`（**21 键原样透传**；`?describe=1` 才附带模块自述）、`POST /media-control`（只认 `CONTROL_OPS` 六项；坏 op/坏 seek ⇒ 400；非 POST ⇒ 405 + `Allow`）、`GET /media-art?player=`（`file://` 封面代理：**只服务当前快照里那个 player 的 artUrl**，非 file ⇒ 409、不存在 ⇒ 404、过大 ⇒ 413，按 magic 判 MIME） |
+| 客户端补充路径 | `npSystemMedia{Start,Stop,Tick,Refresh,Apply,Control}`：**不动**同步的 `npResolveMedia`（壁纸自己那条语义），异步补系统媒体；`available:false` ⇒ **不接管**（本机常态）；封面走代理；毫秒→秒换算；传输动作改道且有**能力位闸**（`canNext/canPrev`） |
+| 资源纪律 | **自适应单链轮询**：有系统媒体 2s、不可用/失败 30s；页面不可见不发请求只续期；定时器统一 `unref`（否则桩 DOM 门禁"跑完了却不结束"—— 实测踩到 `now-playing-test` 卡 600s） |
+| 判据 | 新增 `tools/media-session-wiring-test.mjs`：**24 断言 + 3 组变异自证**（op 白名单 / 封面只认快照里的 player / `available:false` 不许接管），已进 `tools/check.sh` 第 2 步 |
+| 本机诚实降级 | 没有 D-Bus 会话总线 ⇒ `available:false / reason:"no-session-bus"`、其余字段中性值（不编数据）；客户端据此**保持显示壁纸自己的标题/预览** |
+
+**发布前置读数**：`bash tools/check.sh` ⇒ **全部通过 ✓（12/12）**（含新接线门禁与重建后的单文件 bundle 对拍 19/0）；
+`tools/media-session-test.mjs` 95/0、`tools/media-session-wiring-test.mjs` 24/0、`tools/np-media-test.mjs` **91/0**、
+`tools/np-control-test.mjs` **81/0**、`tools/now-playing-test.mjs` **85/0**、`tools/wallpaper-lifecycle-test.mjs` **177/0**；
+`node tools/integrity-check.mjs` ⇒ 72/0；`node tools/secret-scan-test.mjs` ⇒ 干净。
