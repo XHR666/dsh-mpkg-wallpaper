@@ -268,3 +268,24 @@ $ git tag -a v3.8.0 && git push origin v3.8.0   ⇒ [new tag] v3.8.0
 
 **已知限制（如实）**：web 壁纸帧内只有静音、音量是开关不是 0..1 细调；视频壁纸没有曲目清单故上一首/下一首 disabled；
 卡片静音键只在展开态出现（收起态行宽被 `opsX(0)=206` 钉住）；`lib/media-session.js`（系统媒体会话）**已实现但尚未接线**。
+
+## 发布记录：3.8.1（2026-09-19）
+
+```
+$ npm publish --registry=https://registry.npmjs.org/   ⇒ + dsh-mpkg-wallpaper@3.8.1
+$ npm view dsh-mpkg-wallpaper dist-tags                ⇒ { latest: '3.8.1' }
+$ npm view dsh-mpkg-wallpaper versions                 ⇒ … '3.8.0', '3.8.1'
+$ git tag -a v3.8.1 && git push origin v3.8.1          ⇒ [new tag] v3.8.1
+```
+发布面：**15 文件 / unpacked 1.9 MB**，`shasum 4fbaf5570aa4f25a545cfaa055500267b9284190`。
+
+**相对 3.8.0 的变化**
+1. **壁纸选择字段不再丢**（真机 bug：`mpkgKey` 在、`image`/`webUrl` 缺 ⇒ 壁纸层被 `.mpw-bgWrap{display:none}` 藏掉）：两处存储改为**合并不替换**（`undefined` 不覆盖、`null` 才删）+ **源字段粘性** + 两处存储按各自写入时刻**显式裁决** + boot **收尾闸门**（宿主 GET 回来或 3.5s 超时前不落盘）+ **半残档自愈**（按 `mpkgKey` 反推源，能推就推、推不出明确提示）+ 宿主 `PUT /settings` 改**逐键合并**。
+2. 两处文档口径更正：`lib/now-playing.js` 头部归属指向 `THIRD-PARTY.md` **§6**（原写 §13，指向了别的条目）；`docs/NOW-PLAYING-DSH.md` §6 补充"默认值已由 `false` 改为 `true`"的复核更正。
+3. 去掉两处本机工作区绝对路径（`integrity-check` 曾红 1 条）。
+
+**判据（发布前实测）**：`bash tools/check.sh` ⇒ **全部通过 ✓**（12 步，含第 9 步 headless Firefox）；
+`now-playing-test` 83/0、`np-media-test` 82/0（12 组变异）、`settings-persist` 105 断言（7 组变异，`--no-mutations` 105）；
+`integrity-check` 72/0、`secret-scan` 干净。
+真机：`np-media-live-probe` **45 PASS / 0 FAIL**、`np-sidebar-live-probe` **12/0**、
+`settings-persist-live-probe` **5 PASS / 0 FAIL**（源字段已自愈、`computed.display` 由 `none` → `block`）。
