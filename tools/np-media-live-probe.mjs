@@ -229,11 +229,22 @@ try {
       mediaEvents: window.__npProbe ? window.__npProbe.mediaEvents.length : -1,
       video: vid ? {
         src: String(vid.getAttribute('src') || '').slice(0, 80), display: vid.style.display,
-        paused: !!vid.paused, muted: !!vid.muted, volume: vid.volume,
+        paused: !!vid.paused, muted: !!vid.muted, volume: +(vid.volume || 0).toFixed(3),
         duration: isFinite(vid.duration) ? +vid.duration.toFixed(2) : null,
         currentTime: +(vid.currentTime || 0).toFixed(2),
         mozHasAudio: typeof vid.mozHasAudio === 'boolean' ? vid.mozHasAudio : null,
       } : null,
+      /* ①(NP-4) 新增的可查落点（组件根上的属性 + 控制器 inspect + 起播被拒的原因） */
+      linkAttr: n ? n.getAttribute('data-mpw-np-link') : null,
+      volEl: (() => { const e = n && n.querySelector('[data-mpw-np-vol]'); return e ? { now: e.getAttribute('aria-valuenow'), disabled: e.getAttribute('aria-disabled') } : null })(),
+      volRect: rect(n && n.querySelector('[data-mpw-np-vol]')),
+      scrubEl: (() => { const e = n && n.querySelector('[data-mpw-np-scrub]'); return e ? { noseek: e.hasAttribute('data-mpw-np-noseek'), max: e.getAttribute('aria-valuemax'), now: e.getAttribute('aria-valuenow') } : null })(),
+      scrubRect: rect(n && n.querySelector('[data-mpw-np-scrub]')),
+      playBlocked: (() => { try { return window.__mpwNpPlayBlocked || null } catch { return null } })(),
+      retryPlay: (() => { try { return window.__mpwNpRetryPlay || null } catch { return null } })(),
+      ops: (() => { try { return (window.__mpwNpOps || []).slice(-6) } catch { return [] } })(),
+      activation: (() => { try { return navigator.userActivation ? !!navigator.userActivation.hasBeenActive : null } catch { return null } })(),
+      ctlSeq: window.__mpwNpCtlSeq || 0,
       audio: audio ? {
         src: String(audio.getAttribute('src') || '').slice(0, 140), paused: !!audio.paused, muted: !!audio.muted,
         currentTime: +(audio.currentTime || 0).toFixed(2), duration: isFinite(audio.duration) ? +audio.duration.toFixed(2) : null,
@@ -333,12 +344,17 @@ try {
       await sleep(900)
       const after = await state()
       const setting = after.section ? after.section.mute : null
-      const elMuted = after.audio ? after.audio.muted : (after.video && after.video.display !== 'none' ? after.video.muted : (after.video ? after.video.muted : null))
+      const before0 = before.section ? before.section.mute : null
+      const elMuted = after.audio ? after.audio.muted : (after.video ? after.video.muted : null)
       ok(clicked !== null, 'B2 找到并点了静音键（按 aria-label 命中，不靠位置）', 'label=' + clicked + ' 行内键=' + labels)
-      ok(setting === false, 'B3 点一次 ⇒ 设置项 `mute` 真的落成 false（此前只写设置、不落到元素）', 'mute=' + setting)
-      ok(elMuted === false || after.insp && after.insp.media && after.insp.media.muted === false,
-        'B4 点一次 ⇒ 真实媒体元素的 muted 变 false（"一直静音"这条就在这里判）',
-        '元素 muted=' + elMuted + ' frame.muted=' + after.iframeMuted + ' media.muted=' + (after.insp && after.insp.media && after.insp.media.muted))
+      /* 判据**相对**点击前的值（起始档是用户自己的设置：可能已经是 false）：
+         要求的是"真的翻转了"，而不是"必须变成某一个值" —— 后者在起始档不同时会假红。 */
+      ok(setting !== null && before0 !== null && setting === !before0,
+        'B3 点一次 ⇒ 设置项 `mute` **真的翻转**（此前只写设置、不落到元素）',
+        'mute ' + before0 + ' → ' + setting + '（点击前元素 muted=' + (before.video && before.video.muted) + '）')
+      ok(elMuted !== null && elMuted === setting,
+        'B4 点一次 ⇒ **真实媒体元素的 muted 跟着设置走**（"一直静音/点了没用"这条就在这里判）',
+        '设置=' + setting + ' 元素 muted=' + elMuted + ' frame.muted=' + after.iframeMuted + ' media.muted=' + (after.insp && after.insp.media && after.insp.media.muted))
       ok(!/mute|静音/i.test(String(after.opLabels && after.opLabels[after.opLabels.length - 1] || '')) || true,
         'B5 键的文案跟着状态变（取消静音 ⇒ 再点可静音）', JSON.stringify(after.opLabels))
     }
@@ -504,6 +520,206 @@ try {
     ok(s1.open === true && !!s1.cardRect, 'G2 卡片展开且量到了矩形', 'open=' + s1.open + ' card=' + JSON.stringify(s1.cardRect))
     ok(clip.length === 0, 'G3 卡片四边都在侧栏容器的可视区内（1px 容差）', clip.length ? '越界: ' + clip.join(', ') : '四边都在内')
     await page.screenshot({ path: path.join(OUT, '04-float-expanded.png') })
+  }
+
+  /* ══════════════ I. ① 起播顺序 + 音量电平（真机：静音/音量到底有没有落到那个 <video>）══════════════
+     修前读数（同一台机器、同一个档 `custom|3582362359`）：
+       · 加载后 video = {paused:true, muted:false, volume:1, currentTime:0}
+       · 全程 `play()` **只被调用过一次**，rejected `NotAllowedError`（先 unmute 再 play ⇒ 有声自动播放被拒），
+         旧写法在 `.catch(() => {})` 里吞掉 ⇒ 画面冻住、也没有任何声音
+       · section 里与音量有关的键 = **0 个**（只有布尔 muted）⇒ "打开之后也不能调整它开启的音量"
+     ⇒ 本组四条：起播真的成功、音量键真的落在元素上、拖动真的改电平、静音开关与电平是两件事。 */
+  console.log('\n== I. ① 起播顺序 + 音量电平（真机：元素真的在放、volume 真的可调）==')
+  {
+    await writeSection({
+      image: 'host:?custom=1&folder=' + VIDEO_FOLDER + '&file=' + encodeURIComponent(VIDEO_FILE),
+      converted: 'mp4', mpkgKey: 'custom|' + VIDEO_FOLDER, mpkgName: 'Hoshino',
+      source: 'Hoshino', webUrl: '', fromMpkg: false, npNowPlaying: true, mute: false, npVolume: 100,
+    })
+    let s0 = await state()
+    console.log('   读数(首次手势前): video=' + JSON.stringify(s0.video) + ' playBlocked=' + JSON.stringify(s0.playBlocked)
+      + ' retryPlay=' + s0.retryPlay + ' activation=' + s0.activation + ' ctlSeq=' + s0.ctlSeq)
+    /* I1 的判据分两段（都要，缺一不可）：
+       ① 加载时若浏览器拒了自动播放 ⇒ 必须**留下可查原因** + 已经退回 muted 重试（修前是 `.catch(()=>{})` 吞掉）；
+       ② 用户第一次真的点了页面之后 ⇒ 必须真的在放（这是用户能感知到的契约）。 */
+    ok(s0.video && (s0.video.paused === false || (s0.playBlocked && s0.playBlocked.retryMuted === true)),
+      'I1 起播要么成功、要么**有据可查地退回 muted 重试**（不静默；修前读数：paused=true 且什么都查不到）',
+      JSON.stringify({ paused: s0.video && s0.video.paused, blocked: s0.playBlocked, retry: s0.retryPlay }))
+    if (s0.video && s0.video.paused === true) {
+      /* 真机等价动作：用户在页面上点一下（任何一处）⇒ 插件装的一次性手势重试应当把播放补上。 */
+      await page.mouse.click(720, 450)
+      await sleep(1500)
+    }
+    const s0b = await state()
+    ok(!!s0b.video && s0b.video.paused === false, 'I1b **首次用户手势之后**视频壁纸真的在放（paused=false）—— 用户能感知到的那条契约',
+      JSON.stringify({ paused: s0b.video && s0b.video.paused, muted: s0b.video && s0b.video.muted, retry: s0b.retryPlay, t: s0b.video && s0b.video.currentTime }))
+    /* §7.8.2 的口径：页面从未被交互时浏览器不允许出声 ⇒ 这里先做**一次真实手势**（用户会做的事），
+       之后元素状态必须等于设置（muted=false）。这一步不点的话判的是浏览器的策略，不是插件的契约。 */
+    if (s0b.video && s0b.video.muted === true) { await page.mouse.click(720, 450); await sleep(900) }
+    const s0c = await state()
+    ok(!!s0c.video && s0c.video.muted === false && s0c.video.volume === 1,
+      'I2 首次手势之后元素状态 == 设置（mute=false ⇒ 元素 muted=false，npVolume=100 ⇒ volume=1）',
+      JSON.stringify({ muted: s0c.video && s0c.video.muted, volume: s0c.video && s0c.video.volume, paused: s0c.video && s0c.video.paused }))
+    ok(s0b.playBlocked === null || s0b.video.paused === false,
+      'I2b 起播成功之后没有"被拒"残留（window.__mpwNpPlayBlocked 归 null）',
+      'playBlocked=' + JSON.stringify(s0b.playBlocked) + ' retryPlay=' + s0b.retryPlay)
+    /* 音量条：展开卡片 → 找到它 → 真的拖（真机指针事件） */
+    if (!s0.open) { await clickEl(TAP); await sleep(1200) }
+    const s1 = await state()
+    ok(!!s1.volEl && !!s1.volRect && s1.volRect.width > 20, 'I3 卡片里有音量条（data-mpw-np-vol），且量得到宽度（不是 0×0 的画上去的假控件）',
+      JSON.stringify({ el: s1.volEl, rect: s1.volRect }))
+    let dragInfo = null
+    if (s1.volRect) {
+      const r = s1.volRect
+      const y = (r.top + r.bottom) / 2
+      await page.mouse.move(r.right - 2, y)
+      await page.mouse.down()
+      await page.mouse.move(r.left + r.width * 0.3, y, { steps: 6 })
+      await page.mouse.up()
+      await sleep(700)
+      const s2 = await state()
+      dragInfo = { before: s1.video && s1.video.volume, after: s2.video && s2.video.volume, sec: s2.section && s2.section.npVolume }
+      ok(!!s2.video && Math.abs(s2.video.volume - 0.3) < 0.06,
+        'I4 拖音量条到 30% ⇒ **真实元素的 volume 真的变成 ~0.3**（修前：全仓没有改 volume 的地方）',
+        JSON.stringify(dragInfo))
+      ok(s2.section && Number(s2.section.npVolume) >= 25 && Number(s2.section.npVolume) <= 35,
+        'I5 同一次拖动把设置项 `npVolume` 落成 ~30（0..100 持久化）', 'npVolume=' + (s2.section && s2.section.npVolume))
+      ok(!!s2.video && s2.video.muted === false, 'I6 改音量**不动静音开关**（两件事：muted 仍是 false、mute 设置仍是 false）',
+        JSON.stringify({ muted: s2.video && s2.video.muted, mute: s2.section && s2.section.mute }))
+      await writeSection({ npVolume: 100 })
+    }
+  }
+
+  /* ══════════════ J. ① 静音开/关真的改变元素（用户原话："开/关都听不到声音"）══════════════ */
+  console.log('\n== J. ① 静音开关两档：元素 muted 跟着设置走（且开关是开关、音量是电平）==')
+  {
+    /* 每次 reload 之后都要：①确认在放；②做**一次真实手势**（浏览器的出声限制由手势解除）。
+       两步都是"用户会做的事"，不是为了让判据变绿 —— 不这样的话判的是浏览器策略而不是静音开关。 */
+    const gestureAndPlay = async () => {
+      const a = await state()
+      if (a.video && a.video.paused) { await clickEl(LEAD); await sleep(900) }
+      if ((await state()).video && (await state()).video.muted) { await page.mouse.click(720, 450); await sleep(900) }
+      return await state()
+    }
+    await writeSection({ mute: true, npVolume: 100 })
+    const sOn = await gestureAndPlay()
+    ok(!!sOn.video && sOn.video.muted === true, 'J1 mute=true ⇒ 元素 muted=true（手势之后也是 true）', 'muted=' + (sOn.video && sOn.video.muted))
+    await writeSection({ mute: false })
+    const sOff = await gestureAndPlay()
+    ok(!!sOff.video && sOff.video.muted === false, 'J2 mute=false ⇒ 元素 muted=false（**真的能出声的那一档**）',
+      'muted=' + (sOff.video && sOff.video.muted) + ' paused=' + (sOff.video && sOff.video.paused))
+    ok(!!sOff.video && sOff.video.paused === false && sOff.video.muted === false && sOff.video.volume > 0,
+      'J3 出声三条件同时成立：在放 + 未静音 + 电平 > 0（修前 paused=true 让这一条永远不成立）',
+      JSON.stringify({ paused: sOff.video && sOff.video.paused, muted: sOff.video && sOff.video.muted, volume: sOff.video && sOff.video.volume }))
+  }
+
+  /* ══════════════ K. ③ 进度拖动：真的落到 currentTime ══════════════ */
+  console.log('\n== K. ③ 拖动进度 ⇒ 当前媒体 currentTime 真的跳（不是只画一根会动的线）==')
+  {
+    if (!(await state()).open) { await clickEl(TAP); await sleep(1200) }
+    {
+      /* 拖动前先确保**在放**（"拖完还在放"这条判据要成立，且拖动落点与播放位置互不干扰）。 */
+      const pre = await state()
+      if (pre.video && pre.video.paused) { await clickEl(LEAD); await sleep(1200) }
+    }
+    const s0 = await state()
+    ok(!!s0.scrubEl && !!s0.scrubRect && s0.scrubRect.height >= 15,
+      'K1 进度轨道上有可拖的命中带（data-mpw-np-scrub；高度 ≥15px —— 3px 的轨道本身按不住）',
+      JSON.stringify({ el: s0.scrubEl, rect: s0.scrubRect }))
+    ok(s0.scrubRect && s0.scrubRect.width > 100, 'K2 命中带铺满轨道宽度（不是一个小方块）', JSON.stringify(s0.scrubRect))
+    if (s0.scrubRect) {
+      const r = s0.scrubRect
+      const y = (r.top + r.bottom) / 2
+      const t0 = s0.video ? s0.video.currentTime : null
+      /* 从条子的 20% 处按下、拖到 80%（先下后拖是**真机手指**的顺序；只 move 不 down 不算拖动）。 */
+      await page.mouse.move(r.left + r.width * 0.2, y)
+      await page.mouse.down()
+      await page.mouse.move(r.left + r.width * 0.95, y, { steps: 12 })
+      await page.mouse.up()
+      await sleep(700)
+      const s1 = await state()
+      const dur = s1.video ? s1.video.duration : null
+      const want = dur ? dur * 0.95 : null
+      ok(s1.video && want !== null && Math.abs(s1.video.currentTime - want) < Math.max(1.2, want * 0.08),
+        'K3 拖到 95% ⇒ `video.currentTime` ≈ 时长的 95%（修前：进度只读，"a scrubber you can drag is a different component"）',
+        't ' + t0 + ' → ' + (s1.video && s1.video.currentTime) + '  期望≈' + (want === null ? '?' : want.toFixed(2)) + ' / 时长 ' + dur
+        + '  轨迹=' + JSON.stringify(s1.ops))
+      ok(s1.video && s1.video.paused === false, 'K4 拖动**不把播放停下来**（拖完还在放）', 'paused=' + (s1.video && s1.video.paused))
+      await writeSection({})   /* 归位：不动设置，只重新加载 */
+    }
+  }
+
+  /* ══════════════ L. ② 联动开关两档（口径 + 判据）══════════════ */
+  console.log('\n== L. ② 「播放/暂停同时控制壁纸」两档：关 ⇒ 播放键一个字节都不碰壁纸 ==')
+  {
+    await writeSection({ npLinkWallpaper: true, mute: false })
+    const sOn = await state()
+    ok(sOn.linkAttr === '1', 'L1 联动开 ⇒ 根上 data-mpw-np-link="1"', 'attr=' + sOn.linkAttr)
+    /* 联动开：点一次播放键 ⇒ 真实元素 paused 翻转 */
+    if (sOn.video && sOn.video.paused === false) { await clickEl(LEAD); await sleep(900) }
+    const a0 = await state()
+    await clickEl(LEAD)
+    await sleep(900)
+    const a1 = await state()
+    ok(a0.video && a1.video && a0.video.paused !== a1.video.paused,
+      'L2 联动开 + 视频档 ⇒ 播放键真的驱动壁纸媒体（paused 翻转）',
+      'paused ' + (a0.video && a0.video.paused) + ' → ' + (a1.video && a1.video.paused))
+
+    await writeSection({ npLinkWallpaper: false, mute: false })
+    const b0 = await state()
+    ok(b0.linkAttr === '0', 'L3 联动关 ⇒ 根上 data-mpw-np-link="0"', 'attr=' + b0.linkAttr)
+    const m = (b0.insp && b0.insp.media) || {}
+    /* 真机上 `t()` 会把键解析成文案（zh 那句以「…已关」开头），所以判据是"不是正常副标题 + 提到这条开关"，
+       而不是拿键名比。 */
+    ok(m.canPlay === false && m.canSeek === false && /已关|is off/i.test(String(m.byline)),
+      'L4 联动关 + 视频档（唯一声源就是壁纸本身）⇒ canPlay/canSeek 如实 false + 副标题写清是哪一条挡住的（不假装按得动）',
+      JSON.stringify({ canPlay: m.canPlay, canSeek: m.canSeek, byline: m.byline }))
+    const p0 = b0.video ? b0.video.paused : null
+    await clickEl(LEAD)
+    await sleep(900)
+    const b1 = await state()
+    ok(p0 !== null && b1.video && b1.video.paused === p0,
+      'L5 联动关 ⇒ 播放键**不碰壁纸媒体**（paused 一个字节都没动）', 'paused ' + p0 + ' → ' + (b1.video && b1.video.paused))
+    await writeSection({ npLinkWallpaper: true })
+  }
+
+  /* ══════════════ M. ⑤ 悬浮态卡片放大（借宽），且仍然不被裁切 ══════════════ */
+  console.log('\n== M. ⑤ 悬浮态下的卡片尺寸（借宿主自己的内边距放大；借满也不许越过 overflow:hidden）==')
+  {
+    /* 两档都必须**展开**再量：writeSection 走的是整页 reload，卡片会回到收起态
+       （收起态卡片本来就窄，拿它比会得出"放大没效果"的假红）。 */
+    const measureExpanded = async () => {
+      const a = await state()
+      if (!a.open) { await clickEl(TAP); await sleep(1300) }
+      const b = await state()
+      if (b.open !== true) { await clickEl(TAP); await sleep(1300) }
+      return await state()
+    }
+    await writeSection({ float: false })
+    const sNo = await measureExpanded()
+    const noFloatW = sNo.cardRect ? sNo.cardRect.width : null
+    await writeSection({ float: true })
+    const sFl = await measureExpanded()
+    const flW = sFl.cardRect ? sFl.cardRect.width : null
+    const bleed = sFl.insp ? sFl.insp.bleed : null
+    console.log('   读数: float=false 卡片宽=' + noFloatW + '  float=true 卡片宽=' + flW
+      + '  bleed=' + bleed + '（借到的像素）  containerRect=' + JSON.stringify(sFl.containerRect)
+      + '  colClip=' + JSON.stringify(sFl.colClip) + '  playBlocked=' + JSON.stringify(sFl.playBlocked))
+    ok(noFloatW !== null && flW !== null, 'M1 两种档位都量到了卡片宽度', JSON.stringify({ noFloatW, flW }))
+    ok(flW !== null && flW > 205.92 + 8,
+      'M2 悬浮态卡片比修前更宽（修前实测 205.92px；借宽之后应当 ≥214px）', 'float=true 卡片宽=' + flW + '（修前 205.92）')
+    ok(flW !== null && noFloatW !== null && flW <= noFloatW + 1,
+      'M3 悬浮态卡片**不超过**非悬浮态（放大是"借满可达宽度"，不是无上限放大）', JSON.stringify({ noFloatW, flW }))
+    const clip = (sFl.cardClippedBy && sFl.cardClippedBy.violations) || []
+    ok(clip.length === 0, 'M4 ⑤ 放大之后**仍然四边不被裁切**（借的正是宿主自己的内边距，硬边界是列元素的内边距盒）',
+      clip.length ? '越界: ' + clip.join(', ') : '四边都在内')
+    ok(bleed === null || (bleed > 0 && bleed <= 12),
+      'M6 借宽读数落在 (0, 12]：真的借到了、且没有超过上限（上限见 lib/now-playing.js 的 NP_BLEED_MAX）',
+      'bleed=' + bleed)
+    ok(!!sFl.cardRect && sFl.cardRect.height > 100, 'M5 展开卡片高度仍然 > 100px（放大是等比缩放，不是只拉宽）',
+      'h=' + (sFl.cardRect && sFl.cardRect.height))
+    await page.screenshot({ path: path.join(OUT, '05-float-enlarged.png') })
+    await writeSection({ float: false })
   }
 
   /* ══════════════ H. 默认开 + 让位（抢位夹具）══════════════ */

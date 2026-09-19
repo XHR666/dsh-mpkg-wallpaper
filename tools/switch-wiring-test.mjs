@@ -61,6 +61,13 @@ const NON_CSS = {
   chatFollow: '作用于壁纸层**内联样式** --mpw-bg-blur（lib/client.js:4197 的 JS 路径），不进 buildCss（注：buildCss 里那个同名局部 chatFollowInCss 是死代码，未使用）',
   newStyle: '只改**设置页控件外观**（JS 选 className，如液态滑块 radio），不进 buildCss',
   bsBottomAvoid: '已定案的**故意空操作**：该块只输出一段说明注释（"不要再用 margin-left 二次偏移"，对齐交给 better-sidebar 自己的 ResizeObserver）',
+  /* ①(NP-4)②「播放/暂停同时控制壁纸」：**只影响运行时的传输落点**（要不要把动作同步到壁纸媒体），
+     产物 CSS 一个字都不变。它不是"没接线"——读到它的是 lib/client.js 的 npLinkOn()，
+     由 npTransport 的 play/pause/seek 三条分支消费，并写进媒体快照的 canPlay/canSeek/link
+     三个派生量（组件根上落成 data-mpw-np-link）。判据在 tools/np-control-test.mjs 的 D 组
+     （联动开 ⇒ 播放键驱动壁纸媒体；关 ⇒ 一个字节都不碰；且默认值必须仍是 true = 不改既有行为），
+     变更默认值或删掉 npOnNow 门控都会让那一组变红。 */
+  npLinkWallpaper: '只影响**运行时的传输落点**（同步不同步到壁纸媒体），不生成 CSS；消费者是 lib/client.js 的 npLinkOn() → npTransport，判据见 tools/np-control-test.mjs D 组',
 }
 
 /* ── A2. 非布尔功能探测：patch 里放进去必须让产物变化（运行时门控型的见 RUNTIME_GATED） ── */

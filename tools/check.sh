@@ -55,6 +55,12 @@ node tools/now-playing-test.mjs || fail=1
 #   静音写设置**并且**落到 video/audio/帧内元素；宿主同一位置已有别的插件的元素 ⇒ 不挂/撤下且不重建
 #   （data-mpw-np-yield）。12 组变异自证各自必红。设计与根因：docs/NOW-PLAYING-DSH.md §7.7
 node tools/np-media-test.mjs || fail=1
+# ①(NP-4 2026-09-19 真机修复) Now playing 的**控制面**（电平 / 起播顺序 / 拖动 seek / ② 联动开关 /
+#   ④ 清单可播性 / ⑤ 借宽放大 / ⑥ 对外的接口面）：真机六条各自"修前读数 → 修后读数"的可复现判据。
+#   为什么单开一条：这六件事里五件是"**同一个动作落到谁身上**"（静音 vs 音量、起播用了哪个 muted、
+#   拖动影响壁纸还是只影响声音、清单能不能真取到字节、借宽借谁的像素）—— 界面看着对是判不出来的，
+#   必须对着真实元素 / 真实 URL / 真实矩形断言。11 组变异各自必红。根因/读数：docs/NOW-PLAYING-DSH.md §7.8
+node tools/np-control-test.mjs || fail=1
 # ①(2026-09-18) 「开关必须真的接线」审计（功能静默无效这一类的通用判据）：
 #   来历是真事故：「配色」(accent) 与「深底文字可读增强」(aquaTextEnhance) 两段 CSS 被一起
 #   包在 `if (aquaOn(section))` 里 ⇒ 只开这两个开关时规则根本不生成（开关能点、没效果、不报错）。

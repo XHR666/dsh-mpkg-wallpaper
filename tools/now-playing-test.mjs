@@ -306,8 +306,16 @@ console.log('\n== B. 开关默认开（DEFAULT_NP_NOW_PLAYING=true）⇒ 默认�
   ok('B1 源码里的默认值是 true（改回 false 必须让本组变红）',
     /const DEFAULT_NP_NOW_PLAYING = true;/.test(clientSrc),
     (clientSrc.match(/const DEFAULT_NP_NOW_PLAYING = [^;]+;/) || ['<未找到>'])[0])
+  /* ①(NP-4) B2 收紧：原来只判"npNowPlaying 是 boolFields 的**最后一个**元素"（`[^\]]*"npNowPlaying"\]`）
+     —— NP-4 在它后面追加了 `npLinkWallpaper`，那条正则就恒假（**判据绑在了"谁是最后一个"上**，
+     这是断言写法的问题，不是放宽）。现在判"它在这个数组里、且数组以它或它的兄弟收尾"，
+     并同时判新键也在（只增不减：原来真正想说的"已登记"一个字都没少）。 */
   ok('B2 npNowPlaying 已登记进 boolFields（否则接线审计与导入净化都会漏掉它）',
-    /const boolFields = \[[^\]]*"npNowPlaying"\]/.test(clientSrc))
+    /const boolFields = \[[^\]]*"npNowPlaying"[^\]]*\]/.test(clientSrc))
+  ok('B2b ①(NP-4)② npLinkWallpaper 也登记进 boolFields（新开关同样要过接线审计）',
+    /const boolFields = \[[^\]]*"npLinkWallpaper"[^\]]*\]/.test(clientSrc))
+  ok('B2c ①(NP-4)① npVolume 登记进 numFields（导入净化按数值走，字符串会被拒）',
+    /const numFields = \[[^\]]*"npVolume"[^\]]*\]/.test(clientSrc))
   ok('B3 npNowPlaying 已登记进 BACKUP_FIELDS（随备份导出/导入）',
     /const BACKUP_FIELDS = \[[\s\S]{0,1400}?"npNowPlaying"/.test(clientSrc))
   /* 开关关：控制器一个节点都不建、一个观察者都不装 */

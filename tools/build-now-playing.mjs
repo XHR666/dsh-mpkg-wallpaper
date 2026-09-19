@@ -95,9 +95,15 @@ export function applyRegion(src, body) {
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
 if (isMain) {
   const check = process.argv.includes('--check')
+  /* ①(NP-4) `--np <path>` / `--client <path>`：给"变异自证"用。
+     变异门禁要在**副本**上跑（真树不动），而副本改了 now-playing.js 之后必须同步一次生成区，
+     否则 A 组（生成区漂移）先红、看不出是哪条变异打红的 —— 那是假红，不是分辨力。 */
+  const argOf = (n, d) => { const i = process.argv.indexOf(n); return i > 0 ? process.argv[i + 1] : d }
+  const compPath = path.resolve(argOf('--np', COMP))
+  const clientPath = path.resolve(argOf('--client', CLIENT))
   const mathSrc = fs.readFileSync(MATH, 'utf8').replace(/\n$/, '')
-  const compSrc = fs.readFileSync(COMP, 'utf8').replace(/\n$/, '')
-  const client = fs.readFileSync(CLIENT, 'utf8')
+  const compSrc = fs.readFileSync(compPath, 'utf8').replace(/\n$/, '')
+  const client = fs.readFileSync(clientPath, 'utf8')
   const body = buildRegionBody(mathSrc, compSrc)
   const next = applyRegion(client, body)
   if (next === client) {
@@ -108,7 +114,7 @@ if (isMain) {
     console.error('✗ Now playing 生成区与源不一致（漂移）：重跑 node tools/build-now-playing.mjs')
     process.exit(1)
   }
-  fs.writeFileSync(CLIENT, next)
+  fs.writeFileSync(clientPath, next)
   /* 单位更正（①(NP-2)）：原先把 `String.length` 标成"字节"——那对中文是错的
      （一个汉字 3 字节、length 只算 1）。两个数都给，各自标对。 */
   const bytes = (s) => Buffer.byteLength(s, 'utf8')

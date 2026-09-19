@@ -285,10 +285,39 @@ console.log('\n== A. npAudioScope / 两条宿主路由：壁纸目录到底在�
   ok('A7 一点线索都没有 ⇒ null（不瞎猜目录）', S({ image: 'data:image/png;base64,AAA' }) === null, JSON.stringify(S({ image: 'data:image/png;base64,AAA' })))
   ok('A8 scanUrl：custom ⇒ /custom-scene-audio?refs=0&folder=<编码>', T.scanUrl({ mpkgKey: 'custom|3646392375' }) === '/api/mpkg-wallpaper/custom-scene-audio?refs=0&folder=3646392375', T.scanUrl({ mpkgKey: 'custom|3646392375' }))
   ok('A8b scanUrl：library ⇒ /library-scene-audio?refs=0&ltoken=<编码>', T.scanUrl({ mpkgKey: 'library|a b' }) === '/api/mpkg-wallpaper/library-scene-audio?refs=0&ltoken=a%20b', T.scanUrl({ mpkgKey: 'library|a b' }))
-  ok('A9 trackUrl：custom ⇒ /raw?custom=1&folder=&file=（路径只取 basename，防穿越）',
-    T.trackUrl({ mpkgKey: 'custom|3646392375' }, 'sub/../backgroundmuisc.mp3') === '/api/mpkg-wallpaper/raw?custom=1&folder=3646392375&file=backgroundmuisc.mp3',
+  /* ①(NP-4 2026-09-19 真机修复) A9 收紧成**两条**（这条断言只增不减：原来那条的"单段路径
+     ⇒ /raw?file=<basename>"原样保留在 A9a，新增 A9a2/A9a3 判"有子目录时必须走 path 式前缀路由"）。
+     为什么必须改：旧写法无条件取 basename ⇒ 音轨在子目录里时恒 404（真机：`3744579963` 的
+     10 条音轨全在 `assets/audio/`，`raw?...&file=CH0200_…ogg` 实测 **404**；而
+     `custom-folder/3744579963/assets/audio/CH0200_…ogg` 实测 **200 / audio/ogg**）
+     ⇒ "上一首/下一首"看着在切、其实一条都放不出来。 */
+  ok('A9a trackUrl：custom **单段**路径 ⇒ /raw?custom=1&folder=&file=（与改动前逐字节相同）',
+    T.trackUrl({ mpkgKey: 'custom|3646392375' }, 'backgroundmuisc.mp3') === '/api/mpkg-wallpaper/raw?custom=1&folder=3646392375&file=backgroundmuisc.mp3',
+    T.trackUrl({ mpkgKey: 'custom|3646392375' }, 'backgroundmuisc.mp3'))
+  /* 归一化那一步的判据：`sub/../x.mp3` 丢掉 `..` 之后是 **2 段**（`sub/x.mp3`）⇒ 走 path 式路由，
+     而且产物里不许出现 `..`（A9a3 是这条的完整版）。 */
+  ok('A9a1 trackUrl：`sub/../x.mp3` 归一化成 `sub/x.mp3`（丢 `..` 段）⇒ path 式、产物无 `..`',
+    (() => { const u = T.trackUrl({ mpkgKey: 'custom|3646392375' }, 'sub/../backgroundmuisc.mp3'); return u === '/api/mpkg-wallpaper/custom-folder/3646392375/sub/backgroundmuisc.mp3' && u.indexOf('..') < 0 })(),
     T.trackUrl({ mpkgKey: 'custom|3646392375' }, 'sub/../backgroundmuisc.mp3'))
-  ok('A9b trackUrl：library ⇒ /raw?ltoken=&file=', T.trackUrl({ mpkgKey: 'library|tok1' }, 'BGM.wav') === '/api/mpkg-wallpaper/raw?ltoken=tok1&file=BGM.wav', T.trackUrl({ mpkgKey: 'library|tok1' }, 'BGM.wav'))
+  ok('A9a2 trackUrl：custom **有子目录** ⇒ path 式 /custom-folder/<folder>/<逐段编码>（真机 200 的那条）',
+    T.trackUrl({ mpkgKey: 'custom|3744579963' }, 'assets/audio/CH0200_MemorialLobby_1_1.ogg') === '/api/mpkg-wallpaper/custom-folder/3744579963/assets/audio/CH0200_MemorialLobby_1_1.ogg',
+    T.trackUrl({ mpkgKey: 'custom|3744579963' }, 'assets/audio/CH0200_MemorialLobby_1_1.ogg'))
+  /* 防穿越的另一半：`.` / `..` 段必须被**丢掉**（丢掉之后要么退化成单段走 /raw，要么整段被
+     过滤到只剩文件名），任何一个 `..` 都不许出现在产物 URL 里 —— 这是 A9 原来那条的意图。 */
+  {
+    const cases = ['assets/../../etc/passwd', 'a/./b/x.ogg', '..\\..\\x.ogg', 'assets/audio/x.ogg', 'sounds/中文 名.mp3']
+    const urls = cases.map((c) => T.trackUrl({ mpkgKey: 'custom|3744579963' }, c))
+    const noDotDot = urls.every((u) => u.indexOf('..') < 0 && u.indexOf('./') < 0 && u.indexOf('\\') < 0)
+    const encoded = urls.every((u) => !/[^\x00-\x7f]/.test(u))
+    ok('A9a3 trackUrl 防穿越：`.`/`..` 段被丢掉、反斜杠不进 URL、非 ASCII 逐段编码', noDotDot && encoded,
+      JSON.stringify(cases.map((c, i) => c + ' → ' + urls[i])))
+  }
+  ok('A9a4 trackUrl：包内音轨（source=pkg，文件在 scene.pkg 里）⇒ **空串**（宿主没有字节通道 ⇒ 调用方标"只列清单"）',
+    T.trackUrl({ mpkgKey: 'custom|3719111841' }, 'sounds/x.mp3', 'pkg') === '', JSON.stringify(T.trackUrl({ mpkgKey: 'custom|3719111841' }, 'sounds/x.mp3', 'pkg')))
+  ok('A9b trackUrl：library **单段** ⇒ /raw?ltoken=&file=（同改动前）', T.trackUrl({ mpkgKey: 'library|tok1' }, 'BGM.wav') === '/api/mpkg-wallpaper/raw?ltoken=tok1&file=BGM.wav', T.trackUrl({ mpkgKey: 'library|tok1' }, 'BGM.wav'))
+  ok('A9b2 trackUrl：library **有子目录** ⇒ /library-web/<ltoken>/<逐段编码>（prefix 路由同样支持嵌套）',
+    T.trackUrl({ mpkgKey: 'library|tok1' }, 'assets/a/b.ogg') === '/api/mpkg-wallpaper/library-web/tok1/assets/a/b.ogg',
+    T.trackUrl({ mpkgKey: 'library|tok1' }, 'assets/a/b.ogg'))
   ok('A10 真机那一串（用户现场）：web 壁纸的 scanUrl 是 custom 路由，不是 library（旧写法拼成 library ⇒ 404 ⇒ 恒 0 条）',
     T.scanUrl(SEC_WEB).indexOf('/custom-scene-audio?refs=0&folder=3646392375') > 0, T.scanUrl(SEC_WEB))
 }
@@ -729,8 +758,10 @@ const MUTS = [
     id: 'prev-next-collapse-to-restart', expect: 'C', file: 'client',
     why: '①(NP-3) 把"上一首/下一首"改回"回到开头"（旧写法 op=restart 只把 currentTime 归零）'
       + '⇒ 曲目顺序语义消失（用户现场第 3/7 条）',
-    mut: (s) => s.replace("				} else if (op === \"next\" || op === \"prev\") {\n					npStepTrack(op === \"next\" ? 1 : -1, true);",
-      "				} else if (op === \"next\" || op === \"prev\") {\n					if (false) npStepTrack(1, true);"),
+    /* ①(NP-4)：NP-4 在那一行外面包了一层"记 did"（`did = npStepTrack(...) ? ... : ...`），
+       注入点跟着更新 —— 判据本身没变（把"按清单换曲"改回"什么都不做"）。 */
+    mut: (s) => s.replace("did = npStepTrack(op === \"next\" ? 1 : -1, true) ? \"step\" : \"step(nolist)\";",
+      "if (false) npStepTrack(1, true);"),
   },
 ]
 if (!NO_MUT) {
