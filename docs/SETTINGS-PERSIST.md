@@ -246,3 +246,12 @@ localStorage 字段集合（不含元键）：前 90 → 后 90   丢失=[]   �
    只有"推不出"的档（目录被删/改名/多候选）才需要重选一次，且那时面板有明确提示、其余设置全部保留。
 8. `README*.md` / `package.json` / `lib/web-wallpaper.js` / `lib/web-interaction.js` /
    `lib/media-session.js` **未动**；版本号未动。
+
+---
+
+## 7. 提交
+
+* 插件仓：`6514e6e`（本条修法 + 门禁 + 探针 + 本文档；只提交自有路径，未用 `git add -A`）。
+* 台账：渲染器仓 `we-scene-demo/docs/PATCHES.md` 的 **P-157**（跨仓登记，本仓一行代码未动）。
+* 提交前自跑：`bash tools/check.sh --quick` 全绿、`bash tools/pre-commit.sh` 通过、
+  `node tools/settings-persist-test.mjs` 112 通过/0 失败（含 7 组变异）。
