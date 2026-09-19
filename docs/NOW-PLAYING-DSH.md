@@ -1226,3 +1226,23 @@ $ find dd/3582362359 -type f \( -iname '*.mp3' -o -iname '*.wav' -o -iname '*.og
    **绝对不行**（`docs/COPYING-RULES.md` §2.2"GPL 永不进插件"，`tools/web-wallpaper-test.mjs` 的 F 组守着）。
 3. 组件**零相对 require**、不认任何宿主专有对象（`doc/win/react/math` 全部注入）⇒ 测试台自带
    React 与文档即可挂载；`createRoot` 由调用方给（测试台用 `react-dom/client`）。
+
+### 8.6 ①(NP-4) 那一轮的落账（2026-09-19 真机修复后）
+
+| 项 | 落点 | 哈希 |
+|---|---|---|
+| **代码 + 门禁 + 探针 + 本文档 §7.8**（10 个文件） | `lib/client.js`、`lib/now-playing.js`（生成区重算）、`tools/build-now-playing.mjs`、`tools/check.sh`、`tools/now-playing-test.mjs`、`tools/np-media-test.mjs`、`tools/np-control-test.mjs`（新）、`tools/np-media-live-probe.mjs`、`tools/switch-wiring-test.mjs`、`docs/NOW-PLAYING-DSH.md` | **b5e822250327da5d6b8023db78d4796119a3a090**（短 `b5e8222`） |
+| **跨仓台账**（渲染器仓 `we-scene-demo/docs/PATCHES.md`） | P-158（编号 = 提交那一刻的实际最大号 157 + 1；**只追加这一条**，渲染器仓其余路径一行未动） | 见 P-158.5 |
+
+**提交后复跑**（2026-09-19）：
+
+* `bash tools/check.sh` → **11/12 步全绿**；唯一红是 **既有**的语料指纹漂移
+  （第 5 步 `web-wallpaper-test` 的 L5：`399 通过 / 1 失败`，条目 `dd/3580207945/index.html` 的 sha256
+  与文档登记值不同）。**该红在纯 HEAD（独立 worktree，`bab5492`）上同样存在**，门禁自己写着
+  "这是语料变了、不是代码 bug"；本轮**不代做**刷新（刷新等于把数据面漂移盖掉）。
+* `node tools/np-control-test.mjs` → **62 通过 / 0 失败**（含 13 组变异各自必红）
+* `node tools/now-playing-test.mjs` → **85 通过 / 0 失败**
+* `node tools/np-media-test.mjs` → **87 通过 / 0 失败**（含 12 组变异）
+* `node tools/np-media-live-probe.mjs --selftest` → **8 通过 / 0 失败**
+* 真机 `node tools/np-media-live-probe.mjs`（真 `:3080`）→ **71 PASS / 0 FAIL**
+  （跑前跑后 `ps -eo comm | grep -cx firefox` 都是 **0**；单进程 headless Firefox）
