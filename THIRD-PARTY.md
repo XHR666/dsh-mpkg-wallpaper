@@ -216,7 +216,8 @@ db50361cfd3d860602ddc2ff8bd1b6567ff01f471df1eccb60b3bcbfbbb0cd08  lib/liquid-gla
 | `tools/token-namespace-test.mjs` | 25987 | `3c66234b4566bdc5515d03a8801a745de3319677bacff89e4bc22d43916f8ded` |
 | （仓外，非 git）工作区根 `docs/COPYING-RULES.md` | 47283 | `19fd4367e777da4df3401cfb05316d510b309b31d39eade7c04cac5d282610a5` |
 
-提交哈希：见 `docs/NOW-PLAYING-DSH.md` §8.2（本仓模式：先提交代码，再由**第二次「文档落账」提交**
-把哈希写进去；落账提交**自身**的哈希无法写进自己 ⇒ `git log -1 -- THIRD-PARTY.md`）。
+提交哈希：**`bf538fabe3302964fbe8913baab0af4eb413e285`**（①(NP-1) 代码 + 本文档；本仓模式：先提交代码，
+再由**第二次「文档落账」提交**把哈希写进去 —— 本次即那第二次 ⇒ 明细见 `docs/NOW-PLAYING-DSH.md` §8.2；
+落账提交**自身**的哈希无法写进自己 ⇒ `git log -1 -- THIRD-PARTY.md`）。
 
 ---

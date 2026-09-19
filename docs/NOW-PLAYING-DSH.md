@@ -520,10 +520,11 @@ $ node tools/now-playing-test.mjs
 
 | 提交 | 内容 | 哈希 |
 |---|---|---|
-| 第 1 次（代码 + 设计文档 + 归属登记） | `lib/now-playing*.js`、`lib/client.js`、`tools/build-now-playing.mjs`、`tools/now-playing-test.mjs`、`tools/check.sh`、`tools/token-namespace-test.mjs`、`THIRD-PARTY.md`、`docs/NOW-PLAYING-DSH.md` | 见下方"落账"行（第一次提交时还不知道自己的哈希 ⇒ 由第二次提交写入） |
+| 第 1 次（代码 + 设计文档 + 归属登记） | `lib/now-playing*.js`、`lib/client.js`、`tools/build-now-playing.mjs`、`tools/now-playing-test.mjs`、`tools/check.sh`、`tools/token-namespace-test.mjs`、`THIRD-PARTY.md`、`docs/NOW-PLAYING-DSH.md` | **`bf538fabe3302964fbe8913baab0af4eb413e285`**（短 `bf538fa`，9 files changed, 4850 insertions(+), 9 deletions(-)） |
 | 第 2 次（**文档落账**） | 只改文档：把第 1 次提交的哈希写进本节与 `THIRD-PARTY.md` §6.1 | 写进下面这行；**它自己的哈希无法写进自己** ⇒ `git log -1 -- docs/NOW-PLAYING-DSH.md` |
 
-**落账值**：第 1 次提交 = `__COMMIT1__`；第 2 次（本行所在）= `git log -1 -- docs/NOW-PLAYING-DSH.md`。
+**落账值**：第 1 次提交 = `bf538fabe3302964fbe8913baab0af4eb413e285`；
+第 2 次（**本行所在的「文档落账」提交**）= `git log -1 -- docs/NOW-PLAYING-DSH.md`（写完才有哈希 ⇒ 无法自指）。
 
 ### 8.3 提交后复跑（新文件进入 tracked ⇒ 被"只扫 tracked"的门禁覆盖）
 
@@ -535,8 +536,9 @@ $ node tools/now-playing-test.mjs
 
 | 提交后复跑 | 实测 |
 |---|---|
-| `node tools/secret-scan-test.mjs` | 见下方"落账值"块（扫描文件数 + 0 命中尾行） |
-| `node tools/integrity-check.mjs` | 见下方"落账值"块（结果 `72 通过, 0 失败`） |
+| `node tools/secret-scan-test.mjs` | `扫描 108 个 tracked 文件（文本 108 个；跳过二进制 0 / >4MB 0）· 凭据模式 12 条 · 本机路径模式 3 条` … `✓ 敏感信息扫描干净：凭据 0 命中、本机绝对路径 0 命中、白名单无腐烂条目` |
+| `node tools/integrity-check.mjs` | `结果: 72 通过, 0 失败` + `✓ 插件完整性自检通过（配合 tools/check.sh 的 12 步门禁一起看）` |
+| `git status --porcelain` | 空（提交后工作区干净） |
 
 ---
 
