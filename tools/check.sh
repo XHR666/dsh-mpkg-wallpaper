@@ -89,6 +89,17 @@ node tools/bgwrap-visible-test.mjs || fail=1
 #   小图原路径不变 / `?mpwpersist=legacy` 与"删掉读侧 dataURL 分支"的变异必须变红。
 #   判据与阈值表：docs/PERSISTENCE.md。
 node tools/persist-test.mjs || fail=1
+# ①(2026-09-19 设置持久化轮 · 真机"壁纸选择字段会丢")：真机两处存储都成了**半残档**
+#   （`mpkgKey:"custom|3582362359"` 还在、`image`/`webUrl` 都没）⇒ buildCss 的 hasImage=false
+#   ⇒ `.mpw-bgWrap{display:none}` ⇒ **用户的壁纸不显示**（tools/settings-persist-live-probe.mjs 实测）。
+#   本步（假 DOM + 假宿主，驱动**真** lib/client.js 的设置路径）钉四条：
+#     · 一次"无关开关"保存 ⇒ 逐字段 diff 只差这一次改的键（字段集合与每个值都不许动）；
+#     · 两处存储（localStorage / 宿主 settings.json）的新旧裁决：4 种组合各自可判（内嵌时间戳 + 补空缺不覆盖）；
+#     · 半残档自愈：能按包/目录元数据推出来就推并**恢复壁纸层**，推不出就**明确提示**（不静默隐藏）；
+#     · 用户主动"清空壁纸"**仍然**能被清空（自愈不是"删不掉"）。
+#   宿主侧同一条契约（PUT 合并不替换）另有源码守卫 + 行为断言；6 组变异各自必红。
+#   根因链/修法/判据/诚实清单：docs/SETTINGS-PERSIST.md
+node tools/settings-persist-test.mjs || fail=1
 
 if [ "${1:-}" != "--quick" ]; then
   step "3/12 CSS 组合矩阵（512 全组合 + 600 随机 + 边界；8 类历史回归断言）"
