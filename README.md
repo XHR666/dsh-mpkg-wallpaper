@@ -6,22 +6,23 @@
 
 给 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) Web 界面（`dsh web`）添加背景壁纸的插件：**Wallpaper Engine `.mpkg` 解析、Steam 创意工坊目录、视频/网页/图片壁纸、时间变化壁纸的多时段切换、整屏虚化体系、主题色与玻璃外观、本地壁纸库、定时轮换、Now playing 控件、一键更新**。外观细节几乎全部可调。
 
-> 版本口径：本文件描述的是 `package.json` 里 **`3.7.3`** 这一版实现。发布面共 **14 个文件**（`lib/` 8 个运行时文件 + `icon.svg`、`cordis.patch.yml`、`README.md`、`README.en.md`、`THIRD-PARTY.md`、`LICENSE`）；`lib/liquid-glass/**`、`lib/liquid-glass-bundle.js`、`dist/`、`tools/`、`docs/` 都不进 npm 包（`package.json:8-21`）。
+> 版本口径：本文件描述的是 `package.json` 里 **`3.8.0`** 这一版实现。发布面共 **14 个文件**（`lib/` 8 个运行时文件 + `icon.svg`、`cordis.patch.yml`、`README.md`、`README.en.md`、`THIRD-PARTY.md`、`LICENSE`）；`lib/liquid-glass/**`、`lib/liquid-glass-bundle.js`、`dist/`、`tools/`、`docs/` 都不进 npm 包（`package.json:8-21`）。
 
 ---
 
 ## 这一版新增/变更
 
-以 `package.json` 当前版本 **3.7.3** 为基线。逐条的发布说明草稿、回退开关与实测值见 [`docs/RELEASE.md`](docs/RELEASE.md) §3.7.3→下一版 与 [`docs/RELEASE-READY-3.8.0.md`](docs/RELEASE-READY-3.8.0.md)。
+当前版本 = `package.json` 的 **3.8.0**。发布前置/命令/回滚见 [`docs/RELEASE.md`](docs/RELEASE.md)，本轮改动清单见 [`docs/RELEASE-READY-3.8.0.md`](docs/RELEASE-READY-3.8.0.md)，Now playing / 壁纸声音的根因与真机读数见 [`docs/NOW-PLAYING-DSH.md`](docs/NOW-PLAYING-DSH.md) §7.7。
 
-- **Now playing 挂到左侧栏**：新设置项 `npNowPlaying`（默认**关**），落在「壁纸设置」tab、紧挨既有 `mute` 下方（`lib/client.js:13126`）。关闭时零注入——不建 DOM、不装观察者、`buildCss` 产物里一行 NP 规则都没有（`lib/now-playing.js:38-51`、`tools/now-playing-test.mjs` B 段）。组件本体是 **Bencho 的 "Now playing"（MIT）逐行移植**（注释原文保留），归属登记见 `THIRD-PARTY.md` §6；纯数学与组件拆成 `lib/now-playing-math.js` / `lib/now-playing.js`，由 `tools/build-now-playing.mjs` **逐字节内联**进 `lib/client.js` 的生成区（`MPW-NP-GEN-START/END`，`lib/client.js:6240`–`7884`），配两道漂移门禁（生成器自比 + 产物反抠比对）。挂载与收起判据见下文[「Now playing 控件」](#now-playing-控件)。
-- **系统媒体会话的宿主端适配器**：新增 `lib/media-session.js`——Linux 走 **MPRIS**（优先 `playerctl`，退化 `dbus-send`）、Windows 走 **SMTC**（`powershell.exe` + WinRT），macOS 明确 `unsupported-platform`；没有桌面会话总线时回 `available:false / no-session-bus`，**不抛异常、不编数据、不做假动作**（`lib/media-session.js:1-68`）。⚠ **该模块当前未被接线**：全仓无 `import`（`lib/index.js` / `lib/client.js` / `tools/build-bundle.mjs` 都没有），也没有对应的宿主路由，所以设置面板里看不到任何系统媒体信息。判据 `node tools/media-session-test.mjs`（95 断言 = 89 主体 + 6 变异，未接入 `tools/check.sh`）。
-- **网页壁纸渲染 / API 覆盖（WP-1）**：帧内**存储 facade**（不透明源下真 `localStorage` 一读就抛 `SecurityError`）+ 宿主 `/web-store` 路由按壁纸隔离持久化；**主音量 = 宿主音量 × 作者页面音量**；HTML **源级** `file:///` 改写；命中 CSP 时**跳过 shim 注入**并回原字节（不 500）；宿主 `/media-audio` 音频控制契约（**默认仍静音**）。回退：确认弹窗里的「兼容模式（同源）」，或 `?mpwstore=0`。依据 `lib/web-wallpaper.js:1-30`、`docs/WEB-WALLPAPER.md` §5.4/§6/§13。
-- **网页壁纸触控（WP-2）**：`postMessage` 的 `op:'touch'` 协议 + 帧内**真 `TouchEvent`**，触屏单指拖动/多指序列能到达作者脚本，并修掉「拖拽被当成点击」。默认档没变（`mpwWebIxMode()` 缺省 `pointer`）。回退：设置项 `webInteraction="off"` 或 URL `?mpwinteract=off|0`（`lib/web-interaction.js:99-107`、`lib/client.js:2622-2633`）。
-- **若干真机修复**：Now playing 修掉「slot 后渲染那一帧 `wide=false` 把 256px 展开态判成收起 ⇒ 刷新后控件自己消失」，判定改为**物理宽度优先**（`lib/now-playing.js:420-425`、`:744-752`，阈值 `NP_COLLAPSE_MAX_W=96`）；标题栏磨砂 `syncHeaderFrost()` 的 `ReferenceError` 与右侧时间线条被弄透明（见[历史台账](#历史台账)）；`lgCss` 整块因 TDZ 从未执行；`sessionFollow` 有开关无人读；选择文件夹的滚动跳顶。
-- **门禁扩容**：CSS 组合矩阵 615 组、样式作用域护栏、表面 token 命名空间等价性、开关接线审计、秒级 pre-commit（全部见[历史台账](#历史台账)与「[判据](#判据一条命令跑完)」）。
+- **Now playing 默认挂载 + 会让位**：设置项 `npNowPlaying` **默认开**（`lib/client.js` 的 `DEFAULT_NP_NOW_PLAYING`），仍在「壁纸设置」tab、紧挨既有 `mute` 下方（`lib/client.js` 的 `toggleRow(t("npNowPlaying"), …)`）。**关掉它仍然是零注入**——不建 DOM、不装观察者、`buildCss` 产物里一行 NP 规则都没有（`tools/now-playing-test.mjs` 的 B 段）。默认开的前提是**礼让**：宿主同一位置已经有别的插件注入的元素时不挂/撤下，并留一个可查询状态 `data-mpw-np-yield`（`lib/now-playing.js` 的 `occupantOf()`；挂载前与挂载后都判，占用者走了再回来）。组件本体是 **Bencho 的 "Now playing"（MIT）逐行移植**（注释原文保留，归属见 `THIRD-PARTY.md` §6）；纯数学与组件拆成 `lib/now-playing-math.js` / `lib/now-playing.js`，由 `tools/build-now-playing.mjs` **逐字节内联**进 `lib/client.js` 的 `MPW-NP-GEN-START/END` 生成区，配两道漂移门禁（生成器自比 + 产物反抠比对）。挂载与收起判据见下文[「Now playing 控件」](#now-playing-控件)。
+- **壁纸声音真的接线**：数据源只认**当前真的在放**的那个媒体元素（页面里那个隐藏空壳 `#mpw-bgVideo` 在**任何壁纸类型下都在 DOM 里**，旧实现按选择器命中它就当"当前媒体"）⇒ 视频壁纸的播放/暂停/静音落在真实元素上（**`mute` 开关真的落到元素上：关掉静音就真的出声**，旧写法把 `video.muted` 写死 `true`，之后再没有代码按设置赋值）；壁纸目录里**真实存在**的音频文件由我们自己的 `<audio>` 播（作用域认 `mpkgKey="custom|<folder>"`，旧写法只认 `folderName` ⇒ 自定义目录里的 web 壁纸永远拼成 library 路由 404）⇒ **上一首/下一首按清单顺序环形切换**，不再是"回到开头"；web 壁纸帧内那份声音只有**静音**这一条真通道（`canPlay=false`，如实显示，不假装能暂停帧内 WebAudio）；我们放音时帧内被强制静音（防同一首放两遍）。
+- **悬浮态卡片不再被裁切**：贴合缩放改量**我们自己的容器**（旧写法量 `[class*="sidebarCol"]`，而真机上同类名不止一处，量到 280 而容器只有 256），`.mpw_np` 宽度按 `math.W` 钉住并让溢出均分；web 壁纸分支补上 `data-mpw-float` 门控与 `applyNowPlaying()`（旧写法提前 `return`，切到 web 壁纸后控件根本不挂）。
+- **门禁扩容**：`tools/now-playing-test.mjs` **83 通过 / 0 失败**（含 7 组变异）；新增 `tools/np-media-test.mjs`（清单作用域 / 数据源判定 / 播放落点 / 静音落点 / 让位 / 标记 / web 路径不跳过 apply / 卡片几何，**82 通过 / 0 失败**，含 **12 组变异自证**），已注册进 `tools/check.sh` 第 2 步；真机探针新增 `tools/np-media-live-probe.mjs`（`:3080` + headless Firefox；修前 16 PASS / 22 FAIL → 修后 45 PASS / 0 FAIL，不入常驻门禁）。
+- **若干真机修复**：Now playing「slot 后渲染那一帧 `wide=false` 把展开态判成收起 ⇒ 刷新后控件自己消失」（判定改为**物理宽度优先**，阈值 `NP_COLLAPSE_MAX_W = 96`；锚点晚出现时盯住文档自动补挂）；播放/暂停那两个四边形改由**播放状态自己的补间**驱动（旧写法由展开进度驱动 ⇒ 收起态恒画三角、展开态恒画双条）；标题栏磨砂 `syncHeaderFrost()` 的 `ReferenceError` 与右侧时间线条被弄透明（见[历史台账](#历史台账)）；`lgCss` 整块因 TDZ 从未执行；`sessionFollow` 有开关无人读；选择文件夹的滚动跳顶。
+- **仍在同一发布面上的前一轮能力**：网页壁纸渲染 / API 覆盖（帧内存储 facade + 宿主 `/web-store`、主音量、源级 `file:///` 改写、CSP 跳过注入、`/media-audio`）与网页壁纸触控（`op:'touch'` 真 `TouchEvent`）；系统媒体会话的**宿主端适配器** `lib/media-session.js`（MPRIS / SMTC，**已实现、尚未接线**，见下文）。
+- **门禁与护栏**：CSS 组合矩阵、样式作用域护栏、表面 token 命名空间等价性、开关接线审计、秒级 pre-commit（见[历史台账](#历史台账)与「[判据](#判据一条命令跑完)」）。
 
-> 本轮**没有改变任何默认行为**：`webInteraction` 缺省仍是 `pointer`（3.7.3 已发布版就有），`npNowPlaying` 默认关且零注入，WP-1 是既有网页壁纸链路的能力补全（默认仍静音）。
+> 默认行为变化只有一处，如实写明：**`npNowPlaying` 从关改为开**（关掉即回到零注入；同一位置已有别的插件时自动让位）。其余默认档未变：`webInteraction` 缺省仍是 `pointer`，网页壁纸声音默认仍静音（`mute` 默认开）。
 
 ## 核心能力
 
@@ -116,7 +117,7 @@
 | 面板文案 | 内部键 | 默认 | 作用 | 关闭 / 回退 |
 |---|---|---|---|---|
 | 静音（网页壁纸） | `mute` | 开 | 网页壁纸音频；关 = 放壁纸声音 | 关 |
-| **Now playing（左侧栏「设置」上方）** | `npNowPlaying` | **关** | 在左侧栏挂可展开播放器；关 = 零注入 | 关 / 恢复默认 |
+| **Now playing（左侧栏「设置」上方）** | `npNowPlaying` | **开** | 在左侧栏挂可展开播放器（传输行 = 壁纸声音控制：上一首 / 播放暂停 / 下一首，卡片里再加静音）；**关掉仍是零注入**；同一位置检测到其他插件注入的元素时自动让位并写 `data-mpw-np-yield` | 关 / 恢复默认 |
 | 水平翻转（镜像） | `flipX` | 关 | 壁纸左右镜像 | 关 |
 | 垂直翻转（镜像） | `flipY` | 关 | 壁纸上下镜像 | 关 |
 | 解码帧率上限 | `fpsCap` | 无限制 | 源帧率超限时宿主 ffmpeg 抽帧转码（24/30/48/60） | 选「无限制」 |
@@ -292,21 +293,24 @@
 
 ## Now playing 控件
 
-- **挂载点**：宿主 slot `sidebar.footer.action`（插件用 `createSlotAction` 注册 `id:"mpw-now-playing"`、`order:60`，`lib/client.js:15411-15416`）；拿不到 slot 时按三级降级链插入——`[data-slot="sidebar.settings"]` 之前 → `[class*="settingsArea"]` 之前 → `[class*="footArea"]` 首位；全部找不到就**不建任何节点**并 `console.warn`（`lib/now-playing.js:464-488`、`:863-867`）。
-- **左侧栏收起即隐藏**：`data-mpw-np-hidden` + CSS `display:none`（`lib/now-playing.js:174`）。判据以**物理宽度优先**（`shouldHide()` 读 `[class*="sidebarCol"]` 实宽，阈值 `NP_COLLAPSE_MAX_W=96`，严格 `<`），宿主信号（slot `wide` / `data-sidebar-collapsed` / 根类名 `collapsed`）只在宽度量不到时兜底；宽度不够时整体按 `--mpw-np-fit = clamp(avail/260, 0.5, 1)` 缩放（`lib/now-playing.js:106-115`、`:420-425`、`:744-769`）。
-- **形态**：一颗胶囊展开成卡片——封面、标题/副标题、进度条 + 时钟、整块点击热区、三个传输键（回到开头 / 播放-暂停 / 静音），展开是自停的 0→1 补间（无常驻 rAF）。播放/暂停不是换图标而是那对八点四边形（`lib/now-playing.js:506-529`、`:559-627`）。
-- **数据源四情形**（`lib/client.js:5198-5278`）：
+> 定位口径：本节按**符号名**引用实现（`lib/now-playing.js` 的 `resolveAnchor` / `shouldHide` / `occupantOf` / `PlayMark` / `markYield`，`lib/now-playing-math.js` 的 `opsX` 等，`lib/client.js` 的 `npResolveMedia` / `npActiveVideo` / `npAudioScope` / `npApplyMute` / `applyNowPlaying`）——**行号会随版本漂移，以符号为准**。形态是「源 + 生成内联」：`lib/now-playing-math.js` + `lib/now-playing.js` 由 `tools/build-now-playing.mjs` 逐字节内联进 `lib/client.js` 的 `MPW-NP-GEN-START/END` 生成区。
+
+- **挂载点**：宿主 slot `sidebar.footer.action`（`lib/client.js` 里 `createSlotAction` 的注册项：`id:"mpw-now-playing"`、`order:60`）。拿不到 slot 时 `resolveAnchor()` 按模式降级：`slot` → `settings-slot`（宿主设置格子之前）→ `settings-area`（`[class*="settingsArea"]` 之前）→ `foot`（`[class*="footArea"]` 首位）；一条都不成立就**不建任何节点**并打一行 `console.warn`。**锚点晚出现也照样挂上**：找不到落点时盯住文档，宿主 slot 出口渲染出来后自动补挂（旧写法只 warn 就 `return` ⇒ 真机切壁纸后控件再也不出现）。
+- **让位（默认开的配套）**：`occupantOf(container, mode, selfNode)` 逐个看容器子节点，放行三类——我们自己的节点、宿主自有节点（slot 出口 / 设置格子）、实质空节点；剩下第一个即算「占用者」⇒ 不挂（挂载前）或撤下（挂载后，`MutationObserver` 且 `subtree:true`），写 `data-mpw-np-yield="foreign-occupant"` 并打一行可读 warn；占用者走了会自己回来。判据是**双向**的：我们自己的节点与宿主的格子都不许被误判成占用者。
+- **左侧栏收起即隐藏**：`data-mpw-np-hidden` + CSS `display:none`。判据以**物理宽度优先**（`shouldHide(width, hostCollapsed)`：量到 ≥ `NP_COLLAPSE_MAX_W = 96` 就不隐藏），宿主信号（slot `wide` / `data-sidebar-collapsed` / 根类名 `collapsed`）只在宽度**量不到**时兜底；锚点搬动后做**一次性**补判。宽度不够时整体按 `--mpw-np-fit = clamp(avail/260, 0.5, 1)` 缩放，`avail` 量的是**我们自己的容器**（不是 `[class*="sidebarCol"]`——真机上同类名不止一处）。
+- **形态**：一颗胶囊展开成卡片——封面（当前壁纸缩略图）、标题/副标题、进度条 + 时钟、整块点击热区。**展开态四个键**：上一首 / 播放-暂停 / 下一首 / 静音-取消静音；**收起态三个键**——静音键随卡片出现，因为收起态的传输行是按 `opsX(0) = 206` 的 88px 三键行定位的，硬塞第四键会溢出右边距。展开是自停的 0→1 补间（无常驻 rAF）；播放/暂停**不是换图标**，而是那对八点四边形，形状由**播放状态自己的补间**（`mark`：0=暂停 1=播放）驱动，形变进度 `p` 只管尺寸/位置。
+- **数据源**（`npResolveMedia`：**只报我们真的知道的东西**）：
 
 | 当前壁纸 | NP 显示 | 能控什么 |
 |---|---|---|
-| 视频类壁纸（内嵌 mp4/视频纹理） | 真实播放状态、时长、进度可用 | 播放 / 暂停 / 回到开头 / 静音（直接作用于那个 `<video>`） |
-| 网页壁纸 | 有声音通道 | 静音（走既有 `mute` + 宿主 `/media-audio`） |
-| 场景 / 自定义目录壁纸（自带音轨） | 曲目清单（`/custom-scene-audio`、`/library-scene-audio`） | **只显示，不控**（没有作者播放器可驱动） |
-| 静态图 / 无音轨 | 空闲态 | 不显示"点了没用"的键 |
+| 视频壁纸（当前**真的在放**的那个 `<video>`） | 真实播放状态 + 时长/进度；明确知道没有音轨时副标题写「该视频没有音轨」 | 播放 / 暂停 / 静音-取消静音（判断不了有没有音轨时**不猜**，静音键照给）；**没有曲目清单 ⇒ 上一首/下一首如实 disabled** |
+| 壁纸目录里**真实存在**的音频文件（自定义目录 / 库 / 场景目录） | 文件名 + 清单序号；进度与时长来自媒体元素 | 我们自己的 `<audio>`：播放 / 暂停 / **上一首·下一首按清单顺序环形切换**（只有一条 ⇒ 两侧键 disabled）/ 静音 |
+| 网页壁纸（目录里没有独立音频） | 副标题写「网页壁纸声音」 | **只有静音**这一条通道（`canPlay=false`，不假装能暂停帧内 WebAudio） |
+| 无源（静态图 / 清单还没到 / 场景无独立音轨） | 空闲态（曲名 = 未在播放） | 不显示"点了没用"的键；点播放给出面板提示 + console 一行，**不做假动作** |
 
-- **做不到的**（明确列出，不做假动作，`docs/NOW-PLAYING-DSH.md` §4）：没有系统媒体源（那是上面 `lib/media-session.js` 的事，且尚未接线）；场景/自定义壁纸音轨无播放控制、无时长；网页壁纸没有 0..1 数值音量；没有播放列表、上一首/下一首；心形按钮不渲染；没有拖动进度、没有波形、没有键盘快捷键。
-- **回退**：把 `npNowPlaying` 关掉（或「恢复所有默认设置」）⇒ 回到零注入。回归：`node tools/now-playing-test.mjs`（79 断言 = 73 主体 + 6 变异，已接入 `tools/check.sh` 第 2 步）；真机探针 `node tools/np-sidebar-live-probe.mjs`（12 项活体检查 + `--selftest` 4 项无浏览器检查，未接入门禁）。
-- **归属**：组件为 **Bencho 的 "Now playing"（MIT）逐行移植**（注释原文保留）；侧栏挂载控制器、自绘图标、token 映射、数据接入与门禁是本仓自写。登记见 `THIRD-PARTY.md` §6。
+- **做不到的**（明确列出，不做假动作；`docs/NOW-PLAYING-DSH.md` §7.7.7）：没有系统媒体源（那是 `lib/media-session.js` 的事，且尚未接线）；web 壁纸帧内那份声音**只有静音**，播放/暂停做不到；**音量是静音开关，不是 0..1 细调**（既有通道只有 `mute` 布尔 + 宿主 `/media-audio`）；视频壁纸没有上一首/下一首；**静音键只在展开态出现**（要取消静音先展开卡片 —— 几何取舍，不是坏键）；心形按钮不渲染；没有拖动进度、没有波形、没有键盘快捷键。「壁纸自己也播同一首」的叠音组合**没有真机样例可验**（已做的防护：我们放音时强制静音帧内）。
+- **回退**：把 `npNowPlaying` 关掉（或「恢复所有默认设置」）⇒ 回到零注入（不建 DOM、不装观察者、产物里一行 NP 规则都没有）。回归：`node tools/now-playing-test.mjs`（**83 通过 / 0 失败**，含 7 组变异）+ `node tools/np-media-test.mjs`（**82 通过 / 0 失败**，含 12 组变异自证；`--no-mutations` 时主体 70 条），两条都已接入 `tools/check.sh` 第 2 步。真机探针（需 `:3080` + headless Firefox，不入常驻门禁）：`node tools/np-sidebar-live-probe.mjs`（12 条判据）与 `node tools/np-media-live-probe.mjs`（修前 16 PASS / 22 FAIL → 修后 45 PASS / 0 FAIL）。
+- **归属**：组件为 **Bencho 的 "Now playing"（MIT）逐行移植**（注释原文保留）；侧栏挂载控制器、让位判据、自绘图标、token 映射、数据接入与门禁是本仓自写。登记见 `THIRD-PARTY.md` §6。
 
 ## 安装
 
@@ -495,7 +499,7 @@ node tools/bundle-equivalence-test.mjs  # 更全的等价性门禁（38 条断�
 
 ```
 dsh-mpkg-wallpaper/
-├── package.json      # 版本 3.7.3；dsh.bundle + dsh.client 声明；files 白名单 = 发布面（14 文件）
+├── package.json      # 版本 3.8.0；dsh.bundle + dsh.client 声明；files 白名单 = 发布面（14 文件）
 ├── cordis.patch.yml  # 插件安装声明（dsh plugin add 使用）
 ├── LICENSE           # MIT
 ├── THIRD-PARTY.md    # 第三方来历/洁净室记录与许可归属（随包发布）
@@ -510,15 +514,17 @@ dsh-mpkg-wallpaper/
 │   ├── web-wallpaper.js    # 网页壁纸：内容优先类型判定 + WE API shim 源码 + 入口注入 + 跨源策略 + 存储 facade
 │   ├── web-interaction.js  # 网页壁纸交互：坐标换算 / 事件整形（含 touch）/ 状态机 / 舞台契约（MIT，自写）
 │   ├── media-session.js    # 系统媒体会话宿主侧适配器（MPRIS / SMTC；**已实现、尚未接线**）
-│   ├── now-playing.js      # Now playing 组件 + 侧栏挂载控制器（Bencho MIT 逐行移植 + 本仓控制器）
+│   ├── now-playing.js      # Now playing 组件 + 侧栏挂载控制器（Bencho MIT 逐行移植 + 本仓的锚点/收起/让位判据）
 │   ├── now-playing-math.js # Now playing 纯数学（零 DOM）
 │   ├── liquid-glass/       # 遗留 WebGL 液态玻璃库（**仓库保留 · 不进发布面**）
 │   └── liquid-glass-bundle.js  # 上者的打包产物（**仓库保留 · 不进发布面**）
 ├── tools/            # 门禁/测试/基准/探针（**不进发布包**）
 │                     #   check.sh（12 步门禁）/ integrity-check.mjs / secret-scan-test.mjs /
 │                     #   panel-smoke.mjs / switch-wiring-test.mjs / style-scope-guard.mjs /
-│                     #   token-namespace-test.mjs / now-playing-test.mjs + build-now-playing.mjs（生成区内联与漂移门禁）/
-│                     #   media-session-test.mjs（未接入门禁）/ web-wallpaper-test.mjs / web-interaction-test.mjs /
+│                     #   token-namespace-test.mjs / now-playing-test.mjs（83）+ build-now-playing.mjs（生成区内联与漂移门禁）/
+│                     #   np-media-test.mjs（声音接线 82，含 12 组变异；第 2 步）/ media-session-test.mjs（未接入门禁）/
+│                     #   web-wallpaper-test.mjs / web-interaction-test.mjs /
+│                     #   np-sidebar-live-probe.mjs、np-media-live-probe.mjs（真机探针，需 :3080 + headless Firefox）/
 │                     #   bundle-equivalence-test.mjs / pre-commit.sh + ../.githooks/pre-commit
 ├── docs/             # 研发笔记（**不进发布包**）：WEB-WALLPAPER.md / NOW-PLAYING-DSH.md / MEDIA-SESSION.md /
 │                     #   DIAGNOSTICS.md / RELEASE.md / STYLE-SCOPE-GUARD.md / TOKEN-NAMESPACE.md / PRE-COMMIT.md …
@@ -537,7 +543,7 @@ bash tools/check.sh                # 12 步全量门禁（第 9 步需无头 Fir
 node tools/style-scope-guard.mjs   # 判据是末行「… OK / … ALLOWLISTED / 0 RED / 0 REVIEW」：RED/REVIEW 必须为 0（OK 条数随规则演进）
 ```
 
-`tools/check.sh` 的 12 步：① 语法 ② 面板冒烟 + P-66 + 选择器 + 壁纸层可见性 + 持久化 + NP（生成区漂移双门禁）③ CSS 组合矩阵（512 全组合 + 600 随机 + 边界）④ 场景看门狗/调试参数 ⑤ 沙箱与场景 token + 网页壁纸 shim + 转码资源 ⑥ 发布完整性自检 ⑦ 音频扫描提速 ⑧ scene 视频索引 ⑨ 真机复刻 A/B ⑩ better-sidebar 适配 ⑪ 单文件 bundle 等价性 ⑫ 样式作用域护栏 + 表面 token 命名空间。
+`tools/check.sh` 的 12 步：① 语法 ② 面板冒烟 + P-66 + 选择器 + 壁纸层可见性 + 持久化 + NP（生成区漂移双门禁 83 断言 + 声音接线 82 断言）③ CSS 组合矩阵（512 全组合 + 600 随机 + 边界）④ 场景看门狗/调试参数 ⑤ 沙箱与场景 token + 网页壁纸 shim + 转码资源 ⑥ 发布完整性自检 ⑦ 音频扫描提速 ⑧ scene 视频索引 ⑨ 真机复刻 A/B ⑩ better-sidebar 适配 ⑪ 单文件 bundle 等价性 ⑫ 样式作用域护栏 + 表面 token 命名空间。
 
 ## 历史台账
 
