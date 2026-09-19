@@ -350,8 +350,21 @@ $ git tag -a v3.8.2 && git push origin v3.8.2          ⇒ [new tag] v3.8.2
 | 真机探针 | `wallpaper-lifecycle-live-probe` **31 PASS / 0 FAIL / 1 SKIP**；`np-pause-persist-live-probe` **11 PASS / 0 FAIL** |
 | `npm pack --dry-run` | **15 个文件** / unpacked **2 088 240 B** / tarball **708 939 B**（与 3.8.2 比：文件数不变，字节 +10 053） |
 
-**发布后验证**：`npm view` 版本与 dist-tags、真下载核对文件清单、装到干净目录后 `require`/`import` 一次、
-`update-plugin.sh` 同步 profile 副本并核对 md5。
+**发布后验证（2026-09-20 实测读数）**：
+
+| 检查 | 读数 |
+| --- | --- |
+| `npm view … dist-tags` / `@3.9.0 version license` | `{ latest: '3.9.0' }` / `3.9.0` / `MIT`（发布后约 2 分钟可见） |
+| 真下载 `npm pack dsh-mpkg-wallpaper@3.9.0` | **15 个文件**：`lib/` 8 个运行时 + `cordis.patch.yml`、`icon.svg`、`package.json`、`README.md`、`README.en.md`、`THIRD-PARTY.md`、`LICENSE` |
+| 包内 `package.json` | `version 3.9.0` / `files` 12 条 / `dsh.{icon,bundle,client}` 齐 |
+| 包内敏感面 | `lib/client.js` 里 `/root/`、`/storage/emulated` **0 命中** |
+| profile 同步 | `bash update-plugin.sh` ⇒ **13 个文件 md5 全部一致**（含 `lib/` 子目录；无需重启 dsh，刷新页面即可） |
+| 真机复跑（同步后的 3.9.0） | `tools/np-pause-persist-live-probe.mjs --watch 25` ⇒ 见下方"3.9.0 发布后真机复跑" |
+| git tag | `v3.9.0` 已推送（`ef48cb3`） |
+
+**3.9.0 发布后真机复跑**：点卡片暂停 → 真刷新 → 25s×500ms 采样 ⇒ 每一拍 `npPaused=true` 且载体 `paused=true`、
+卡片保持暂停态、`play()` 钩子 0 次调用；再点播放 ⇒ 恢复；整轮 0 pageerror（探针汇总行见 CI/终端输出，
+时间线与截图落 `/tmp/np-live/np-pause-persist-{timeline.json,after-reload.png}`）。
 
 **这一版对老用户的默认行为影响（自查）**：
 1. **`powPauseHidden` 关 → 开**：只迁移**从没设过**这个键的存量档（`powPauseHiddenUserSet` 标记与 `bsCompat` 同口径）；
