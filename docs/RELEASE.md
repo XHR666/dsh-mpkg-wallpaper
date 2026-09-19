@@ -238,3 +238,33 @@ node --check lib/client.js → OK
 WP-1 是既有网页壁纸链路的**能力补全**（默认仍静音）。⇒ **未发现需要用户改设置才能保持原样的项**；
 但真机观感（触屏手势是否被浏览器抢走、面板在窄侧栏下的排版）**仍需用户在自己设备上确认**。
 
+
+---
+
+## 发布记录：3.8.0（2026-09-19）
+
+**发布动作（已执行，非计划）**
+```
+$ npm publish --registry=https://registry.npmjs.org/
++ dsh-mpkg-wallpaper@3.8.0
+$ npm view dsh-mpkg-wallpaper versions  ⇒ … '3.7.3', '3.8.0'
+$ npm view dsh-mpkg-wallpaper dist-tags ⇒ { latest: '3.8.0' }
+$ git tag -a v3.8.0 && git push origin v3.8.0   ⇒ [new tag] v3.8.0
+```
+发布面（npm 实测）：**15 文件 / tarball 634.2 kB / unpacked 1.9 MB**，`shasum 27286f6905229472c285a132aa61d23d14aba666`。
+
+**这一版相对 3.7.3 的实质变化**
+1. **Now playing 默认挂载**：`npNowPlaying` 由 `false` → **`true`**（关掉仍是零注入）；宿主同一位置已有别的插件注入的元素时**自动让位**（`data-mpw-np-yield`，挂载前与挂载后都判，占用者离开后恢复）。
+2. **壁纸声音真的接线**：目录自带音频由插件自己的 `<audio>` 播放（作用域认 `mpkgKey="custom|<folder>"`）；上一首/下一首按曲目清单**环形**切换（不再"回到开头"，也不触发壁纸 remount）；展开/收起两态播放暂停都生效；静音键可解开且真的落到媒体元素。web 壁纸**帧内**声音仍只有静音这一条通道（界面如实标 `canPlay=false`）。
+3. **悬浮态卡片几何修复**：无壁纸/半残设置档下 NP 样式不再整份丢失；贴合缩放改为量**自己的容器**；卡片四边不再被裁切。
+4. 真机探针另抓到并修掉两条同形状缺陷：web 分支提前 return 导致控件不挂；宿主侧栏晚渲染时不再"打一行 warn 就放弃"。
+
+**门禁与真机证据（发布前实测）**
+* `bash tools/check.sh` ⇒ **12 步全绿**（含第 9 步 `header-rail-replica` headless Firefox；跑前跑后 firefox 计数均为 0）
+* `node tools/now-playing-test.mjs` ⇒ **83 通过 / 0 失败**（含 7 组变异）；`node tools/np-media-test.mjs` ⇒ **82 通过 / 0 失败**（12 组变异）
+* 真机 `tools/np-media-live-probe.mjs`（`:3080`）⇒ **修前 16 PASS / 22 FAIL → 修后 45 PASS / 0 FAIL**；`tools/np-sidebar-live-probe.mjs` ⇒ **12 / 0**
+* `tools/integrity-check.mjs` ⇒ 72/0；`tools/secret-scan-test.mjs` ⇒ 凭据 0 / 本机绝对路径 0 命中
+* 截图：`reports/np-media-20260919/{01-expanded,02-collapsed,03-web-audio,04-float-expanded}.png`（含 `before-*` 对照）
+
+**已知限制（如实）**：web 壁纸帧内只有静音、音量是开关不是 0..1 细调；视频壁纸没有曲目清单故上一首/下一首 disabled；
+卡片静音键只在展开态出现（收起态行宽被 `opsX(0)=206` 钉住）；`lib/media-session.js`（系统媒体会话）**已实现但尚未接线**。
