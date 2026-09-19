@@ -289,3 +289,30 @@ $ git tag -a v3.8.1 && git push origin v3.8.1          ⇒ [new tag] v3.8.1
 `integrity-check` 72/0、`secret-scan` 干净。
 真机：`np-media-live-probe` **45 PASS / 0 FAIL**、`np-sidebar-live-probe` **12/0**、
 `settings-persist-live-probe` **5 PASS / 0 FAIL**（源字段已自愈、`computed.display` 由 `none` → `block`）。
+
+## 发布记录：3.8.2（2026-09-19 夜）
+
+```
+$ npm publish --registry=https://registry.npmjs.org/  ⇒ + dsh-mpkg-wallpaper@3.8.2
+$ npm view dsh-mpkg-wallpaper dist-tags               ⇒ { latest: '3.8.2' }
+$ git tag -a v3.8.2 && git push origin v3.8.2          ⇒ [new tag] v3.8.2
+```
+
+**这一版修的是"音乐组件在 DSH 里不可用"的一整批真机缺陷（NP-4）**
+1. **起播顺序**：原先 `showVideoEl` 先按设置**取消静音**再 `play()` ⇒ 那是一次**有声自动播放** ⇒ `NotAllowedError`，且被 `.catch(()=>{})` 吞掉。
+   改成 muted 起播 → 拿到播放权 → **同步**恢复设置值；被拒不再静默（`window.__mpwNpPlayBlocked`）+ 一次性 muted 重试 + 首次用户手势后重试。
+2. **被浏览器策略停住**：muted 起播的 promise **成功 resolve**，但取消静音那一刻浏览器**直接把元素停住**（不 reject、也不调用 `pause()`，任何 promise/包装都看不见）。
+   现在用 `pause` 事件识别"被停住" ⇒ 退回 muted 保画面 + 记 `window.__mpwNpSoundBlocked`。
+   **可交付口径（写进文档与判据）：用户手势之后必定出声**；"页面从未被交互时自动出声"在当前浏览器策略下做不到，不当判据。
+3. **真实音量**：新增 `npVolume`（0..100，默认 100）+ 卡片可拖音量条，落到 `<video>` / 我们的 `<audio>` / web 帧既有 shim 的 `policy.volume`；**默认档一个元素都不碰**。
+4. **进度可拖动**：命中带（`[data-mpw-np-scrub]`，轨道上下各补 9px）修掉"偏移被加两遍"的真 bug（原来命中带落在卡片外、事件被同行宿主元素接走）。
+5. **新增联动开关 `npLinkWallpaper`**（Now playing 之下、仅在 NP 打开时渲染；默认 **true** = 与改动前逐字节同行为；关掉后播放键一个字节都不碰壁纸）。
+6. **音轨清单四类来源**：目录 / 子目录（改走 `/custom-folder/<folder>/<逐段编码>`，旧写法取基名会 404）/ 包内（`source=pkg`，**无字节通道 ⇒ 只列清单、如实 disabled**）/ 视频容器内音轨；用户那张 video 档如实 `1/1` + 上一首/下一首 disabled。
+7. **悬浮态卡片放大**：借"容器到最近裁切祖先内边距盒"之间的宿主内边距（`bleedFor`，上限 12px，只写我们自己容器的内联样式）⇒ 真机 **205.92 → 230.1px**，`cardClippedBy.violations=[]`（放大且不裁切）。
+
+**判据**：`bash tools/check.sh` ⇒ **全部通过 ✓（12 步）**；`np-control-test` **62/0 + 13 组变异各自必红**、`now-playing-test` 85/0、
+`np-media-test` 87/0、`web-wallpaper-test` 400/0（语料指纹刷新见 `76f384e`）；真机 `np-media-live-probe` **43 PASS/2 FAIL → 71 PASS/0 FAIL**，
+`np-sidebar-live-probe` 12/0、`settings-persist-live-probe` 5/0（发布后由主对话独立复跑，同一读数）。
+
+**已知边界**：包内音频（`scene.pkg` 内音轨）**无字节通道**（要补需宿主新增一条路由）；web 帧内只有静音这一条通道；
+`?scriptstore=persist` 缺省仍不持久化（`docs/README-DIAGNOSTICS.md`）。
