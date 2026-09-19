@@ -568,7 +568,8 @@ t≈8000ms: np=true  hidden=TRUE  anchor=slot          inSlot=true  colW=256   �
 
 #### 7.6.6 修后**还没验**的（诚实清单）
 
-1. **修好之后真机还没复跑**：请主对话跑 `node tools/np-sidebar-live-probe.mjs --out /tmp/np-live`
+1. **修好之后真机还没复跑**（⟶ **更正：已复跑，见 §7.6.7** —— `PASS=12 FAIL=0`，时间线里那次重锚 `hidden=0`；
+   原文保留在这一行下面）：请主对话跑 `node tools/np-sidebar-live-probe.mjs --out /tmp/np-live`
    ⇒ 要求全 PASS（新增 L5b/L6b/L6c：等 slot 真的渲染出来再断言、时间线任何一拍都不许 hidden、
    之后 1.5s 内不许"自己冒出来"）。探针这轮加了诊断字段（`slotWide` / `frameCollapsed` /
    `rootCollapsed` / 时间线），复跑输出的**时间线**就是这次的"修后读数"。
@@ -577,6 +578,34 @@ t≈8000ms: np=true  hidden=TRUE  anchor=slot          inSlot=true  colW=256   �
 3. **过渡期多停留一会儿**：折叠/展开的 0.15s 过渡期间，宽度还没跨过 96px ⇒ 组件会晚一点点才隐藏/出现。
    这是"物理优先"的代价，**没有**给过渡期做特判（特判会引入第二套判据）。
 4. 探针**不进**常驻门禁（要用户 DSH + 浏览器）；`--selftest` 是它的无浏览器半边。
+
+#### 7.6.7 修后真机读数（**已复跑**，2026-09-19 当天）
+
+修完 → 提交（`d072858`）→ `bash update-plugin.sh`（同步到 profile 安装副本：**13 个文件 md5 全部一致**，
+含 `lib/now-playing.js` / `lib/client.js`）→ 跑探针：
+
+```
+$ node tools/np-sidebar-live-probe.mjs --out /tmp/np-live     # 退出码 0
+时间线（250ms/拍，只打印变化行，共 15 拍）:
+  t≈   36ms  np=1 hidden=0 anchor=settings-slot inSlot=false colW=256 slotWide=n/a frameCollapsed=false rootCollapsed=false
+  t≈ 1651ms  np=1 hidden=0 anchor=slot          inSlot=true  colW=256 slotWide=1   frameCollapsed=false rootCollapsed=false
+PASS L0 宿主 slot 在位  PASS L1 进插件分区  PASS L2 「壁纸设置」tab  PASS L3 找到那一行
+PASS L4 恰好 1 个节点  PASS L5 文档序在「设置」之前（inSlot=true）
+PASS L5b 宿主 slot 出口真的渲染出来了（anchor=slot inSlot=true slotWide=1）
+PASS L6 重锚进 slot 之后仍然不带 hidden（hidden=0 colW=256 slotWide=1 frameCollapsed=false）
+PASS L6b 展开态的任何一拍都不许带 hidden（展开态样本 15 拍 / 违规 0 拍）
+PASS L6c 之后 1.5s 内 hidden 不会自己冒出来（3 拍全 hidden=0）
+PASS L7 侧栏收起 ⇒ 带 hidden（hidden=1 colW=56 frameCollapsed=true rootCollapsed=true 触发=button「收起侧边栏」）
+PASS L8 整轮 0 个 pageerror
+── 汇总：PASS=12 FAIL=0   截图 /tmp/np-live/01-mounted.png、/tmp/np-live/02-collapsed.png
+```
+
+**修前 vs 修后的同一处对比**：修前"重锚进 slot 那一拍"是 `hidden=TRUE`（§7.6.1 的 t≈8000ms），
+修后那一拍是 `hidden=0`，而且 L6b 看的是**整条时间线**（15 拍 0 违规）而不是最后一眼。
+**如实记一笔**：这次复跑的 `slotWide` 从 slot 出现那一刻起就是 `1`（上一轮 bug 里的 `wide=false` 是
+slot 刚渲染时的 **prelim 值**，这次没复现到）—— 也就是说这次的"修后读数"**没有**在同一份输入上
+重演 bug 的那一帧；判据的有效性由**变异自证**兜住（`host-signal-beats-width-restored` ⇒ G 组必红），
+而 L6b 看整条时间线这一条能抓住"任何一拍"的翻转。
 
 ---
 
@@ -670,6 +699,7 @@ t≈8000ms: np=true  hidden=TRUE  anchor=slot          inSlot=true  colW=256   �
 7. **①(NP-2) 复核后的状态（2026-09-19）**：第 1 条已由主对话验了一半（真机探针，见 §7.6），
    并**抓出一条真 bug**（重锚进 slot 那一刻把自己藏了）—— 已修 + 配无浏览器判据。
    **修后真机未复跑**；`slot` 的 `wide` 现在有了直接读数通道（探针时间线里的 `slotWide`）。
+   ⟶ **更正：修后已复跑**（§7.6.7，`PASS=12 FAIL=0`）；`slotWide` 实测为 `1`。
    第 2、3 条（`wide` 是否真到、260px 观感）仍然只有"源码 + 截图"，没有人眼结论。
 
 ### 8.4 ①(NP-2) 那一轮的落账（2026-09-19 真机复核后）
@@ -690,7 +720,8 @@ t≈8000ms: np=true  hidden=TRUE  anchor=slot          inSlot=true  colW=256   �
 
 | 提交 | 内容 | 哈希 |
 |---|---|---|
-| 第 1 次（代码 + 门禁 + 探针 + 文档） | `lib/now-playing.js`、`lib/client.js`（生成区重算）、`tools/now-playing-test.mjs`、`tools/build-now-playing.mjs`、`tools/check.sh`、`tools/np-sidebar-live-probe.mjs`、`docs/NOW-PLAYING-DSH.md` | 见下方"落账值" |
-| 第 2 次（**文档落账**） | 把第 1 次的哈希写进本节 | `git log -1 -- docs/NOW-PLAYING-DSH.md` |
+| 第 1 次（代码 + 门禁 + 探针 + 文档） | `lib/now-playing.js`、`lib/client.js`（生成区重算）、`tools/now-playing-test.mjs`、`tools/build-now-playing.mjs`、`tools/check.sh`、`tools/np-sidebar-live-probe.mjs`、`docs/NOW-PLAYING-DSH.md` | **`d072858a48e9e99f7371c3db23b629d88e86daba`**（短 `d072858`，7 files changed, 667 insertions(+), 49 deletions(-)） |
+| 第 2 次（**文档落账**） | 把第 1 次的哈希 + §7.6.7 修后真机读数（12 PASS / 0 FAIL）写进本节 | `git log -1 -- docs/NOW-PLAYING-DSH.md` |
 
-**落账值（①(NP-2)）**：第 1 次提交 = `__COMMIT_NP2__`（第 2 次提交写入这里）。
+**落账值（①(NP-2)）**：第 1 次提交 = `d072858a48e9e99f7371c3db23b629d88e86daba`（= `d072858`）。
+第 2 次（**本行所在的「文档落账」提交**）= `git log -1 -- docs/NOW-PLAYING-DSH.md`。
