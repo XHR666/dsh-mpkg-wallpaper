@@ -919,3 +919,29 @@ node tools/np-media-live-probe.mjs --selftest              # 判据自证：8 PA
     `content-type: application/octet-stream` 对音频的兼容性实测在 Firefox 下可用（`E3/E6`
     `readyState=4`、`currentTime` 推进）；另做了一次"失败即 blob 兜底重试（带上扫描到的 mime，≤32MB）"
     的保险（`npAudioError`），本机没触发过它。
+
+### 8.5 ①(NP-3) 那一轮的落账（2026-09-19 真机修复后）
+
+**代码 + 门禁 + 探针 + 文档** 一次提交（只提交本线路径，未 `git add -A`）：
+
+| 提交 | 内容 | 哈希 |
+|---|---|---|
+| **代码**（7 files changed） | `lib/client.js`、`lib/now-playing.js`（生成区重算）、`tools/check.sh`、`tools/now-playing-test.mjs`、`tools/np-media-test.mjs`（新）、`tools/np-media-live-probe.mjs`（新）、`docs/NOW-PLAYING-DSH.md` | **`9be7ec5c754599cdd29b9720000bb8c210053ca3`**（短 `9be7ec5`） |
+| **本仓文档落账** | 把上面那个哈希 + §7.7 的修前/修后读数写进本节 | `git log -1 -- docs/NOW-PLAYING-DSH.md` |
+| **跨仓台账**（渲染器仓 `we-scene-demo/docs/PATCHES.md`） | P-156（编号 = 提交那一刻的实际最大号 155 + 1；**只追加这一条**，渲染器仓其余路径一行未动） | **`6791197`**（`we-scene-demo` 仓内） |
+
+**sha256（`sha256sum` 原样，2026-09-19 NP-3 提交后）**
+
+| 文件 | 字节 | sha256 | 与提交 `9be7ec5` 的 blob |
+|---|---|---|---|
+| `lib/client.js` | 1021926 | `94fc7c3dce19594d3dd8927367cb175ce79633d5abf3d3293f763c53182daea2` | 一致 |
+| `lib/now-playing.js` | 76104 | `8ef6193a69c0804f47d020c3af7ffb5f571c9047de4d0000d952c5652680d504` | 一致 |
+| `tools/check.sh` | 19942 | `67c2bde2161cc057cff8b899b30af8b1312a0d8b7a49e2fa4881bd7fd64c2353` | 一致 |
+| `tools/now-playing-test.mjs` | 52754 | `69e8514bb828d3e236e8be254a8cb52e67dee4a6177f3d6164ed134944b76871` | 一致 |
+| `tools/np-media-test.mjs` | 54706 | `0160c88f6361a7448f1540250271d4dde315daf8ad4eafab4cfd0451cd459d89` | 一致 |
+| `tools/np-media-live-probe.mjs` | 40785 | `36d277294766d18b1385dbcef2615120a7548c743305b0ac075658882d774e44` | 一致 |
+
+**提交后复跑**：`node tools/now-playing-test.mjs`（83/0）· `node tools/np-media-test.mjs`（82/0，12 组变异）·
+`node tools/np-media-live-probe.mjs --selftest`（8/0）· 真机 `np-media-live-probe.mjs`（45 PASS / 0 FAIL）·
+真机 `np-sidebar-live-probe.mjs`（12 PASS / 0 FAIL）· `bash tools/check.sh`（全部通过，12 步 / 7m20s，
+含第 9 步真机复刻的 headless Firefox 与第 11 步 bundle 等价性）。
