@@ -172,8 +172,12 @@ console.log('\n== A. ① 音量电平：设置项 npVolume → 真实元素（vi
   ok('A3 拖到 0.35 ⇒ 设置项 `npVolume` 落成 35（0..100 持久化）', sec.npVolume === 35, 'npVolume=' + sec.npVolume)
   ok('A4 ⇒ **视频元素的 volume 真的变成 0.35**（旧实现全仓没有改 volume 的地方）',
     Math.abs(F.video.volume - 0.35) < 1e-9, 'video.volume=' + F.video.volume)
+  /* ⚠ 语义变更（2026-09-20 NP-5/C4，见 docs/WALLPAPER-LIFECYCLE.md §8.5）：新增**浏览器策略闸** ——
+     "首次用户手势之前一律 muted"（消除"加载后若干秒自己从 muted 翻成可听"）。下面这几条旧断言
+     断言的是"元素 muted 立刻等于设置值"，现在改为**两段式**：手势前保持 muted / 手势后按设置。
+     机制部分（play 调用、被拒记录、一次性重试、兜底到期清状态）一条都没少。 */
   ok('A5 音量**不改静音开关**（两件事：mute 仍是 false，元素 muted 也没被动过）',
-    sec.mute === false && F.video.muted === mutedBefore && mutedBefore === false,
+    sec.mute === false && F.video.muted === mutedBefore,
     'mute=' + sec.mute + ' el.muted ' + mutedBefore + '→' + F.video.muted)
 
   /* web 帧：shim 的 policy.volume 通道（web-wallpaper.js 的 setMasterVolume / mpwvol） */
@@ -254,8 +258,17 @@ console.log('\n== B. ① 起播顺序（真机根因：先 unmute 再 play ⇒ N
   F.video.paused = true
   F.T.primePlay(SEC_VIDEO)
   await settle()
-  ok('B1 起播成功档：`play()` 时的 muted **就是设置值**（mute=false ⇒ false；真机修前读数是 muted=false 却被拒）',
-    F.video.__playArg && F.video.__playArg.muted === false, 'play() 时的 muted=' + (F.video.__playArg && F.video.__playArg.muted))
+  ok('B1 起播成功档：`play()` 时**没有用户手势 ⇒ 以 muted 起播**（C4 闸；真机修前读数是 muted=false 却被拒）',
+    !!F.video.__playArg && F.video.__playArg.muted === true, 'play() 时的 muted=' + (F.video.__playArg && F.video.__playArg.muted))
+  {
+    const g1 = globalThis.__mpwLifecycleTest
+    if (g1) {
+      g1.gestureUnlock('test')
+      F.T.applyMute()
+      await sleep(20)
+      ok('B1c 手势之后 ⇒ 元素 muted 等于设置值（mute=false ⇒ 可听；闸门不是永久静音）', F.video.muted === false, 'el.muted=' + F.video.muted)
+    }
+  }
   ok('B1b 起播成功档：`npPrimedMuted` 为 false（没有"偷 muted"这一段，一条状态都不用回调来还）',
     F.T.primedMuted() === false, 'primedMuted=' + F.T.primedMuted())
   ok('B1c 起播成功后没有"被拒"残留（playBlocked=null）', F.T.playBlocked() === null, JSON.stringify(F.T.playBlocked()))
@@ -278,8 +291,12 @@ console.log('\n== B. ① 起播顺序（真机根因：先 unmute 再 play ⇒ N
   ok('B4 "muted 起播"这一段有明确状态可查（npPrimedMuted=true），且**有到期兜底**（不会永久静音）',
     G.T.primedMuted() === true, 'primedMuted=' + G.T.primedMuted())
   await sleep(1700)
-  ok('B5 兜底到期（1.5s）⇒ 自动恢复成设置值（muted 回到 false）—— 这是"开/关都听不到声音"的第二道闸',
-    G.T.primedMuted() === false && G.video.muted === false, 'primedMuted=' + G.T.primedMuted() + ' el.muted=' + G.video.muted)
+  ok('B5 兜底到期（1.5s）⇒ `npPrimedMuted` 状态清掉（第二道闸不再持有），元素在**无手势**时保持 muted（C4）',
+    G.T.primedMuted() === false && G.video.muted === true, 'primedMuted=' + G.T.primedMuted() + ' el.muted=' + G.video.muted)
+  {
+    const g2 = globalThis.__mpwLifecycleTest
+    if (g2) { g2.gestureUnlock('test'); G.T.applyMute(); await sleep(20); ok('B5b 手势后 ⇒ muted 回到设置值 false', G.video.muted === false, 'el.muted=' + G.video.muted) }
+  }
 
   /* B3 抛异常档：同步 throw 也要走同一条记录/重试，且元素状态仍等于设置 */
   const H = freshPlugin({ settings: SEC_VIDEO, playResult: 'throw' })
@@ -290,8 +307,12 @@ console.log('\n== B. ① 起播顺序（真机根因：先 unmute 再 play ⇒ N
   H.video.paused = true
   H.T.primePlay(SEC_VIDEO)
   await settle()
-  ok('B6 `play()` 同步抛错 ⇒ 同样记原因、同样重试，且**元素状态仍等于设置**（不留在 muted=true）',
-    !!H.T.playBlocked() && H.video.muted === false, 'blocked=' + JSON.stringify(H.T.playBlocked()) + ' el.muted=' + H.video.muted)
+  ok('B6 `play()` 同步抛错 ⇒ 同样记原因、同样重试；**无手势**时元素保持 muted（C4），手势后按设置',
+    !!H.T.playBlocked() && H.video.muted === true, 'blocked=' + JSON.stringify(H.T.playBlocked()) + ' el.muted=' + H.video.muted)
+  {
+    const g3 = globalThis.__mpwLifecycleTest
+    if (g3) { g3.gestureUnlock('test'); H.T.applyMute(); await sleep(20); ok('B6b 手势后 ⇒ muted 等于设置值 false', H.video.muted === false, 'el.muted=' + H.video.muted) }
+  }
 
   /* B4 已经在放 ⇒ 起播入口不改状态（避免 60ms 延迟 apply 把静音按旧值写回去） */
   const I = freshPlugin({ settings: SEC_VIDEO })
@@ -582,8 +603,12 @@ console.log('\n== G. ⑥ 组件对外接口面（渲染器测试台 :8902 若复
     && /audio-blocked-replay/.test(clientSrc),
     'pause 事件 + 守卫 + npSoundBlocked + audio-blocked 轨迹 + muted 续播 + 重播结果')
   ok('G7 "被策略挡住时 muted 由本状态持有"的接线在位（否则 取消静音→被停→再取消静音 会自转成环）',
-    /npSoundBlocked \|\| \(\(s\.mute !== void 0/.test(clientSrc) && /npPrimedMuted \|\| npSoundBlocked/.test(clientSrc),
-    'npWantMuted + npApplyMute/applyVideoMute 三处都带 npSoundBlocked')
+    /* ①(NP-5/C4) 之后三处静音落点统一走 `npWantMuted()`（唯一口径，npSoundBlocked/npPrimedMuted/手势闸
+       都在它里面）⇒ 判据改成"npWantMuted 里带着 npSoundBlocked，且三处都调 npWantMuted"。 */
+    /if \(npPrimedMuted\) return true;/.test(clientSrc)
+    && /return npSoundBlocked \|\| \(\(s\.mute !== void 0/.test(clientSrc)
+    && (clientSrc.match(/npWantMuted\(\)/g) || []).length >= 4,
+    'npWantMuted 内含 npSoundBlocked/npPrimedMuted + 三处静音落点都走它（出现 ' + (clientSrc.match(/npWantMuted\(\)/g) || []).length + ' 次）')
 }
 
 /* ══════════════ H. 分辨力自证：每一组修复各有一条"改回旧写法 ⇒ 指定组必红" ══════════════ */

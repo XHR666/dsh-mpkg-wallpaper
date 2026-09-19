@@ -52,7 +52,11 @@ const NON_CSS = {
   clock24h: '时钟 24 小时制：JS 写元素文案，不进 CSS',
   clockSec: '时钟秒显示：同上（元素内文案）',
   clockDate: '时钟日期显示：同上（元素内文案）',
-  powPauseHidden: '省电：页面隐藏时暂停播放，运行时行为',
+  powPauseHidden: '省电：页面隐藏时暂停播放，运行时行为（①(NP-5) 起同时是"隐藏即静音"的总闸，见 lib/client.js 的 mpwHiddenAudioBlock）',
+  /* ①(NP-5) 卡片的播放/暂停**用户意图**（持久化）：只影响运行时的媒体状态与卡片显示，
+     产物 CSS 一个字都不变。读到它的是：npApplyPersistedPause()（刷新/换档后按它落实
+     "整体 pause" 或 "只静音音轨"）与 npResolveMedia() 的 playing 派生量（卡片显示暂停态）。 */
+  npPaused: '用户的播放/暂停意图（持久化）：运行时落实媒体状态 + 卡片显示，不生成 CSS',
   powPauseBlur: '省电：失焦时暂停播放，运行时行为',
   powPauseBattery: '省电：电池供电时暂停播放，运行时行为',
   lgComposer: '液态玻璃目标选择（输入框）：由 JS 打 [data-mpw-lg-css] 标记，样式在 lgCss 段统一下发',

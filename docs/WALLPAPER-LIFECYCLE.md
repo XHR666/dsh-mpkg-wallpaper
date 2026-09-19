@@ -385,6 +385,26 @@ currentTime, hidden, np{on,link,mute}}`，写进**有界环形**（≤200 条，
 
 ---
 
+## 8.6 NP-5 卡片的播放/暂停意图持久化（刷新后不许自动换成播放）
+
+* **键**：`npPaused`（布尔，默认 `false` = 播放）。
+* **唯一写入口**：`npPersistPaused(v)`，只被 `npTransport` 的**用户显式操作**调用
+  （video 档 link 开：pause/play；link 关：静音/取消静音；曲目档：pause/play）。
+  `npPrimedMuted`（muted 起播兜底）、`npSoundBlocked`（浏览器策略）、hidden/省电暂停、联动对齐
+  **一个都不写**（否则刷新后会把内部状态当成用户意图恢复）。
+* **恢复**：`applyNowPlaying` 入口调 `npApplyPersistedPause(s)`，按当时的 `npLinkWallpaper` 翻译意图 ——
+  开 ⇒ 整体 `pause()`（画面也停）；关 ⇒ **只静音音轨**（画面继续）。`npPrimePlay` 的闸门加了
+  `npCardPaused`（持久化暂停时不起播）；卡片显示 `playing = npCardPaused ? false : !vid.paused`。
+* **换档清零口径变更**：`npCardPausedKey` 变化时**不再无条件清零** `npCardPaused`，而是重新读持久化值
+  （旧写法在这里把"用户按过暂停"抹成 false —— 那正是"刷新后暂停被换成播放"的最后一环）。
+* **恢复默认**：`npPaused = false`（回到播放），与"恢复默认后壁纸照常动"一致；键同时进了
+  `BACKUP_FIELDS` 与导入的 `boolFields`（白名单净化），并在开关接线审计里登记为**仅运行时**开关。
+* **判据**：R 组 10 条（boot 读到持久化值 / 不进入可听状态 / `play()` 一次都没被调 / 卡片显示暂停态 /
+  审计留痕 / 内部状态不写档 / link 关时"只静音" + 写了意图 / 反向（播放）/ 写入口径 / 登记表）；
+  变异 `np-paused-not-restored`（去掉恢复）与 `np-paused-written-by-internal-state`（把内部状态当意图）必红。
+
+---
+
 ## 9. 同类审计（用户要求："查这类 bug 会不会衍生出其他 bug"）
 
 每条给"是否有 / 在哪 / 判据"。**结论：这一类（源字段残留 + 形状错配 + 错误页被当素材）在本轮

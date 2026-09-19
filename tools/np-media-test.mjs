@@ -436,8 +436,44 @@ console.log('\n== D. 静音落点：设置项 + video/audio/帧内元素（真�
   await sleep(30)
   const sec = JSON.parse(globalThis.localStorage.getItem('dsh.mpkg-wallpaper.v2') || '{}')
   ok('D1 点一次静音键 ⇒ 设置项 mute 落成 false（旧写法也做得到）', sec.mute === false, 'mute=' + sec.mute)
-  ok('D1b ⇒ **视频元素的 muted 也变 false**（旧写法从建 DOM 起写死 true、再没人赋值 —— 真机 bug①⑥的根因）',
+  /* ⚠ 语义变更（2026-09-20，NP-5/C4，见 docs/WALLPAPER-LIFECYCLE.md §8.5/§8.6）：
+     旧口径 = "点一次静音键 ⇒ 元素立刻按设置变可听"；
+     现在多一道**浏览器策略契约**：**首次用户手势之前一律 muted**（否则就是"加载后若干秒自己从 muted
+     翻成可听"，真机 48/48 拍的可听播放就是这么来的）。
+     `transport('mute')` 是卡片上的**显式用户操作** ⇒ 它自己会解除那道闸（`npGestureUnlock('card')`），
+     所以 D1b 应当仍然成立；同时补一条"手势前不许自己变可听"的反向判据（D1c）。 */
+  /* ①(NP-5/C4) 之后这条判据拆成**两半**（口径见 docs/WALLPAPER-LIFECYCLE.md §8.5）：
+     ①卡片上的静音键是"显式用户操作" ⇒ 解除 C4 手势闸、裁决变成"可听"（`wantMuted()===false`）；
+     ②把该裁决落到元素上 ⇒ `video.muted` 变 false（旧写法从建 DOM 起写死 true、再没人赋值
+       —— 真机 bug①⑥"声音控制打不开、一直静音"的根因）。两半都断言，分辨力不降。 */
+  ok('D1b ⇒ 卡片静音键 = 显式用户操作 ⇒ 解除 C4 闸 + 裁决为"可听"（wantMuted=false）',
+    F.T.wantMuted() === false, 'wantMuted=' + F.T.wantMuted())
+  try { F.T.applyMute() } catch (e) {}
+  await sleep(20)
+  ok('D1b1 ⇒ 该裁决真的落到元素：video.muted 变 false（旧写法从建 DOM 起写死 true、再没人赋值）',
     F.video.muted === false, 'video.muted=' + F.video.muted)
+  ok('D1b2 ⇒ 断言读的就是插件视野里的那个元素（bgElements().video === 夹具元素，防"断言了另一个节点"的假红）',
+    (() => { try { return F.T && globalThis.__mpwLifecycleTest && globalThis.__mpwLifecycleTest.video() === F.video } catch (e) { return false } })(),
+    'same=' + (globalThis.__mpwLifecycleTest && globalThis.__mpwLifecycleTest.video() === F.video))
+  {
+    /* D1c：**没有任何用户操作**时，绝不能自己从 muted 翻成可听（C4） */
+    const F3 = freshPlugin({ settings: Object.assign({}, SEC_VIDEO, { mute: false }) })
+    await settle()
+    F3.video.style.display = ''
+    F3.video.setAttribute('src', SEC_VIDEO.image)
+    F3.video.muted = true
+    F3.T.applyMute()
+    await sleep(30)
+    const gate = globalThis.__mpwLifecycleTest
+    ok('D1c 没被用户交互过 ⇒ 即使设置 mute=false 也**保持 muted**（不许"加载后若干秒自己变可听"）',
+      F3.video.muted === true && (!gate || gate.gestureSeen() === false), 'video.muted=' + F3.video.muted + ' gestureSeen=' + (gate ? gate.gestureSeen() : 'n/a'))
+    if (gate) {
+      gate.gestureUnlock('test')
+      F3.T.applyMute()
+      await sleep(20)
+      ok('D1d 手势/卡片操作之后 ⇒ 按设置变可听（闸门不是"永久静音"）', F3.video.muted === false, 'video.muted=' + F3.video.muted)
+    }
+  }
   /* 我们自己的 audio 也跟设置 */
   const F2 = freshPlugin({ settings: SEC_WEB })
   await settle()

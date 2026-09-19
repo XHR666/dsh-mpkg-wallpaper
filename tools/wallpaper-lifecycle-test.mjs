@@ -820,6 +820,50 @@ console.log('\n== Q. C4 起播时机可预期（手势前恒 muted）+ 联动关
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════════
+   R. NP-5 用户的暂停意图要持久化（刷新后不许自动换成播放）
+   ══════════════════════════════════════════════════════════════════════════════════ */
+console.log('\n== R. NP-5 暂停持久化：刷新后保持暂停 + 不跑起播链 ==')
+{
+  const FIX = { enabled: true, npNowPlaying: true, mute: false, npVolume: 33, npLinkWallpaper: true, npPaused: true, converted: 'mp4', image: 'host:?custom=1&folder=f&file=a.mp4', mpkgKey: 'custom|f', source: 'a.mp4' }
+  // 走**真实 boot**（持久化值在档里）⇒ 模拟"刷新页面"
+  const { L } = boot({ settings: FIX })
+  const video = L.video()
+  if (video) {
+    video.paused = false; video.muted = false   // 故意先造成"在播且可听"的现场
+    video.src = '/api/mpkg-wallpaper/media?token=t&index=0'
+    video.play = () => { video.__plays = (video.__plays || 0) + 1; video.paused = false; return { catch () {} } }
+    video.pause = () => { video.paused = true }
+  }
+  ok('R1 boot 时读到了持久化值（npPaused=true）', L.persistedPaused() === true && L.cardPausedNow() === true, 'persisted=' + L.persistedPaused() + ' cardPaused=' + L.cardPausedNow())
+  L.applyNowPlaying(FIX)      // = 刷新后那次 apply
+  await sleep(60)
+  ok('R2 刷新后**不进入可听状态**（link 开 ⇒ 整体暂停：paused=true）', !!video && video.paused === true, JSON.stringify({ paused: video && video.paused, muted: video && video.muted }))
+  ok('R3 没有执行"muted 起播 → 恢复设置"那条链：play() 一次都没被调', (video && video.__plays || 0) === 0, 'plays=' + (video && video.__plays))
+  const m = globalThis.__mpwNpTest.resolve(FIX)
+  ok('R4 卡片显示暂停态（playing=false）', m.playing === false, JSON.stringify({ playing: m.playing, canPlay: m.canPlay }))
+  ok('R5 审计留痕"恢复自持久化暂停"（可归因）', JSON.stringify(L.audit()).indexOf('apply-persisted-pause') >= 0, JSON.stringify(L.audit().slice(-2)).slice(0, 200))
+  // 只有**用户显式操作**才写这条键（内部状态一律不写）
+  const before = JSON.stringify(L.read().npPaused)
+  L.cardPausedNow()  // 只是读
+  ok('R6 内部状态不写持久化（读一次不改档）', JSON.stringify(L.read().npPaused) === before, 'npPaused=' + before)
+  const off = Object.assign({}, FIX, { npLinkWallpaper: false })
+  L.writePartial({ npLinkWallpaper: false })
+  L.applyNowPlaying(off)
+  if (video) { video.paused = false; video.muted = false }
+  L.transport('pause', off)   // 用户显式按暂停（link 关）
+  await sleep(30)
+  ok('R7 用户在 link 关时按暂停 ⇒ **只静音音轨**（muted=true、paused=false）且写了 npPaused=true',
+    !!video && video.muted === true && video.paused === false && L.persistedPaused() === true,
+    JSON.stringify({ muted: video && video.muted, paused: video && video.paused, persisted: L.persistedPaused() }))
+  L.transport('play', off)    // 用户显式按播放
+  await sleep(30)
+  ok('R8 用户按播放 ⇒ npPaused=false（持久化跟着用户意图走）', L.persistedPaused() === false, 'persisted=' + L.persistedPaused())
+  const src = fs.readFileSync(clientPath, 'utf8')
+  ok('R9 写入口径写明"只有用户显式操作才写"（内部状态不串味）', /只有用户显式操作才会走到这里/.test(src) && /一个都不许写进来/.test(src))
+  ok('R10 `npPaused` 已登记进 BACKUP_FIELDS + boolFields（导入净化 + 随备份走）', /"npPaused" \/\/ ①\(NP-4\)/.test(src) && /"npLinkWallpaper", "npPaused"\]/.test(src))
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════
    K. 变异自证
    ══════════════════════════════════════════════════════════════════════════════════ */
 const MUTATIONS = [
@@ -839,15 +883,17 @@ const MUTATIONS = [
   { id: 'card-pause-does-not-gate-frame', expect: 'I', why: '帧内归属不再看"卡片暂停"（修前 NP-3 形态）⇒ 卡片暂停后壁纸 BGM 继续响（真机第 ④ 条）', mut: (s) => s.replace('if (npCardPaused) return true;\n\t\t\t\treturn npAudioOwns();', 'return npAudioOwns();') },
   /* C3 的两道防线（换档硬归零 + 早退收口）互为兜底：只拆一道仍然不红 = 设计如此；
      变异必须把两道一起退回（= 修前的完整形态）才算有分辨力。 */
+  { id: 'np-paused-not-restored', expect: 'R', why: '刷新后不按持久化意图恢复（把它退回"内存态、刷新即播放"）⇒ 用户的暂停被换成播放', mut: (s) => s.replace('try { npApplyPersistedPause(s); } catch (e) {}', '') },
+  { id: 'np-paused-written-by-internal-state', expect: 'R', why: '内部状态也去写 npPaused（把"用户意图"和"我们的内部暂停"混在一起）⇒ 刷新后把内部状态当意图恢复', mut: (s) => s.replace('const userPaused = s.npPaused !== void 0 ? !!s.npPaused : DEFAULT_NP_PAUSED;', 'const userPaused = true;') },
   { id: 'unmuted-before-gesture', expect: 'Q', why: '去掉"手势前恒 muted"（修前形态）⇒ 加载后若干秒自己从 muted 翻成可听（真机 48/48 拍的可听播放）', mut: (s) => s.replace('if (!npGestureSeen) return true;', '') },
   { id: 'link-off-freezes-whole-video', expect: 'Q', why: '联动关退回"整体暂停/禁用"（被用户判为 bug 的旧口径）⇒ 用户"关闭状态下暂停播放用不了"', mut: (s) => s.replace('} else if (vid && !link) {', '} else if (false) {') },
   { id: 'source-change-keeps-old-audio', expect: 'O', why: '换档硬归零与早退收口**一起**退回（修前形态）⇒ 上一张壁纸的 <audio> 继续放（用户："切掉了还在放他的声音"）', mut: (s) => s.replace('if (npSrcIdPrev !== null && idNow !== npSrcIdPrev) npAudioHardReset("source-changed:" + npSrcIdPrev + "->" + idNow);', '').replace('if (npAudio && (!npAudio.paused || npAudio.getAttribute("src"))) npAudioHardReset("no-scan-url");', '') },
   { id: 'audit-detached-flag-dropped', expect: 'P', why: '审计不再标 `connected:false`（"已摘除仍在播"抓不到）⇒ 以后同类问题又只能靠猜', mut: (s) => s.replace('connected: el.isConnected !== false,', 'connected: true,') },
   { id: 'video-teardown-no-pause', expect: 'P', why: '切离视频档退回"只 removeAttribute(src)"（规范：不会停止播放）⇒ 隐藏但仍在响', mut: (s) => s.replace('try { if (!video.paused) video.pause() } catch (e) {}\n\t\t\ttry { video.removeAttribute("src"); if (video.load) video.load() } catch (e) {}', 'try { video.removeAttribute("src") } catch (e) {}') },
-  { id: 'hidden-retry-not-gated', expect: 'N', why: '起播闸门去掉 hidden 条件（修前形态）⇒ 被节流的重试定时器在后台把音频拉起来（真机"过一会儿又响一下"）', mut: (s) => s.replace('if (wallUserPaused || powPaused || npUserPausedOf(video) || mpwHiddenAudioBlock()) {', 'if (wallUserPaused || powPaused || npUserPausedOf(video)) {') },
+  { id: 'hidden-retry-not-gated', expect: 'N', why: '起播闸门去掉 hidden 条件（修前形态）⇒ 被节流的重试定时器在后台把音频拉起来（真机"过一会儿又响一下"）', mut: (s) => s.replace('if (wallUserPaused || powPaused || npUserPausedOf(video) || npCardPaused || mpwHiddenAudioBlock()) {', 'if (wallUserPaused || powPaused || npUserPausedOf(video) || npCardPaused) {') },
   /* C 的两道闸是**互为兜底**的（applyNowPlaying 那条跳过 + npPrimePlay 内部闸），任一条单独生效就够
      ⇒ 变异必须把两道一起拆掉才是"修前的完整形态"（否则拆一道仍然不红，那是设计如此，不是假绿）。 */
-  { id: 'apply-prime-ignores-hidden', expect: 'N', why: 'applyNowPlaying 的补起播与 npPrimePlay 的内部闸**一起**退回（修前的完整形态）⇒ 被节流的延迟重放会在后台起播', mut: (s) => s.replace('if (vid.paused && !npPlayBlocked && !mpwHiddenAudioBlock()) npPrimePlay(vid);', 'if (vid.paused && !npPlayBlocked) npPrimePlay(vid);').replace('if (wallUserPaused || powPaused || npUserPausedOf(video) || mpwHiddenAudioBlock()) {', 'if (wallUserPaused || powPaused || npUserPausedOf(video)) {') },
+  { id: 'apply-prime-ignores-hidden', expect: 'N', why: 'applyNowPlaying 的补起播与 npPrimePlay 的内部闸**一起**退回（修前的完整形态）⇒ 被节流的延迟重放会在后台起播', mut: (s) => s.replace('if (vid.paused && !npPlayBlocked && !mpwHiddenAudioBlock()) npPrimePlay(vid);', 'if (vid.paused && !npPlayBlocked) npPrimePlay(vid);').replace('if (wallUserPaused || powPaused || npUserPausedOf(video) || npCardPaused || mpwHiddenAudioBlock()) {', 'if (wallUserPaused || powPaused || npUserPausedOf(video) || npCardPaused) {') },
   { id: 'pow-pause-hidden-default-false', expect: 'J', why: '切页暂停退回默认关（修前形态）⇒ 切到别的标签页声音继续', mut: (s) => s.replace('const DEFAULT_POW_PAUSE_HIDDEN = true;', 'const DEFAULT_POW_PAUSE_HIDDEN = false;') },
 ]
 
