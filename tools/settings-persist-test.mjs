@@ -125,7 +125,9 @@ const USER_APPEARANCE = {
   headerBlurAmount: 41, dialogBlur: true, dialogAmount: 14, unifyTint: true, unifyAmount: 30,
   sidebarAlpha: 38, chatFollow: false, sessionFollow: true, aquaMask: false, aquaTint: false,
   aquaMaskAlpha: 22, hybrid: true, rotate: false, rotateMin: 5,
-  customDirPath: '/root/Desktop/DSHarea/allwallpaper/dd',
+  // ①(2026-09-19) 本机工作区绝对路径不许进仓库（`integrity-check` ⑩ / `secret-scan` 会判红）⇒ 按脚本自身位置推导：
+  //   仓库 = <DSHAREA>/dsh-mpkg-wallpaper ⇒ <DSHAREA> = repoRoot/..；可用 MPW_ROOT 覆盖。
+  customDirPath: path.join(process.env.MPW_ROOT || path.resolve(repoRoot, '..'), 'allwallpaper', 'dd'),
   brightness: 100, float: false, thinkBg: false, enabled: true, mute: true, fpsCap: 0, resMax: 0,
   bsCompat: false, bsCompatUserSet: true, npNowPlaying: true, fontColorGray: false,
 }

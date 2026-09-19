@@ -23,7 +23,7 @@
 
 补充事实（同一轮量到的，影响判据设计）：
 
-* 目标素材**真的存在**：`customDirPath=/root/Desktop/DSHarea/allwallpaper/dd` 下确实有 `3582362359/Mid-Autumn Hoshino.mp4`
+* 目标素材**真的存在**：`customDirPath=<DSHAREA>/allwallpaper/dd`（本机工作区根，按脚本自身位置推导；仓库里不写绝对路径） 下确实有 `3582362359/Mid-Autumn Hoshino.mp4`
   ⇒ `mpkgKey="custom|3582362359"` 足以把源推回来。
 * `mpkgKey:"custom|3582362359"` 里的这段数字**不是哈希**，就是**目录名**（见 `tools/np-media-test.mjs:265` 的夹具与
   `docs/NOW-PLAYING-DSH.md:774`）。这条纠正了"custom|<id> 是某种 token、丢了就不可恢复"的直觉。
