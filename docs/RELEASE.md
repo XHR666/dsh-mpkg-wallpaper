@@ -5,6 +5,11 @@
 > （`node tools/integrity-check.mjs`）。这份文件把**发布前置**、**确切命令**、**发布后验证**和
 > **回滚**钉死成可复制的步骤 —— 照着跑就行，不靠记忆。
 >
+> 状态（2026-09-20 02:0x 实测）：本地 `package.json` = **3.9.0**；npm 官方 registry 上 `latest` = **3.8.2**
+> ⇒ 本地 > 已发布 ⇒ 可以直接发（发包前**必须**重跑第 1 节全部命令）。历史：3.8.0 → 3.8.1 → 3.8.2 → **3.9.0**。
+>
+> （下面这一段是 2026-09-19 的原始状态记录，保留以便对照当时的判断过程）
+>
 > 状态（2026-09-19 12:37 实测）：本地 `package.json` = **3.7.3**；npm 官方 registry 上 `latest` = **3.7.3**
 > （`npm view dsh-mpkg-wallpaper dist-tags --registry=https://registry.npmjs.org` ⇒ `{ latest: '3.7.3' }`）
 > ⇒ **本地版本号 == 已发布版本号 ⇒ 现在直接 `npm publish` 必然 403**
@@ -316,3 +321,44 @@ $ git tag -a v3.8.2 && git push origin v3.8.2          ⇒ [new tag] v3.8.2
 
 **已知边界**：包内音频（`scene.pkg` 内音轨）**无字节通道**（要补需宿主新增一条路由）；web 帧内只有静音这一条通道；
 `?scriptstore=persist` 缺省仍不持久化（`docs/README-DIAGNOSTICS.md`）。
+
+
+## 发布记录：3.9.0（2026-09-20）
+
+**为什么发**：3.8.2 之后落地了一整轮**用户点名的真机批次**，其中既有用户可见的新能力（卡片暂停持久化、音频审计、
+交互音分类、`?npvoice`），也有**默认档变化**（`powPauseHidden` 关 → 开）。按 semver「加功能 = minor」取 **3.9.0**。
+
+**这一版包含**（逐条根因/真机读数见 `docs/WALLPAPER-LIFECYCLE.md`）：
+
+| 面 | 内容 |
+| --- | --- |
+| 六条真机 bug | ⑥ 设置面板被困左栏（`backdrop-filter` 包含块）、② 清空被粘性护栏带回 / 残留 `webUrl` 抢先武装 / web 档预览空白 / 源不可用被当素材、① 预览候选链、③ 沙箱档策略降级（shim `probeCaps`）、④ 卡片暂停压住帧内音频、⑤ 切页静音 |
+| 音频语义 | A 交互音分类（`mpwClassifyWebAudio` + `?npvoice=keep\|drop`，缺省 auto）、B 联动关 = **只控声音**、C 切页"又响一下"的唯一闸门（`mpwHiddenAudioBlock()`） |
+| NP-5 | 卡片播放/暂停**意图持久化**（键 `npPaused`，唯一写入口只在用户显式操作时写；刷新/换档继续成立） |
+| 审计 | `mpwInstallAudioAudit()`：hook `play`/`volume`/`muted`/`new Audio`/`AudioContext`，有界环形 ≤200，可疑转变即 POST `/diag`（`?npaudit=0` 关） |
+| 宿主超限语义 | 两个 POST 接收端（`/diag`、`/custom-scene-thumb`）超限从 `req.destroy()` 改成 **413 + JSON 说明**（旧行为客户端只看到 ECONNRESET）；新增门禁 `tools/host-body-limit-test.mjs`（真 HTTP + 变异自证） |
+
+**发布前置读数**（本机实测，命令见第 1 节）：
+
+| 闸门 | 读数 |
+| --- | --- |
+| `bash tools/check.sh` | **12/12 全绿**（`9939ac3` 与 `a8f377e` 两轮都跑过，末行"全部通过 ✓"） |
+| `node tools/wallpaper-lifecycle-test.mjs` | **172 通过 / 0 失败**（含 **21 组**变异自证） |
+| `node tools/host-body-limit-test.mjs` | **10 通过 / 0 失败**（含变异自证） |
+| `node tools/integrity-check.mjs` | **72 通过 / 0 失败** |
+| `node tools/secret-scan-test.mjs` | 干净（凭据 0 / 本机绝对路径 0 / 白名单无腐烂） |
+| 真机探针 | `wallpaper-lifecycle-live-probe` **31 PASS / 0 FAIL / 1 SKIP**；`np-pause-persist-live-probe` **11 PASS / 0 FAIL** |
+| `npm pack --dry-run` | **15 个文件** / unpacked **2 088 240 B** / tarball **708 939 B**（与 3.8.2 比：文件数不变，字节 +10 053） |
+
+**发布后验证**：`npm view` 版本与 dist-tags、真下载核对文件清单、装到干净目录后 `require`/`import` 一次、
+`update-plugin.sh` 同步 profile 副本并核对 md5。
+
+**这一版对老用户的默认行为影响（自查）**：
+1. **`powPauseHidden` 关 → 开**：只迁移**从没设过**这个键的存量档（`powPauseHiddenUserSet` 标记与 `bsCompat` 同口径）；
+   显式关过的用户在 3.4.x 之后的档里带标记，不会被迁移；迁移后用户仍可显式关掉，此后不再迁移。
+2. `npPaused` 是**新键**（默认 `false` = 播放）⇒ 老用户升级后行为与升级前一致（不会突然变暂停）。
+3. 超限语义变化只影响**病态载荷**（>8MB 的 diag / >3MB 的首帧）：从"连接被掐"变成"413 + 说明"，正常档逐字节不变。
+
+**已知边界**：服务端两处改动（`lib/index.js` 的文档类 404 用 HTML + 三条 scene 路由 404 化；`lib/web-wallpaper.js` 的
+`probeCaps`）**要等 dsh 进程重启**才生效（ESM 模块缓存，patch 热重载不重新 import）；本机 headless Firefox 无 WebGL，
+沙箱档"画面是否正确"只能人眼；NP-5 的"点暂停 → 刷新 → 30s 采样"已由新增真机探针覆盖（11 PASS/0 FAIL）。
