@@ -443,3 +443,34 @@ $ git tag -a v3.8.2 && git push origin v3.8.2          ⇒ [new tag] v3.8.2
 **判据读数**：`tools/wallpaper-lifecycle-test.mjs` ⇒ **179 通过 / 0 失败**（新增 P6g/P6h 两条钉住新 trigger
 与窗口清单）；`bash tools/check.sh` ⇒ **全部通过 ✓（12/12）**；`integrity-check` 72/0；`secret-scan` 干净；
 `docs/AUDIO-SOURCES.md` 新增 §5b 写清"适用范围收窄 + 下一次怎么定位（命中即自动落 `diag-*.json`）+ 仍抓不到的三类"。
+
+
+## 发布记录：3.11.0（2026-09-21 · 音乐卡片 seek 真机 P0 + 音频格式路由 + 预览框几何 + 网页帧三档 + 风险预检接口）
+
+**为什么是 minor**：既有**用户可见的新能力**（网页帧三档 `webFrameMode`、网页壁纸风险预检接口与面板提示、更多音频格式真的能放），
+也有一个**真机 P0 修复**（音乐卡片进度条 seek 落错元素）。按 semver「加功能 = minor」取 **3.11.0**。
+
+| 面 | 内容 | 判据读数 |
+| --- | --- | --- |
+| **P0 音乐卡片 seek**（真机：卡片总时长 `−3:22`、点轨道 90% 视频只从 11.53 → 12.69） | 根因两条：① `npActiveVideo` 把 `display:none` 当成"这不是壁纸媒体"⇒ 容器档换档窗口里卡片掉进曲目分支、绑到上一张壁纸残留的**游离 `<audio>`**（213s BGM）；② `npTransport("seek")` 是两段独立 if（视频 seek 完还会顺手 seek 那个 audio），而 `npSyncAudio` 的 `timeupdate` **无条件**把 audio 的时钟写进同一根进度条 ⇒ 两个元素轮流写、谁最后触发谁说了算。改法：新增 **`npMediaTarget(section)` = 卡片唯一媒体目标** `{el,kind:'video'\|'audio'\|'none'}`（数据源/时长/进度/seek/静音/上报全走它；`npActiveVideo` 判据改"src 非空 + 视频档 + 非 web 档"；残留 audio 只在**真有曲目清单**时才认），`npSyncVideo`/`npSyncAudio` 各自只在"主人是自己"时写进度，seek 单所有者 | `tools/np-control-test.mjs` **101 通过 / 0 失败**（T 组 9 条 + 其余全量）；**2 条变异自证**：恢复 `display` 一票否决 ⇒ T 组红 6 条；恢复"顺手也 seek 游离 audio" ⇒ T 组红 1 条 |
+| 音频格式（用户第 10 条） | 根因在**路由层**而非扫描表：`/raw` 对非 mpkg/pkg/json 一律 `application/octet-stream`、`/custom-media` 无音频分支、`/custom-dir` 白名单无音频后缀；另 `AUDIO_MAGIC_MIME` 的 ISO-BMFF 分支常量写成 `66427970`（ASCII `fByp`，ftyp 实际在偏移 4）且整体被 `n>=12` 包住。改法：唯一表 `AUDIO_SUFFIX_MIME`（8 项，与渲染器 `server/upload-policy.mjs` **同一份名单**）+ 新入口 `audioMimeFor(path, head)`（magic 优先 / 后缀兜底 / ID3 前缀的 `.flac` 例外），四条路由改查表 | `tools/audio-scan-test.mjs` **79/0**；`tools/scene-audio-route-test.mjs` **37/0**（实测 content-type：`/raw` 与 `/custom-folder` 的 `.flac` 都是 `audio/flac`，Range 206 同值；`/custom-media` 的 `.m4a` = `audio/mp4`） |
+| 预览框「半张图 + 白块 mp4」（第 12 条） | `.mpw_wallThumb` 是 flex 行，媒体与类型占位是**兄弟** ⇒ 占位一露把图压到 3/4、`cover` 再裁一块。改为媒体 `position:absolute;inset:0;object-fit:contain`、占位同层铺满居中、显隐收口 `mpwThumbFail/mpwThumbOk`（同框可见 ≤1、三条失败路径同形），候选链 = 扫描到的 `preview.*` → 容器 preview → 目录约定名 → 视频首帧 → 图片 | `tools/thumb-chain-test.mjs` **26/0**（真 CSS 产物几何 + **旧 CSS 对照**：并排 + 裁切、白块占框 ≈32% = 真机那块白） |
+| 换目录预览失败（第 13 条） | 缩略图 URL 缓存键 = 原 URL + **目录身份**（`mpwd=`）+ **严格单调纪元时间戳**（`mpwt=`），React key 同源 ⇒ 换目录换新节点、旧的内联 display/失败标记不可能粘住、候选链从 0 重走、失败不缓存 | thumb-chain B5/B6 + `tools/wallpaper-lifecycle-test.mjs` **184/0** |
+| Web 帧三档（第 9 条） | 判定表唯一在 `lib/web-wallpaper.js`（`webFramePlan/webFrameSandboxAttr/webFrameStatus`），客户端镜像并由门禁**逐档对拍**；`section.webFrameMode`（默认 `auto`）+ `?webframe=` 回退口；`auto` 才允许"策略挡住 ⇒ 一次性降级兼容"，`sandbox` 强制隔离**不**自动降级（原因进状态），`compat` 不带 shim 标记；状态 `window.__mpwWebFrame{...}` + `#mpw-bgWrap[data-mpw-webframe-mode\|-reason\|-attr\|-degraded]` | `tools/web-wallpaper-test.mjs` **429/0** |
+| 风险预检接口（第 11 条） | 判定收敛到模块级 `probeWebWallpaper`（两处扫描 + 新路由共用，源码级判据"递归只允许一份定义"）；`GET /api/mpkg-wallpaper/web-probe?folder=\|ltoken=` ⇒ `{ok,target,probe{heavy,external,heavyHits[≤8],externalRefs[≤8],htmlFile,scannedBytes,reasons[],limits}}`，400/403/404/200 四态，回环地址（localhost/127.0.0.1/::1）不算外网；条目级已有 `webHeavy/webExternal` + `webProbe`；选中时给**一次性、非阻塞**提示（面板 hint 行 + `localStorage.mpwWebRiskSeen`），状态 `window.__mpwWebRisk` + `#mpw-bgWrap[data-mpw-web-heavy\|-external\|-risk]` | `tools/web-probe-test.mjs` **26/0** + web-wallpaper B7i/B7j；形状契约 `docs/WEB-WALLPAPER.md` §3.4 |
+| 卡片细节三条（第 17 / 19 / 20 条） | ①收起态描述行与切歌键实测 `p≈0.06–0.45` 真的相交 ⇒ `lib/now-playing-math.js` 新增 `transportRow/sayRect/sayRowBandsMeet`，纵向相交时 `sayWidth` 收口到传输键左缘前 8px；②曲目档 prev/next **只改下标**（环形），视频档 no-op 且壁纸媒体 `{t,paused,src,plays,pauses}` 前后逐字段相同；③video 档 `kind:'video'`/`trackCount=1`/`byline` 带 `1/1`/`canVolume` 取 `mozHasAudio\|audioTracks`（判不出给 `null` 不禁用）/`POST /media-audio` 的 `source='video'` | np-control-test **101/0**（T/U/V 组全枚举：**101/101 不相交**、旧公式对照 27 个采样重叠；V 组逐字段比对） |
+
+**发布前置读数**：`bash tools/check.sh` ⇒ **全部通过 ✓（12/12）**；`node tools/integrity-check.mjs` ⇒ **72/0**；
+`node tools/secret-scan-test.mjs` ⇒ 干净（126 tracked 文件 / 凭据 0 / 本机绝对路径 0 / 白名单无腐烂）；
+`tools/wallpaper-lifecycle-test.mjs` **184/0**、`tools/np-media-test.mjs` **91/0**、`tools/np-control-test.mjs` **101/0**、
+`tools/thumb-chain-test.mjs` **26/0**、`tools/web-wallpaper-test.mjs` **429/0**、`tools/web-probe-test.mjs` **26/0**、
+`tools/audio-scan-test.mjs` **79/0**、`tools/scene-audio-route-test.mjs` **37/0**、
+`tools/np-seek-live-probe.mjs --selftest` ⇒ **PASS=8 / FAIL=0**（纯判据，未起浏览器、未写设置）。
+
+**诚实清单（本轮）**
+1. **P0 的真机那一次还没跑**：宿主（`:3080`）读的是 profile 安装副本，`update-plugin.sh` 同步 + 宿主重载之后才作数；
+   在此之前 `tools/np-seek-live-probe.mjs` 的 P0 会**直接红**并把"STALE INSTALL / 旧代码"打在读数里（不假装通过）。
+2. **`.wea` 故意不加**（来历不明、浏览器不解码，加了只会"列出来放不响"）；`.wma` 同理，除非有人明确要。
+3. `/custom-media`、`/library-media` 只做**后缀兜底**（读头会拖慢视频首帧）；带字节双判的是 `/raw` 与 `/custom-folder`。
+4. `tools/token-namespace-test.mjs` 的 before 基线取自 `git show HEAD:lib/client.js` ⇒ 本次提交后它退化为"自比"
+   （末尾的变异自证仍有分辨力）；下一轮把 before 钉到固定 rev（`tools/dir-picker-test.mjs` 已有先例）。

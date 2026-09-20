@@ -220,6 +220,7 @@ node tools/build-bundle.mjs
 | 静音（网页壁纸） | `mute` | 开 | 网页壁纸音频；关 = 放壁纸声音 | 关 |
 | **Now playing（左侧栏「设置」上方）** | `npNowPlaying` | **开** | 左侧栏挂可展开播放器（传输行 = 壁纸声音控制）；**关掉仍是零注入**；同一位置被别的插件占用时自动让位（`data-mpw-np-yield`） | 关 / 恢复默认 |
 | 播放/暂停同时控制壁纸 | `npLinkWallpaper` | 开 | Now playing 的播放/暂停与进度同时驱动壁纸自身；关 = 只驱动本插件播放器（壁纸媒体是唯一声源时控件**如实 disabled**） | 关 |
+| Web 帧模式（网页壁纸） | `webFrameMode` | `auto` | 网页壁纸 iframe 的**三档**：`auto` = 隔离沙箱，被浏览器策略挡住才一次性降级兼容（默认）；`sandbox` = 强制隔离，**不**自动降级（原因写进状态，可查）；`compat` = 兼容档（不带 shim 标记）。判定表只有一份（`lib/web-wallpaper.js`），状态见 `window.__mpwWebFrame` 与 `#mpw-bgWrap[data-mpw-webframe-mode\|-reason\|-attr\|-degraded]`（详见 [docs/WEB-WALLPAPER.md](docs/WEB-WALLPAPER.md) §3.0） | 选 `auto`；也可用 `?webframe=auto\|sandbox\|compat` 临时覆盖（不改设置） |
 | 水平翻转（镜像） | `flipX` | 关 | 壁纸左右镜像 | 关 |
 | 垂直翻转（镜像） | `flipY` | 关 | 壁纸上下镜像 | 关 |
 | 解码帧率上限 | `fpsCap` | 无限制 | 源帧率超限时宿主 ffmpeg 抽帧转码（24/30/48/60） | 选「无限制」 |
@@ -552,7 +553,7 @@ node tools/build-bundle.mjs
 - 参考项目：[dsh-bg-image](https://github.com/lyh9712/dsh-bg-image)（MIT，模板）、[unmpkg](https://github.com/aqnya/unmpkg)（GPL-3.0，仅参考 mpkg 二进制格式）、[repkg](https://github.com/notscuffed/repkg)（MIT，仅研究 .tex 格式）。
 - 致谢：[Bil812](https://github.com/Bil812)（[PR #2](https://github.com/XHR666/dsh-mpkg-wallpaper/pull/2) 的取色/自适应文字色/统一遮罩构想 → 已吸收为 Aqua 实验模式，全部可开关、默认关）、[elysia395/dsh-wallpaper-engine](https://github.com/elysia395/dsh-wallpaper-engine)（场景提取器与"设置持久化到宿主端文件""Edge canvas 兼容渲染"思路）、[oneincase/webwallgl](https://github.com/oneincase/webwallgl)（网页壁纸沙箱 + WE API shim 的 API 名单与语义参考）、[awesome-dsh-plugin](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin) 社区（收录与推广）。
 
-> **命名说明（2026-09-18）**：本插件对接的渲染器产品现名 **WEwebLoader**。
+> **命名说明（2026-09-18）**：本插件对接的渲染器产品名为 **WEwebLoader**（渲染器仓的 npm 包名与仓库名保持不变，见该仓 README）。
 
 ## 文件结构
 
@@ -610,7 +611,15 @@ node tools/style-scope-guard.mjs   # 判据是末行「… OK / … ALLOWLISTED 
 
 ## 这一版新增/变更
 
-当前版本 = `package.json` 的 **3.10.1**（本轮发布线 3.8.0 → 3.8.1 → 3.8.2 → 3.9.0 → 3.9.1 → 3.10.0 → **3.10.1**）。发布前置/命令/回滚见 [`docs/RELEASE.md`](docs/RELEASE.md)，本轮改动清单见 [`docs/RELEASE-READY-3.8.0.md`](docs/RELEASE-READY-3.8.0.md)，Now playing / 壁纸声音的根因与真机读数见 [`docs/NOW-PLAYING-DSH.md`](docs/NOW-PLAYING-DSH.md) §7.7。
+当前版本 = `package.json` 的 **3.11.0**（本轮发布线 3.8.0 → 3.8.1 → 3.8.2 → 3.9.0 → 3.9.1 → 3.10.0 → 3.10.1 → **3.11.0**）。发布前置/命令/回滚见 [`docs/RELEASE.md`](docs/RELEASE.md)，本轮改动清单见 [`docs/RELEASE-READY-3.8.0.md`](docs/RELEASE-READY-3.8.0.md)，Now playing / 壁纸声音的根因与真机读数见 [`docs/NOW-PLAYING-DSH.md`](docs/NOW-PLAYING-DSH.md) §7.7。
+
+- **3.11.0：音乐卡片 seek 落错元素（真机 P0）+ 音频格式路由 + 预览框几何 + 网页帧三档 + 风险预检接口** ——
+  ①**seek 落错元素**（真机：卡片显示总时长 `−3:22`、点轨道 90% 视频只从 11.53 → 12.69）：根因两条 —— `npActiveVideo` 把 `display:none` 当成"这不是壁纸媒体"（容器档换档窗口里画面确实不可见，于是卡片掉进曲目分支、绑到**上一张壁纸残留的游离 `<audio>`**），且 `npTransport("seek")` 会"顺手"也 seek 那个游离 audio、`npSyncAudio` 的 `timeupdate` 又**无条件**把 audio 的时钟写进同一根进度条。现在卡片的**数据源/时长/进度/seek/静音/上报全部走唯一目标** `npMediaTarget()`（`{el, kind:'video'|'audio'|'none'}`，判据 = src 非空 + 视频档 + 非 web 档；残留 audio 只在**这张壁纸真有曲目清单**时才认）；判据 `tools/np-control-test.mjs` T 组 9 条 + **2 条变异自证**（改回旧写法 ⇒ T 组红 6/1 条），真机探针 `tools/np-seek-live-probe.mjs`（`--selftest` 8/0；**真机那一次要等宿主重启后同步生效才跑**，见诚实清单）。
+  ②**更多音频格式**：真凶在**路由**而不是扫描表 —— `/raw` 对非 mpkg/pkg/json 一律 `application/octet-stream`、`/custom-media` 没有音频分支、`/custom-dir` 白名单没有音频后缀，另有 `AUDIO_MAGIC_MIME` 的 ISO-BMFF 分支写成 `fByp`（ftyp 在偏移 4）且整体被 `n>=12` 包住。现在**唯一表** `AUDIO_SUFFIX_MIME`（`.mp3/.ogg/.oga/.opus/.wav/.flac/.m4a/.aac`，与渲染器 `server/upload-policy.mjs` 同一份名单）+ `audioMimeFor(path, head)`（magic 优先 / 后缀兜底 / 带 ID3 前缀的 `.flac` 例外），四条路由改查表（`audio-scan` 79/0、`scene-audio-route` 37/0，实测 `/raw` 与 `/custom-folder` 的 `.flac` 都是 `audio/flac`）。
+  ③**预览框「半张图 + 白块 mp4」**：`.mpw_wallThumb` 原本是 flex 行，媒体（`width:100%` + `cover`）与类型占位是**兄弟** ⇒ 占位一露就把图压到 3/4、cover 再裁一块；现在媒体 `position:absolute;inset:0;object-fit:contain`、占位同层铺满、显隐收口到唯一落点（候选链 = 扫描到的 `preview.*` → 容器 preview → 目录约定名 → 视频首帧 → 图片；`thumb-chain` 26/0，含**旧 CSS 对照**：并排 + 裁切、白块占框 ≈32%）。
+  ④**换目录后预览不加载**：缩略图 URL 缓存键 = 原 URL + **目录身份** + **单调纪元时间戳**，React key 同源 ⇒ 换目录换新节点，旧的内联 display / 失败标记不可能粘住，失败不缓存。
+  ⑤**网页帧三档**（`webFrameMode`，见设置项总表）与**风险预检接口** `GET /api/mpkg-wallpaper/web-probe?folder=|ltoken=`（`{ok,target,probe{heavy,external,heavyHits,externalRefs,htmlFile,scannedBytes,reasons,limits}}`；回环地址不算外网；形状契约 [docs/WEB-WALLPAPER.md](docs/WEB-WALLPAPER.md) §3.4；`web-wallpaper` 429/0、`web-probe` 26/0），选中带风险标记的网页壁纸时给**一次性、非阻塞**提示（不弹窗、不拦选）。
+  ⑥**卡片细节**：收起态描述行不再压住切歌键（`lib/now-playing-math.js` 的 `transportRow/sayRect/sayRowBandsMeet`，全枚举 101/101 不相交、旧公式对照 27 个采样重叠）；**左右键只控曲目、绝不切壁纸**（视频档 no-op 且壁纸媒体前后逐字段相同）；video 档音轨接入卡片（`kind:'video'`、`1/1`、`/media-audio` 的 `source='video'`、`canVolume` 取 `mozHasAudio|audioTracks`，判不出给 `null` 不禁用）。
 
 - **Now playing 默认挂载 + 会让位**：设置项 `npNowPlaying` **默认开**（`lib/client.js` 的 `DEFAULT_NP_NOW_PLAYING`），仍在「壁纸设置」tab、紧挨既有 `mute` 下方（`lib/client.js` 的 `toggleRow(t("npNowPlaying"), …)`）。关掉即回到零注入（机制与判据见 [Now playing 与壁纸声音](#now-playing-与壁纸声音)）。默认开的前提是**礼让**：宿主同一位置已经有别的插件注入的元素时不挂/撤下，并留一个可查询状态 `data-mpw-np-yield`（`lib/now-playing.js` 的 `occupantOf()`；挂载前与挂载后都判，占用者走了再回来）。组件本体是 **Bencho 的 "Now playing"（MIT）逐行移植**（注释原文保留，归属见 `THIRD-PARTY.md` §6）；纯数学与组件拆成 `lib/now-playing-math.js` / `lib/now-playing.js`，由 `tools/build-now-playing.mjs` **逐字节内联**进 `lib/client.js` 的 `MPW-NP-GEN-START/END` 生成区，配两道漂移门禁（生成器自比 + 产物反抠比对）。挂载与收起判据见 [Now playing 与壁纸声音](#now-playing-与壁纸声音)。
 - **壁纸声音真的接线**：数据源只认**当前真的在放**的那个媒体元素（页面里那个隐藏空壳 `#mpw-bgVideo` 在**任何壁纸类型下都在 DOM 里**，旧实现按选择器命中它就当"当前媒体"）⇒ 视频壁纸的播放/暂停/静音落在真实元素上（**`mute` 开关真的落到元素上：关掉静音就真的出声**，旧写法把 `video.muted` 写死 `true`，之后再没有代码按设置赋值）；壁纸目录里**真实存在**的音频文件由我们自己的 `<audio>` 播（作用域认 `mpkgKey="custom|<folder>"`，旧写法只认 `folderName` ⇒ 自定义目录里的 web 壁纸永远拼成 library 路由 404）⇒ **上一首/下一首按清单顺序环形切换**，不再是"回到开头"；web 壁纸帧内那份声音只有**静音**这一条真通道（`canPlay=false`，如实显示，不假装能暂停帧内 WebAudio）；我们放音时帧内被强制静音（防同一首放两遍）。
