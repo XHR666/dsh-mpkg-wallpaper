@@ -19,6 +19,26 @@ done
 
 step "2/12 面板冒烟（含 CSS 模板闭合 / h 声明 / 花括号配平 / 渲染）+ P-66 面板健壮性/语言回归 + 选择器（第13条）回归 + 壁纸层可见性（.mpw-bgWrap）回归 + 壁纸持久化（刷新不丢）回归"
 node tools/panel-smoke.mjs || fail=1
+# ①(2026-09-21 真机第12/13条) 预览框：**媒体不裁切 + 与占位不并排 + 同框可见 ≤ 1**。
+#   真机现场：暂停键左边的预览图被切掉一块、右边约 1/4 是白块写着 `mp4`（换目录后同形，白块不走）。
+#   根因：`.mpw_wallThumb` 是 flex 行，`<img>/<video>`（width:100% + object-fit:cover）与类型占位
+#   是**兄弟** ⇒ 占位一露出来就把图压到 3/4、占位吃满剩下 1/4，cover 再裁掉一块。
+#   判据（契约，不是本机读数）：A 组拿**真 CSS 产物**（panel-smoke --css）算几何 —— 媒体
+#   `object-fit:contain` + `position:absolute`、占位 `inset:0` 铺满、`[hidden]` 必不显示；并把
+#   **旧 CSS** 喂给同一模型做对照（旧产物必须判成"并排 + 裁切"，占位占框 ≈32% = 真机那块白）；
+#   B 组切片 lib/client.js 的 MPW-THUMB 块跑生产状态机（三条失败路径都要求同框可见 ≤ 1、
+#   "先目录 preview.*、后首帧兜底"、换目录 key/URL 全换、缓存键含目录身份+纪元时间戳）；
+#   C 组装配点判据（显隐占位只有一个落点）+ 旧实现对照。26 通过 / 0 失败。
+node tools/thumb-chain-test.mjs || fail=1
+# ①(2026-09-21 用户第 11 条) 网页壁纸风险预检（重动画 / 需外网）**单查接口**：
+#   来历：预检本来只藏在两次目录扫描的返回值里（形状各不相同、导入前没法单查）⇒ 测试台要显示
+#   两个标记只能自己再解析一遍目录。现在判定只有一处实现（模块级 probeWebWallpaper），
+#   扫描（/custom-dir、/steam-inventory）与 `GET /web-probe?folder=|ltoken=` 共用它。
+#   判据：路由存在性 / 响应形状逐字段（ok,target,probe{heavy,external,heavyHits,externalRefs,
+#   htmlFile,scannedBytes,reasons,limits}）/ 正负例（骨骼动画 + 外链 vs 干净目录 vs 只引回环）/
+#   参数闸门（400/403/404）/ 扫描条目与单查结论逐项一致 / 递归只有一份定义（源码级）。
+#   形状契约：docs/WEB-WALLPAPER.md §3.4。26 通过 / 0 失败。
+node tools/web-probe-test.mjs || fail=1
 # ①(第13条 用户点名"长期没修好"的 bug) 选择文件夹/选择文件的选择器：
 #   滚动位置（重渲染/容器被重建后不跳顶）、不抢焦点、键盘导航、500 项大目录、滚轮不串联宿主。
 #   A 组源码级（**同一套断言对 `git show HEAD:lib/client.js` 必须变红** ⇒ 证明用例有分辨力）

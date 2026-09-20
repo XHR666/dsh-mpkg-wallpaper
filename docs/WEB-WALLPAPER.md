@@ -72,9 +72,37 @@ iframe（`lib/client.js` 的 `showWebEl`）——没有任何 WE API，于是所
 
 | 通道 | 何时使用 | `sandbox` 属性 | 帧的源 | 后果 |
 |---|---|---|---|---|
-| **网页 shim（默认）** | 入口 URL 带 `?mpwshim=1`（插件对网页壁纸默认加） | `allow-scripts` | **不透明源**（opaque origin） | 作者脚本读不到宿主 DOM / `localStorage`；父页也读不到帧内 DOM（静音/倍速/暂停由 shim 在帧内执行）。**①(WP-1)** 帧内 `localStorage`/`sessionStorage` 由 shim 给 facade（内存 + 宿主 `/web-store` 持久化，见 §5.4）——**这不是放宽 sandbox**：facade 读写的是"这张壁纸自己的键值"，宿主按 wallId 隔离 |
+| **网页 shim（默认；档位见 §3.0）** | 入口 URL 带 `?mpwshim=1`（插件对网页壁纸默认加；`compat` 档不加、`sandbox` 档对 html 入口强制加） | `allow-scripts` | **不透明源**（opaque origin） | 作者脚本读不到宿主 DOM / `localStorage`；父页也读不到帧内 DOM（静音/倍速/暂停由 shim 在帧内执行）。**①(WP-1)** 帧内 `localStorage`/`sessionStorage` 由 shim 给 facade（内存 + 宿主 `/web-store` 持久化，见 §5.4）——**这不是放宽 sandbox**：facade 读写的是"这张壁纸自己的键值"，宿主按 wallId 隔离 |
 | **兼容模式** | 用户在确认弹窗选「兼容模式（同源）」 | `allow-scripts allow-same-origin allow-pointer-lock` | 与宿主同源（等价于改动前的裸 iframe） | Live2D 类壁纸的「网页壁纸选项」（写 iframe 同源 `localStorage`）可用；代价是作者脚本与 DSH 界面同源。**此档不注入 shim** ⇒ 作者直接用浏览器真 storage（facade 只在真 storage 不可用时才装，见 §5.4） |
 | 场景渲染器（不在本项范围） | 渲染器 `:8899` URL（`sandbox=strict` 与否） | `allow-scripts allow-pointer-lock` / 旧档 | 渲染器自己的源 | 见 `../docs/COPYING-RULES.md` 与 B6 契约 |
+
+### 3.0 用户可切的三档：`webFrameMode`（自动 / 沙箱 / 兼容）
+
+真机读数：**同一张** web 壁纸在「兼容」档能加载、在「沙箱」档加载不了（作者脚本依赖沙箱里不可用的
+能力，典型是帧内 Worker / 同源 `localStorage`）。旧实现只有"自动"一档 ⇒ 用户没有可选项。
+
+设置项：`section.webFrameMode`（默认 `auto`）；回退口：URL `?webframe=auto|sandbox|compat`
+（URL 显式写了就优先于设置项）。**判定表只有一份**：`lib/web-wallpaper.js`
+（`WEB_FRAME_MODES` / `webFramePlan` / `webFrameSandboxAttr` / `webFrameStatus`）；
+`lib/client.js` 是单文件产物、不能 `require` 它，因此**镜像**同一张表 ——
+镜像一致性由 `tools/web-wallpaper-test.mjs` 的 B7 组逐档对拍（档 / 属性 / shim / 可降级 / 归一化）。
+
+| 档 | iframe `sandbox` | `mpwshim=1` 标记 | 策略挡住 / shim 没报到时 |
+|---|---|---|---|
+| `auto`（默认） | `allow-scripts` | 带 | **一次性降级「兼容」档**并重载（= 改动前的既有行为，零回归） |
+| `sandbox` | `allow-scripts` | 带（记录里没有标记的 html 入口也**补上**，否则"强制沙箱"名不副实） | **不降级**（用户明确要隔离）：原因写进状态，面板提示"需要的话手动切兼容" |
+| `compat` | `allow-scripts allow-same-origin allow-pointer-lock` | **不带**（同源裸 iframe） | n/a（已是最宽档） |
+
+**可查状态**（面板/探针/测试台读同一份，不自己算）：
+
+- `window.__mpwWebFrame` = `{ mode, requested, source, queryMode, attr, shim, degradable, degraded, why, reason, at }`
+  - `mode` = 当前实际用的档；`source` ∈ `query|setting|default`（"为什么是这档"）；
+  - `degraded/why`：真的发生过"自动档被策略挡住 ⇒ 降级"时才有值（`sandbox` 档永不置位）；
+  - `attr` = 真正写到 iframe 上的 `sandbox` 属性值（与 §3 表格同源）。
+- DOM：`#mpw-bgWrap[data-mpw-webframe-mode|-reason|-attr|-degraded]`（探针不必求值 JS 也能读）。
+
+面板：「壁纸设置」页的**Web 帧模式**一行（三个按钮，当前档高亮）+ 状态行（当前档 / 由谁指定 /
+是否降级过）。**切换不弹模态、不阻塞**；`?webframe=` 只影响当前这次页面加载。
 
 ### 3.1 为什么 `allow-scripts` 必须保留、`allow-same-origin` 必须去掉
 
@@ -108,6 +136,58 @@ iframe（`lib/client.js` 的 `showWebEl`）——没有任何 WE API，于是所
 - 沙箱帧与父页只走 `postMessage`（协议见 §5），`window.parent` 之外无任何桥。
 - 帧内导航到壁纸目录之外（外链页面）仍是允许的（作者可能引外网 SDK，`webExternal` 预检会提示），
   但那样就脱离了本插件的 shim 覆盖范围（新文档由对方站点提供，shim 不会二次注入）。
+
+---
+
+### 3.4 风险预检接口：重动画 / 需外网（`GET /web-probe`）
+
+两个标记的来历（都是真机语料）：**重动画** = 目录里有 Spine/Live2D 骨骼动画资产（`.skel` / `.atlas`
+后缀，或文件名含 `spine` / `live2d` / `.l2d`，递归 ≤3 层）⇒ 低配设备上会卡住界面；
+**需外网** = 入口 HTML（≤256 KB）里出现 `http(s)://` 外链（**排除** `localhost` / `127.0.0.1` / `[::1]`
+——插件自己的路由就是本机地址，误判会让每张壁纸都挂标记）。
+
+判定只有一处实现：`lib/index.js` 的模块级 `probeWebWallpaper(dir, entryFile)`；
+两处扫描（`/custom-dir`、`/steam-inventory`）与单查路由都调它（源码级判据见
+`tools/web-probe-test.mjs` 的 P8：递归只允许一份定义）。
+
+```
+GET /api/mpkg-wallpaper/web-probe?folder=<自定义目录下的单段子目录名>
+GET /api/mpkg-wallpaper/web-probe?ltoken=<库 token>
+```
+
+| 状态 | 什么时候 |
+|---|---|
+| `400 {ok:false,error:"need folder or ltoken"}` | 两个参数都没给 |
+| `403 {ok:false,error:"forbidden"}` | `folder` 含 `..` / `/` / `\` / 以 `.` 开头（只接受单段子目录名） |
+| `404 {ok:false,error:"not found"}` | 目录不在当前自定义目录里 / `ltoken` 解析不到 |
+| `200` | 见下 |
+
+```jsonc
+{
+  "ok": true,
+  "target": "custom|<folder>" | "library|<ltoken>",
+  "probe": {
+    "isWeb": true,
+    "heavy": true,                      // 标记①：重动画
+    "external": true,                   // 标记②：需外网
+    "heavyHits": ["char.skel", "char.atlas"],   // 证据（最多 8 条，命中的文件名）
+    "externalRefs": ["https://cdn.example.com/sdk.js"], // 证据（最多 8 条，去重后的外链）
+    "htmlFile": "index.html",           // 在哪个入口上判的（没找到 = null）
+    "scannedBytes": 213,                // 实际读了多少字节（上限 262144）
+    "reasons": ["骨骼动画资产 2 个（Spine/Live2D）⇒ 低配设备可能卡顿",
+                "入口 HTML 引用外网资源 1 处 ⇒ 断网/被墙时可能加载失败"],
+    "limits": { "depth": 3, "bytes": 262144, "refs": 8 }
+  }
+}
+```
+
+**消费侧（测试台 / 渲染器侧那一半）**：直接读这两个布尔画标记即可，`reasons` 可原样当悬停说明，
+`heavyHits`/`externalRefs` 给证据。扫描接口的条目也带同样的结论（`webHeavy` / `webExternal`）外加
+结构化字段 `webProbe`（同 `probe` 的裁剪版），所以"扫描那一刻已经有了"的场景不必再发一次请求。
+插件自身：选中带标记的壁纸时给一条**一次性、非阻塞**的提示（面板 hint 行；同一张壁纸同一组标记
+只提示一次，记录在 `localStorage.mpwWebRiskSeen`），并把标记写成可查状态
+`window.__mpwWebRisk` + `#mpw-bgWrap[data-mpw-web-heavy|-external|-risk]`。
+探测失败**不阻塞**任何流程（`reasons` 里如实写明原因，两个标记为 `false`）。
 
 ---
 

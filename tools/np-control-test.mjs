@@ -560,6 +560,158 @@ console.log('\n== F. ⑤ 悬浮态卡片放大（借宿主内边距，不越过�
 }
 
 /* ══════════════ G. ⑥ 测试台（:8902）复用同一个组件时需要的接口面 ══════════════ */
+/* ══════════════════════════════════════════════════════════════════════════════════
+   V. 第19条：左右键**只控曲目**，绝不切壁纸（也不碰壁纸媒体）
+   ──────────────────────────────────────────────────────────────────────────────────
+   用户口径：「音乐控件的左右键不该切换壁纸」。插件侧的可判定契约：
+     · 曲目档：prev/next 只改**曲目下标**（清单顺序、环形），卡片副标题跟着走；
+     · 视频档：没有曲目清单 ⇒ prev/next 是 no-op，且**一个字节都不碰**壁纸媒体
+       （play/pause/src/currentTime 全不变）—— 这条同时挡住"按了左右键壁纸重挂/重播"。
+   测试台（:8902）那一半由渲染器侧接同一对回调；插件侧只保证"回调里不出现切壁纸的动作"。
+   ══════════════════════════════════════════════════════════════════════════════════ */
+console.log('\n== V. 第19条：prev/next 只控曲目（不切壁纸、不碰壁纸媒体）==')
+{
+  /* V1/V2 视频档：没有清单 ⇒ no-op，且壁纸媒体零变化 */
+  const F = freshPlugin({ settings: SEC_VIDEO })
+  await settle()
+  F.video.style.display = ''; F.video.setAttribute('src', SEC_VIDEO.image)
+  F.video.currentTime = 4.2; F.video.paused = false
+  const before = { t: F.video.currentTime, paused: F.video.paused, src: F.video.getAttribute('src'), plays: F.video.__plays, pauses: F.video.__pauses }
+  F.T.transport('next', SEC_VIDEO)
+  F.T.transport('prev', SEC_VIDEO)
+  await settle()
+  ok('V1 视频档按左右键 ⇒ 壁纸媒体零变化（currentTime/paused/src/play 次数/pause 次数全同）',
+    F.video.currentTime === before.t && F.video.paused === before.paused && F.video.getAttribute('src') === before.src
+      && F.video.__plays === before.plays && F.video.__pauses === before.pauses,
+    JSON.stringify({ before: before, after: { t: F.video.currentTime, paused: F.video.paused, plays: F.video.__plays, pauses: F.video.__pauses } }))
+  ok('V2 视频档副标题仍是"1/1"（没有假装有第二首）', (() => { const m = F.T.resolve(SEC_VIDEO); return m && m.trackCount === 1 && !m.canNext && !m.canPrev })(), JSON.stringify((() => { const m = F.T.resolve(SEC_VIDEO); return { n: m && m.trackCount, next: m && m.canNext } })()))
+
+  /* V3/V4 曲目档：下标按清单顺序推进（环形），壁纸媒体依旧零变化 */
+  const G = freshPlugin({ settings: SEC_WEB })
+  await settle()
+  G.T.seedTracks(SEC_WEB, TRACKS6, 'dir')
+  G.T.load(0)
+  const i0 = G.T.idx()
+  G.T.transport('next', SEC_WEB)
+  await settle()
+  const i1 = G.T.idx()
+  const m1 = G.T.resolve(SEC_WEB)
+  ok('V3 曲目档 next ⇒ 下标 +1 且副标题写 2/6（顺序语义可见）', i1 === i0 + 1 && /2\/6/.test(String(m1 && m1.byline)), 'idx=' + i0 + '→' + i1 + ' byline=' + (m1 && m1.byline))
+  G.T.transport('prev', SEC_WEB); G.T.transport('prev', SEC_WEB)
+  await settle()
+  ok('V4 曲目档 prev 两次 ⇒ 从 2/6 回到 6/6（环形，不是"回到开头"）且壁纸媒体零变化',
+    G.T.idx() === TRACKS6.length - 1 && G.video.__plays === 0 && G.video.__pauses === 0 && !G.video.getAttribute('src'),
+    'idx=' + G.T.idx() + ' video.src=' + JSON.stringify(G.video.getAttribute('src')) + ' plays=' + G.video.__plays)
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════
+   U. 第17条：卡片缩小过程中**描述行与左右切歌键不许重叠**（纯几何，全枚举 p）
+   ──────────────────────────────────────────────────────────────────────────────────
+   真机现象：「音乐卡片缩小时"当前壁纸没有可播放的媒体"这行与左右切歌键重叠」。
+   用组件自己的几何量出来：收起端 p=0 时文字块右边缘 154 < 传输行左边缘 162（没重叠），
+   但 p≈0.15–0.45 那一段传输行从下方升进文字带、横向又比文字块更靠左 ⇒ **真的叠在一起**。
+   修法在 lib/now-playing-math.js：纵向两条带相交时，文字块宽度收口到传输行左边缘之前
+   （SAY_ROW_GAP=8）。判据：0.01 步长全枚举 + **旧公式**对照（必须判红，证明有分辨力）。
+   ══════════════════════════════════════════════════════════════════════════════════ */
+console.log('\n== U. 第17条：缩小时描述行与切歌键的几何（全枚举 p + 旧公式对照）==')
+{
+  const MATH = loadCjsSource(fs.readFileSync(path.join(repoRoot, 'lib', 'now-playing-math.js'), 'utf8'), 'math')
+  const P = (() => { const q = {}; for (let i = 0; i <= 100; i++) q[i] = i / 100; return Object.values(q) })()
+  const inter = (a, b) => !(a.r <= b.l || a.l >= b.r || a.b <= b.t || a.t >= b.b)
+  const rows = P.map((p) => ({ p, say: MATH.sayRect(p), row: MATH.transportRow(p), raw: Object.assign({}, MATH.sayRect(p), { r: MATH.sayLeft(p) + MATH.sayWidthRaw(p) }) }))
+  const bad = rows.filter((r) => r.say.w > 0 && inter(r.say, r.row))
+  const badRaw = rows.filter((r) => inter(r.raw, r.row))
+  ok('U1 全枚举 p∈[0,1]（0.01 步长）：文字块与传输行**永不相交**（' + (P.length - bad.length) + '/' + P.length + '）',
+    bad.length === 0, bad.length ? JSON.stringify(bad.slice(0, 2)) : '最窄处 ' + Math.min.apply(null, rows.map((r) => r.say.w)).toFixed(1) + 'px')
+  ok('U2 分辨力对照：**旧公式**（未收口）在同一判据下必须重叠（真机读到的那段窗口）',
+    badRaw.length > 0, '重叠采样 ' + badRaw.length + ' 个，首个 p=' + (badRaw[0] ? badRaw[0].p : '-'))
+  ok('U3 收起端（p=0）与展开端（p=1）的既有几何不许被这次收口改动',
+    Math.abs(rows[0].say.w - MATH.sayWidthRaw(0)) < 0.001 && Math.abs(rows[100].say.w - MATH.sayWidthRaw(1)) < 0.001,
+    'p=0 w=' + rows[0].say.w.toFixed(2) + ' / raw=' + MATH.sayWidthRaw(0).toFixed(2) + '；p=1 w=' + rows[100].say.w.toFixed(2) + ' / raw=' + MATH.sayWidthRaw(1).toFixed(2))
+  ok('U4 收口只在"纵向相交"的窗口里生效（其余位置宽度逐字节等于旧公式）',
+    rows.filter((r) => Math.abs(r.say.w - (r.raw.r - r.raw.l)) > 0.001).every((r) => MATH.sayRowBandsMeet(r.p)),
+    '生效采样 ' + rows.filter((r) => Math.abs(r.say.w - (r.raw.r - r.raw.l)) > 0.001).length + ' 个')
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════
+   T. 真机 P0：卡片的数据源与 seek 目标**恒为同一个元素**（位置/时长不许来自两个媒体）
+   ──────────────────────────────────────────────────────────────────────────────────
+   真机读数（`:3080`，用户档 `custommpkg|小鸟游星野01_04.mpkg`）：看得见的 `#mpw-bgVideo` 在放
+   100.05s 的 mp4（loop），卡片却显示 `["0:11","−3:22"]`（位置 11s 来自视频、总时长 213s 来自
+   上一张 web 壁纸残留的 `<audio>`），点轨道 90% 视频 `currentTime` 不动（seek 落到了那个 audio）。
+   根因：`npActiveVideo` 里 `if (video.style.display === "none") return null` —— 视频在"换档/兜底/
+   隐藏层"的窗口里确实是 display:none，卡片于是改绑到游离 audio（两个元素混搭）。
+   本组四条：① 唯一目标判定（含 display:none）；② 单一 seek 落点；③ 同步写入不许交叉；
+            ④ `/media-audio` 归属与卡片一致（video 档音轨 = source:'video'）。
+   ══════════════════════════════════════════════════════════════════════════════════ */
+console.log('\n== T. 真机 P0：数据源 / 时长 / seek 恒为**同一个元素**（视频档不许被游离 <audio> 接管）==')
+{
+  const SEC_CONTAINER = { image: 'host:?token=TK&index=0', converted: 'mp4', mpkgKey: 'custommpkg|小鸟游星野01_04.mpkg', mpkgName: '小鸟游星野01_04', npNowPlaying: true, mute: false, enabled: true }
+  const F = freshPlugin({ settings: SEC_CONTAINER })
+  await settle()
+  /* 真机形态：视频**正在放**、src 在，但元素此刻 display:none（换档窗口） */
+  F.video.style.display = 'none'
+  F.video.setAttribute('src', 'http://127.0.0.1:3080/api/mpkg-wallpaper/media?token=TK&index=0')
+  F.video.duration = 100.05
+  F.video.currentTime = 11.53
+  F.video.paused = false
+  const t1 = F.T.mediaTarget(SEC_CONTAINER)
+  ok('T1 视频档 + <video> display:none ⇒ 媒体目标**仍是 video**（看不见画面 ≠ 换了媒体）',
+    t1 && t1.kind === 'video', JSON.stringify(t1))
+  const m1 = F.T.resolve(SEC_CONTAINER)
+  ok('T2 卡片总时长 == round(视频时长) = 100（不是别的元素的 213）',
+    m1 && m1.total === 100 && m1.kind === 'video', JSON.stringify({ kind: m1 && m1.kind, total: m1 && m1.total }))
+
+  /* 残留的 <audio>：上一张 web 壁纸的播放器还在（有 src、有 213s 时长）—— 它**不许**接管卡片。
+     必须用**插件自己的那个 npAudio**（真机形态；用一个测试自造的元素就测不出"顺手也 seek 了它"）。 */
+  F.T.ensureAudio()
+  const stale = F.T.audio()
+  ok('T0 夹具拿到了插件自己的 <audio>（残留播放器必须用真元素，否则 T6 测不到落点）', !!stale, stale ? 'AUDIO' : 'null')
+  stale.setAttribute('src', 'blob:stale-bgm')
+  stale.duration = 213.0
+  stale.currentTime = 7
+  const t2 = F.T.mediaTarget(SEC_CONTAINER)
+  ok('T3 有残留 <audio>（src + 213s）也不许接管：目标仍是 video',
+    t2 && t2.kind === 'video', JSON.stringify(t2))
+  const m2 = F.T.resolve(SEC_CONTAINER)
+  ok('T4 卡片总时长仍来自视频（100），不是残留 audio 的 213',
+    m2 && m2.total === 100, JSON.stringify({ kind: m2 && m2.kind, total: m2 && m2.total, byline: m2 && m2.byline }))
+
+  /* 单一落点：拖到 90% ⇒ 只动视频；残留 audio 的 currentTime 一个字节都不许变 */
+  F.video.currentTime = 0
+  stale.currentTime = 7
+  F.T.transport('seek', SEC_CONTAINER, 0.9)
+  await settle()
+  ok('T5 拖到 90% ⇒ `video.currentTime` = 90.045s（真的落到用户在看的那个媒体）',
+    Math.abs(F.video.currentTime - 0.9 * 100.05) < 0.05, 'video.currentTime=' + F.video.currentTime)
+  ok('T6 同一次拖动**不动**残留 <audio>（单一所有者：一次拖动只落一个元素）',
+    stale.currentTime === 7, 'staleAudio.currentTime=' + stale.currentTime)
+
+  /* 同步写入不许交叉：audio 的 timeupdate 触发 npSyncAudio 时，主人是视频 ⇒ 进度不被改 */
+  const before = F.T.progress ? F.T.progress() : null
+  F.video.currentTime = 42
+  F.T.syncVideo()
+  const afterVideo = F.T.progress ? F.T.progress() : null
+  stale.currentTime = 88
+  F.T.syncAudio()      // 残留 audio 的时钟**不许**写进同一根进度条
+  const afterStale = F.T.progress ? F.T.progress() : null
+  ok('T7 残留 <audio> 的 timeupdate 不许改卡片进度（两个元素轮流写 = 修前形态）',
+    afterStale === afterVideo && (afterVideo === null || afterVideo === 42),
+    JSON.stringify({ before: before, afterVideo: afterVideo, afterStale: afterStale }))
+
+  /* 目录音轨档：目标必须是 audio（这一半不许被上面的修复压掉） */
+  const G = freshPlugin({ settings: SEC_WEB })
+  await settle()
+  G.T.seedTracks(SEC_WEB, TRACKS6, 'dir')
+  G.T.load(0)
+  const t3 = G.T.mediaTarget(SEC_WEB)
+  ok('T8 目录音轨档 ⇒ 目标 audio（清单是它的依据；视频档的修法不许反过来压掉这一档）',
+    t3 && t3.kind === 'audio', JSON.stringify(t3))
+  const m3 = G.T.resolve(SEC_WEB)
+  ok('T9 音轨档卡片：kind=track + 清单计数可见（1/N）',
+    m3 && m3.kind === 'track' && m3.trackCount === TRACKS6.length, JSON.stringify({ kind: m3 && m3.kind, n: m3 && m3.trackCount, byline: m3 && m3.byline }))
+}
+
 console.log('\n== G. ⑥ 组件对外接口面（渲染器测试台 :8902 若复用同一组件，这些必须齐）==')
 {
   const doc = (() => {
@@ -629,8 +781,8 @@ if (!NO_MUT) {
       to: 'try { /* mutated: 不落 video */ } catch (e) {}' },
     { id: 'seek-ignores-value', group: 'C',
       why: '把 seek 的落点删掉（= 旧实现进度条只读，"a scrubber you can drag is a different component"）',
-      file: 'client.js', from: 'if (vid && link && isFinite(vid.duration) && vid.duration > 0) {',
-      to: 'if (false) {' },
+      file: 'client.js', from: 'try { t.el.currentTime = r * t.el.duration; did = "video.seek=" + t.el.currentTime.toFixed(2) } catch (e) {}',
+      to: 'try { /* mutated: seek 不落点 */ } catch (e) {}' },
     { id: 'link-default-flipped-to-false', group: 'D',
       why: '把 ② 的默认值改成 false（= 改变既有默认行为，本条明令禁止）',
       file: 'client.js', from: 'const DEFAULT_NP_LINK_WALLPAPER = true;', to: 'const DEFAULT_NP_LINK_WALLPAPER = false;' },
@@ -657,6 +809,17 @@ if (!NO_MUT) {
       why: '把"被挡住时强制 muted"删掉（= 取消静音→被停→再取消静音 自转成环，画面反复被停）',
       file: 'client.js', from: 'return npSoundBlocked || ((s.mute !== void 0 ? !!s.mute : true) || npAudioOwns());',
       to: 'return ((s.mute !== void 0 ? !!s.mute : true) || npAudioOwns());' },
+    /* ①(2026-09-21 真机 P0) 两条：把"唯一媒体目标"改回旧写法 ⇒ T 组必须红。 */
+    { id: 'np-activevideo-display-veto-restored', group: 'T',
+      why: '把 `display:none` 一票否决加回 npActiveVideo（= 真机根因原样：视频在换档窗口里被否认 ⇒ 卡片改绑游离 audio）',
+      file: 'client.js',
+      from: '\t\t\tif (s.webUrl) return null;                       /* web 壁纸：那个 video 不是壁纸本体 */',
+      to: '\t\t\ttry { if (video.style && video.style.display === "none") return null; } catch (e) {}\n\t\t\tif (s.webUrl) return null;' },
+    { id: 'seek-also-hits-stray-audio', group: 'T',
+      why: '把"一次拖动顺手也 seek 那个游离 audio"加回来（= 真机根因：条子动了、视频没动）',
+      file: 'client.js',
+      from: 'try { t.el.currentTime = r * t.el.duration; did = "video.seek=" + t.el.currentTime.toFixed(2) } catch (e) {}',
+      to: 'try { t.el.currentTime = r * t.el.duration; did = "video.seek=" + t.el.currentTime.toFixed(2) } catch (e) {}\n\t\t\t\t\t\tif (npAudio && isFinite(npAudio.duration) && npAudio.duration > 0) { try { npAudio.currentTime = r * npAudio.duration } catch (e) {} }' },
     { id: 'ontransport-value-dropped', group: 'G',
       why: '把接线的第二参数丢掉（= 拖动/音量送不出值，控件只能"点一下"没有连续量）',
       file: 'client.js', from: 'onTransport: (op, value) => npTransport(op, readSection(), value),',

@@ -10,6 +10,8 @@
 //   T6 规格 §6 返回结构与缓存（字段名与顺序、source、cacheHit、mtime 失效）
 //   T7 边界（无音轨 / 多音轨 / 同名不同目录 / 损坏头 / 短条目 / 大写后缀）
 //   T8 真包（11 个 scene.pkg）与**规格慢速参考实现**逐项一致
+//   T9 扩展名 + 头字节双判（audioMimeFor：最小 FLAC / ID3v2 前缀的 FLAC / 说谎后缀 / ftyp@4 / 非音频）
+//      + 分辨力自证：老写法（只看后缀 / 只看头字节 / 短头一律放弃）必须在本组变红
 //
 // **独立性声明**：本文件不读取、不切片、不执行渲染器仓库（we-scene-demo/**）的任何文件，
 //   也不 import 渲染器的函数；所有期望值都来自 docs/AUDIO-TRACK-SPEC.md 的表格字面量
@@ -21,7 +23,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   parsePkg, readPkgEntry, scanSceneAudio, enumerateAudioTracks, isAudioPath, suffixAudioMime, sniffAudioMime,
-  AUDIO_SUFFIX_MIME, AUDIO_CONTAINER_RULES,
+  audioMimeFor, AUDIO_SUFFIX_MIME, AUDIO_CONTAINER_RULES,
   clearPkgAudioIndexCache, pkgAudioIndexStats,
 } from '../lib/pkg-extract.js';
 
@@ -419,6 +421,85 @@ try {
     ok('除目录表外只多读 scene.json（< 1MB）', lazy.every(({ r }) => r.bytesRead - r.tableBytes - 16 * r.indexEntries < 1024 * 1024),
       lazy.map(({ r }) => r.bytesRead - r.tableBytes - 16 * r.indexEntries).join(','));
   }
+  console.log('\n== T9 扩展名 + 头字节双判（规格 §1.2 × §3，audioMimeFor 统一入口）==');
+  {
+    // 夹具：仓内临时目录（路径由 os.tmpdir() 推导，不写本机绝对路径）。
+    // 这一组守的是**扩展名与内容不一致**的四种组合，以及"短文件/带标签前缀"这两个旧嗅探的盲区。
+    const dir = path.join(tmp, 'fmt');
+    fs.mkdirSync(dir, { recursive: true });
+
+    /** 最小合法 FLAC：`fLaC` + STREAMINFO 块头（`0x80` = 最后一块 + 类型 0，`00 00 22` = 34 字节）+ 34 字节负载。 */
+    const streaminfo = (() => {
+      const b = Buffer.alloc(4 + 34);
+      b.write('fLaC', 0, 'latin1'); b[4] = 0x80; b[5] = 0x00; b[6] = 0x00; b[7] = 0x22;
+      return b;
+    })();
+    /** ID3v2 头（`ID3` + 版本 03 00 + flag 00 + syncsafe size 00 00 00 0a）+ 2 字节标签负载 + 最小 FLAC。
+     *  16 字节窗口里只有 `ID3`（`fLaC` 落在偏移 12，被标签顶掉了）—— 真实语料里带封面的 FLAC 就是这样。 */
+    const id3TaggedFlac = Buffer.concat([bytesOf('ID3\x03\x00\x00\x00\x00\x00\x0a'), Buffer.from([0x41, 0x42]), streaminfo]);
+    const oggBytes = Buffer.concat([bytesOf('OggS'), Buffer.alloc(60, 0x40)]);
+    const ftypM4a = Buffer.concat([Buffer.alloc(4), bytesOf('ftypM4A '), Buffer.alloc(48, 0x11)]);   // ISO-BMFF：`ftyp` 在偏移 4
+
+    fs.writeFileSync(path.join(dir, 'minimal.flac'), streaminfo);        // 42 字节：旧嗅探被 n>=12 … 恰好 ≥12，但短文件同族用下面的
+    fs.writeFileSync(path.join(dir, 'tagged.flac'), id3TaggedFlac);      // ID3v2 前缀 + fLaC，后缀 .flac
+    fs.writeFileSync(path.join(dir, 'liar.mp3'), oggBytes);              // 后缀说谎：内容其实是 Ogg
+    fs.writeFileSync(path.join(dir, 'song.m4a'), ftypM4a);               // ftyp 在偏移 4（旧实现查偏移 0 的 fByp ⇒ 永远落空）
+    fs.writeFileSync(path.join(dir, 'notes.txt'), 'not audio at all');   // 非音频：不得进清单
+
+    const scan = scanSceneAudio(dir);
+    const got = new Map(scan.tracks.map((t) => [t.path, t]));
+    ok('扫描夹具目录：source=dir / bytesRead=0', scan.source === 'dir' && scan.bytesRead === 0, scan.source + '/' + scan.bytesRead);
+    ok('目录清单恰好 4 条音频（notes.txt 被 §1.2 挡掉）', scan.tracks.length === 4, scan.tracks.map((t) => t.path + ':' + t.mime).join(','));
+
+    // ① 最小合法 FLAC（fLaC + STREAMINFO）：进清单 + mime + size 三项都对。
+    ok('最小 FLAC（fLaC + STREAMINFO）进清单', got.has('minimal.flac'), scan.tracks.map((t) => t.path).join(','));
+    ok('最小 FLAC → audio/flac', (got.get('minimal.flac') || {}).mime === 'audio/flac', JSON.stringify((got.get('minimal.flac') || {}).mime));
+    ok('最小 FLAC size = ' + streaminfo.length + '（目录表实测值，不口算）', (got.get('minimal.flac') || {}).size === streaminfo.length, String((got.get('minimal.flac') || {}).size));
+
+    // ② ID3v2 前缀 + fLaC + 后缀 .flac ⇒ 必须 audio/flac。
+    //    分辨力：R5（ID3v2）在 §3.2 里先命中 ⇒ 只看头字节的老逻辑给 audio/mpeg（浏览器按 MP3 解 FLAC 必失败）。
+    ok('ID3v2 前缀 + .flac → audio/flac（不是 audio/mpeg）', (got.get('tagged.flac') || {}).mime === 'audio/flac', JSON.stringify((got.get('tagged.flac') || {}).mime));
+    ok('ID3v2 前缀 + .flac size 正确', (got.get('tagged.flac') || {}).size === id3TaggedFlac.length, String((got.get('tagged.flac') || {}).size));
+
+    // ③ 后缀说谎（.mp3 / 内容是 OggS）⇒ 按 magic 判 ⇒ 双判生效（不是只看扩展名）。
+    ok('后缀说谎 .mp3 实为 OggS → audio/ogg（magic 优先于后缀）', (got.get('liar.mp3') || {}).mime === 'audio/ogg', JSON.stringify((got.get('liar.mp3') || {}).mime));
+
+    // ④ ISO-BMFF：`ftyp` 在偏移 4 才认（旧实现查偏移 0 的 ASCII `fByp` ⇒ 这里永远给后缀 audio/mp4 也"恰好"对，
+    //    所以下面用 sniffAudioMime 直接钉住 R1 的位置口径）。
+    ok('.m4a（ftyp@4）→ audio/mp4', (got.get('song.m4a') || {}).mime === 'audio/mp4', JSON.stringify((got.get('song.m4a') || {}).mime));
+    ok('sniffAudioMime 认偏移 4 的 ftyp（offset 0 写 ftyp 不算命中）',
+      sniffAudioMime(Buffer.concat([Buffer.alloc(4), bytesOf('ftypM4A ')]) ) === 'audio/mp4' && sniffAudioMime(Buffer.concat([bytesOf('ftypM4A '), Buffer.alloc(8)])) === '');
+
+    // ⑤ 非音频后缀：不进清单；统一入口对"表外后缀 + 无魔数"的内容给空串（调用方才有权回落
+    //    octet-stream）。注意 magic 判定本身与后缀无关（规格 §3 只看字节）：表外后缀 + 真 OggS
+    //    仍得到 audio/ogg —— 这不是缺陷，是"双判"里 magic 那一侧的语义；把 .txt 挡在门外是
+    //    清单层（§1.2）的职责，所以下面两条分开断言。
+    ok('非音频 .txt 不在清单里', !scan.tracks.some((t) => /\.txt$/.test(t.path)));
+    ok('audioMimeFor：表外后缀 + 非音频字节 → 空串（不猜后缀）',
+      audioMimeFor('notes.txt', bytesOf('not audio')) === '' && audioMimeFor('a.tex', bytesOf('TEX\x00')) === '');
+    ok('audioMimeFor：表外后缀 + 真 OggS → audio/ogg（magic 与后缀无关；清单层才有后缀过滤）', audioMimeFor('notes.txt', oggBytes.subarray(0, 16)) === 'audio/ogg');
+    ok('audioMimeFor 异常输入不抛（null/undefined/数字/空）', (() => {
+      try { return audioMimeFor(null, null) === '' && audioMimeFor(undefined, undefined) === '' && audioMimeFor('', null) === '' && audioMimeFor('x.flac') === 'audio/flac' } catch { return false }
+    })());
+
+    // ⑥ 分辨力自证（本仓惯例：把实现改回旧写法必须变红）。
+    //    老写法一：`mime = sniffAudioMime(head) || suffixAudioMime(path)`（只把后缀当"嗅探失败后的兜底"）
+    //      ⇒ tagged.flac 会得到 audio/mpeg（因为嗅探"成功"给出了 ID3 的结论，轮不到后缀兜底）。
+    //    老写法二：只看后缀 ⇒ liar.mp3 会得到 audio/mpeg（漏掉 OggS 这一真结论）。
+    const oldFlavor = (p, head) => sniffAudioMime(head) || suffixAudioMime(p);
+    const suffixOnly = (p) => suffixAudioMime(p);
+    ok('（分辨力·老写法一）"嗅探||后缀"对 tagged.flac 给 audio/mpeg，实现给 audio/flac —— 两者必须不同',
+      oldFlavor('tagged.flac', id3TaggedFlac.subarray(0, 16)) === 'audio/mpeg' && audioMimeFor('tagged.flac', id3TaggedFlac.subarray(0, 16)) === 'audio/flac',
+      'old=' + oldFlavor('tagged.flac', id3TaggedFlac.subarray(0, 16)) + ' new=' + audioMimeFor('tagged.flac', id3TaggedFlac.subarray(0, 16)));
+    ok('（分辨力·老写法二）只看后缀对 liar.mp3 给 audio/mpeg，实现按 magic 给 audio/ogg —— 两者必须不同',
+      suffixOnly('liar.mp3') === 'audio/mpeg' && audioMimeFor('liar.mp3', oggBytes.subarray(0, 16)) === 'audio/ogg',
+      'suffix=' + suffixOnly('liar.mp3') + ' mime=' + audioMimeFor('liar.mp3', oggBytes.subarray(0, 16)));
+    //    老写法三：宿主 AUDIO_MAGIC_MIME 的 `if (n >= 12)` + `hex.startsWith('66427970')`
+    //      ⇒ 4 字节头（`fLaC`）与偏移 4 的 ftyp 都判不出来；规格 §3.3 明确禁止"因长度不足整体放弃"。
+    ok('（分辨力·老写法三）4 字节头 fLaC 必须命中（规格 §3.3，短文件不得整体放弃）', audioMimeFor('short.flac', streaminfo.subarray(0, 4)) === 'audio/flac');
+    ok('（分辨力·老写法三）ftyp@4 必须命中（旧写法查偏移 0 的 66427970 ⇒ 空）', audioMimeFor('short.m4a', Buffer.concat([Buffer.alloc(4), bytesOf('ftypM4A ')])) === 'audio/mp4');
+  }
+
 } finally {
   try { fs.rmSync(tmp, { recursive: true, force: true }) } catch { /* 忽略 */ }
 }

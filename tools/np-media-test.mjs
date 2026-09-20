@@ -720,16 +720,15 @@ const MUTS = [
   },
   {
     id: 'hidden-shell-video-accepted-again', expect: 'B', file: 'client',
-    why: '①(NP-3) 把"只有当前真的在放的那个 video 才算源"三条判据删掉（旧写法：查询命中的第一个 video，'
+    why: '①(NP-3) 把"只有当前真的在放的那个 video 才算源"的判据删掉（旧写法：查询命中的第一个 video，'
       + '而页面里**永远**有一个隐藏空壳 #mpw-bgVideo）⇒ web 壁纸被判成 video、播放/静音全落在空壳上',
-    mut: (s) => s.replace(
-      '			if (!video || String(video.tagName || "").toUpperCase() !== "VIDEO") return null;\n'
-      + '			const src = String(video.currentSrc || video.getAttribute("src") || video.src || "");\n'
-      + '			if (!src) return null;\n'
-      + '			try { if (video.style && video.style.display === "none") return null; } catch (e) {}\n'
-      + '			if (s.webUrl) return null;',
-      '			if (!video || String(video.tagName || "").toUpperCase() !== "VIDEO") return null;\n'
-      + '			return video;   /* 变异：旧写法 —— 命中的第一个 video 就算"当前媒体" */'),
+    /* ①(2026-09-21 真机 P0) 判据从"display 一票否决"改成 **src 非空 + section 是视频档 + 非 web 档**
+       三条（`display:none` 不再是否认依据：它只表示"画面此刻不可见"，不表示换了媒体）。
+       变异因此改成"把这三条一起删掉" —— 语义与旧变异完全相同（空壳 video 又被当成当前媒体）。 */
+    mut: (s) => s
+      .replace('			if (!src) return null;', '			/* 变异：不查 src */')
+      .replace('			if (s.webUrl) return null;', '			/* 变异：不查 web 档 */')
+      .replace('			return isVid ? video : null;', '			return video;   /* 变异：命中的第一个 video 就算"当前媒体" */'),
   },
   {
     id: 'audio-scope-loses-custom-mpkgkey', expect: 'A', file: 'client',

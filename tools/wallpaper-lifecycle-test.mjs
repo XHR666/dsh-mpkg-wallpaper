@@ -295,32 +295,59 @@ console.log('\n== C. ② 形状跟着条目来源（custom / library / container
 /* ══════════════════════════════════════════════════════════════════════════════════
    D. ① 预览候选链
    ══════════════════════════════════════════════════════════════════════════════════ */
-console.log('\n== D. ① 设置里"当前壁纸"预览框：web 档必须有预览图候选 ==')
+console.log('\n== D. ① 设置里"当前壁纸"预览框：候选链 + 缓存键 ==')
 {
   const { L } = boot({})
+  // 缩略图 URL 现在带**缓存键**（`mpwd=` 目录身份 + `mpwt=` 纪元时间戳）⇒ 断言按"路径前缀"匹配
+  const at = (u, p) => new RegExp('/' + p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(\\?|$)').test(String(u))
   const web = L.thumbCandidates({ converted: 'web', webUrl: 'host:?custom=1&folder=3580207945&file=index.html&shim=1', mpkgKey: 'custom|3580207945/index.html' })
   ok('D1 web 档第一候选 = 目录内 preview.gif（修前：候选为空 ⇒ 预览框什么都没有）',
-    web.length >= 2 && /\/custom-folder\/3580207945\/preview\.gif$/.test(web[0].src), JSON.stringify(web.slice(0, 2)))
-  ok('D2 web 档候选链含 loading.webp（Vite 包的兜底图）', web.some((c) => /loading\.webp$/.test(c.src)), web.map((c) => c.src.split('/').pop()).join(','))
+    web.length >= 2 && at(web[0].src, 'custom-folder/3580207945/preview.gif'), JSON.stringify(web.slice(0, 2)))
+  ok('D2 web 档候选链含 loading.webp（Vite 包的兜底图）', web.some((c) => at(c.src, 'custom-folder/3580207945/loading.webp')), web.map((c) => c.src.split('/').pop()).join(','))
   const lib = L.thumbCandidates({ converted: 'web', webUrl: 'host:?ltoken=abc&web=1&file=index.html&shim=1', mpkgKey: 'library|abc' })
-  ok('D3 库 web 档 ⇒ 走 /library-web/<ltoken>/', lib.length >= 2 && /\/library-web\/abc\/preview\.gif$/.test(lib[0].src), lib[0] && lib[0].src)
+  ok('D3 库 web 档 ⇒ 走 /library-web/<ltoken>/', lib.length >= 2 && at(lib[0].src, 'library-web/abc/preview.gif'), lib[0] && lib[0].src)
   const box = L.thumbCandidates({ converted: 'mp4', action: 1, source: 'bgcs_abydos03.mp4', image: 'host:?token=t&index=0', mpkgKey: 'custommpkg|小鸟游星野01_04.mpkg' })
   ok('D4 容器档第一候选仍是容器预览（既有行为不许回归）', /custom-mpkg-preview/.test(box[0].src), box[0] && box[0].src)
   const vid = L.thumbCandidates({ converted: 'mp4', source: 'a.mp4', image: 'host:?custom=1&folder=f&file=a.mp4' })
-  ok('D5 视频档 ⇒ video 候选（首帧），不参与 img 候选链', vid.length === 1 && vid[0].kind === 'video', JSON.stringify(vid))
+  ok('D5 视频档：目录内 preview.* 在前、首帧（video 候选）殿后（抽帧退成兜底）',
+    vid.length > 1 && vid[0].why === 'dir-preview-convention' && vid[vid.length - 1].kind === 'video'
+      && vid.slice(0, -1).every((c) => c.kind === 'img'), JSON.stringify(vid.map((c) => c.why)))
+  ok('D5b 扫描器**明确**给出的 preview（section.preview）优先于约定名', (() => {
+    const v = L.thumbCandidates({ converted: 'mp4', source: 'a.mp4', preview: 'my-cover.png', image: 'host:?custom=1&folder=f&file=a.mp4' })
+    return v[0] && v[0].why === 'dir-preview-declared' && at(v[0].src, 'custom-folder/f/my-cover.png')
+  })(), JSON.stringify(L.thumbCandidates({ converted: 'mp4', source: 'a.mp4', preview: 'my-cover.png', image: 'host:?custom=1&folder=f&file=a.mp4' }).slice(0, 2)))
   const img = L.thumbCandidates({ converted: 'gif', image: 'host:?custom=1&folder=f&file=a.gif' })
-  ok('D6 图片档 ⇒ img 候选', img.length === 1 && img[0].kind === 'img', JSON.stringify(img))
+  ok('D6 图片档：目录内 preview.* 在前、图片本身殿后',
+    img.length > 1 && img[0].why === 'dir-preview-convention' && img[img.length - 1].why === 'image', JSON.stringify(img.map((c) => c.why)))
+  /* 缓存键（第13条）：URL 必须带目录身份 + 纪元时间戳；同一身份幂等；换目录 ⇒ 键变。 */
+  const u1 = L.thumbBust('/api/mpkg-wallpaper/custom-folder/f/preview.gif', { mpkgKey: 'custom|f' })
+  const u2 = L.thumbBust('/api/mpkg-wallpaper/custom-folder/f/preview.gif', { mpkgKey: 'custom|f' })
+  const u3 = L.thumbBust('/api/mpkg-wallpaper/custom-folder/g/preview.gif', { mpkgKey: 'custom|g' })
+  ok('D6b 缓存键含目录身份 + 纪元：同身份幂等 / 换目录即变键',
+    u1 === u2 && u1 !== u3 && /mpwd=dir%3Af/.test(u1) && /mpwt=\d+/.test(u1) && /mpwd=dir%3Ag/.test(u3),
+    JSON.stringify([u1, u3]))
+  ok('D6c data:/blob: URL 不加查询串（加了会整体失效）', L.thumbBust('data:image/gif;base64,AAAA', {}) === 'data:image/gif;base64,AAAA')
+  const epA = L.thumbEpoch()
+  L.thumbInvalidate('test')
+  const epB = L.thumbEpoch()
+  ok('D6d 显式失效 ⇒ 纪元前进（同目录也换键）', epB.epoch > epA.epoch && epB.n === epA.n + 1, JSON.stringify([epA, epB]))
   // 候选耗尽 ⇒ 显示占位（不显示破图）：夹具驱动真 mpwThumbNext
   const wrap = mkNode('div', 'mpw_wallThumb')
-  const im = mkNode('img', 'mpw_thumbImg'); im.setAttribute('src', 'a'); im.setAttribute('data-mpw-thumb-list', JSON.stringify(['a', 'b']))
-  im.setAttribute('data-mpw-thumb-idx', '0')
-  const ph = mkNode('span', 'mpw_hint'); ph.setAttribute('data-mpw-thumb-ph', ''); ph.style.setProperty('display', 'none')
+  const im = mkNode('img', 'mpw_thumbImg'); im.setAttribute('src', 'a')
+  im.setAttribute('data-mpw-thumb-list', JSON.stringify({ urls: ['a', 'b'], i: 0 }))
+  const ph = mkNode('span', 'mpw_hint'); ph.setAttribute('data-mpw-thumb-ph', ''); ph.setAttribute('hidden', '')
   wrap.appendChild(im); wrap.appendChild(ph)
   L.thumbNext(im)
-  ok('D7 第一个候选失败 ⇒ 自动前进到第二个', im.getAttribute('src') === 'b' && im.getAttribute('data-mpw-thumb-idx') === '1', im.getAttribute('src'))
+  ok('D7 第一个候选失败 ⇒ 自动前进到第二个（载荷 {urls,i} 的 i 前进）',
+    im.getAttribute('src') === 'b' && /"i":1/.test(im.getAttribute('data-mpw-thumb-list')), im.getAttribute('src') + ' / ' + im.getAttribute('data-mpw-thumb-list'))
   L.thumbNext(im)
   ok('D8 候选耗尽 ⇒ 标记失败 + 隐藏图片 + 露出占位文字（绝不显示破图图标）',
-    im.getAttribute('data-mpw-thumb-failed') === '1' && im.style.getPropertyValue('display') === 'none' && ph.style.getPropertyValue('display') === '', JSON.stringify({ f: im.getAttribute('data-mpw-thumb-failed'), d: im.style.getPropertyValue('display'), p: ph.style.getPropertyValue('display') }))
+    im.getAttribute('data-mpw-thumb-failed') === '1' && im.style.getPropertyValue('display') === 'none' && ph.getAttribute('hidden') === null,
+    JSON.stringify({ f: im.getAttribute('data-mpw-thumb-failed'), d: im.style.getPropertyValue('display'), h: ph.getAttribute('hidden') }))
+  L.thumbOk(im)
+  ok('D9 媒体加载成功 ⇒ 撤下占位（hidden 回到属性上）+ 清掉失败标记',
+    ph.getAttribute('hidden') === '' && im.getAttribute('data-mpw-thumb-failed') === null && im.style.getPropertyValue('display') === '',
+    JSON.stringify({ h: ph.getAttribute('hidden'), f: im.getAttribute('data-mpw-thumb-failed') }))
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════════

@@ -13,6 +13,9 @@
 //   R6 /custom-scene-audio 目录穿越 folder=../ → 403
 //   R7 /library-scene-audio 无 ltoken → 404
 //   R8 路由存在性：/custom-scene-audio、/library-scene-audio、/raw（防改名后测试静默失效）
+//   R9 /raw 与 /custom-folder/<folder>/<file> 的音频 content-type（自定义目录里的 .flac 必须是
+//      audio/flac：旧实现两条路径都给 application/octet-stream ⇒ 浏览器 <audio> 不认）
+//   R10 /custom-dir 清单含音频条目（旧实现 exts 白名单无音频后缀 ⇒ 单段音轨根本不进清单）
 //
 // 复现: node tools/scene-audio-route-test.mjs [--pkg <scene.pkg>] [--module <被测模块>]
 //   `--module`（或环境变量 MPW_MODULE）用于把同一套断言打到**别的实现**上（默认 ../lib/index.js）：
@@ -21,7 +24,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Writable } from 'node:stream';
+import { Writable, Readable } from 'node:stream';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(here, '..');
@@ -92,6 +95,15 @@ if (realPkg) {
   const off = Buffer.alloc(8); off.writeUInt32LE(0, 0); off.writeUInt32LE(body.length, 4);
   fs.writeFileSync(pkgPath, Buffer.concat([head, nl, nm, off, body]));
 }
+// ①(2026-09-21 音频格式补全) 夹具：自定义目录里放一个**最小合法 FLAC**（`fLaC` + STREAMINFO 块头
+//   `0x80 00 00 22` + 34 字节零 = 42 字节）。路径由 os.tmpdir() + mkdtempSync 推导，不写本机绝对路径。
+const flacBody = (() => {
+  const b = Buffer.alloc(4 + 4 + 34);
+  b.write('fLaC', 0, 'latin1'); b[4] = 0x80; b[5] = 0x00; b[6] = 0x00; b[7] = 0x22;
+  return b;
+})();
+fs.writeFileSync(path.join(sceneDir, 'song.flac'), flacBody);          // /raw、/custom-folder 的夹具（子目录里）
+fs.writeFileSync(path.join(customDir, 'top.flac'), flacBody);          // /custom-dir 的夹具（顶层才进清单）
 fs.writeFileSync(path.join(tmpHome, '.dsh-mpkg-wallpaper', 'custom-dir.json'), JSON.stringify({ dir: customDir }));
 process.env.DSH_HOME = tmpHome;   // 必须在 import index.js 之前：DATA_DIR 由它决定
 
@@ -113,13 +125,20 @@ class Res extends Writable {
 //   （本轮实测遇到 1 次，随后 3 次加压复跑未复现）。这个 race 只是防"handler 卡死"的保险，
 //   不该当性能判据 ⇒ 提到 30s，可用 MPW_TEST_CALL_TIMEOUT_MS 覆盖。
 const CALL_TIMEOUT_MS = Number(process.env.MPW_TEST_CALL_TIMEOUT_MS || 30000);
-async function call(target, { method = 'GET', url = target, headers = {} } = {}) {
+async function call(target, { method = 'GET', url = target, headers = {}, body = null } = {}) {
   const bare = target.split('?')[0];
-  const r = routes.find((x) => x.kind === 'exact' && x.path === bare);
+  // exact 优先；退化到 prefix（/custom-folder/<folder>/<file> 那条是 kind:'prefix'，
+  // 路径匹配规则与宿主一致：pathname === route.path 或以其 + '/' 开头）。
+  const r = routes.find((x) => x.kind === 'exact' && x.path === bare)
+    || routes.find((x) => x.kind === 'prefix' && (bare === x.path || bare.startsWith(x.path + '/')));
   if (!r) return { status: 0, headers: {}, body: Buffer.alloc(0), missing: true };
   const res = new Res();
   const done = new Promise((resolve) => res.on('finish', resolve));
-  await r.handler({ method, url, headers }, res);
+  // POST 体（/custom-dir 的 {dir}）用 Readable 喂 —— 路由里是 `for await (const c of req)`。
+  const req = body === null
+    ? { method, url, headers }
+    : Object.assign(Readable.from([Buffer.from(body)]), { method, url, headers });
+  await r.handler(req, res);
   await Promise.race([done, new Promise((r2) => setTimeout(r2, CALL_TIMEOUT_MS))]);
   return { status: res.status, headers: res.headers, body: res.body };
 }
@@ -190,6 +209,56 @@ ok(lib404.status === 404, '未知 ltoken → 404', 'status=' + lib404.status);
 for (const p of ['/api/mpkg-wallpaper/raw', '/api/mpkg-wallpaper/custom-scene-audio', '/api/mpkg-wallpaper/library-scene-audio']) {
   ok(routes.some((r) => r.kind === 'exact' && r.path === p), '路由在位 ' + p);
 }
+
+console.log('\n== R9 自定义目录里 .flac 的 content-type（旧行为：两条路径都给 octet-stream）==');
+// ①(2026-09-21 音频格式补全) 客户端 npTrackUrl 对自定义目录里的**单段音轨**就是走
+//   `/raw?custom=1&folder=<folder>&file=<file>`；.flac 拿到 application/octet-stream 时
+//   浏览器 <audio> 不认（不解码、也不按扩展名猜）⇒ 用户侧"列出来了但放不响"。
+//   期望值不写死常量：从夹具字节反推 size，MIME 由被测实现给出后**断言其等于 audio/flac**。
+const flacRaw = await call('/api/mpkg-wallpaper/raw', { url: '/api/mpkg-wallpaper/raw?custom=1&folder=hina-scene&file=song.flac' });
+ok(flacRaw.status === 200 && flacRaw.headers['content-type'] === 'audio/flac',
+  '/raw?custom=1&folder=hina-scene&file=song.flac → content-type: audio/flac',
+  'status=' + flacRaw.status + ' content-type=' + JSON.stringify(flacRaw.headers['content-type']));
+// content-length 在桩里是**数字**（真 HTTP 由 Node 序列化成字符串），这里按 Number 比，别按字符串比。
+ok(flacRaw.body.length === flacBody.length && Number(flacRaw.headers['content-length']) === flacBody.length,
+  '/raw 回整份夹具字节 = ' + flacBody.length, 'len=' + flacRaw.body.length + ' header=' + flacRaw.headers['content-length']);
+const flacPrefix = await call('/api/mpkg-wallpaper/custom-folder/hina-scene/song.flac', { url: '/api/mpkg-wallpaper/custom-folder/hina-scene/song.flac' });
+ok(flacPrefix.status === 200 && flacPrefix.headers['content-type'] === 'audio/flac',
+  '/custom-folder/hina-scene/song.flac → content-type: audio/flac',
+  'status=' + flacPrefix.status + ' content-type=' + JSON.stringify(flacPrefix.headers['content-type']));
+const flacRange = await call('/api/mpkg-wallpaper/raw', { url: '/api/mpkg-wallpaper/raw?custom=1&folder=hina-scene&file=song.flac', headers: { range: 'bytes=0-3' } });
+ok(flacRange.status === 206 && flacRange.headers['content-type'] === 'audio/flac' && flacRange.body.toString('latin1') === 'fLaC',
+  '/raw + Range 分段回音频时 content-type 同样是 audio/flac（206 不得丢 MIME）',
+  'status=' + flacRange.status + ' type=' + JSON.stringify(flacRange.headers['content-type']) + ' body=' + JSON.stringify(flacRange.body.toString('latin1')));
+// 分辨力自证：老行为（除 .mpkg/.pkg/.json 外一律 octet-stream，且 /custom-media 三元链无音频分支）
+// 下这两条断言必红；这里把"老行为会给出什么"也断言出来，防止日后有人把 octet-stream 当"也够用"。
+ok('（分辨力）老行为 = application/octet-stream ≠ 现在的 audio/flac',
+  'application/octet-stream' !== flacRaw.headers['content-type'] && 'application/octet-stream' !== flacPrefix.headers['content-type'],
+  'raw=' + JSON.stringify(flacRaw.headers['content-type']) + ' prefix=' + JSON.stringify(flacPrefix.headers['content-type']));
+// .m4a 的 magic 在偏移 4（旧 AUDIO_MAGIC_MIME 查偏移 0 的 ASCII `fByp` ⇒ 也走 FOLDER_MIME 兜底）：
+// /custom-media 这条给的是"扩展名兜底"结论，spec §1.2 表内 ⇒ audio/mp4。
+fs.writeFileSync(path.join(customDir, 'song.m4a'), Buffer.concat([Buffer.alloc(4), Buffer.from('ftypM4A '), Buffer.alloc(48, 0x11)]));
+const m4aCustom = await call('/api/mpkg-wallpaper/custom-media', { url: '/api/mpkg-wallpaper/custom-media?file=song.m4a' });
+ok(m4aCustom.status === 200 && m4aCustom.headers['content-type'] === 'audio/mp4',
+  '/custom-media?file=song.m4a → content-type: audio/mp4（原三元链无音频分支 ⇒ octet-stream）',
+  'status=' + m4aCustom.status + ' content-type=' + JSON.stringify(m4aCustom.headers['content-type']));
+
+console.log('\n== R10 /custom-dir 清单要能列出音频（旧行为：exts 只有图片/视频/mpkg）==');
+// 用户侧"扫不出来"的另一半：`/custom-dir` 的 exts 白名单不含音频后缀 ⇒ 单段音轨根本不进清单，
+// 客户端连条目都没有（更谈不上拿 content-type）。这里断言 .flac/.m4a 在清单里且带 type:'audio'。
+fs.writeFileSync(path.join(customDir, 'notes.txt'), 'not media');   // 白名单负例：不得进清单
+const scan = await call('/api/mpkg-wallpaper/custom-dir', { method: 'POST', url: '/api/mpkg-wallpaper/custom-dir', body: JSON.stringify({ dir: customDir }) });
+let scanBody = {};
+try { scanBody = JSON.parse(scan.body.toString('utf8')); } catch { /* 下面报 */ }
+const scanFiles = Array.isArray(scanBody.files) ? scanBody.files : [];
+const flacEntry = scanFiles.find((f) => f.name === 'top.flac') || null;
+ok(scan.status === 200 && scanBody.ok === true, '/custom-dir 200 JSON', 'status=' + scan.status);
+ok(!!flacEntry && flacEntry.type === 'audio', '/custom-dir 清单含 top.flac 且 type=audio',
+  'flac=' + JSON.stringify(flacEntry) + ' files=' + scanFiles.map((f) => f.name + ':' + f.type).join(','));
+ok(scanFiles.some((f) => f.name === 'song.m4a' && f.type === 'audio'), '清单含 song.m4a（.m4a 也进白名单）',
+  scanFiles.map((f) => f.name + ':' + f.type).join(','));
+ok(!scanFiles.some((f) => /\.txt$|\.js$|\.sh$/i.test(f.name)), '清单不含非媒资后缀（.txt/.js/.sh 不进白名单）',
+  scanFiles.map((f) => f.name).join(','));
 
 try { fs.rmSync(tmpHome, { recursive: true, force: true }); } catch { /* 忽略 */ }
 console.log('\n' + (fail ? '✗ 失败 ' + fail + ' 项' : '✓ 全部通过') + '  （pass=' + pass + ' fail=' + fail + '）');

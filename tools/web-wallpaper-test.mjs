@@ -23,6 +23,8 @@ import { loadPlugin } from './_stub.mjs'
 import {
   WEB_KIND, SHIM_ATTR, SHIM_QUERY_KEY, SHIM_MSG, SHIM_VERSION, SHIM_API_NAMES, SHIM_CONTROL_OPS,
   WEB_SANDBOX_ATTR, WEB_SANDBOX_COMPAT_ATTR, WEB_SHIM_REFERENCE, WEB_SHIM_SOURCE,
+  WEB_FRAME_QUERY_KEY, WEB_FRAME_MODES, WEB_FRAME_DEFAULT, normalizeWebFrameMode, webFrameFromQuery,
+  resolveWebFrameMode, webFrameSandboxAttr, webFramePlan, webFrameStatus,
   detectWebWallpaperKind, detectWallpaperDir, declaredTypeOf, declaredFileOf,
   isShimRequest, webPolicyFromQuery, buildSeedScript, rewriteWebEntryHtml, webAssetCorsHeaders,
   listWallpaperFiles, readProjectJson,
@@ -169,6 +171,77 @@ console.log('\n== B. 沙箱 iframe：最小必要集 + 三档（网页 shim / �
   eq(T.stripPolicy(ua), '/api/mpkg-wallpaper/custom-folder/W/index.html?mpwshim=1', 'B7 剥离后保留 shim 标记与路径')
   ok(T.stripPolicy('/a/index.html') === '/a/index.html', 'B7 无策略参数时原样返回')
   ok(!plugin.applyErrors.length, 'B6 载入/接线期无 apply 错误')
+}
+
+/* ══════════════════ B7. 网页帧模式三档（用户第 9 条：同一张壁纸兼容档能加载、沙箱档加载不了） ══════════════════
+   判据（契约）：
+   ① 判定表只有一份（本模块），客户端镜像它 —— 三档的**属性映射 / shim 标记 / 能不能自动降级**
+      必须逐项相等（镜像漂移 = 用户切了档但属性没跟着变，这种"开关能点没效果"必须被门禁拦住）；
+   ② 优先级：URL `?webframe=` > 设置项 `webFrameMode` > 默认 auto；非法值不改变档位（回落 auto）；
+   ③ 可查状态：`webFrameStatus()` 形状固定（mode/requested/source/attr/shim/degradable/degraded/why/at）。 */
+console.log('\n== B7. 网页帧模式三档：属性 / shim 标记 / 自动降级（唯一判定表 + 客户端镜像对拍）==')
+{
+  eq(WEB_FRAME_DEFAULT, 'auto', 'B7a 默认档 = auto（= 既有行为，改动前语义不变）')
+  eq(WEB_FRAME_MODES.join(','), 'auto,sandbox,compat', 'B7a 三档规范顺序 = auto, sandbox, compat')
+  eq(WEB_FRAME_QUERY_KEY, 'webframe', 'B7a 回退口键名 = webframe')
+  eq(normalizeWebFrameMode(undefined) + ',' + normalizeWebFrameMode(' SANDBOX ') + ',' + normalizeWebFrameMode('nope') + ',' + normalizeWebFrameMode(null), 'auto,sandbox,auto,auto', 'B7a 归一化：未知/空白/大小写一律回落 auto')
+  eq(webFrameFromQuery('/a?webframe=compat'), 'compat', 'B7a 从 URL 读 webframe')
+  eq(webFrameFromQuery('/a?webframe=bogus') + '|' + webFrameFromQuery('/a'), '|', 'B7a 非法值/缺省 → 空串（= 没指定，不是 auto）')
+  const planTable = WEB_FRAME_MODES.map((m) => {
+    const p = webFramePlan(m)
+    return [m, p.attr === WEB_SANDBOX_ATTR ? 'sandbox' : 'compat', p.shim ? 'shim' : 'no-shim', p.degradable ? 'can-degrade' : 'no-degrade'].join('/')
+  }).join(' ')
+  eq(planTable,
+    'auto/sandbox/shim/can-degrade sandbox/sandbox/shim/no-degrade compat/compat/no-shim/no-degrade',
+    'B7b 判定表逐档：auto=沙箱+shim+可降级 / sandbox=沙箱+shim+**不**降级 / compat=兼容+无 shim')
+  eq(resolveWebFrameMode({ query: 'compat', section: 'sandbox' }).mode, 'compat', 'B7c URL 显式指定 > 设置项')
+  eq(resolveWebFrameMode({ query: '', section: 'sandbox' }).source, 'setting', 'B7c 没写 URL 参数时听设置项')
+  eq(resolveWebFrameMode({}).source + '/' + resolveWebFrameMode({}).mode, 'default/auto', 'B7c 都没有 ⇒ 默认档 auto')
+  const st = webFrameStatus({ section: 'sandbox' })
+  eq(Object.keys(st).sort().join(','), 'at,attr,degradable,degraded,mode,queryMode,reason,requested,shim,source,why'.split(',').sort().join(','), 'B7d 状态形状固定（面板/探针/文档共用）')
+  eq(st.attr, WEB_SANDBOX_ATTR, 'B7d 状态里的 attr 就是 iframe 要写的 sandbox 属性')
+
+  /* 客户端镜像对拍：同一份判定表在 lib/client.js 里必须给出**同一个**答案（否则用户切档不生效） */
+  /* 复用 B6 已经装载好的客户端钩子（同一次会话里再 loadPlugin 会因单实例守卫找不到注册）。 */
+  const Tc = globalThis.__mpwWebTest
+  ok(!!Tc && typeof Tc.framePlan === 'function', 'B7e 客户端测试钩子暴露 framePlan（镜像可对拍）')
+  const mirror = WEB_FRAME_MODES.concat(['bogus', '', ' SANDBOX ']).map((m) => {
+    const c = Tc.framePlanFor(m), h = webFramePlan(normalizeWebFrameMode(m)), hn = normalizeWebFrameMode(m)
+    return [String(m || '(空)'),
+      c.mode === hn ? 'mode=' : 'mode!',
+      c.attr === h.attr ? 'attr=' : 'attr!',
+      c.shim === h.shim ? 'shim=' : 'shim!',
+      c.degradable === h.degradable ? 'degrade=' : 'degrade!',
+      Tc.frameNorm(m) === hn ? 'norm=' : 'norm!',
+      Tc.frameAttrFor(m) === webFrameSandboxAttr(m) ? 'attrfn=' : 'attrfn!',
+    ].join('')
+  }).join(' ')
+  ok(!/!/.test(mirror), 'B7e 三档（含非法值）在客户端与宿主模块逐项一致：档/属性/shim/可降级/归一化', mirror)
+  eq(Tc.frameShimWanted(true, 'index.html', 'auto') + '/' + Tc.frameShimWanted(true, 'index.html', 'sandbox') + '/'
+    + Tc.frameShimWanted(false, 'index.html', 'sandbox') + '/' + Tc.frameShimWanted(false, 'index.html', 'auto'),
+    'true/true/true/false',
+    'B7f 带标记的入口在 auto/sandbox 都要 shim；**强制沙箱档**给没标记的 html 入口也补 shim；auto 档沿用记录形状')
+  eq(Tc.frameShimWanted(true, 'index.html', 'compat') + '/' + Tc.frameShimWanted(false, 'index.html', 'compat'),
+    'false/false', 'B7f compat 档：绝不带 shim 标记（同源裸 iframe）')
+  eq(String(Tc.frameShimWanted(false, 'a.mp4', 'sandbox')), 'false', 'B7f 强制沙箱档只给 html 入口补 shim（素材 URL 不动）')
+  const modes = Tc.frameModes.join(',')
+  eq(modes, WEB_FRAME_MODES.join(','), 'B7g 客户端三档清单与宿主模块一致')
+  eq(Tc.frameDefault, WEB_FRAME_DEFAULT, 'B7g 客户端默认档与宿主模块一致')
+  eq(Tc.frameQueryKey, WEB_FRAME_QUERY_KEY, 'B7g 客户端回退口键名与宿主模块一致')
+  const q = Tc.frameQuery()
+  eq(q, '', 'B7h 测试环境无 ?webframe= ⇒ 空串（设置项/默认档接管）')
+  eq(Tc.frameResolve().source, 'default', 'B7h 无设置项 ⇒ source=default')
+  /* B7i 风险预检接口（用户第 11 条）：URL 形状 + 标记/状态/文案（纯函数层；路由层见 tools/web-probe-test.mjs） */
+  eq(Tc.webProbeUrl({ folder: 'W' }), '/api/mpkg-wallpaper/web-probe?folder=W', 'B7i /web-probe URL 形状：folder=')
+  eq(Tc.webProbeUrl({ ltoken: 'abc' }), '/api/mpkg-wallpaper/web-probe?ltoken=abc', 'B7i /web-probe URL 形状：ltoken=')
+  eq(Tc.webProbeUrl({}), '', 'B7i 两个参数都没有 ⇒ 空串（不发必 400 的请求）')
+  eq(Tc.webRiskMarks({}).any, false, 'B7j 无标记 ⇒ any=false（不提示）')
+  const rm = Tc.webRiskMarks({ webHeavy: true, webExternal: true, webProbe: { heavyHits: ['a.skel'], externalRefs: ['https://cdn.x/a.js'] } })
+  eq(rm.sig, 'he', 'B7j 标记签名 h/e（同一张壁纸同一组标记只提示一次的依据）')
+  const msg = Tc.webRiskMsg({ webHeavy: true, webExternal: true }, (k) => k)
+  ok(/webrisk\.heavy/.test(msg) && /webrisk\.external/.test(msg) && /webrisk\.once/.test(msg), 'B7j 提示文案含两个标记 + "只提示一次"', msg)
+  const rst = Tc.webRiskStatus({ webHeavy: true })
+  ok(rst && rst.heavy === true && rst.external === false && rst.sig === 'h', 'B7j 状态形状（__mpwWebRisk 的内容）', JSON.stringify(rst))
 }
 
 /* ══════════════════ C. shim 注入顺序 ══════════════════ */
