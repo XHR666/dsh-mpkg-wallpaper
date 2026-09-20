@@ -441,7 +441,7 @@ This section gathers what environment and what sizes work, and what is out of re
 
 ### Without a Wallpaper Engine install (missing / non-Windows)
 
-A "WE install" means the Steam edition of Wallpaper Engine (appid **431960**). The host's `locateWallpaperEngine()` (`lib/index.js:303-327`) searches in this order: Windows registry `HKCU\Software\Valve\Steam\SteamPath` → common Steam directories → non-Windows Steam directories (macOS `~/Library/Application Support/Steam`, Linux/Android `~/.local/share/Steam`, WSL `/mnt/c/...`) → every library's `steamapps/libraryfolders.vdf` containing 431960 → and only accepts the one where `<library>/steamapps/common/wallpaper_engine/wallpaper32.exe` exists. **If nothing is found it returns `null`** and everything falls back:
+A "WE install" means the Steam edition of Wallpaper Engine (appid **431960**). The host's `locateWallpaperEngine()` (`lib/index.js:311-399`) searches in this order: Windows registry `HKCU\Software\Valve\Steam\SteamPath` → common Steam directories → non-Windows Steam directories (macOS `~/Library/Application Support/Steam`, Linux/Android `~/.local/share/Steam`, WSL `/mnt/c/...` plus a per-drive enumeration of `/mnt/d`…`/mnt/z`) → every library's `steamapps/libraryfolders.vdf` containing 431960 → and only accepts the one where `<library>/steamapps/common/wallpaper_engine/wallpaper32.exe` exists. **If nothing is found it returns `null`** and everything falls back:
 
 | Scenario | Real behaviour (with code location) |
 |---|---|

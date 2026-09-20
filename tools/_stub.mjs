@@ -2,6 +2,7 @@
 // 把 lib/client.js 在 Node 里跑起来：注册 __ModuleLoader__ → 调用 factory → 拿到 plugin
 // → 用桩 ctx 执行 apply()，并返回 settings.section 组件、诊断事件、apply 期间的错误。
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -194,8 +195,11 @@ export function loadPlugin(opts = {}) {
   return { src, plugin, sectionComp, ctx, applyErrors, localeDicts, localeNs, ...stubs }
 }
 
-/** 读取宿主真实设置（存在则用，不存在给空对象） */
+/** 读取宿主真实设置（存在则用，不存在给空对象）。
+ *  ①(2026-09-21 跨平台轮) 默认档原来写死作者本机 home 下的固定路径 ⇒ 换个人/换台机器（Windows
+ *  根本没有 /root）就读成恒空夹具，且属于"写死宿主绝对路径"。改成按 os.homedir() 推导，
+ *  本机（root）取值一字未变。 */
 export function readSection(file) {
-  try { const f = file || '/root/.dsh/.dsh-mpkg-wallpaper/settings.json'; if (fs.existsSync(f)) return JSON.parse(fs.readFileSync(f, 'utf8')) } catch {}
+  try { const f = file || path.join(os.homedir(), '.dsh', '.dsh-mpkg-wallpaper', 'settings.json'); if (fs.existsSync(f)) return JSON.parse(fs.readFileSync(f, 'utf8')) } catch {}
   return {}
 }

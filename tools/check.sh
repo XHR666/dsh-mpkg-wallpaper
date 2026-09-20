@@ -182,6 +182,13 @@ node tools/integrity-check.mjs || fail=1
 #   判据/白名单/退出码见 tools/secret-scan-test.mjs 文件头（白名单逐条写理由，且断言"每条都仍然命中"，
 #   防止白名单腐烂成遮羞布）。**不新增步骤**：integrity-check ⑨b 断言 "N/M" 编号自洽，加一步要全表改分母。
 node tools/secret-scan-test.mjs || fail=1
+# ①(2026-09-21 跨平台轮) 跨平台**静态**门禁（秒级 / 无浏览器 / 无网络）：上面 12 步几乎全是"在 Linux
+#   本机跑一遍看行为"，**没有一条**钉住"平台分支真的齐全、不许写成 Linux 独占"—— WSL 只写死 /mnt/c 就是
+#   这类漏网（Steam 装在 D:/E:/… 的 WSL 用户永远扫不到，而本机跑什么都绿）。判据：steamProbeDirs() 纯函数
+#   契约（WSL 盘符枚举可在**非 WSL 机器**上断言 + 三平台各自成根 + 与改前候选逐字节等价）+ tracked 静态卫生
+#   （写死的临时目录/宿主绝对路径台账、shell 可移植、文件名、BOM/CRLF）+ 每类合成反例自证 + 两条"改回去必红"变异。
+#   实测：63 通过 / 0 失败（tracked 126 文件；账本 25 条全部反查命中）。不新增步骤编号（integrity-check ⑨b 断言编号自洽）。
+node tools/cross-platform-test.mjs || fail=1
 
 # ①(2026-09-15 用户第 1 条反馈「扫描音频的速度能否快些」)
 #   惰性音频索引（只读目录表 + 仅候选条目 16 字节头，带 mtime+size 缓存）+

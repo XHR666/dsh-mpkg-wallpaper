@@ -442,7 +442,7 @@ node tools/build-bundle.mjs
 
 ### 没有 Wallpaper Engine 安装时（缺失 / 非 Windows）
 
-「WE 安装」指 Steam 版 Wallpaper Engine（appid **431960**）。宿主端 `locateWallpaperEngine()`（`lib/index.js:303-327`）按这个顺序找：Windows 注册表 `HKCU\Software\Valve\Steam\SteamPath` → 常见 Steam 目录 → 非 Windows 的 Steam 目录（macOS `~/Library/Application Support/Steam`、Linux/Android `~/.local/share/Steam`、WSL `/mnt/c/...`）→ 各库 `steamapps/libraryfolders.vdf` 里含 431960 的库 → 只认 `<库>/steamapps/common/wallpaper_engine/wallpaper32.exe` 存在的那一个。**找不到就返回 `null`**，后续走降级路径：
+「WE 安装」指 Steam 版 Wallpaper Engine（appid **431960**）。宿主端 `locateWallpaperEngine()`（`lib/index.js:311-399`）按这个顺序找：Windows 注册表 `HKCU\Software\Valve\Steam\SteamPath` → 常见 Steam 目录 → 非 Windows 的 Steam 目录（macOS `~/Library/Application Support/Steam`、Linux/Android `~/.local/share/Steam`、WSL `/mnt/c/...` 与按盘符枚举的 `/mnt/d`…`/mnt/z`）→ 各库 `steamapps/libraryfolders.vdf` 里含 431960 的库 → 只认 `<库>/steamapps/common/wallpaper_engine/wallpaper32.exe` 存在的那一个。**找不到就返回 `null`**，后续走降级路径：
 
 | 场景 | 真实行为（含代码位置） |
 |---|---|

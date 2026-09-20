@@ -4,6 +4,7 @@
 //       这类 bug 之前只能靠用户反复刷新才能发现。
 // 用法: node tools/panel-smoke.mjs [--section <json文件>]
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -138,7 +139,9 @@ if (!sectionComp) { console.error('✗ 未注册 settings.section 组件'); proc
 /* ---------- 用真实设置数据渲染 ---------- */
 const argFile = process.argv.indexOf('--section')
 let section = {}
-const defaultFile = '/root/.dsh-mpkg-wallpaper/settings.json'
+// ①(2026-09-21 跨平台轮) 默认档原来写死作者本机 home 下的固定路径（Windows/macOS 上永远读不到，
+// 且属于"写死宿主绝对路径"）⇒ 按 os.homedir() 推导；显式 --section 仍然优先。本机取值一字未变。
+const defaultFile = path.join(os.homedir(), '.dsh-mpkg-wallpaper', 'settings.json')
 const file = argFile > 0 ? process.argv[argFile + 1] : defaultFile
 try { if (fs.existsSync(file)) section = JSON.parse(fs.readFileSync(file, 'utf8')) } catch (e) { console.warn('设置读取失败:', e.message) }
 globalThis.localStorage.setItem('dsh.mpkg-wallpaper.v2', JSON.stringify(section))

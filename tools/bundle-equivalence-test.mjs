@@ -291,7 +291,14 @@ const mut = (name, repl) => {
 };
 const mRoute = mut('route', (s) => s.replace("path: BASE + '/raw'", "path: BASE + '/raw-x'"));
 const mPayload = mut('payload', (s) => s.replace('{ ok: true, version, betterSidebar, betterSidebarVersion }', '{ ok: false, version, betterSidebar }'));
-const mExport = mut('export', (s) => s.replace(/^export \{ __mpwTest, apply, inject \};$/m, 'export { __mpwTest, inject };'));
+/* ①(2026-09-21 跨平台轮) 这条变异原来把导出面的**名字逐名写死**（`__mpwTest, apply, inject`）：入口
+   每加一个导出（本轮加了 steamProbeDirs）模板就失配 ⇒ 变异段自己抛"模板失配"、整步假红。
+   改成"从产物**实际**导出面里去掉最后一个名字"——判据不变（源码 n 名 ↔ 产物 n-1 名 ⇒ --check 必红），
+   且入口导出面以后怎么变都不用再回来改这里。 */
+const mExport = mut('export', (s) => s.replace(/^export \{ ([^}]+) \};$/m, (all, names) => {
+  const kept = names.split(',').map((x) => x.trim()).filter(Boolean).slice(0, -1);
+  return kept.length ? `export { ${kept.join(', ')} };` : all;
+}));
 for (const [label, p] of [['/raw 路由改名', mRoute], ['ping 载荷改', mPayload], ['少一个导出', mExport]]) {
   const r = run(['tools/build-bundle.mjs', '--check', '--bundle', p]);
   ok(r.status !== 0 && /✗/.test(r.stdout + r.stderr), '变异「' + label + '」被 --check 抓住（非 0 退出 + ✗）',
