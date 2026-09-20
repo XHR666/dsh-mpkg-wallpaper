@@ -5,7 +5,7 @@
 > （`node tools/integrity-check.mjs`）。这份文件把**发布前置**、**确切命令**、**发布后验证**和
 > **回滚**钉死成可复制的步骤 —— 照着跑就行，不靠记忆。
 >
-> 状态（2026-09-20 03:5x 实测）：本地 `package.json` = **3.10.0**；npm 官方 registry 上 `latest` = **3.9.1**
+> 状态（2026-09-20 05:0x 实测）：本地 `package.json` = **3.10.1**；npm 官方 registry 上 `latest` = **3.10.0**
 > ⇒ 本地 > 已发布 ⇒ 可以直接发（发包前**必须**重跑第 1 节全部命令）。历史：3.8.0 → 3.8.1 → 3.8.2 → **3.9.0**。
 >
 > （下面这一段是 2026-09-19 的原始状态记录，保留以便对照当时的判断过程）
@@ -425,3 +425,21 @@ $ git tag -a v3.8.2 && git push origin v3.8.2          ⇒ [new tag] v3.8.2
 `tools/media-session-test.mjs` 95/0、`tools/media-session-wiring-test.mjs` 24/0、`tools/np-media-test.mjs` **91/0**、
 `tools/np-control-test.mjs` **81/0**、`tools/now-playing-test.mjs` **85/0**、`tools/wallpaper-lifecycle-test.mjs` **177/0**；
 `node tools/integrity-check.mjs` ⇒ 72/0；`node tools/secret-scan-test.mjs` ⇒ 干净。
+
+
+## 发布记录：3.10.1（2026-09-20 · 声音溯源补网：WebAudio + 窗口清单）
+
+**为什么发**：用户澄清「别人插件的音效**必须我去交互他才会出现，并不会自己出现**」⇒ 3.9.1 那条
+"鲸鱼 UI 音效"只解释了"交互时响"，**解释不了"什么都没动却响"**。不需要交互就能出声、而我们的 `muted`
+又管不到的，只剩 **WebAudio**（Live2D 角色语音 / 壁纸自己用 `AudioContext` 播的声）——它不碰任何标签，
+旧判据 `audible`（`!paused && !muted && volume>0`）**永远抓不到它**。
+
+| 补的东西 | 判据/形状 |
+| --- | --- |
+| 新 trigger **`webaudio-on-muted`** | `webaudio-start`（`AudioBufferSourceNode`/`OscillatorNode`/`ConstantSourceNode` 的 `start()`）或 `audioctx-resume`，**且** `np.mute === true` ⇒ 立刻 POST `/diag`（节流 5s） |
+| `__mpwAudioAudit.frames()` | 窗口清单：`{depth,url,media,looksLive2D,top}`（Live2D 判定 = 有 canvas 且文档里出现 `live2d|model3.json|loadJson.json`） |
+| 记录仍带 | `who`（栈前 3 帧）、`win{top,url,foreign}`、`bufferSec`、`ctxState`、当时 `np.mute` |
+
+**判据读数**：`tools/wallpaper-lifecycle-test.mjs` ⇒ **179 通过 / 0 失败**（新增 P6g/P6h 两条钉住新 trigger
+与窗口清单）；`bash tools/check.sh` ⇒ **全部通过 ✓（12/12）**；`integrity-check` 72/0；`secret-scan` 干净；
+`docs/AUDIO-SOURCES.md` 新增 §5b 写清"适用范围收窄 + 下一次怎么定位（命中即自动落 `diag-*.json`）+ 仍抓不到的三类"。

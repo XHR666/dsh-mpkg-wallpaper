@@ -769,7 +769,8 @@ console.log('\n== P. C2 音频审计（play/volume/muted/Audio/AudioContext + is
   ok('P5 审计面覆盖 play/volume/muted/Audio/AudioContext/decodeAudioData', /P\.play = function/.test(src) && /\["muted", "volume"\]/.test(src) && /new-Audio/.test(src) && /AudioContext/.test(src) && /decodeAudioData/.test(src))
   ok('P6 可听转换（!paused && !muted && volume>0）立刻把**审计窗口**POST 到 /diag（下一次"响"在磁盘上就有证据）',
     /const audible = !!\(rec\.el && rec\.paused === false && rec\.muted === false && Number\(rec\.volume\) > 0\)/.test(src)
-    && /trigger: muteOnAudible \? "mute-on-but-audible"/.test(src)
+    && /trigger: webaudioOnMuted \? "webaudio-on-muted"/.test(src)
+    && /muteOnAudible \? "mute-on-but-audible"/.test(src)
     && /audible \? "audible-playback"/.test(src) && /window: list\.slice\(-12\)/.test(src))
   /* ①(2026-09-20 用户点名「静音状态下还是突然冒出来的声音」) 把那次投诉**变成判据**：
      设置项 `mute === true`（面板写着静音）而元素却处在可听状态 ⇒ 必须单独一个 trigger 报上来，
@@ -786,6 +787,15 @@ console.log('\n== P. C2 音频审计（play/volume/muted/Audio/AudioContext + is
     /function mpwAuditWin\(win\)/.test(src) && /foreign: url === "cross-origin"/.test(src) && /win: mpwAuditWin\(win\)/.test(src))
   ok('P6f 声源归属指纹（ours / whale-widget / frame / other）写进记录，指认"这声音是谁放的"',
     /owner: \(\(\) => \{/.test(src) && /whale-widget/.test(src) && /"ours"/.test(src))
+  /* ①(2026-09-20 用户澄清)「别人插件的音效必须我去交互他才会出现，并不会自己出现」⇒ 鲸鱼那条解释不了
+     "什么都没动却响"。不需要交互就能出声、而我们 `muted` 管不到的只剩 **WebAudio**（Live2D 角色语音）：
+     它不碰任何标签，`audible` 判据永远抓不到 ⇒ 必须单开一条 `webaudio-on-muted`。 */
+  ok('P6g **WebAudio 出声 + 静音设置开着**是独立判据（`trigger=webaudio-on-muted`）',
+    /const webaudioOnMuted = !!\(rec\.np && rec\.np\.mute === true\)/.test(src)
+    && /kind === "webaudio-start" \|\| kind === "audioctx-resume"/.test(src)
+    && /webaudioOnMuted \? "webaudio-on-muted"/.test(src))
+  ok('P6h 窗口清单可查（`__mpwAudioAudit.frames()`：深度/URL/媒体数/像不像 Live2D）——"这条 WebAudio 是谁放的"',
+    /__mpwAudioAudit\.frames = \(\) => \{/.test(src) && /looksLive2D/.test(src) && /cross-origin/.test(src))
   ok('P7 `?npaudit=0` 可完全关掉（零开销逃生门）', /get\("npaudit"\) !== "0"/.test(src))
   // 媒体卸载点审计：切离视频档必须 pause（只 removeAttribute('src') 不会停播）
   ok('P8 showImageEl 切离视频档时先 pause 再清 src/load（规范：移除 src 不会停止播放）', /if \(!video\.paused\) video\.pause\(\)[\s\S]{0,120}video\.removeAttribute\("src"\); if \(video\.load\) video\.load\(\)/.test(src))

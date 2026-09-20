@@ -98,6 +98,26 @@ node tools/audio-source-hunt-live-probe.mjs --selftest
 > 我们能做且已经做的：**把归属查清楚并留证**（上面 §3/§4），以及保证**我们自己的**声音在任何情况下都不漏
 > —— 用户这次报的场景里，"我们自己的元素 945 拍全静音"这条判据就是那个保证。
 
+## 5b. 用户澄清（2026-09-20）：鲸鱼只解释"交互时响"，**解释不了"什么都没动却响"**
+
+用户原话：「不动别人的插件」「别人插件的音效**必须我去交互他才会出现，并不会自己出现**」。
+这条把第 2 节那份证据的**适用范围**收窄了：它证明的是"**按下**鲸鱼 ⇒ 它出声、且不受我们 mute 约束"，
+但不能解释"没有任何交互的突然出声"。于是本轮把网再补大一号（3.10.1）：
+
+| 补的判据 | 抓什么 | 为什么不用交互也能响 |
+| --- | --- | --- |
+| `trigger: "webaudio-on-muted"` | **WebAudio 真的开始出声**（`AudioBufferSourceNode`/`OscillatorNode`/`ConstantSourceNode` 的 `start()`、`audioctx-resume`）**且**我们的静音设置开着 | Live2D 角色语音、壁纸自己用 `AudioContext` 播的环境音/语音：**不碰任何 `<audio>/<video>` 标签**，`audible` 那条判据永远抓不到；它们由壁纸自己的定时器/待机动作触发 ⇒ **不需要用户交互** |
+| `window.__mpwAudioAudit.frames()` | 窗口清单：深度 / URL / 媒体元素数 / **像不像 Live2D**（有 canvas 且脚本/文档里出现 `live2d|model3.json|loadJson.json`） | 收到 `webaudio-on-muted` 时能立刻回答"这条声音来自哪个帧、那个帧是不是 Live2D" |
+| 记录里的 `win{top,url,foreign}` | 归属窗口 | 跨源帧装不进钩子 ⇒ 如实标 `foreign:true`（不假装没声音） |
+
+**下一次"什么都没动却响"怎么定位（不需要你在场）**：命中即自动 POST `/diag` ⇒ 落在
+`~/.dsh/.dsh-mpkg-wallpaper/diag-<ts>.json`（`kind:"web-wallpaper"`、`why:"audio-audit"`、
+`trigger:"webaudio-on-muted"`），里面带**调用栈前 3 帧**、`win.url`、`bufferSec`、以及当时 `np.mute`。
+把那个文件名告诉我就行（或直接让我去读目录 —— 我每轮都会读）。
+
+**仍然抓不到的（如实）**：①跨源（沙箱）帧内的 WebAudio —— 浏览器不允许装钩子，只能标 `foreign`；
+②不在浏览器里的声音（系统/别的 App）；③`<audio>` 之外的原生控件（本机没有）。
+
 ## 6. 诚实边界
 
 1. **跨源 iframe 内的声音装不进钩子**（浏览器安全模型）：记录会标 `foreign:true`，我们能说"这段声音来自一个跨源帧"，
