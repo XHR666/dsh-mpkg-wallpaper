@@ -486,3 +486,25 @@ $ git tag -a v3.8.2 && git push origin v3.8.2          ⇒ [new tag] v3.8.2
    并打出"谁盖在上面"，另加 P2a/P3a"这一次点击**真的**推入了 `video.seek=` 落点"的分辨判据；
 ② `__mpwNpOps` 是**有界环形**（>32 条 shift）⇒ "落了几个 seek"不能用窗口内计数（上一次拖动就把窗口填满、差值恒 0），
    改判"日志是否前进"（长度/队首时间戳/最近落点三者任一变化）。
+
+## 发布记录：3.12.0（2026-09-21 · WSL 盘符枚举 + 插件侧跨平台静态门禁）
+
+**为什么是 minor**：这是**平台能力的新增**（WSL 上 Steam 装在 D:/E:/… 盘时，安装目录发现从"永远扫不到"变成能扫到），
+外加一条新的常驻门禁；按 semver「加功能 = minor」取 **3.12.0**。
+
+| 面 | 内容 | 判据读数 |
+| --- | --- | --- |
+| **WSL 安装目录候选** | `lib/index.js` 新增 `steamProbeDirs(env)`：`{platform, release, homedir, exists, procVersion}` 全部可注入（默认取 `process.platform` / `os.release()` / `os.homedir()`），返回去重后的字符串数组；`locateWallpaperEngine()` 改为 `probes.push(...steamProbeDirs())`，注册表那条路与 `libraryfolders.vdf` / `wallpaper32.exe` 判定逻辑一字未动 | 我独立复算：WSL 入参 **100 条**（含 `/mnt/d/SteamLibrary`、`/mnt/z/Steam`，仍含 `/mnt/c` 两条）、普通 linux **8 条且 `/mnt/d…z` 为 0**、win32 7 条 / darwin 8 条（含 macOS 根、无 linux 根泄漏）；四组均无重复；同参两次逐项相同；传一个会抛的 `exists` 也不影响返回 |
+| **平台分支不动原有行为** | Windows 仍走注册表优先 + `STEAM_PROBE_DIRS`；macOS `~/Library/Application Support/Steam`、Linux/Android `~/.local/share/Steam`；两条 `/mnt/c/...` 作为历史遗留候选**不分平台**保留 ⇒ win32/darwin/linux/android 的候选集合与改动前**逐字节相同** | 门禁逐项断言"与改前历史表达式逐字节相同" |
+| **插件侧跨平台静态门禁** | 新增 `tools/cross-platform-test.mjs`（**63 断言 / 1.2s**，无浏览器无网络；只扫 `git ls-files`，没有 git ⇒ 打印 SKIP 并 exit 0 不假装通过）：WSL 分支可判 + 三平台各自成根 + 纯函数纪律 + `/tmp` 字面量与五类宿主绝对路径"同行可覆盖"（存量 25 处逐条带理由的账本，**每条反查必须仍命中**）+ shell 可移植（9 种 bash 4+ 写法、shebang 与语法匹配）+ 文件名可移植 + BOM/CRLF + G 段合成反例必红 | **63 通过 / 0 失败**；两处**变异自证**：删掉盘符枚举 ⇒ exit=1（对照组 0）、把路径写死 ⇒ exit=1（对照组 0） |
+| **顺带修 4 处** | `tools/_stub.mjs` / `tools/panel-smoke.mjs` 的默认设置文件路径由写死作者家目录改为 `os.homedir()` 推导（本机取值一字未变）；`tools/bundle-equivalence-test.mjs` 的"少一个导出"变异原来逐名写死导出面（新增导出后必假红）⇒ 改成从产物实际导出面去掉最后一个名字；README 中/英各一行指针与 WSL 描述同步 | `bash tools/check.sh` **12 步全绿**（新门禁在第 6 步内）、`tools/integrity-check.mjs` **72/0**、`tools/secret-scan-test.mjs` 干净 |
+
+**诚实清单（本轮）**
+1. 本机不是 WSL：WSL 分支只用**注入入参**断言（这正是把它做成纯函数的原因）；"真机 WSL 上 `/mnt/d` 确实存在并扫到 D 盘 Steam"
+   **没有**在真 WSL 上跑过；`/proc/version` 兜底那条路也只喂了注入字符串/函数。
+2. `locateWallpaperEngine()` 用上纯函数这件事是**源码级**断言（`probes.push(...steamProbeDirs())` + 旧常量消失 + 注册表在前），
+   没有"假 WSL 树 → 扫到 wallpaper32.exe"的端到端用例（造 `/mnt/d` 要写宿主根目录，不适合由门禁做）。
+3. 口径两处：注释行对 `/tmp` 与宿主路径都排除；"同行可覆盖"对两类统一适用，因此 `process.env.MPW_COOKIE || '/tmp/…'` 这类
+   写法自动放行、未进账本（若要 `/tmp` 更严，收紧一处判断并补账本即可）。
+4. 账本是**存量豁免**（25 条）而不是放行名单：条目必须仍命中否则判红，但它只保证"这一行还在且仍被该判据命中"，不保证语义永远成立。
+5. 新门禁**没有**加进 `tools/pre-commit.sh`（该脚本只跑 panel-smoke + switch-wiring，且本机 `core.hooksPath` 未设置 ⇒ hook 未生效）。
