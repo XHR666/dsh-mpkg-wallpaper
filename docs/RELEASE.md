@@ -474,3 +474,15 @@ $ git tag -a v3.8.2 && git push origin v3.8.2          ⇒ [new tag] v3.8.2
 3. `/custom-media`、`/library-media` 只做**后缀兜底**（读头会拖慢视频首帧）；带字节双判的是 `/raw` 与 `/custom-folder`。
 4. `tools/token-namespace-test.mjs` 的 before 基线取自 `git show HEAD:lib/client.js` ⇒ 本次提交后它退化为"自比"
    （末尾的变异自证仍有分辨力）；下一轮把 before 钉到固定 rev（`tools/dir-picker-test.mjs` 已有先例）。
+
+**发布后验证（真机 `:3080`，2026-09-21）**：宿主副本用工作区 `update-plugin.sh` 整目录同步（13 文件 md5 一致，
+顶层 6 文件在内）后，`node tools/np-seek-live-probe.mjs` ⇒ **PASS=11 / FAIL=0**：
+`__mpwNpTest.mediaTarget` 在位且 `kind=video`、卡片 `total=20 == round(video.duration=20.015)`、
+点轨道 90% ⇒ `currentTime/duration=0.895`、50% ⇒ `0.519`、游离 `<audio>` 未被带着跳、
+`__mpwNpOps` 最近一次 seek 落点 `video.seek=10.01`、拖动后 2.5 秒位置只前进（10.396 → 12.958，未回到开头）。
+**探针自身也修了两处假红来源**（这一轮跑出来的）：
+① 卡片收起时整张被"换形状"命中区 `button.mpw_np_tap` 盖住 ⇒ 第一次点击的语义是展开而非 seek，
+   旧探针把这种"根本没点到轨道"报成"比例算错"；现在先 `elementFromPoint` 判命中带、命中失败时先点一次展开，
+   并打出"谁盖在上面"，另加 P2a/P3a"这一次点击**真的**推入了 `video.seek=` 落点"的分辨判据；
+② `__mpwNpOps` 是**有界环形**（>32 条 shift）⇒ "落了几个 seek"不能用窗口内计数（上一次拖动就把窗口填满、差值恒 0），
+   改判"日志是否前进"（长度/队首时间戳/最近落点三者任一变化）。

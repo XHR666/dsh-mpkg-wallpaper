@@ -14,10 +14,14 @@
  *   P0 装的是修后版本（`__mpwNpTest.mediaTarget` 存在）+ 媒体目标是 `video`；
  *      旧实现没有这个钩子 ⇒ P0 直接 FAIL 并把"STALE INSTALL / 旧代码"打在读数里（不假装通过）。
  *   P1 卡片总时长 == round(video.duration)（±1s）—— 位置与时长必须来自同一个媒体；
- *   P2 点轨道 90% ⇒ `video.currentTime / video.duration ∈ [0.85, 0.95]`；
- *   P3 点轨道 50% ⇒ 同式 ∈ [0.45, 0.55]；
+ *   P2a/P3a 这一次点击**真的落在命中带上**（`video.seek=` 落点 +1；命中带中心点上是谁用
+ *       `elementFromPoint` 读出来）—— 把"根本没点到（卡片收起/展开改了几何）"与"比例算错"分开；
+ *   P2b 点轨道 90% ⇒ `video.currentTime / video.duration ∈ [0.85, 0.95]`；
+ *   P3b 点轨道 50% ⇒ 同式 ∈ [0.45, 0.55]；
  *   P4 同一次点击**不动**那个游离的 `<audio>`（不是"顺手也 seek 了它"）；
- *   P5 `__mpwNpOps` 里最近一次 seek 的 `did` 以 `video.seek=` 开头（落点可查，不是靠猜）。
+ *   P5 `__mpwNpOps` 里最近一次 seek 的 `did` 以 `video.seek=` 开头（落点可查，不是靠猜）；
+ *   P6 拖完 2.5 秒内位置**只前进不回退**（"调到中间后播 2 秒又自己重播"这半句的判据；
+ *      回退时一并打印媒体事件序列 play/pause/seeking/seeked/ended/loadeddata/emptied）。
  *
  * 用法：
  *   node tools/np-seek-live-probe.mjs                     # 默认视频档（--video-folder/--video-file）
@@ -110,7 +114,27 @@ try {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } })
   await ctx.addCookies([{ name: cookie.name, value: cookie.value, domain: '127.0.0.1', path: '/', httpOnly: true, sameSite: 'Strict' }])
   const page = await ctx.newPage()
-  await page.addInitScript(() => { window.__seekProbe = { mediaEvents: [] } })
+  /* 媒体事件留痕：判"调完之后会不会自己重播"（用户口述的后半句）需要看到 play/seeking/seeked 的顺序，
+     否则只能从 currentTime 回退这一条现象猜原因。 */
+  await page.addInitScript(() => {
+    window.__seekProbe = { mediaEvents: [] }
+    const push = (type, el) => {
+      try {
+        window.__seekProbe.mediaEvents.push({
+          t: Date.now(), type,
+          el: el && el.id ? el.id : (el && el.tagName ? el.tagName : '?'),
+          ct: el && isFinite(el.currentTime) ? +Number(el.currentTime).toFixed(2) : null,
+        })
+        if (window.__seekProbe.mediaEvents.length > 60) window.__seekProbe.mediaEvents.shift()
+      } catch { /* 忽略 */ }
+    }
+    for (const type of ['play', 'pause', 'seeking', 'seeked', 'ended', 'loadeddata', 'emptied']) {
+      document.addEventListener(type, (e) => {
+        const el = e && e.target
+        if (el && (el.tagName === 'VIDEO' || el.tagName === 'AUDIO')) push(type, el)
+      }, true)
+    }
+  })
 
   const goto = async () => { await page.goto('http://' + AUTHORITY + '/', { waitUntil: 'domcontentloaded', timeout: 60000 }); await page.waitForTimeout(6000) }
   const readSection = () => page.evaluate((k) => { try { return JSON.parse(localStorage.getItem(k) || '{}') } catch { return {} } }, STORE_NAME)
@@ -138,21 +162,75 @@ try {
       video: v ? { src: String(v.getAttribute('src') || '').slice(0, 60), duration: num(v.duration), currentTime: num(v.currentTime), paused: !!v.paused, display: v.style.display } : null,
       audio: a ? { src: String(a.getAttribute('src') || '').slice(0, 60), duration: num(a.duration), currentTime: num(a.currentTime), paused: !!a.paused } : null,
       scrub: r ? { left: +r.left.toFixed(2), top: +r.top.toFixed(2), right: +r.right.toFixed(2), bottom: +r.bottom.toFixed(2), width: +r.width.toFixed(2), height: +r.height.toFixed(2) } : null,
+      /* 命中带中心点上**实际是谁**：卡片从收起到展开会改轨道几何，指针若落到别的元素上，
+         这一条能把"根本没点到轨道"与"比例算错"分开（旧探针把前者误报成后者）。 */
+      hit: (() => {
+        if (!r || !scrub) return null
+        try {
+          const top = document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2)
+          const inside = !!(top && (top === scrub || scrub.contains(top)))
+          const cls = top && typeof top.className === 'string' ? '.' + String(top.className).split(' ')[0] : ''
+          return { ok: inside, top: top ? String(top.tagName) + cls : null }
+        } catch (err) { return { ok: false, top: 'err' } }
+      })(),
+      mediaEvents: (() => { try { return (window.__seekProbe && window.__seekProbe.mediaEvents ? window.__seekProbe.mediaEvents.slice(-6) : []) } catch { return [] } })(),
       ops: (() => { try { return (window.__mpwNpOps || []).slice(-8).map((o) => ({ op: o.op, did: o.did })) } catch { return [] } })(),
+      /* `__mpwNpOps` 是**有界环形**（>32 条就 shift）⇒ "这一次点击落了几个 seek"不能用窗口内计数
+         （上一次拖动就能把窗口填满，差值恒 0）。改用"日志有没有前进"：长度变了、或队首时间戳变了、
+         或最近一次 seek 落点变了 —— 三者任一即证明确实推入了新记录。 */
+      opsLen: (() => { try { return (window.__mpwNpOps || []).length } catch { return null } })(),
+      opsFirstAt: (() => { try { const a = window.__mpwNpOps || []; return a.length ? a[0].at : null } catch { return null } })(),
+      lastSeekDid: (() => {
+        try {
+          const a = window.__mpwNpOps || []
+          for (let i = a.length - 1; i >= 0; i--) if (/^video\.seek=/.test(String(a[i].did || ''))) return String(a[i].did)
+          return null
+        } catch { return null }
+      })(),
     }
   })
-  /** 点轨道到 `want`（0..1）：按下 → 拖 → 松手（真机手指顺序），然后等一拍读视频位置。 */
+  /** 等卡片布局稳定（连续两次读到的命中带矩形一致）**且命中带真的在指针下面**。
+      为什么必须等：卡片从"收起"到"展开"会改轨道宽度/位置，第一次点击若拿的是收起态的坐标，
+      指针就落到别的元素上 —— 那一种必须报"没点到"，不能被当成"比例算错"（旧探针的假红来源）。 */
+  const settle = async (tries = 12) => {
+    let prev = null, expanded = false
+    for (let i = 0; i < tries; i++) {
+      const s = await state()
+      if (!s.scrub) return { err: 'no-scrub', last: s }
+      const stable = prev && Math.abs(prev.left - s.scrub.left) < 0.5 && Math.abs(prev.width - s.scrub.width) < 0.5
+      if (stable && s.hit && s.hit.ok) return Object.assign({}, s, { expanded })
+      /* 收起态的卡片整张被"换形状"命中区（`button.mpw_np_tap`）盖住 —— 那一下点击的语义是展开/收起，
+         **不是** seek。先点一次它把卡片展开，再重新量；否则会把"没点到轨道"报成"比例算错"。 */
+      if (!expanded && s.hit && !s.hit.ok && /mpw_np_tap/.test(String(s.hit.top || ''))) {
+        const r = s.scrub
+        await page.mouse.click(r.left + r.width / 2, (r.top + r.bottom) / 2)
+        expanded = true
+        await sleep(600)
+        prev = null
+        continue
+      }
+      prev = s.scrub
+      await sleep(400)
+    }
+    return Object.assign({}, await state(), { unstable: true })
+  }
+  /** 点轨道到 `want`（0..1）：按下 → 拖 → 松手（真机手指顺序），然后等一拍读视频位置。
+      读数另带 `hit`（那一刻谁在命中带上面）与 `seekOps`（这一次点击真的落了几个 `video.seek=`）。 */
   const clickRail = async (want) => {
-    const s = await state()
-    if (!s.scrub) return { err: 'no-scrub' }
+    const s = await settle()
+    if (!s || !s.scrub) return { err: 'no-scrub' }
     const r = s.scrub
     const y = (r.top + r.bottom) / 2
+    const before = { len: s.opsLen, firstAt: s.opsFirstAt, did: s.lastSeekDid }
     await page.mouse.move(r.left + r.width * 0.05, y)
     await page.mouse.down()
     await page.mouse.move(r.left + r.width * want, y, { steps: 10 })
     await page.mouse.up()
     await sleep(700)
-    return await state()
+    const out = await state()
+    const advanced = out.opsLen !== before.len || out.opsFirstAt !== before.firstAt || out.lastSeekDid !== before.did
+    const landed = /^video\.seek=/.test(String(out.lastSeekDid || '')) && advanced
+    return Object.assign({}, out, { hit: s.hit, unstable: !!s.unstable, landed, before })
   }
 
   await goto()
@@ -209,13 +287,30 @@ try {
 
     console.log('\n== P2/P3 点轨道 90% / 50% ⇒ 视频 currentTime 真的走 ==')
     const s90 = await clickRail(0.90)
-    ok(s90.video && ratioOk(s90.video.currentTime, s90.video.duration, 0.90), 'P2 90% ⇒ currentTime/duration ∈ [0.85,0.95]',
-      't=' + (s90.video && s90.video.currentTime) + ' / dur=' + (s90.video && s90.video.duration) + ' = ' + (s90.video && s90.video.duration ? (s90.video.currentTime / s90.video.duration).toFixed(3) : '?')
+    const ratio90 = s90.video && s90.video.duration ? +(s90.video.currentTime / s90.video.duration).toFixed(3) : null
+    ok(s90.landed === true, 'P2a 这一次点击**真的落在命中带上**（`video.seek=` 落点推入日志）',
+      'landed=' + s90.landed + '  hit=' + JSON.stringify(s90.hit) + '  unstable=' + s90.unstable
+      + '  before=' + JSON.stringify(s90.before) + '  after=' + JSON.stringify({ len: s90.opsLen, firstAt: s90.opsFirstAt, did: s90.lastSeekDid })
+      + '  scrub=' + JSON.stringify(s90.scrub && { left: s90.scrub.left, w: s90.scrub.width }))
+    ok(ratioOk(s90.video && s90.video.currentTime, s90.video && s90.video.duration, 0.90), 'P2b 90% ⇒ currentTime/duration ∈ [0.85,0.95]',
+      't=' + (s90.video && s90.video.currentTime) + ' / dur=' + (s90.video && s90.video.duration) + ' = ' + ratio90
       + '  ops=' + JSON.stringify(s90.ops.slice(-3)))
     const s50 = await clickRail(0.50)
-    ok(s50.video && ratioOk(s50.video.currentTime, s50.video.duration, 0.50), 'P3 50% ⇒ currentTime/duration ∈ [0.45,0.55]',
-      't=' + (s50.video && s50.video.currentTime) + ' / dur=' + (s50.video && s50.video.duration) + ' = ' + (s50.video && s50.video.duration ? (s50.video.currentTime / s50.video.duration).toFixed(3) : '?'))
-    ok(s50.video && s50.video.paused === false, 'P3b 拖动不把播放停下来（还在放）', 'paused=' + (s50.video && s50.video.paused))
+    const ratio50 = s50.video && s50.video.duration ? +(s50.video.currentTime / s50.video.duration).toFixed(3) : null
+    ok(s50.landed === true, 'P3a 第二次点击也真的落在命中带上（`video.seek=` 落点推入日志）',
+      'landed=' + s50.landed + '  hit=' + JSON.stringify(s50.hit)
+      + '  before=' + JSON.stringify(s50.before) + '  after=' + JSON.stringify({ len: s50.opsLen, firstAt: s50.opsFirstAt, did: s50.lastSeekDid }))
+    ok(ratioOk(s50.video && s50.video.currentTime, s50.video && s50.video.duration, 0.50), 'P3b 50% ⇒ currentTime/duration ∈ [0.45,0.55]',
+      't=' + (s50.video && s50.video.currentTime) + ' / dur=' + (s50.video && s50.video.duration) + ' = ' + ratio50)
+    ok(s50.video && s50.video.paused === false, 'P3c 拖动不把播放停下来（还在放）', 'paused=' + (s50.video && s50.video.paused))
+
+    console.log('\n== P6 拖完之后 2.5 秒内不"自己重播"（点中间后播 2 秒又回到开头）==')
+    const t50 = s50.video ? s50.video.currentTime : null
+    await sleep(2500)
+    const sLate = await state()
+    const late = sLate.video ? sLate.video.currentTime : null
+    ok(t50 !== null && late !== null && late >= t50 - 0.35, 'P6 2.5 秒后位置只前进不回退（没有回到开头重播）',
+      't50=' + t50 + ' → +2.5s=' + late + '  events=' + JSON.stringify(sLate.mediaEvents))
 
     console.log('\n== P4/P5 单一落点 + 落点可查 ==')
     ok(strayUntouched(s50.audio, 0.50), 'P4 同一次点击**没有**把游离的 <audio> 也拖到同一个比例（修前形态）',
