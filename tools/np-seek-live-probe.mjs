@@ -29,13 +29,15 @@
  * ⚠ 真机探针，**不进** check.sh 常驻门禁（秒级判据不该依赖用户 DSH 在不在）。
  */
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { execFileSync } from 'node:child_process'
 
 const argv = process.argv.slice(2)
 const arg = (n, d) => { const i = argv.indexOf('--' + n); return i >= 0 && argv[i + 1] ? argv[i + 1] : d }
-const OUT = arg('out', path.join(process.env.TMPDIR || '/tmp', 'np-seek'))
+/* 输出目录由环境/系统临时目录推导（跨平台：不写死 /tmp —— mac 与 Windows 上都不成立） */
+const OUT = arg('out', path.join(os.tmpdir(), 'np-seek'))
 const AUTHORITY = arg('authority', '127.0.0.1:3080')
 const VIDEO_FOLDER = arg('video-folder', '3582362359')
 const VIDEO_FILE = arg('video-file', 'Mid-Autumn Hoshino.mp4')

@@ -335,19 +335,19 @@ console.log('\n== D. ① 设置里"当前壁纸"预览框：候选链 + 缓存�
   const wrap = mkNode('div', 'mpw_wallThumb')
   const im = mkNode('img', 'mpw_thumbImg'); im.setAttribute('src', 'a')
   im.setAttribute('data-mpw-thumb-list', JSON.stringify({ urls: ['a', 'b'], i: 0 }))
-  const ph = mkNode('span', 'mpw_hint'); ph.setAttribute('data-mpw-thumb-ph', ''); ph.setAttribute('hidden', '')
+  const ph = mkNode('span', 'mpw_hint'); ph.setAttribute('data-mpw-thumb-ph', '')   // 默认不显示：靠 data-mpw-thumb-shown 才整块露出
   wrap.appendChild(im); wrap.appendChild(ph)
   L.thumbNext(im)
   ok('D7 第一个候选失败 ⇒ 自动前进到第二个（载荷 {urls,i} 的 i 前进）',
     im.getAttribute('src') === 'b' && /"i":1/.test(im.getAttribute('data-mpw-thumb-list')), im.getAttribute('src') + ' / ' + im.getAttribute('data-mpw-thumb-list'))
   L.thumbNext(im)
   ok('D8 候选耗尽 ⇒ 标记失败 + 隐藏图片 + 露出占位文字（绝不显示破图图标）',
-    im.getAttribute('data-mpw-thumb-failed') === '1' && im.style.getPropertyValue('display') === 'none' && ph.getAttribute('hidden') === null,
-    JSON.stringify({ f: im.getAttribute('data-mpw-thumb-failed'), d: im.style.getPropertyValue('display'), h: ph.getAttribute('hidden') }))
+    im.getAttribute('data-mpw-thumb-failed') === '1' && im.style.getPropertyValue('display') === 'none' && ph.getAttribute('data-mpw-thumb-shown') === '',
+    JSON.stringify({ f: im.getAttribute('data-mpw-thumb-failed'), d: im.style.getPropertyValue('display'), s: ph.getAttribute('data-mpw-thumb-shown') }))
   L.thumbOk(im)
-  ok('D9 媒体加载成功 ⇒ 撤下占位（hidden 回到属性上）+ 清掉失败标记',
-    ph.getAttribute('hidden') === '' && im.getAttribute('data-mpw-thumb-failed') === null && im.style.getPropertyValue('display') === '',
-    JSON.stringify({ h: ph.getAttribute('hidden'), f: im.getAttribute('data-mpw-thumb-failed') }))
+  ok('D9 媒体加载成功 ⇒ 撤下占位（shown 属性被摘掉）+ 清掉失败标记',
+    ph.getAttribute('data-mpw-thumb-shown') === null && im.getAttribute('data-mpw-thumb-failed') === null && im.style.getPropertyValue('display') === '',
+    JSON.stringify({ s: ph.getAttribute('data-mpw-thumb-shown'), f: im.getAttribute('data-mpw-thumb-failed') }))
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════════

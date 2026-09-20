@@ -37,9 +37,23 @@ const ok = (name, cond, extra) => { if (cond) { pass++; console.log('  ✓ ' + n
 const head = (s) => console.log('\n\x1b[1m== ' + s + ' ==\x1b[0m')
 
 const src = fs.readFileSync(CLIENT, 'utf8')
-/** HEAD 版本（对照用；取不到就跳过对照组，不假装通过）。 */
+/** 对照用的"修复前"实现：**不能取 HEAD** —— 本修复一旦提交，`HEAD:lib/client.js` 就是修复后的版本，
+ *  对照会退化成"自己对自己"（恒 0 失分 ⇒ 门禁假红；2026-09-21 实测过一次）。
+ *  取法（与 tools/dir-picker-test.mjs 同一惯例）：`git log -S MPW-THUMB-BEGIN` 里**最早**引入该块的提交，
+ *  取其**父提交**；环境变量 MPW_THUMB_BEFORE 可覆盖，便于人工指定对照点；取不到就跳过对照组。 */
+const beforeRev = (() => {
+  if (process.env.MPW_THUMB_BEFORE) return process.env.MPW_THUMB_BEFORE
+  try {
+    const list = execFileSync('git', ['log', '--format=%H', '-S', 'MPW-THUMB-BEGIN', '--', 'lib/client.js'],
+      { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }).trim().split('\n').filter(Boolean)
+    const first = list[list.length - 1]        // 最早引入该块的那次提交
+    if (first) return first + '^'
+  } catch { /* 落下面的跳过分支 */ }
+  return ''
+})();
 const headSrc = (() => {
-  try { return execFileSync('git', ['show', 'HEAD:lib/client.js'], { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }) } catch { return '' }
+  if (!beforeRev) return ''
+  try { return execFileSync('git', ['show', beforeRev + ':lib/client.js'], { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }) } catch { return '' }
 })()
 
 /* ══════════════════════════════════════════════════════════════════════════════════
@@ -69,13 +83,15 @@ head('A 组：预览框几何 —— 媒体不裁切、媒体与占位不并排�
   const boxBody = rule(built, '.mpw_wallThumb')
   const mediaBody = rule(built, '.mpw_wallThumb .mpw_thumbImg')
   const phBody = rule(built, '.mpw_wallThumb [data-mpw-thumb-ph], .mpw_thumb [data-mpw-thumb-ph]')
-  const phHiddenBody = rule(built, '.mpw_wallThumb [data-mpw-thumb-ph][hidden], .mpw_thumb [data-mpw-thumb-ph][hidden]')
+  const phShownBody = rule(built, '.mpw_wallThumb [data-mpw-thumb-ph][data-mpw-thumb-shown], .mpw_thumb [data-mpw-thumb-ph][data-mpw-thumb-shown]')
   ok('A1 媒体**不裁切**：object-fit 必须是 contain（cover 会把图裁掉一块）', decl(mediaBody, 'object-fit') === 'contain', 'object-fit=' + (decl(mediaBody, 'object-fit') || '(缺)'))
   ok('A2 媒体脱离文档流（position:absolute + inset:0）⇒ 与占位重叠而非并排', decl(mediaBody, 'position') === 'absolute' && /inset\s*:\s*0/.test(mediaBody), decl(mediaBody, 'position') + ' / ' + (decl(mediaBody, 'inset') ? 'inset ' + decl(mediaBody, 'inset') : '(缺 inset)'))
-  ok('A3 占位是**整块**（inset:0 铺满 + flex 居中），不是被挤出来的一条白边',
-    /inset\s*:\s*0/.test(phBody) && /display\s*:\s*flex/.test(phBody) && /align-items\s*:\s*center/.test(phBody) && /justify-content\s*:\s*center/.test(phBody), phBody.trim().slice(0, 90))
-  ok('A4 占位带 hidden 属性时**必**不显示（display:none !important 压过任何 display 声明）',
-    /display\s*:\s*none\s*!important/.test(phHiddenBody), phHiddenBody.trim().slice(0, 90))
+  ok('A3 占位是**整块**（inset:0 铺满 + 居中；默认 none、带 shown 才 flex），不是被挤出来的一条白边',
+    /inset\s*:\s*0/.test(phBody) && /align-items\s*:\s*center/.test(phBody) && /justify-content\s*:\s*center/.test(phBody)
+      && /display\s*:\s*none/.test(phBody) && /display\s*:\s*flex/.test(phShownBody), phBody.trim().slice(0, 110))
+  ok('A4 占位**默认不显示**（基规则 display:none），只有带 data-mpw-thumb-shown 时才整块露出（display:flex）',
+    /display\s*:\s*none/.test(phBody) && /display\s*:\s*flex/.test(phShownBody),
+    'base=' + decl(phBody, 'display') + ' / shown=' + decl(phShownBody, 'display'))
   ok('A5 预览框是定位容器（position:relative）', decl(boxBody, 'position') === 'relative', decl(boxBody, 'position') || '(缺)')
 
   /* 几何模型（**唯一判据**：同框两个可见元素不许并排）：
@@ -106,7 +122,7 @@ head('A 组：预览框几何 —— 媒体不裁切、媒体与占位不并排�
       old.sideBySide === true && old.cut === true,
       JSON.stringify(Object.assign({}, old, { 占位占框比例: old.sliver })))
   } else {
-    console.log('  · A8 对照跳过：取不到 HEAD 版本的 lib/client.js')
+    console.log('  · A8 对照跳过：取不到修复前版本（' + (beforeRev || '未知 rev') + '）')
   }
   try { fs.unlinkSync(cssOut) } catch { /* 忽略 */ }
 }
@@ -168,12 +184,12 @@ if (!BLOCK) {
       box.appendChild(el); media.push(el)
     }
     const ph = node('span', { 'data-mpw-thumb-ph': '' })
-    if (media.length) ph.setAttribute('hidden', '')
+    if (!media.length) ph.setAttribute('data-mpw-thumb-shown', '')   // 无候选 ⇒ 整块显示（与渲染点同形）
     box.appendChild(ph)
     return { box, media, ph }
   }
   const visible = (f) => f.media.filter((m) => m.style.getPropertyValue('display') !== 'none' && m.getAttribute('data-mpw-thumb-failed') !== '1').length
-  const phShown = (f) => f.ph.getAttribute('hidden') === null
+  const phShown = (f) => f.ph.getAttribute('data-mpw-thumb-shown') !== null
   const atMostOne = (f) => (visible(f) + (phShown(f) ? 1 : 0)) <= 1
   const imgOf = (f) => f.media.find((m) => m.tagName === 'IMG')
   const vidOf = (f) => f.media.find((m) => m.tagName === 'VIDEO')
@@ -183,7 +199,7 @@ if (!BLOCK) {
     const f = fixture([{ tag: 'img', src: 'a1', urls: ['a1', 'a2'] }], 'mp4')
     M.mpwThumbNext({ target: imgOf(f) }); ok('B1a 图候选未耗尽 ⇒ 前进到下一个、占位仍藏着（不闪白块）', imgOf(f).getAttribute('src') === 'a2' && !phShown(f) && atMostOne(f), JSON.stringify({ src: imgOf(f).getAttribute('src'), ph: phShown(f) }))
     M.mpwThumbNext({ target: imgOf(f) }); ok('B1b 图候选耗尽 ⇒ 图撤下 + 占位整块露出 + 同框可见 ≤ 1', imgOf(f).getAttribute('data-mpw-thumb-failed') === '1' && phShown(f) && atMostOne(f), JSON.stringify({ state: f.box.getAttribute('data-mpw-thumb-state'), why: f.box.getAttribute('data-mpw-thumb-why') }))
-    ok('B1c 占位是**整块**（hidden 属性被摘掉，不是靠内联 display 半露）', f.ph.getAttribute('hidden') === null && f.ph.style.getPropertyValue('display') === '', JSON.stringify({ hidden: f.ph.getAttribute('hidden'), display: f.ph.style.getPropertyValue('display') }))
+    ok('B1c 占位是**整块**（data-mpw-thumb-shown 被写上，不是靠内联 display 半露）', f.ph.getAttribute('data-mpw-thumb-shown') === '' && f.ph.style.getPropertyValue('display') === '', JSON.stringify({ shown: f.ph.getAttribute('data-mpw-thumb-shown'), display: f.ph.style.getPropertyValue('display') }))
   }
   /* B2 路径②：图候选全灭 ⇒ 视频首帧被启用（占位继续藏着）⇒ 视频也灭 ⇒ 才落占位 */
   {
@@ -223,12 +239,12 @@ if (!BLOCK) {
     const kids1 = M.mpwThumbChildren(reactStub.createElement, sec1, { placeholder: 'mp4' })
     const kids2 = M.mpwThumbChildren(reactStub.createElement, sec2, { placeholder: 'mp4' })
     const tags = kids1.map((k) => k.type)
-    ok('B5a 子元素形态：img 在前、video 在后且**先藏着**、占位默认 hidden',
+    ok('B5a 子元素形态：img 在前、video 在后且**先藏着**、占位默认不显示',
       tags[0] === 'img' && tags[1] === 'video' && tags[2] === 'span'
         && kids1[1].props.style && kids1[1].props.style.display === 'none'
-        && kids1[2].props.hidden === ''
+        && kids1[2].props['data-mpw-thumb-shown'] === void 0   // 有媒体 ⇒ 占位默认不显示（靠状态机在失败时才写上）
         && kids1[2].props['data-mpw-thumb-ph'] === '',
-      JSON.stringify({ tags: tags, videoDisplay: kids1[1].props.style && kids1[1].props.style.display, phHidden: kids1[2].props.hidden }))
+      JSON.stringify({ tags: tags, videoDisplay: kids1[1].props.style && kids1[1].props.style.display, phShown: kids1[2].props['data-mpw-thumb-shown'] }))
     const keyOf = (kids) => kids.map((k) => k.props.key).join('|')
     const srcOf = (kids) => kids.map((k) => String(k.props.src || '')).join('|')
     ok('B5b 换目录 ⇒ key 与 URL 全换（旧节点的失败标记/内联 display 不可能粘住）',
@@ -236,9 +252,9 @@ if (!BLOCK) {
       JSON.stringify({ k1: keyOf(kids1), k2: keyOf(kids2) }))
     const first = JSON.parse(kids1[0].props['data-mpw-thumb-list'])
     ok('B5c 载荷 {urls,i} 从 0 开始（换目录不会"URL 换了、下标还在 3"）', first.i === 0 && Array.isArray(first.urls) && first.urls.length >= 1, JSON.stringify(first).slice(0, 140))
-    ok('B5d 无候选 ⇒ 只给占位且**不**带 hidden（整块显示，不是空白框）', (() => {
+    ok('B5d 无候选 ⇒ 只给占位且带 data-mpw-thumb-shown（整块显示，不是空白框）', (() => {
       const kids = M.mpwThumbChildren(reactStub.createElement, { customDirPath: '/libs/A' }, { placeholder: 'web' })
-      return kids.length === 1 && kids[0].type === 'span' && kids[0].props.hidden === void 0
+      return kids.length === 1 && kids[0].type === 'span' && kids[0].props['data-mpw-thumb-shown'] === ''
     })(), JSON.stringify(M.mpwThumbChildren(reactStub.createElement, { customDirPath: '/libs/A' }, { placeholder: 'web' }).map((k) => k.props)))
   }
   /* B6 缓存键：目录身份 + 纪元；data:/blob: 不动 */
@@ -276,8 +292,9 @@ head('C 组：显隐占位只有**一个**落点（旧实现是"每个分支各�
   const nowHits = writes(strip(src))
   ok('C1 生产代码里"操作占位"只出现在状态机落点（≤ 4 处：查询 + hidden 设置 + 渲染点 + CSS 选择器）', nowHits <= 6, '命中 ' + nowHits + ' 处')
   ok('C2 状态机落点里同时管"撤下媒体"与"露出占位"（不是只显示占位）',
-    /style\.display = "none"/.test(nowBlock) && /removeAttribute\("hidden"\)/.test(nowBlock) && /setAttribute\("hidden"/.test(strip(body(src, /function mpwThumbOk/, /function mpwThumbFail/))),
-    'mpwThumbFail 管撤媒体+露占位 / mpwThumbOk 管 hidden')
+    /el\.style\.display = "none"/.test(nowBlock) && /setAttribute\("data-mpw-thumb-shown"/.test(nowBlock)
+      && /removeAttribute\("data-mpw-thumb-shown"\)/.test(strip(body(src, /function mpwThumbOk/, /function mpwThumbFail/))),
+    'mpwThumbFail 管撤媒体+露占位 / mpwThumbOk 管撤占位')
   if (headSrc) {
     const old = strip(headSrc)
     const oldHits = (old.match(/data-mpw-thumb-ph/g) || []).length
@@ -285,7 +302,7 @@ head('C 组：显隐占位只有**一个**落点（旧实现是"每个分支各�
       oldHits >= 3,
       '旧实现命中 ' + oldHits + ' 处（新实现 ' + nowHits + ' 处）')
   } else {
-    console.log('  · C3 对照跳过：取不到 HEAD 版本的 lib/client.js')
+    console.log('  · C3 对照跳过：取不到修复前版本（' + (beforeRev || '未知 rev') + '）')
   }
 }
 
