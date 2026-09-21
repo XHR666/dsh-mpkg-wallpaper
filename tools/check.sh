@@ -59,6 +59,13 @@ node tools/web-probe-test.mjs || fail=1
 #   静音期 `play()` 压制且返回**已 resolve** 的 Promise、`start(when)` 迟到分 burst/jitter 且**只记录不阻止**、
 #   `new Audio()`/Shadow DOM/`speechSynthesis`/WebRTC track/跨域"不可控清单"归因、档位 `off|report|redirect|1|all` 与跨 realm 幂等。
 #   ~0.1s，无浏览器无网络。真机那半由 `tools/audio-bus-live-probe.mjs` 负责（**待接线后启用**）。
+node tools/audio-bus-test.mjs || fail=1
+# ①(2026-09-22 接线) `audio-bus-wiring-test`：`lib/client.js` 里的 MPW-AUDIO-BUS 内联块是**生成产物**
+#   （client.js 是单文件产物，页面没有模块图 ⇒ 只能内联，与 now-playing 同款）。判据：块必须**逐字**包含
+#   `lib/audio-bus.js` 的当前源码（改源不重跑生成器 ⇒ 红）、顶层真的调用了安装入口且幂等、模式纯函数口径
+#   （顶层缺省 `redirect` 只归因 / 帧内缺省 `1` 真压 / 显式档照办 / 帧内不接受 `redirect`）、静音跟随设置
+#   `mute` 同步（800ms 轮询 + 走模块 API）、三条分辨力自证。20 断言，~0.1s，无浏览器。
+node tools/audio-bus-wiring-test.mjs || fail=1
 # ①(第13条 用户点名"长期没修好"的 bug) 选择文件夹/选择文件的选择器：
 #   滚动位置（重渲染/容器被重建后不跳顶）、不抢焦点、键盘导航、500 项大目录、滚轮不串联宿主。
 #   A 组源码级（**同一套断言对 `git show HEAD:lib/client.js` 必须变红** ⇒ 证明用例有分辨力）
