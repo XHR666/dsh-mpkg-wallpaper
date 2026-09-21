@@ -51,6 +51,14 @@ node tools/np-axis-live-probe.mjs --selftest || fail=1
 #   参数闸门（400/403/404）/ 扫描条目与单查结论逐项一致 / 递归只有一份定义（源码级）。
 #   形状契约：docs/WEB-WALLPAPER.md §3.4。26 通过 / 0 失败。
 node tools/web-probe-test.mjs || fail=1
+# ①(2026-09-22 漏音：总线级静音) `audio-bus-test`：内核 `lib/audio-bus.js` 的**离线**判据 37 条 ——
+#   直连 `ctx.destination` 必须被改接到每 ctx 懒建的 masterGain（挂 `AudioNode.prototype`，不是 AudioContext.prototype）、
+#   master 自己那一下走原始 connect（无递归）、`connect` 返回值按真 API 语义返回**调用方传进来的 dest**、
+#   `OfflineAudioContext` 放行、**安装前就存在的 ctx 采用后进静音名单**、静音 = `cancelScheduledValues + setValueAtTime(0)`
+#   且**不 suspend**、被 `createMediaElementSource` 接管的元素只总线归零**不 pause**（否则 analyser 恒 0）、
+#   静音期 `play()` 压制且返回**已 resolve** 的 Promise、`start(when)` 迟到分 burst/jitter 且**只记录不阻止**、
+#   `new Audio()`/Shadow DOM/`speechSynthesis`/WebRTC track/跨域"不可控清单"归因、档位 `off|report|redirect|1|all` 与跨 realm 幂等。
+#   ~0.1s，无浏览器无网络。真机那半由 `tools/audio-bus-live-probe.mjs` 负责（**待接线后启用**）。
 # ①(第13条 用户点名"长期没修好"的 bug) 选择文件夹/选择文件的选择器：
 #   滚动位置（重渲染/容器被重建后不跳顶）、不抢焦点、键盘导航、500 项大目录、滚轮不串联宿主。
 #   A 组源码级（**同一套断言对 `git show HEAD:lib/client.js` 必须变红** ⇒ 证明用例有分辨力）
