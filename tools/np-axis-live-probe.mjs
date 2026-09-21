@@ -247,6 +247,44 @@ try {
     return await read()
   }
 
+  /* ── `--check-volume`：共享面判定（`:8902` 测试台报"音量被重置"，而音量条就在**同一个组件**
+     lib/now-playing.js 里 ⇒ 必须在 DSH 侧也量一遍）。判据：拖到 70% 之后
+     ① 卡片 aria-valuenow ≈ 70；② 设置项 `npVolume` ≈ 70；③ **刷新一次**之后仍然是 ≈70（没被重置）；
+     ④ 媒体元素的 volume ≈ 0.7。跑完把 npVolume 复原成原值（连同 localStorage/宿主两份）。 */
+  if (argv.includes('--check-volume')) {
+    const VOL = Math.round(Number((await page.evaluate((k) => { try { return (JSON.parse(localStorage.getItem(k) || '{}').npVolume) } catch { return null } }, STORE_NAME)) || 33))
+    const s1 = await expand()
+    const r = s1.scrub
+    const volHit = await page.evaluate(() => { const v = document.querySelector('[data-mpw-np-vol]'); if (!v) return null; const b = v.getBoundingClientRect(); return { l: b.left, t: b.top, w: b.width, h: b.height } })
+    let out = { before: VOL, hit: volHit }
+    if (!volHit || !(volHit.w > 8)) { ok(false, 'V1 音量条命中区可量（找不到 [data-mpw-np-vol] 的几何）', JSON.stringify({ volHit: volHit, r: r && { l: r.l, w: r.w } })) }
+    else {
+      const y = volHit.t + volHit.h / 2
+      await page.mouse.move(volHit.l + volHit.w * 0.05, y)
+      await page.mouse.down()
+      await page.mouse.move(volHit.l + volHit.w * 0.7, y, { steps: 8 })
+      await page.mouse.up()
+      await sleep(900)
+      const after = await read()
+      const set1 = await page.evaluate((k) => { try { return JSON.parse(localStorage.getItem(k) || '{}').npVolume } catch { return null } }, STORE_NAME)
+      const aria1 = after.scrub && after.scrub.ariaMax !== null ? await page.evaluate(() => { const v = document.querySelector('[data-mpw-np-vol]'); return v ? v.getAttribute('aria-valuenow') : null }) : null
+      const elVol = await page.evaluate(() => { const a = document.querySelector('audio[data-mpw-np-audio]'); const v = document.getElementById('mpw-bgVideo'); const m = (a && a.volume) || (v && v.volume); return typeof m === 'number' ? +m.toFixed(3) : null })
+      await goto()   // 刷新：判"有没有被重置"
+      const s2 = await expand()
+      const set2 = await page.evaluate((k) => { try { return JSON.parse(localStorage.getItem(k) || '{}').npVolume } catch { return null } }, STORE_NAME)
+      const aria2 = await page.evaluate(() => { const v = document.querySelector('[data-mpw-np-vol]'); return v ? v.getAttribute('aria-valuenow') : null })
+      const elVol2 = await page.evaluate(() => { const a = document.querySelector('audio[data-mpw-np-audio]'); const v = document.getElementById('mpw-bgVideo'); const m = (a && a.volume) || (v && v.volume); return typeof m === 'number' ? +m.toFixed(3) : null })
+      out = Object.assign(out, { setAfterDrag: set1, ariaAfterDrag: aria1, elVolumeAfterDrag: elVol, setAfterReload: set2, ariaAfterReload: aria2, elVolumeAfterReload: elVol2 })
+      evidence.steps.volume = out
+      console.log('  音量读数: ' + JSON.stringify(out))
+      const near = (a2, b2, tol) => a2 !== null && a2 !== void 0 && Math.abs(Number(a2) - b2) <= tol
+      ok(near(set1, 70, 12), 'V1 拖到 70% ⇒ 设置项 npVolume 跟着走（±12）', 'npVolume=' + set1)
+      ok(near(aria1, 70, 12), 'V2 卡片 aria-valuenow ≈ 70（组件显示与设置同源）', 'aria=' + aria1)
+      ok(near(set2, Number(set1), 6) && near(aria2, Number(aria1), 6), 'V3 **刷新之后**音量仍在（没有被重置）', JSON.stringify({ set: [set1, set2], aria: [aria1, aria2] }))
+      ok(elVol2 === null || near(elVol2 * 100, Number(set2), 10), 'V4 刷新之后电平真的落到媒体元素（volume ≈ npVolume/100）', 'elVolume=' + elVol2 + ' npVolume=' + set2)
+    }
+  }
+
   const s0 = await expand()
   evidence.steps.initial = s0
   console.log('初始读数: ' + JSON.stringify({ target: s0.target, scrub: s0.scrub && { max: s0.scrub.ariaMax, now: s0.scrub.ariaNow, noseek: s0.scrub.noseek }, run: s0.run, rail: s0.rail, clock: s0.clockSpans, media: s0.media || s0.audio || s0.video }))
@@ -314,8 +352,8 @@ try {
         await page.reload({ waitUntil: 'domcontentloaded', timeout: 60000 }).catch(() => {})
         await sleep(3000)
         back = await page.evaluate((k) => { try { return localStorage.getItem(k) } catch { return null } }, STORE_NAME).catch(() => null)
-        const same = (() => { try { const a = JSON.parse(originalSection), b = JSON.parse(back || '{}'); return ['mpkgKey', 'source', 'image', 'converted', 'webUrl', 'sceneKey', 'customDirPath', 'enabled'].every((x) => JSON.stringify(a[x]) === JSON.stringify(b[x])) } catch { return false } })()
-        if (same || MODE !== 'track') { if (same) console.log('✓ 插件设置已复原（壁纸档字段逐项一致）'); break }
+        const same = (() => { try { const a = JSON.parse(originalSection), b = JSON.parse(back || '{}'); return ['mpkgKey', 'source', 'image', 'converted', 'webUrl', 'sceneKey', 'customDirPath', 'enabled', 'npVolume', 'npPaused'].every((x) => JSON.stringify(a[x]) === JSON.stringify(b[x])) } catch { return false } })()
+        if (same || MODE !== 'track') { if (same) console.log('✓ 插件设置已复原（壁纸档字段逐项一致，含 npVolume/npPaused）'); break }
       }
       if (back !== originalSection && MODE === 'track') console.log('⚠ 复原后与原文不同，请人工确认 ' + STORE_NAME)
     }
