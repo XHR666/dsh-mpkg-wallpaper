@@ -344,10 +344,34 @@ console.log('\n== D. ① 设置里"当前壁纸"预览框：候选链 + 缓存�
   ok('D8 候选耗尽 ⇒ 标记失败 + 隐藏图片 + 露出占位文字（绝不显示破图图标）',
     im.getAttribute('data-mpw-thumb-failed') === '1' && im.style.getPropertyValue('display') === 'none' && ph.getAttribute('data-mpw-thumb-shown') === '',
     JSON.stringify({ f: im.getAttribute('data-mpw-thumb-failed'), d: im.style.getPropertyValue('display'), s: ph.getAttribute('data-mpw-thumb-shown') }))
+  /* ①(2026-09-21 真机第 1/2 条) 状态机改成**单一事实源**之后，"媒体加载成功"的判据多了一条前置：
+     **它必须真的画出来了**（img: complete+naturalWidth；video: readyState≥2+videoWidth），
+     而且**排在前面的候选都已判死**。真机语料里"判死之后原地复活"不会发生
+     （判死那一刻它的 src 就是加载失败的那条 URL），所以这里改成走**真实路径**：
+     图候选耗尽 ⇒ 视频首帧获得资格 ⇒ 视频出帧 ⇒ 它成为主人、占位撤下、图仍保持判死。 */
+  const vidThumb = mkNode('video', 'mpw_thumbImg')
+  vidThumb.setAttribute('src', 'v1')
+  vidThumb.setAttribute('data-mpw-thumb-list', JSON.stringify({ urls: ['v1'], i: 0 }))
+  vidThumb.setAttribute('data-mpw-thumb-standby', '1')
+  wrap.appendChild(vidThumb)
+  L.thumbOk(vidThumb)   // 还没出帧 ⇒ 不许显示（"可见即有画面"）
+  ok('D9a 备胎视频**还没出帧**时不许显示（占位收起但框进"加载态"：既不是白块、也不是类型文字）',
+    vidThumb.style.getPropertyValue('display') === 'none' && ph.getAttribute('data-mpw-thumb-shown') === null
+      && wrap.getAttribute('data-mpw-thumb-state') === 'trying',
+    JSON.stringify({ v: vidThumb.style.getPropertyValue('display'), s: ph.getAttribute('data-mpw-thumb-shown'), st: wrap.getAttribute('data-mpw-thumb-state') }))
+  vidThumb.readyState = 4; vidThumb.videoWidth = 3840; vidThumb.videoHeight = 2160   // 出帧
+  L.thumbOk(vidThumb)
+  ok('D9 媒体加载成功（真的出帧）⇒ 撤下占位（shown 属性被摘掉）+ 它成为主人 + 同框可见 ≤ 1',
+    ph.getAttribute('data-mpw-thumb-shown') === null && vidThumb.style.getPropertyValue('display') === ''
+      && im.style.getPropertyValue('display') === 'none' && im.getAttribute('data-mpw-thumb-failed') === '1',
+    JSON.stringify({ s: ph.getAttribute('data-mpw-thumb-shown'), v: vidThumb.style.getPropertyValue('display'), i: im.style.getPropertyValue('display'), f: im.getAttribute('data-mpw-thumb-failed') }))
+  /* D9b 优先级：图与视频**都**画得出来时主人恒为图（视频的元数据事件迟到不许抢镜头） */
+  im.complete = true; im.naturalWidth = 192; im.naturalHeight = 192
+  im.removeAttribute('data-mpw-thumb-failed')
   L.thumbOk(im)
-  ok('D9 媒体加载成功 ⇒ 撤下占位（shown 属性被摘掉）+ 清掉失败标记',
-    ph.getAttribute('data-mpw-thumb-shown') === null && im.getAttribute('data-mpw-thumb-failed') === null && im.style.getPropertyValue('display') === '',
-    JSON.stringify({ s: ph.getAttribute('data-mpw-thumb-shown'), f: im.getAttribute('data-mpw-thumb-failed') }))
+  ok('D9b 图也出画 ⇒ 主人回到图（优先级固定，不取决于谁最后触发）',
+    im.style.getPropertyValue('display') === '' && vidThumb.style.getPropertyValue('display') === 'none',
+    JSON.stringify({ i: im.style.getPropertyValue('display'), v: vidThumb.style.getPropertyValue('display') }))
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════════

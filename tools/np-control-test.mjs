@@ -592,6 +592,11 @@ console.log('\n== V. 第19条：prev/next 只控曲目（不切壁纸、不碰�
   G.T.seedTracks(SEC_WEB, TRACKS6, 'dir')
   G.T.load(0)
   const i0 = G.T.idx()
+  /* 壁纸媒体的 play/pause 计数按**增量**判（不按绝对值 0）：
+     插件自己有一条**有界**的"有源无画 ⇒ 补一次"兜底（见 lib/client.js 的 mpwBgPaintedNow），
+     桩里的 `<video>` 永远出不了帧 ⇒ 它可能在若干秒后补挂一次（这是**插件自己的行为**，
+     与"左右键有没有碰壁纸"无关）。本组要钉的是**这两个动作的效果**：动作前后计数不许变。 */
+  const gBefore = { plays: G.video.__plays, pauses: G.video.__pauses }
   G.T.transport('next', SEC_WEB)
   await settle()
   const i1 = G.T.idx()
@@ -600,8 +605,9 @@ console.log('\n== V. 第19条：prev/next 只控曲目（不切壁纸、不碰�
   G.T.transport('prev', SEC_WEB); G.T.transport('prev', SEC_WEB)
   await settle()
   ok('V4 曲目档 prev 两次 ⇒ 从 2/6 回到 6/6（环形，不是"回到开头"）且壁纸媒体零变化',
-    G.T.idx() === TRACKS6.length - 1 && G.video.__plays === 0 && G.video.__pauses === 0 && !G.video.getAttribute('src'),
-    'idx=' + G.T.idx() + ' video.src=' + JSON.stringify(G.video.getAttribute('src')) + ' plays=' + G.video.__plays)
+    G.T.idx() === TRACKS6.length - 1 && G.video.__plays === gBefore.plays && G.video.__pauses === gBefore.pauses && !G.video.getAttribute('src'),
+    'idx=' + G.T.idx() + ' video.src=' + JSON.stringify(G.video.getAttribute('src'))
+      + ' plays=' + gBefore.plays + '→' + G.video.__plays + ' pauses=' + gBefore.pauses + '→' + G.video.__pauses)
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════════
@@ -710,6 +716,103 @@ console.log('\n== T. 真机 P0：数据源 / 时长 / seek 恒为**同一个元�
   const m3 = G.T.resolve(SEC_WEB)
   ok('T9 音轨档卡片：kind=track + 清单计数可见（1/N）',
     m3 && m3.kind === 'track' && m3.trackCount === TRACKS6.length, JSON.stringify({ kind: m3 && m3.kind, n: m3 && m3.trackCount, byline: m3 && m3.byline }))
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════
+   X. 卡片时间轴（**显示面**）：进度条填充宽度与"−剩余"必须以**当前媒体时长**为准
+   ──────────────────────────────────────────────────────────────────────────────────
+   真机读数（`:3080` 用户档，媒体 = `#mpw-bgVideo` 100.053s = 1:40）：
+     卡片写着 `0:04 −3:29`（= 214−4.5 = 209.5 ⇒ 3:29），把轨道拖到 90% 媒体确实跳到了 90s，
+     但游标只画到 46.7%（100/214）⇒ 用户原话"读成 3 分 30 多秒"+"点一下只跳到整条的一半"。
+   根因：`lib/now-playing-math.js` 的 `runPct/remain` 无条件用上游演示常量 `TOTAL = 214`。
+   T 组（数据面）当时是绿的 —— 所以这一组必须单独钉**渲染出来的那两个数**：
+     X1 填充宽度 == at/媒体时长；X2 "−剩余" == 媒体时长 − at；X3 常量轴在同一判据下必须判红（分辨力）；
+     X4 媒体时长恰好等于常量（214）时行为不变（不许把"带参"变成"另一个常量"）；
+     X5 源码级：`lib/now-playing.js` 里两处调用都必须把时间轴传进去（防止以后新加一处又各写各的）。
+   形态：组件用**假 React + 捕获式 root** 渲染（不起 DOM、不起浏览器），直接读产出的元素树。
+   ══════════════════════════════════════════════════════════════════════════════════ */
+console.log('\n== X. 卡片时间轴（显示面）：填充与剩余时间必须以当前媒体时长为准（无浏览器）==')
+{
+  const MATH = loadCjsSource(fs.readFileSync(path.join(repoRoot, 'lib', 'now-playing-math.js'), 'utf8'), 'math')
+  /** 用捕获式 root 建一个控制器：`ctl.setMedia/setProgress` 之后能拿到**产出的元素树**。 */
+  const makeCard = () => {
+    /* 直接调**导出的纯渲染函数**（NP.NowPlaying）：控制器要起容器/锚点才能 render，
+       而这里要测的是"产出的那两个数"，不需要 DOM —— 这也是把它导出的原因。 */
+    const props = { p: 1, open: true, playing: true, at: 0, media: {}, mark: 0, volume: 1, canSeek: true, link: true, note: '' }
+    const react = { createElement: (t, p, ...k) => ({ t, p, k }) }
+    const made = NP.createNowPlaying({
+      math: MATH,
+      react,
+      createRoot: () => ({ render() {}, unmount() {} }),
+      t: (k) => k,
+      doc: { createElement: () => ({ setAttribute() {}, style: {}, appendChild() {} }), body: { appendChild() {} } },
+      win: { requestAnimationFrame: (fn) => setTimeout(fn, 0), cancelAnimationFrame: (id) => clearTimeout(id), performance: { now: () => Date.now() }, addEventListener() {}, removeEventListener() {}, innerWidth: 1440, innerHeight: 900, matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }) },
+      log: { info() {}, warn() {}, error() {} },
+      onTransport: () => {},
+    })
+    /* `NowPlaying` 自己声明 `h = react.createElement`（本仓既有写法），所以直接调即可 ——
+       拿到的就是控制器 render() 会产出的同一棵树（同一条代码路径，不是复制品）。 */
+    const renderCard = (patch) => {
+      const p2 = Object.assign({}, props, patch)
+      try { return made.NowPlaying(p2) } catch (e) { return { __err: String((e && e.message) || e) } }
+    }
+    const ctl = { setMedia: (m) => { props.media = Object.assign({}, props.media, m) }, setProgress: (a) => { props.at = a } }
+    /** 产出树 → 找节点（跳过自己：组件返回的是**元素树**，`t` 就是标签名）。 */
+    const walk = (n, out = []) => {
+      if (!n || typeof n !== 'object') return out
+      if (Array.isArray(n)) { for (const x of n) walk(x, out); return out }
+      if (n.t !== void 0) out.push(n)
+      if (n.k) walk(n.k, out)
+      return out
+    }
+    const tree = () => walk(renderCard())
+    return { ctl, tree }
+  }
+  const CARD_TOTAL = 100.05   // 真机那个 mp4 的时长（1:40）
+  const CARD_AT = 45          // 播到 45 秒
+  const { ctl, tree } = makeCard()
+  ctl.setMedia({ kind: 'video', title: 't', byline: 'b', total: CARD_TOTAL, playing: true, muted: false, volume: 1, canPlay: true, canSeek: true, canVolume: true, link: true })
+  ctl.setProgress(CARD_AT)
+  const nodes = tree()
+  const run = nodes.find((n) => n.p && n.p.className === 'mpw_np_run')
+  const clock = nodes.find((n) => n.p && n.p.className === 'mpw_np_clock')
+  const flat = (n, out = []) => {
+    if (n === null || n === void 0 || n === false) return out
+    if (typeof n === 'string' || typeof n === 'number') { out.push(String(n)); return out }
+    if (Array.isArray(n)) { for (const x of n) flat(x, out); return out }
+    if (n && n.k) flat(n.k, out)
+    return out
+  }
+  const clockTexts = clock ? flat(clock.k) : []
+  const remainTxt = clockTexts.find((t) => /^[−-]/.test(t)) || ''
+  const widthPct = run && run.p && run.p.style ? Number(String(run.p.style.width).replace('%', '')) : null
+  const wantPct = (CARD_AT / CARD_TOTAL) * 100
+  const constPct = (CARD_AT / MATH.TOTAL) * 100
+  ok('X1 进度条填充 = at/媒体时长（±0.1%）', widthPct !== null && Math.abs(widthPct - wantPct) <= 0.1,
+    'width=' + widthPct + '%  期望=' + wantPct.toFixed(2) + '%（常量轴会画成 ' + constPct.toFixed(2) + '%）')
+  const wantRemain = '−' + MATH.clock(MATH.remain(CARD_AT, CARD_TOTAL))
+  ok('X2 "−剩余" = 媒体时长 − 位置（±1s）', wantRemain === remainTxt,
+    'label=' + JSON.stringify(remainTxt) + '  期望=' + wantRemain + '（常量轴会是 −' + MATH.clock(MATH.TOTAL - CARD_AT) + '）')
+  ok('X3 分辨力：常量轴（214）在同一判据下必须判红', Math.abs(constPct - wantPct) > 0.1 && MATH.clock(MATH.TOTAL - CARD_AT) !== remainTxt,
+    '常量轴填充 ' + constPct.toFixed(2) + '% / 剩余 ' + MATH.clock(MATH.TOTAL - CARD_AT))
+  /* X4 媒体时长恰好 214（上游演示那首）⇒ 逐字节等于常量轴：带参不许把演示档改坏 */
+  {
+    const c2 = makeCard()
+    c2.ctl.setMedia({ kind: 'video', total: MATH.TOTAL, playing: true, muted: false, volume: 1, canPlay: true, canSeek: true, canVolume: true, link: true })
+    c2.ctl.setProgress(52)
+    const n2 = c2.tree()
+    const r2 = n2.find((n) => n.p && n.p.className === 'mpw_np_run')
+    const ck2 = n2.find((n) => n.p && n.p.className === 'mpw_np_clock')
+    const t2 = ck2 ? flat(ck2.k).find((t) => /^[−-]/.test(t)) : ''
+    ok('X4 媒体时长 == 常量（214）时行为不变（演示档零回归）',
+      Math.abs(Number(String(r2.p.style.width).replace('%', '')) - MATH.runPct(52)) < 1e-9 && t2 === ('−' + MATH.clock(MATH.remain(52))),
+      'width=' + r2.p.style.width + ' 剩余=' + JSON.stringify(t2))
+  }
+  /* X5 源码级契约：显示面的两处调用都必须带时间轴（新加一处忘了带 = 又变成各写各的） */
+  const calls = (npSrc.match(/M\.(runPct|remain)\([^)]*\)/g) || [])
+  ok('X5 源码级：now-playing.js 里 runPct/remain 的每一次调用都带了时间轴参数',
+    calls.length >= 2 && calls.every((c) => c.includes(',')),
+    JSON.stringify(calls))
 }
 
 console.log('\n== G. ⑥ 组件对外接口面（渲染器测试台 :8902 若复用同一组件，这些必须齐）==')

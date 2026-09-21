@@ -166,7 +166,7 @@ const reactStub = {
 
 const load = (blockSrc) => new Function(
   'mpwVal', 'HOST_BASE', 'resolveHostUrl', 'mpwTrace', 'h',
-  blockSrc + '\n;return { mpwThumbCandidates, mpwThumbNext, mpwThumbOk, mpwThumbFail, mpwThumbBust, mpwThumbDirIdentity, mpwThumbChildren, mpwThumbPayloadGet, mpwThumbParts, mpwThumbInvalidate, mpwThumbEpochFor };'
+  blockSrc + '\n;return { mpwThumbCandidates, mpwThumbNext, mpwThumbOk, mpwThumbFail, mpwThumbBust, mpwThumbDirIdentity, mpwThumbChildren, mpwThumbPayloadGet, mpwThumbParts, mpwThumbInvalidate, mpwThumbEpochFor, mpwThumbSync, mpwThumbPainted, mpwThumbIsContainerUrl, mpwThumbContentSignature, mpwThumbNoteContent, mpwThumbCover };'
 )((o, k) => (o || {})[k], '/api/mpkg-wallpaper', (u) => String(u).replace(/^host:/, '/api/mpkg-wallpaper'), () => {}, reactStub.createElement)
 
 head('B 组：候选链状态机（切片 lib/client.js 的 MPW-THUMB 块，跑生产实现）')
@@ -177,16 +177,26 @@ if (!BLOCK) {
   /** 夹具：一个预览框 + 若干媒体 + 占位（与渲染点 mpwThumbChildren 同形）。 */
   const fixture = (mediaSrcs, phText) => {
     const box = node('div', { 'data-mpw-thumb-box': '', 'data-mpw-thumb-state': 'trying' })
+    box.clientWidth = 74; box.clientHeight = 42   // 底色判据要用框尺寸（与真机 .mpw_thumb 同形）
     const media = []
     for (const s of mediaSrcs) {
       const el = node(s.tag, { class: 'mpw_thumbImg', src: s.src, 'data-mpw-thumb-list': JSON.stringify({ urls: s.urls, i: 0 }) })
-      if (s.standby) el.style.display = 'none'
+      el.style.display = 'none'                    // 新契约：媒体**一律先藏着**（渲染点同形）
+      if (s.standby) el.setAttribute('data-mpw-thumb-standby', '1')
       box.appendChild(el); media.push(el)
     }
     const ph = node('span', { 'data-mpw-thumb-ph': '' })
     if (!media.length) ph.setAttribute('data-mpw-thumb-shown', '')   // 无候选 ⇒ 整块显示（与渲染点同形）
     box.appendChild(ph)
     return { box, media, ph }
+  }
+  /** 让某个媒体"真的画出来了"（img: complete+naturalWidth；video: readyState≥2+videoWidth）。
+   *  新契约的唯一裁决依据就是这个 —— 桩里必须能把这件事设出来，否则测不到竞态。 */
+  const paint = (el, w, h) => {
+    if (el.tagName === 'IMG') { el.complete = true; el.naturalWidth = w || 192; el.naturalHeight = h || 192 }
+    else { el.readyState = 4; el.videoWidth = w || 3840; el.videoHeight = h || 2160 }
+    el.setAttribute('src', el.getAttribute('src') || 'x')
+    return el
   }
   const visible = (f) => f.media.filter((m) => m.style.getPropertyValue('display') !== 'none' && m.getAttribute('data-mpw-thumb-failed') !== '1').length
   const phShown = (f) => f.ph.getAttribute('data-mpw-thumb-shown') !== null
@@ -201,16 +211,20 @@ if (!BLOCK) {
     M.mpwThumbNext({ target: imgOf(f) }); ok('B1b 图候选耗尽 ⇒ 图撤下 + 占位整块露出 + 同框可见 ≤ 1', imgOf(f).getAttribute('data-mpw-thumb-failed') === '1' && phShown(f) && atMostOne(f), JSON.stringify({ state: f.box.getAttribute('data-mpw-thumb-state'), why: f.box.getAttribute('data-mpw-thumb-why') }))
     ok('B1c 占位是**整块**（data-mpw-thumb-shown 被写上，不是靠内联 display 半露）', f.ph.getAttribute('data-mpw-thumb-shown') === '' && f.ph.style.getPropertyValue('display') === '', JSON.stringify({ shown: f.ph.getAttribute('data-mpw-thumb-shown'), display: f.ph.style.getPropertyValue('display') }))
   }
-  /* B2 路径②：图候选全灭 ⇒ 视频首帧被启用（占位继续藏着）⇒ 视频也灭 ⇒ 才落占位 */
+  /* B2 路径②：图候选全灭 ⇒ 视频首帧**获得资格**（但看不见，直到它真的出帧）⇒ 视频也灭 ⇒ 才落占位 */
   {
     const f = fixture([
       { tag: 'img', src: 'p1', urls: ['p1', 'p2'] },
       { tag: 'video', src: 'v1', urls: ['v1'], standby: true },
     ], 'mp4')
     M.mpwThumbNext({ target: imgOf(f) }); M.mpwThumbNext({ target: imgOf(f) })
-    ok('B2a 图全灭但视频候选还在 ⇒ 启用视频、占位**不露**（"优先 preview.*、首帧退兜底"）',
-      vidOf(f).style.getPropertyValue('display') === '' && !vidOf(f).getAttribute('data-mpw-thumb-failed') && !phShown(f) && atMostOne(f),
+    ok('B2a 图全灭但视频候选还在 ⇒ 视频**不许立刻显示**（还没出帧）、占位不露（"优先 preview.*、首帧退兜底"）',
+      visible(f) === 0 && !vidOf(f).getAttribute('data-mpw-thumb-failed') && !phShown(f) && atMostOne(f) && f.box.getAttribute('data-mpw-thumb-state') === 'trying',
       JSON.stringify({ v: vidOf(f).style.getPropertyValue('display'), ph: phShown(f), state: f.box.getAttribute('data-mpw-thumb-state') }))
+    M.mpwThumbOk(paint(vidOf(f)))   // 视频真的出帧（元数据 + 首帧）
+    ok('B2a2 视频出帧之后才成为主人（同框仍 ≤ 1、占位仍藏着）',
+      vidOf(f).style.getPropertyValue('display') === '' && !phShown(f) && atMostOne(f) && f.box.getAttribute('data-mpw-thumb-state') === 'media',
+      JSON.stringify({ v: vidOf(f).style.getPropertyValue('display'), state: f.box.getAttribute('data-mpw-thumb-state') }))
     M.mpwThumbNext({ target: vidOf(f) })
     ok('B2b 视频也灭 ⇒ 两个媒体都撤下 + 占位整块 + 同框可见 ≤ 1', visible(f) === 0 && phShown(f) && atMostOne(f), JSON.stringify({ v: visible(f), ph: phShown(f) }))
   }
@@ -226,11 +240,70 @@ if (!BLOCK) {
       { tag: 'img', src: 'p1', urls: ['p1'] },
       { tag: 'video', src: 'v1', urls: ['v1'], standby: true },
     ], 'mp4')
-    M.mpwThumbNext({ target: imgOf(f) })                       // 图全灭 ⇒ 视频被启用
-    M.mpwThumbOk(vidOf(f))                         // 视频出画
+    M.mpwThumbNext({ target: imgOf(f) })           // 图全灭 ⇒ 视频获得资格（仍不可见）
+    M.mpwThumbOk(paint(vidOf(f)))                  // 视频出帧
     ok('B4 媒体成功 ⇒ 占位撤下（hidden）+ 同框其它媒体藏起来 + 失败标记清掉',
       phShown(f) === false && vidOf(f).style.getPropertyValue('display') === '' && imgOf(f).style.getPropertyValue('display') === 'none' && atMostOne(f),
       JSON.stringify({ ph: phShown(f), v: vidOf(f).style.getPropertyValue('display'), i: imgOf(f).style.getPropertyValue('display') }))
+  }
+  /* B4b **唯一事实源**（本轮真机第 1 条的正题）：图与视频**都**画得出来时，主人恒为优先级高的图；
+       视频的 onLoadedMetadata 迟到**不许**把镜头抢走（旧写法：谁最后跑谁说了算 ⇒ 扫描一次翻一次面）。 */
+  {
+    const f = fixture([
+      { tag: 'img', src: 'p1', urls: ['p1'] },
+      { tag: 'video', src: 'v1', urls: ['v1'], standby: true },
+    ], 'mp4')
+    M.mpwThumbOk(paint(imgOf(f)))                  // 图先出画
+    ok('B4b-1 图出画 ⇒ 图是主人', imgOf(f).style.getPropertyValue('display') === '' && vidOf(f).style.getPropertyValue('display') === 'none' && f.box.getAttribute('data-mpw-thumb-state') === 'media')
+    M.mpwThumbOk(paint(vidOf(f)))                  // 视频的 loadedmetadata 迟到（旧写法这里会抢镜头）
+    ok('B4b-2 视频随后也出画 ⇒ **镜头不换**（优先级：图 > 视频首帧）',
+      imgOf(f).style.getPropertyValue('display') === '' && vidOf(f).style.getPropertyValue('display') === 'none' && atMostOne(f),
+      JSON.stringify({ i: imgOf(f).style.getPropertyValue('display'), v: vidOf(f).style.getPropertyValue('display') }))
+  }
+  /* B7 候选链：容器文件（.mpkg/.pkg）**不给** <video> 候选（容器不是媒体流）
+       真机读数：给了就会去拉 130MB~830MB 的字节（`/custom-media` 206 ×20），既播不出来，
+       又把宿主的连接与解析占满（容器预览被挤到 5.6s→11.8s）。 */
+  {
+    const secC = { converted: 'mp4', source: '小鸟游星野01_04.mpkg', image: 'host:?custom=1&folder=f&file=A.mpkg', customDirPath: '/libs/A' }
+    const secV = { converted: 'mp4', source: 'a.mp4', image: 'host:?custom=1&folder=f&file=a.mp4', customDirPath: '/libs/A' }
+    const cC = M.mpwThumbCandidates(secC), cV = M.mpwThumbCandidates(secV)
+    ok('B7a 判定纯函数：容器扩展名认得出来（URL 里 / 文件名里 / 带查询串）',
+      M.mpwThumbIsContainerUrl('host:?custom=1&file=A.mpkg', '') === true
+      && M.mpwThumbIsContainerUrl('/x/A.pkg?a=1', '') === true
+      && M.mpwThumbIsContainerUrl('host:?custom=1&file=a.mp4', 'a.mp4') === false,
+      JSON.stringify([M.mpwThumbIsContainerUrl('host:?custom=1&file=A.mpkg', ''), M.mpwThumbIsContainerUrl('host:?custom=1&file=a.mp4', 'a.mp4')]))
+    ok('B7b 容器源 ⇒ 候选里**没有** video 类（容器档的"首帧"走容器内预览图）',
+      cC.length > 0 && cC.every((c) => c.kind !== 'video'), JSON.stringify(cC.map((c) => c.kind + ':' + c.why)))
+    ok('B7c 真视频源 ⇒ 仍保留 video 首帧候选（这一档不许被压掉）',
+      cV.some((c) => c.kind === 'video'), JSON.stringify(cV.map((c) => c.kind + ':' + c.why)))
+  }
+  /* B8 内容签名：同一个目录**同一份清单**重复扫描 ⇒ 纪元不动（键不动 ⇒ React 不换节点、不重发请求）
+       —— 真机读数：旧写法每次扫描都把 11 个缩略图重挂载，宿主串行解析容器 5.6s→11.8s 递增。 */
+  {
+    const files1 = [{ name: 'a.mp4', type: 'video', size: 10 }, { name: 'b.mp4', type: 'video', size: 20 }]
+    const files2 = [{ name: 'a.mp4', type: 'video', size: 10 }, { name: 'b.mp4', type: 'video', size: 20 }]
+    const files3 = [{ name: 'a.mp4', type: 'video', size: 10 }, { name: 'b.mp4', type: 'video', size: 999 }]
+    const sig1 = M.mpwThumbContentSignature('/libs/A', files1)
+    ok('B8a 同一份清单（含顺序打乱）⇒ 同一个签名（顺序不参与身份）',
+      sig1 === M.mpwThumbContentSignature('/libs/A', [files1[1], files1[0]]) && sig1 === M.mpwThumbContentSignature('/libs/A', files2),
+      sig1.slice(0, 90))
+    ok('B8b 内容变了（大小/名字/目录任一）⇒ 签名必须变', sig1 !== M.mpwThumbContentSignature('/libs/A', files3))
+    const r1 = M.mpwThumbNoteContent('/libs/A', files1, 'scan')
+    const e1 = M.mpwThumbEpochFor('/libs/A')
+    const r2 = M.mpwThumbNoteContent('/libs/A', files2, 'scan')
+    const e2 = M.mpwThumbEpochFor('/libs/A')
+    ok('B8c 重复扫描同一份内容 ⇒ **纪元不动**（changed=false；真机"扫描 N 次结果一致"的地基）',
+      r2.changed === false && e2 === e1, JSON.stringify({ r1: r1.changed, r2: r2.changed, e1: e1, e2: e2 }))
+    M.mpwThumbNoteContent('/libs/A', files3, 'scan')
+    ok('B8d 内容真的变了 ⇒ 纪元前进（换了 URL 键、浏览器重发请求）', M.mpwThumbEpochFor('/libs/A') > e2)
+  }
+  /* B9 底色（--mpw-thumb-cover）：媒体出画时写上，来源与画面是**同一个元素**（不裁切也不留白边） */
+  {
+    const f = fixture([{ tag: 'img', src: 'p1', urls: ['p1'] }], 'mp4')
+    M.mpwThumbOk(paint(imgOf(f), 192, 192))
+    const cov = f.box.style.getPropertyValue('--mpw-thumb-cover')
+    ok('B9 图出画 ⇒ 框底写上图自己的 URL（模糊铺满层用它；来源 = 画面来源）',
+      /url\("?p1"?\)/.test(String(cov)), JSON.stringify(cov))
   }
   /* B5 渲染点构造：媒体与占位的形态 + 换目录 ⇒ key/URL 全换（React 换新节点、候选链从 0 重走） */
   {
@@ -278,7 +351,7 @@ if (!BLOCK) {
 /* ══════════════════════════════════════════════════════════════════════════════════
    C. 唯一落点（渲染点不许各写各的显隐）+ 旧实现的对照
    ══════════════════════════════════════════════════════════════════════════════════ */
-head('C 组：显隐占位只有**一个**落点（旧实现是"每个分支各写各的"）')
+head('C 组：显隐只有**一个**落点（"谁最后跑谁说了算"的根除点）')
 {
   const strip = (code) => String(code).replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/[^\n]*/g, '$1')
   const body = (code, startRe, endRe) => {
@@ -287,20 +360,46 @@ head('C 组：显隐占位只有**一个**落点（旧实现是"每个分支各�
     const e = code.slice(s).search(endRe)
     return e < 0 ? code.slice(s) : code.slice(s, s + e)
   }
-  const nowBlock = strip(body(src, /function mpwThumbFail/, /function mpwThumbPayloadGet/))
-  const writes = (code) => (code.match(/data-mpw-thumb-ph/g) || []).length
-  const nowHits = writes(strip(src))
-  ok('C1 生产代码里"操作占位"只出现在状态机落点（≤ 4 处：查询 + hidden 设置 + 渲染点 + CSS 选择器）', nowHits <= 6, '命中 ' + nowHits + ' 处')
-  ok('C2 状态机落点里同时管"撤下媒体"与"露出占位"（不是只显示占位）',
-    /el\.style\.display = "none"/.test(nowBlock) && /setAttribute\("data-mpw-thumb-shown"/.test(nowBlock)
-      && /removeAttribute\("data-mpw-thumb-shown"\)/.test(strip(body(src, /function mpwThumbOk/, /function mpwThumbFail/))),
-    'mpwThumbFail 管撤媒体+露占位 / mpwThumbOk 管撤占位')
+  const count = (code, re) => (code.match(re) || []).length
+  const srcS = strip(src)
+  const syncB = body(srcS, /function mpwThumbSync/, /function mpwThumbOk/)
+  const okB = body(srcS, /function mpwThumbOk/, /function mpwThumbFail/)
+  const failB = body(srcS, /function mpwThumbFail/, /function mpwThumbPayloadGet/)
+  const nextB = body(srcS, /function mpwThumbNext/, /function mpwThumbChildren/)
+  /* C1 占位显隐的**写入**（set/removeAttribute("data-mpw-thumb-shown")）只允许出现在同步器里。
+        旧实现是"每个失败分支各写各的"，所以才会出现"分支 A 露占位、分支 B 没撤媒体"的中间态。 */
+  const shownWrites = (code) => count(code, /(set|remove)Attribute\("data-mpw-thumb-shown"/g)
+  /* 同步器里恰好 3 个写入点 = 三种转移：① 有主人（remove 占位）② 还在等候选（remove 占位）
+     ③ 一个候选都不剩（set 占位）。事件入口一个都不许写（下一条 C2）。 */
+  ok('C1 占位显隐的写入只出现在 mpwThumbSync（同步器之外 0 处）',
+    shownWrites(syncB) === 3 && shownWrites(okB + failB + nextB) === 0,
+    'sync=' + shownWrites(syncB) + ' 其它=' + shownWrites(okB + failB + nextB))
+  /* C2 **只有同步器能把媒体显示出来**：三个事件入口只许把它藏起来（`= "none"`），
+        不许出现 `= ""` / removeProperty("display") —— 那正是"事件各自写显隐"的旧形态。 */
+  const showAssign = (code) => count(code, /\.style\.display\s*=\s*""/g) + count(code, /removeProperty\("display"\)/g)
+  const hideAssign = (code) => count(code, /\.style\.display\s*=\s*"none"/g)
+  ok('C2 事件入口（Ok/Fail/Next）只许"收起"，显示只能由同步器写',
+    showAssign(okB + failB + nextB) === 0 && hideAssign(okB + failB + nextB) >= 2,
+    '事件里的显示写入=' + showAssign(okB + failB + nextB) + ' 收起=' + hideAssign(okB + failB + nextB))
+  /* C2b 同步器必须同时管"撤下别的媒体"与"露出/收起占位"（不是只显示占位） */
+  ok('C2b 同步器同时管：媒体显隐（含撤下其它媒体）+ 占位显隐 + 框状态',
+    /mine\s*\?\s*""\s*:\s*"none"/.test(syncB) && shownWrites(syncB) === 3 && /data-mpw-thumb-state", "media"/.test(syncB),
+    'mpwThumbSync：媒体显示/撤下 + 占位 set/remove + 框状态')
+  /* C2c "画出来了没有"只有一个判据函数（img: naturalWidth；video: readyState≥2 + videoWidth），
+        且只有同步器用它挑主人 —— 这是"可见即有画面"的地基。 */
+  const paintUses = count(srcS, /mpwThumbPainted\(/g)
+  ok('C2c "画出来了没有"只有一个判据函数（mpwThumbPainted），且只在同步器里被用于挑主人',
+    /function mpwThumbPainted/.test(srcS) && paintUses >= 2 && /mpwThumbPainted\(m\)/.test(syncB),
+    'mpwThumbPainted 引用 ' + paintUses + ' 次')
   if (headSrc) {
+    /* 对照口径与原文一致：数 `data-mpw-thumb-ph` 的出现次数（旧实现里它散在渲染分支与状态机里）。
+       新实现里这些出现点全部收口到"同步器 + 渲染点 + CSS"。 */
     const old = strip(headSrc)
-    const oldHits = (old.match(/data-mpw-thumb-ph/g) || []).length
-    ok('C3 分辨力对照：旧实现里占位显隐散落在多个渲染分支（≥ 2 处设置点，没有唯一落点）',
-      oldHits >= 3,
-      '旧实现命中 ' + oldHits + ' 处（新实现 ' + nowHits + ' 处）')
+    const oldHits = count(old, /data-mpw-thumb-ph/g)
+    const nowHits = count(srcS, /data-mpw-thumb-ph/g)
+    ok('C3 分辨力对照：旧实现把占位的查询/显隐散在多个分支（新实现收口）',
+      oldHits >= 3 && shownWrites(syncB) === 3,
+      '旧实现出现点 ' + oldHits + ' 处 / 新实现 ' + nowHits + ' 处（显隐写入全在 mpwThumbSync 的 3 处）')
   } else {
     console.log('  · C3 对照跳过：取不到修复前版本（' + (beforeRev || '未知 rev') + '）')
   }

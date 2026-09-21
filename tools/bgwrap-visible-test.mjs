@@ -275,6 +275,74 @@ console.log('\n== PART 4 诊断接口 ==')
   else bad('回退开关没反映到诊断接口', JSON.stringify(st2))
 }
 
+console.log('\n== PART 5 「有源、有 src、但一直没有画面」的补画校验（真机第 3 条）==')
+{
+  /* 真机现场（用户原话）：扫描 + 切档之后"壁纸是白色的，什么都没有"；点一下 Now Playing 的
+     进度条，背景又加载出来了。根因读数：宿主被 10 个缩略图的容器解析占满（`/custom-mpkg-preview`
+     串行 5.6s→11.8s），壁纸自己的 `<video>` 长时间停在 readyState 0 / videoWidth 0 —— 层可见、
+     里面没画面；而之后任何一次 re-apply 都会重新武装它 ⇒ 用户以为"点一下就好了"。
+     旧兜底只判"有没有 src"（mpwBgArmedNow）⇒ 这种"有 src 没画面"的状态**永远不会被补**。
+     本组对着**真源码块**跑：判据函数 + 两档校验 + 有界（同签名只补一次）+ 转码豁免。 */
+  const block = cutOpt(src, 'let __mpwBgHeal = {', 'try { window.__mpwBgWrapState')
+  if (!block || block.length < 500) {
+    bad('源码块在位（mpwBgArmedNow/mpwBgPaintedNow/两档校验）', '切块失败：锚点结构变了，请同步本测试')
+  } else {
+    const mkMedia = (tag) => {
+      const el = { tagName: tag.toUpperCase(), style: {}, __a: new Map(), loads: 0, pauses: 0 }
+      el.getAttribute = (n) => (el.__a.has(n) ? el.__a.get(n) : null)
+      el.setAttribute = (n, v) => el.__a.set(n, String(v))
+      el.removeAttribute = (n) => { el.__a.delete(n) }
+      el.pause = () => { el.pauses++ }
+      el.load = () => { el.loads++ }
+      Object.defineProperty(el, 'currentSrc', { configurable: true, get () { return el.__a.get('src') || '' } })
+      return el
+    }
+    /** 跑一次真源码块：返回判据读数 + 补挂计数（同签名有界）。 */
+    const run = (section, videoPatch, phase) => {
+      const wrap = { style: {}, classList: { add() {}, remove() {}, contains: () => true }, setAttribute() {}, getAttribute: () => null }
+      const img = mkMedia('img'), video = Object.assign(mkMedia('video'), videoPatch || {}), frame = mkMedia('iframe'), canvas = mkMedia('canvas')
+      const warns = []
+      const api = new Function('bgElements', 'sceneComposite', 'normalizeSection', 'readSection', 'DEFAULT_ENABLED', 'sectionSigNow', 'mpwBgWrapFixOn', 'applyFromStorageInner', 'mpwErr', 'window', 'console', `
+${block}
+		return { mpwBgArmedNow, mpwBgPaintedNow, mpwBgSrcHealCheck, heal: () => window.__mpwBgSrcHeal || 0 };
+`)(() => ({ img, video, frame, canvas, wrap }), null, (x) => x || {}, () => section, true, () => 'sig-A', () => true,
+        () => { applies++ }, () => {}, {}, { warn: (...a) => warns.push(a.join(' ')), log() {}, error() {} })
+      let applies = 0
+      const before = api.heal()
+      api.mpwBgSrcHealCheck(phase || 'slow')
+      return { painted: api.mpwBgPaintedNow(section), armed: api.mpwBgArmedNow(section), healed: api.heal() > before, applies: applies, loads: video.loads, warns: warns }
+    }
+    const SEC = { enabled: true, image: 'host:?token=TK&index=0', converted: 'mp4' }
+    const V0 = { readyState: 0, videoWidth: 0 }
+    const r1 = run(SEC, Object.assign({ __a: new Map([['src', '/api/mpkg-wallpaper/media?token=TK&index=0']]) }, V0), 'slow')
+    ok('P5a 视频档 + 有 src + readyState0/videoWidth0 ⇒ 判成"没有画面"', r1.painted === false && r1.armed === true, JSON.stringify({ painted: r1.painted, armed: r1.armed }))
+    ok('P5b 慢判确实补了一次，并且是**强制重挂**（removeAttribute(src)+src+load，不是只重跑 apply）',
+      r1.healed === true && r1.applies >= 1 && r1.loads >= 1, JSON.stringify({ healed: r1.healed, applies: r1.applies, loads: r1.loads }))
+    const r2 = run(SEC, Object.assign({ __a: new Map([['src', '/api/mpkg-wallpaper/media?token=TK&index=0']]) }, V0), 'slow')
+    ok('P5c 有界：同一签名再跑一次**不再补**（不抖动/不循环）', r2.healed === false, JSON.stringify({ healed: r2.healed }))
+    const r3 = run(SEC, { readyState: 4, videoWidth: 3840, __a: new Map([['src', '/x']]) }, 'slow')
+    ok('P5d 真的出画面（readyState4+videoWidth3840）⇒ 不补', r3.painted === true && r3.healed === false, JSON.stringify({ painted: r3.painted, healed: r3.healed }))
+    const r4 = run(SEC, { readyState: 0, videoWidth: 0, __a: new Map([['src', '/x'], ['data-mpw-wp-state', 'transcode']]) }, 'slow')
+    ok('P5e 转码档（host 正在转）⇒ **豁免**（它有自己的超时回退，不能被我们在后面推着重来）', r4.painted === true && r4.healed === false, JSON.stringify({ painted: r4.painted, healed: r4.healed }))
+    const r5 = run(SEC, { readyState: 0, videoWidth: 0, __a: new Map() }, 'fast')
+    ok('P5f 快判（既有行为）：有源但**没有 src** ⇒ 仍然立刻补挂一次', r5.armed === false && r5.healed === true, JSON.stringify({ armed: r5.armed, healed: r5.healed }))
+    /* 分辨力对照：把"看画面"这一条退化回旧的"只看 src"⇒ P5a/P5b 必须判红（同一判据下） */
+    const legacyBlock = block.replace(/return rs >= 2 && vw > 0;/, 'return true;')
+    const legacyPainted = (() => {
+      const video = Object.assign(mkMedia('video'), { readyState: 0, videoWidth: 0, __a: new Map([['src', '/x']]) })
+      const wrap = { style: {}, classList: { add() {}, remove() {}, contains: () => true }, setAttribute() {}, getAttribute: () => null }
+      const img = mkMedia('img'), frame = mkMedia('iframe'), canvas = mkMedia('canvas')
+      const api = new Function('bgElements', 'sceneComposite', 'normalizeSection', 'readSection', 'DEFAULT_ENABLED', 'sectionSigNow', 'mpwBgWrapFixOn', 'applyFromStorageInner', 'mpwErr', 'window', 'console', `
+${legacyBlock}
+		return { mpwBgPaintedNow };
+`)(() => ({ img, video, frame, canvas, wrap }), null, (x) => x || {}, () => SEC, true, () => 'sig-A', () => true, () => {}, () => {}, {}, console)
+      return api.mpwBgPaintedNow(SEC)
+    })()
+    ok('P5g 分辨力对照：把判据退化回旧写法（只看有没有 src）⇒ 同一条必须判红', legacyPainted === true && r1.painted === false,
+      JSON.stringify({ legacy: legacyPainted, now: r1.painted }))
+  }
+}
+
 function tick () { return new Promise((r) => setTimeout(r, 30)) }
 
 console.log(`\n结果: ${pass} 通过, ${fail} 失败`)

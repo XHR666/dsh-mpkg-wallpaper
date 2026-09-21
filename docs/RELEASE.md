@@ -508,3 +508,39 @@ $ git tag -a v3.8.2 && git push origin v3.8.2          ⇒ [new tag] v3.8.2
    写法自动放行、未进账本（若要 `/tmp` 更严，收紧一处判断并补账本即可）。
 4. 账本是**存量豁免**（25 条）而不是放行名单：条目必须仍命中否则判红，但它只保证"这一行还在且仍被该判据命中"，不保证语义永远成立。
 5. 新门禁**没有**加进 `tools/pre-commit.sh`（该脚本只跑 panel-smoke + switch-wiring，且本机 `core.hooksPath` 未设置 ⇒ hook 未生效）。
+
+## 发布记录：3.13.0（2026-09-21 · 缩略图单一事实源 + 卡片时间轴 + 壁纸层"有源无画"补画）
+
+**为什么是 minor**：三条**用户可见**的行为修复（缩略图不再白块/白边、卡片时长与游标不再按常量画、
+壁纸层"白了"能自己回来）+ 两条新的真机探针与两组常驻门禁；按 semver「加功能 = minor」取 **3.13.0**。
+
+### 逐面读数（真机 `:3080`，同一条探针修前/修后各跑一次）
+
+| 症状 | 真机读数（修前） | 根因 | 修法 | 真机读数（修后） |
+| --- | --- | --- | --- | --- |
+| ① 暂停键旁边的预览图：点一次「扫描该目录」变白块（中间写着 `mp4`），再点一次又好了 | `tools/scan-switch-live-probe.mjs --group thumb`：扫描 #1/#2/#3 后「当前壁纸预览」的稳定态 = `VIDEO`/`IMG(空白)`/`VIDEO`（**每次翻面**）；全时间线 **2501 拍**出现"媒体可见但没画出来" | 三个根因叠加：**(a)** `<img>` 的 `onLoad` 挂的是 `mpwThumbOk`，而 React 交下来的是**事件对象** ⇒ `parentElement` 为 undefined ⇒ **图的 onLoad 从来没有生效过**；**(b)** `<video>` 的 `onLoadedMetadata` 无条件 `mpwThumbOk` ⇒ 与图抢镜头，"谁最后跑谁说了算"；**(c)** 每次扫描无条件推进缓存纪元 ⇒ 11 张缩略图**全部重挂载 + 重发请求**（宿主串行解析容器，`/custom-mpkg-preview` 逐个 **199ms → 5597 → … → 11846ms** 递增） | 状态机收口成**单一事实源**：显隐由 `mpwThumbSync` 从"真的画出来了（img: `complete+naturalWidth`；video: `readyState≥2+videoWidth`）+ 候选优先级（图 > 视频首帧）"推导；事件只触发不写显隐；`mpwThumbOk/Next` 入参**既认元素也认事件**；媒体一律"先藏着"、出画才显示；缓存纪元改成**内容签名**（同一份清单重复扫描 ⇒ 键不动、节点不动、请求 0 次） | 扫描 #1/#2/#3 稳定态**完全一致**（`IMG:/custom-mpkg-preview?…mpkg` ×3）；"可见但没画" **0 拍**；扫描后列表出画 **10/10**（修前 0/10）；`PASS=10 FAIL=0` |
+| ② 扫描出来的壁纸预览：左右各约 1/5 被切成白块 | 几何读数：容器自带预览是 **192×192**（`nat=192x192`），框是 `74×42`/`96×54`，`object-fit:contain` ⇒ 左右各留 **21.6% / 21.9%** ≈ 用户说的"各约 1/5"；留边露的是框底色（浅色主题实测 `background: color(srgb 0.976,0.980,0.984 / 0.63)`） | 上一轮为"不裁切"改的 `contain` 是对的，但**留白没有任何兜底** ⇒ 露框底色 | 留边交给**同一张图**的模糊铺满层：`mpwThumbSync` 选主人时把 `--mpw-thumb-cover` 写成该元素的 `currentSrc/src`，CSS `::before{background-size:cover;filter:blur(6px)}` 铺满；视频档只在"画幅与框不一致"时把当前帧画进 32×18 画布当底色（画不出就如实退化成留边） | 每个出画框 `cover=set`（11/11）；像素口径 `white=false`（左右竖条不再是与底色一致的纯色块）；`object-fit` 仍是 `contain` ⇒ **不裁切**（T5 绿） |
+| ③ 扫描 + 切档之后背景壁纸"白色的、什么都没有"，点一下 Now Playing 进度条又出来了 | **无头环境未复现**（修前/修后都是切档后 3s 内 `rs=4/vw=3456`，像素贡献 37/255）。但抓到了**机制**：扫描那一刻 10 张缩略图把宿主占满（`/custom-mpkg-preview` 5.6s→11.8s 串行），壁纸自己的媒体请求排在其后；救回来的路径是 NP 那条 `showVideoEl + prime(played)`（`__mpwNpOps` 留痕）。旧兜底 `mpwBgArmedNow` 只判"**有没有 src**" ⇒ "有 src、但一直没画面"这一档**永远不会被补** | 兜底判据缺一档 + 扫描把宿主占满 | ① 去掉无谓请求（容器不给 `<video>` 候选、同内容不重发）⇒ 扫描后宿主不再饱和；② 补画校验分两档：快判 1.2s（没有 src ⇒ 补挂，既有行为）与**慢判 12s**（有 src 但 `readyState<2 / videoWidth=0` ⇒ **强制重挂一次**，同签名只做一次）；转码档、用户暂停、省电暂停、页面在后台**豁免**（不打断它们） | 切档后 3s 内 `painted=true`（B1 绿）；`heal=0`（这次没轮到它）；新增门禁 PART 5 七条（含"退化回只看 src 必红"的对照） |
+| ④ 音频时长读成 3 分 30 多秒；点音频条只跳到整条的一半 | `tools/np-axis-live-probe.mjs`（视频档，媒体 = `#mpw-bgVideo` **100.053s**）：`aria-valuemax=100` ✅ 但卡片写 `0:04 −3:28`（= 214−5.8）、进度条只画 **2.50%**（应 5.84%）；拖到 90% 媒体确实到 **89.5%** 而**游标只画到 41.8%**（= 90/214）⇒ 用户原话"点一下只跳到一半" | **显示轴是常量**：`lib/now-playing-math.js` 的 `runPct/remain` 无条件用上游演示常量 `TOTAL = 214`（3.11.0 修的是**数据目标** `npMediaTarget`，所以数据面一直绿） | `axisOf(total)` + `runPct(at,total)` / `remain(at,total)`：夹取、进度条填充、"−剩余"三处共用**控制器送进来的 `media.total`**（= 媒体元素自己的 duration）；`now-playing.js` 用 `M.axisOf(known ? media.total : null)`；`NowPlaying` 从工厂返回值导出，供无浏览器门禁直接对**产出的元素树**断言 | 视频档 **5 PASS / 0 FAIL**：`−1:39`（期望 99.3s）、填充 0.52%、拖 90% 后游标 **89.5%**；曲目档（`backgroundmuisc.mp3`）**6 PASS / 0 FAIL**，且 **ffprobe = 104.088s vs 元素 104.052s**（差 0.036s）⇒ 证明是"**显示错**"不是"元素时长真的错" |
+
+### 门禁读数
+* 新增/改写：`tools/thumb-chain-test.mjs` **39 通过 / 0 失败**（B 组新增容器候选、内容签名、优先级不抢镜头、`--mpw-thumb-cover` 同源；C 组改成"显隐只有 mpwThumbSync 里的 3 处写入、事件入口只许收起"）；
+  `tools/np-control-test.mjs` 新增 **X 组**（显示面：填充/剩余/常量轴对照/演示档零回归/源码级必须带时间轴）；
+  `tools/bgwrap-visible-test.mjs` 新增 **PART 5**（"有 src 无画面"两档校验 + 有界 + 转码豁免 + 分辨力对照）。
+* 两条真机探针的 `--selftest`（20 与 9 条纯判据）**常驻 check.sh 第 2 步**：探针本身不进门禁，但"判据还有没有分辨力"必须常驻。
+* `bash tools/check.sh` ⇒ **12 步全绿**（EXIT=0，零 `✗`；其中 thumb-chain **39/0**、np-control **91/0**、bgwrap **30/0**、lifecycle **186/0**、
+  settings-persist 112/0、css-matrix 429/0、style-scope 285 OK/0 RED、token-namespace 12/0、bundle 对照 38/0）；
+  `node tools/integrity-check.mjs` ⇒ **72/0**；`node tools/secret-scan-test.mjs` ⇒ 凭据 0 / 本机绝对路径 0 命中。
+
+### 诚实清单（本轮）
+1. **症状③没有无头复现**：修前/修后都在 3s 内出画。判据是"切档 20s 内必须真的在画"，**不是**"复现了用户那次白屏"；
+   兜底那档（慢判 12s 强制重挂）只有**桩级**证据（PART 5 七条），真机上这一轮它一次都没触发（`heal=0`）。
+2. 探针会**改用户的设置**（缩略图组要扫描、切档组要切档）：现在同时复原 localStorage 与宿主 `/settings`，
+   并且 `--mode track` 还会把宿主进程内存里的"当前自定义目录"POST 回去；本轮开发过程中曾把宿主那份留在
+   探针的目录上，已用 `POST /settings` + `POST /custom-dir` 复原为用户的 `小鸟游星野` 档（复核读数见提交记录）。
+3. "白边"的**像素**口径受主题影响：无头这次是深色主题，左右竖条量到的是深色框底色（不是白）。
+   几何口径（21.6% 留边）+ `cover=set` 是跨主题成立的判据；"浅色主题下就是白条"来自修前的 token 实测。
+4. 视频档的底色层只在"画幅与框不一致"时才画（`<video>` 不能当 `background-image`）；一致时 `contain` 本来就铺满，
+   不一致且画不出帧（跨源/被拒）时**如实退化成留边**，不伪造底色。
+5. `loading="lazy"` 被去掉（元素"先藏着"时 Firefox 的惰性加载永不发请求 —— 真机读数 0 次 `/custom-mpkg-preview`）；
+   代价是列表项变多时预览请求更早发出（每项一次小请求，已无容器字节那种大请求）。
