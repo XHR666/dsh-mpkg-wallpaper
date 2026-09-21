@@ -17,7 +17,7 @@
 //   ⑫ 幂等 + 跨 realm：同一 realm 装两遍只有一个实例；`installFrame` 能装另一个 realm
 //
 // 运行：node tools/audio-bus-test.mjs       （全过输出 ALL PASS，退出码 0）
-import { installAudioBus, normalizeMode, modeMutes, modeRedirectOnly, LATE_START_SEC } from '../lib/audio-bus.js'
+import { installAudioBus, normalizeMode, modeMutes, modeRedirectOnly, frameModeFor, LATE_START_SEC } from '../lib/audio-bus.js'
 
 let pass = 0, fail = 0
 const ok = (name, cond, detail = '') => {
@@ -267,6 +267,16 @@ console.log('\n== H 幂等 + 跨 realm ==')
   const ctx = new other.AudioContext(); const n = new win.__C.FakeNode(ctx); n.connect(ctx.destination)
   ok('H2 跨 realm 各装一遍：另一个 realm 的直连也被接管', n.connections[0] !== ctx.destination && ctx.gains.length === 1,
     'gains=' + ctx.gains.length)
+  ok('H4 帧内模式映射：`redirect` 提升为 `1`（顶层只归因、帧里要真压），其余档原样下传',
+    frameModeFor('redirect') === '1' && frameModeFor('1') === '1' && frameModeFor('all') === 'all' && frameModeFor('off') === 'off' && frameModeFor('report') === 'report')
+  ok('H5 真机探针抓到的那条：顶层 redirect 实例把**帧内**装成 1（不是把顶层档原样下传）',
+    (() => {
+      const w = mkWin({ frames: [] }); const b = installAudioBus(w, { mode: 'redirect' })
+      const fw = mkWin()
+      w.document.querySelectorAll = (sel) => sel === 'iframe' ? [{ src: 'same.html', contentWindow: fw }] : (sel === 'audio,video' ? [] : [])
+      b.syncFrames()
+      return fw.__mpwAudioBus && fw.__mpwAudioBus.mode === '1'
+    })())
   ok('H3 两个 realm 的 AudioNode.prototype 不是同一个对象（这正是要各装一遍的原因）',
     win.AudioNode.prototype !== other.AudioNode.prototype || win.AudioNode !== other.AudioNode)
 }
