@@ -6,7 +6,9 @@
 //   T4  B1 看门狗：武装 → 信标确认；超时 → 兜底（diag 落证）；迟到首帧 → 自动恢复；旧信标不误判
 //   T5  作用域修复：applySceneViaRenderer 在桥缺席时不再 ReferenceError（此前 P0：所有场景壁纸静默回退）
 //   T6  B3 调试参数拼进壁纸 URL 且 skin0 永远进不去；B5 lowmem 透传
+//   T7  用户第 18 条：渲染器分辨率档 `&res=dpr`（常规）/ `&res=auto`（低内存）——"所有壁纸都糊"的根因
 import { loadPlugin } from './_stub.mjs'
+import fs from 'node:fs'
 
 let pass = 0, fail = 0
 const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓ ' + name) } else { fail++; console.error('  ✗ ' + name) } }
@@ -133,6 +135,32 @@ const iframeEv2 = diagEvents.filter((d) => d.why === 'renderer-iframe').pop()
 eq(r2, true, '桥存在时返回 true')
 ok(!!iframeEv2 && String(iframeEv2.url).indexOf('lowmem=1') >= 0, '低内存设备 → &lowmem=1 透传（B5）')
 ok(!!iframeEv2 && iframeEv2.lowmem === true, 'diag 记录 lowmem 标记')
+
+/* ---------- T7 用户第 18 条：渲染器分辨率档（全局"糊"的根因） ---------- */
+// 根因：渲染器 `?res=` 缺省 = **固定 1920×1080**，而插件此前一个分辨率参数都不发 ⇒ 物理像素超
+// 1920×1080 的屏幕（2× DPR / 2560 / 4K）上画布被 CSS 放大，全屏也不重算 = "所有壁纸都糊，全屏也一样"。
+// 修法：场景帧显式要活档位 `&res=dpr`（画布 = 画布盒 × 设备 DPR，resize/DPR/全屏即重算），
+// 低内存设备走 `&res=auto`（按屏幕物理像素选固定档：比 1080p 贴屏，又不满额画布）。
+console.log('\n== T7 分辨率档（第 18 条）==')
+try { Object.defineProperty(globalThis, 'navigator', { value: { deviceMemory: 8, hardwareConcurrency: 8, userAgent: 't', language: 'zh' }, configurable: true }) } catch {}
+eq(T.lowMem(), false, '常规设备：lowMem()=false')
+eq(T.resParam(), '&res=dpr', '常规设备 → &res=dpr（活档位：画布盒 × 设备 DPR）')
+const r3 = T.applyScene({ rawFile: 'scene.pkg', folder: 'f1', title: 'T1', key: 'custom|f1' })
+const iframeEv3 = diagEvents.filter((d) => d.why === 'renderer-iframe').pop()
+ok(r3 === true && !!iframeEv3 && String(iframeEv3.url).indexOf('&res=dpr') >= 0, '常规设备的壁纸 URL 带 &res=dpr', String(iframeEv3 && iframeEv3.url).slice(0, 80))
+try { Object.defineProperty(globalThis, 'navigator', { value: { deviceMemory: 2, hardwareConcurrency: 8, userAgent: 't', language: 'zh' }, configurable: true }) } catch {}
+eq(T.resParam(), '&res=auto', '低内存设备 → &res=auto（内存纪律）')
+const r4 = T.applyScene({ rawFile: 'scene.pkg', folder: 'f1', title: 'T1', key: 'custom|f1' })
+const iframeEv4 = diagEvents.filter((d) => d.why === 'renderer-iframe').pop()
+ok(!!iframeEv4 && String(iframeEv4.url).indexOf('&res=auto') >= 0, '低内存设备的壁纸 URL 带 &res=auto')
+ok(!!iframeEv4 && String(iframeEv4.url).indexOf('&lowmem=1') >= 0, '低内存标记仍在（两条互不替代）')
+// 源码守卫：URL 拼装点必须真的调用 mpwSceneResParam()（防"函数还在、调用被删"），档位字面量只许有一处
+const __src = fs.readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8')
+ok(/\+ mpwSceneResParam\(\)/.test(__src), '源码守卫：渲染器 URL 拼装点调用 mpwSceneResParam()')
+// 计数前先剥注释（JSDoc 里也写着 `?res=dpr` / `?res=auto`，那是文档不是实现）
+const __code = __src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/[^\n]*/g, '$1')
+const __resHits = (__code.match(/res=(dpr|auto)/g) || []).length
+eq(__resHits, 2, '去掉注释后：res=dpr / res=auto 各只出现一次（都在 mpwSceneResParam 内）')
 
 console.log(`\n结果: ${pass} 通过, ${fail} 失败`)
 process.exit(fail ? 1 : 0)
