@@ -668,26 +668,35 @@ userDirectoryFiles* 9 / Media*Listener 2 / PluginListener 2`（42 张）。本�
 把输出整段替换下面这块）：
 
 ```json
+
 {
   "corpus": {
     "root": "allwallpaper",
-    "walls": 8,
+    "walls": 11,
     "apis": {
+      "setPaused": {
+        "hits": 54,
+        "walls": 7
+      },
       "wallpaperPropertyListener": {
-        "hits": 17,
-        "walls": 5
+        "hits": 20,
+        "walls": 8
       },
       "applyUserProperties": {
-        "hits": 9,
-        "walls": 5
-      },
-      "setPaused": {
-        "hits": 9,
-        "walls": 5
+        "hits": 12,
+        "walls": 8
       },
       "wallpaperRegisterAudioListener": {
-        "hits": 4,
-        "walls": 1
+        "hits": 8,
+        "walls": 4
+      },
+      "applyGeneralProperties": {
+        "hits": 3,
+        "walls": 3
+      },
+      "wallpaperPluginListener": {
+        "hits": 2,
+        "walls": 2
       },
       "userDirectoryFilesAddedOrChanged": {
         "hits": 1,
@@ -697,27 +706,27 @@ userDirectoryFiles* 9 / Media*Listener 2 / PluginListener 2`（42 张）。本�
         "hits": 1,
         "walls": 1
       },
-      "wallpaperPluginListener": {
+      "wallpaperRequestRandomFileForProperty": {
         "hits": 1,
         "walls": 1
       }
     },
     "signals": {
       "localStorage": {
-        "hits": 27,
-        "walls": 4
+        "hits": 67,
+        "walls": 6
       },
       "file:///": {
-        "hits": 26,
-        "walls": 3
+        "hits": 33,
+        "walls": 5
+      },
+      "AudioContext": {
+        "hits": 11,
+        "walls": 2
       },
       "new Audio(": {
         "hits": 9,
         "walls": 2
-      },
-      "AudioContext": {
-        "hits": 3,
-        "walls": 1
       }
     },
     "nonApi": {
@@ -739,6 +748,21 @@ userDirectoryFiles* 9 / Media*Listener 2 / PluginListener 2`（42 张）。本�
         "id": "0917/884307090",
         "entry": "index.html",
         "sha256": "a31c4c88f48b025876faca0780b6dca8ff1f02db680f8a0d875f41e67e4b81ea"
+      },
+      {
+        "id": "0923/1081733658",
+        "entry": "index.html",
+        "sha256": "466be878f95a4e8109bc591f0bef47aa907ead1b5681c9a3aa71b0f67c2eb2b5"
+      },
+      {
+        "id": "0923/1748506393",
+        "entry": "index.html",
+        "sha256": "0b6199220db23703458a786c37e26183efacd0aea6ad6337b79d527aad47dda9"
+      },
+      {
+        "id": "0923/2905017768",
+        "entry": "index.html",
+        "sha256": "c327de81b8f3774623683d5ae272d3cabab6e3159d764c938490549944514731"
       },
       {
         "id": "dd/3580207945",
@@ -778,8 +802,8 @@ userDirectoryFiles* 9 / Media*Listener 2 / PluginListener 2`（42 张）。本�
     ]
   },
   "mpkgCache": {
-    "files": 5,
-    "entries": 241,
+    "files": 4,
+    "entries": 114,
     "html": 0,
     "js": 0
   }

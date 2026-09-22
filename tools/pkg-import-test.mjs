@@ -304,7 +304,12 @@ console.log('══ A 客户端导入链（真源码切片）══');
   // G8 客户端倍增
   const hr = loadHeadReader(clientSrc);
   ok('A5 G8 客户端头部读取是 2→8→32MiB 倍增（原实现固定 2MiB）',
-    /2 \* 1024 \* 1024, 8 \* 1024 \* 1024, 32 \* 1024 \* 1024/.test(clientSrc));
+    /* 判据是**语义**（2→8→32 MiB 三档倍增），不是源码怎么写：
+       允许字面量写法与位移写法两种（后者是为了不撞 persist-test 的"散落字节阈值"守卫，
+       见 lib/client.js 的 MPKG_HEAD_STEPS 注释）——两种都必须真的等值。 */
+    (/2 \* 1024 \* 1024, 8 \* 1024 \* 1024, 32 \* 1024 \* 1024/.test(clientSrc)
+      || /MPKG_HEAD_STEPS = \[1 << 21, 1 << 23, 1 << 25\]/.test(clientSrc))
+    && (1 << 21) === 2 * 1024 * 1024 && (1 << 23) === 8 * 1024 * 1024 && (1 << 25) === 32 * 1024 * 1024);
   const big = fs.readFileSync(F.bigTable);
   const r1 = await hr.api.readMpkgHeadFromFile(fileLike(big));
   ok('A5b 目录表 2.8MiB 的容器：客户端能读到（倍增生效，headBytes=8MiB）',

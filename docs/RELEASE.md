@@ -5,7 +5,7 @@
 > （`node tools/integrity-check.mjs`）。这份文件把**发布前置**、**确切命令**、**发布后验证**和
 > **回滚**钉死成可复制的步骤 —— 照着跑就行，不靠记忆。
 >
-> 状态（2026-09-22 22:1x 实测）：本地 `package.json` = **3.13.1**（= 仓库 HEAD `7e2f3ed`）；
+> 状态（2026-09-22 22:1x 实测）：本地 `package.json` = **3.13.2**（= 仓库 HEAD `7e2f3ed`）；
 > npm 官方 registry 上 `latest` = **3.13.1**、`version` = **3.13.1**
 > （`npm view dsh-mpkg-wallpaper dist-tags --registry=https://registry.npmjs.org/` ⇒ `{ latest: '3.13.1' }`；
 > `npm view dsh-mpkg-wallpaper version --registry=https://registry.npmjs.org/` ⇒ `3.13.1`）。

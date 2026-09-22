@@ -136,6 +136,20 @@ console.log('\n== C 变异自证：把每条判据改回旧写法 ⇒ 同一判�
     fs.readFileSync(MOD, 'utf8') === modSrc && fs.readFileSync(CLIENT, 'utf8') === clientSrc)
 }
 
+/* ---------- D 组：插件侧 `applyWebMute`（同一类"周期重压"的另一个落点） ---------- */
+{
+  console.log('\n== D applyWebMute 幂等化（值同则不写 / shim policy 有缓存与新鲜度检查）==')
+  const src = clientSrc
+  ok('D1 `frame.muted` 只在值不同时写', /if \(frame && frame\.muted !== mute\) frame\.muted = mute/.test(src))
+  ok('D2 帧内元素逐个只在值不同时写', /if \(els\[i\]\.muted !== mute\) els\[i\]\.muted = mute/.test(src))
+  ok('D3 shim policy 有缓存 + 帧重载新鲜度检查（contentWindow 身份）',
+    /__mpwShimPolicy/.test(src) && /prev\.win !== frame\.contentWindow/.test(src))
+  const mutated = src.replace('if (frame && frame.muted !== mute) frame.muted = mute', 'if (frame) frame.muted = mute')
+  ok('D4 变异：把 frame.muted 改回无条件写 ⇒ D1 的判据必须红',
+    mutated !== src && !/if \(frame && frame\.muted !== mute\) frame\.muted = mute/.test(mutated))
+  ok('D5 变异只发生在内存字符串里：真文件 sha 与读入时一致', fs.readFileSync(CLIENT, 'utf8') === clientSrc)
+}
+
 console.log('\n结果: ' + pass + ' 通过, ' + fail + ' 失败')
 if (fail === 0) console.log('✓ 周期重压幂等化的源级/接线判据通过：周期路径无节点操作与全文档扫描 / 值同则不写 / 元素逐项幂等 / dispose 全清并接上插件与帧的生命周期 / 有分辨力')
 process.exit(fail > 0 ? 1 : 0)
