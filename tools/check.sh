@@ -38,6 +38,28 @@ node tools/panel-smoke.mjs || fail=1
 #   C 组单一落点判据（占位显隐只有 mpwThumbSync 里的 3 处写入；事件入口只许"收起"）+ 旧实现对照。
 #   39 通过 / 0 失败。真机读数与两条真机探针见 docs/RELEASE.md。
 node tools/thumb-chain-test.mjs || fail=1
+# ①(2026-09-23 用户第 4 项「支持导入 pkg 单文件和 mpkg 文件」) 导入链回归 —— 依据核验报告
+#   `../docs/PKG-IMPORT-VERIFICATION-20260923.md`（12 条缺口 G1~G12）。原状（本机可复现）：
+#   单文件 `.pkg`（真机 magic `PKGV0022`）**没有任何入口**（accept 不含 .pkg、嗅探只认 PKGM
+#   ⇒ 0 次宿主调用 + `file.unsafe`）；渲染器自带 `pack-dir.mjs` 产出的 `.mpkg` 恰好也是 PKGV
+#   ⇒ 自家产物进不来；全仓 `grep onDrop|dataTransfer` 0 命中；库目录**根**下的单文件 `.pkg`
+#   不进清单；无素材容器**先整包上传**再报错；`.pkg` 拿不到容器内预览图（200→404）；目录表
+#   >2MiB ⇒ `/upload` 500（Node 原生 RangeError）+ 未登记残骸；上传的容器副本**永不回收**；
+#   mpkg 路径不解压（压缩条目 = 构造性缺口，本机 508 条 0 压缩）；文案只承诺 `.mpkg`。
+#   判据（65 条，~1.5s，无浏览器/无 ffmpeg/不读语料）：
+#     A 客户端切片真跑：`sniffFileType` 认 `PKG[VM]`（PNG/MP4/HTML/畸形头分辨力对照）、
+#       拖拽与选择器**同一条落点**（importPickedFile）、accept 含 `.pkg`、预检在 fetch `/upload`
+#       **之前**、头部读取 2→8→32MiB 倍增 + 可读错误、压缩条目识别、中英文案同时承诺两后缀；
+#     B 真 HTTP 打真路由：`.pkg`/PKGM/PKGV 都能 `/upload`+`/media`、2.8MiB 目录表**能解析**（/upload 与
+#       /custom-mpkg 都是）、超限档 413+可读 code+无残骸、
+#       压缩条目 415+`code=entry-compressed`（同容器正常条目不受影响）、根下 `.pkg` 进清单、
+#       `/custom-mpkg-preview` 收 `.pkg`、任意名容器的 kindReason=scene-container；
+#     C 回收：连导 5 次 ≤ 上限、最旧先删、**正在播放**（/media 读过）与 settings.json 引用的
+#       绝不删、用户自己的文件一个不动；
+#     D 用户原话硬语义：预检只吃条目表（**不依赖 preview / project.json**——上游 oneincase
+#       的包这两者一般是缺失的）；
+#     E 变异自证 6 组（accept / 嗅探 / preview 路由 / 失败清理 / 回收 / reason 两处各自承重）。
+node tools/pkg-import-test.mjs || fail=1
 # 真机探针的**纯判据**（--selftest）常驻在这里：探针本身不进门禁（要用户 :3080 在跑），
 # 但"探针的判据还有没有分辨力"是秒级的 —— 不常驻的话探针会悄悄退化成恒绿。
 node tools/scan-switch-live-probe.mjs --selftest || fail=1
@@ -126,6 +148,25 @@ node tools/wallpaper-lifecycle-test.mjs || fail=1
 #   glassWindow 按用户"不留看得见却点不动的死文案"政策**退役删除**，转由 A0 段看住
 #   "源码 0 悬空引用 + 两套字典 0 孤儿文案"，并配常驻变异 `retired-glasswindow-copy-restored`）。
 node tools/switch-wiring-test.mjs || fail=1
+# ①(2026-09-23 静默失败审计，../docs/SILENT-FAILURE-AUDIT-20260923.md §A-1/§A-2/§A-10 + 资源审计 §2.1 #2)
+#   上面那条管"开关有没有接线"，这一条管**同一类事故的另一半：失败有没有留下痕迹**。四条修的都是
+#   "把失败当成正常值"，各自的既有门禁只覆盖主路径，没有一处钉住"失败要报/要计数/要拒绝写回"：
+#   ① 注册入口（lib/client.js 尾部的双 id 注册）：修前两个 `catch (e) {}` 把"插件整个没注册上"
+#      完全吞掉（无 console、无 trace、无全局标记）⇒ 失败必须留痕：console.error + `globalThis.__mpwRegisterErr`
+#      （真机控制台/探针一眼可见）+ 成功路径记 `__mpwRegisteredIds` 便于对拍；**重试/idempotency 语义不变**。
+#   ② 帧内 shim 通道（父页→帧内唯一控制通道）：`webShimCall` 一直有可判定返回值，修前 13 个调用点全部
+#      忽略 ⇒ 沙箱档下"暂停/静音/倍速/属性下发"静默失效而面板显示"已生效"。现在统一走
+#      `webShimCallChecked`（返回值 + `window.__mpwShimCallFails` ≤32 条台账 + `…FailN` 累计 + 首次 warn），
+#      且 `pauseWebFrame` 失败**不**记 `webFramePausedByUs`（否则恢复时会 play() 作者自己停着的媒体）；
+#      原始 `webShimCall` 的签名/语义一字未动（既有调用方零影响）。
+#   ③ 磨砂同步/样式自愈的 8 处 catch（4 函数尾 + 4 调用点）：全在文件 61-62 自述的"致命路径必须报"
+#      白名单里，修前全静默 ⇒ 现在一律走 `mpwErr`（观察器没起来 = 永远不自愈，这条必须看得见）。
+#   ④ 帧内 localStorage：修前"读失败"被吞成"没存过"，随后把默认值整串写回，覆盖用户在帧内改过的
+#      真实设置 ⇒ 现在三态（ok/empty/error），error 时 `showError("webcfg.readFail")` + **拒绝写回**。
+#   ⑤ 结构性护栏：np 播放器 blob 兜底 URL 的每一处清 src 都必须伴随 `npBlobUrlSet("")`
+#      （资源审计 #2：修前该 URL 从不 revoke，自动连播每曲钉一支 ≤32MiB 的 Blob 到页面卸载）。
+#   判据：34 通过 / 0 失败，纯自造桩环境（无浏览器/网络/ffmpeg/语料，约 8s）+ **7 组变异各自必红**。
+node tools/silent-failure-guards-test.mjs || fail=1
 # ①(2026-09-18 §5 第3项)「诊断自证闭环」：payload 补齐关键子系统（磨砂/侧栏/时间线是否被影响、
 #   壁纸类型与路径、shim 是否注入、视频解码、表面 token、场景健康），**每个字段带来源（provenance）**，
 #   读不到 ⇒ 字段仍在 + value:null + degraded.reason（部分子来源缺 ⇒ degraded.partial）——绝不静默省略；
@@ -199,6 +240,22 @@ node tools/web-interaction-test.mjs || fail=1
 #   客户端三态可见与 ?mpwtranscode 回退开关 / 磁盘卫生（夹具 ≤1MB + 必删 + 上限断言）。
 #   详见 docs/TRANSCODE-RESOURCE.md
 node tools/transcode-limit-test.mjs || fail=1
+# ①(2026-09-23 用户第 1 项 B) 视频「按屏幕物理尺寸预缩（ffmpeg lanczos）」档 —— **默认关**：
+#   依据 ../docs/USER-ITEMS-20260921.md 第 19 条实测（`3588989102` 2558×1438@60）：非全屏尺寸上
+#   「一次直降」的**闪烁**是「逐级减半」的 1.6~2.7×，代价是细节低 1.4~1.9× ⇒ 取舍，默认不翻。
+#   复用**既有** `/transcode` 通道（不新起一套）：档 = `section.preScale`（0=关 / 1=按屏幕物理尺寸）；
+#   开了只多两件事：`maxW=<屏幕物理宽>` + `scale=lanczos`。宿主新增 `scale` 参数（**白名单**，非法 400），
+#   `-vf` 链由 `buildScaleFilter` 唯一构造；缓存键只在真给了 flags 时追加 `|s:<flag>`
+#   ⇒ **不传 flags 的键与改动前逐字节相同**（既有产物继续命中、升级不重转）。
+#   判据（38 条，~1s，**不真跑 ffmpeg**：`DSH_WE_FFMPEG` 指向记录 argv 的桩）：
+#     A 纯函数：白名单（注入串 ⇒ null）/ vf 链 / 缓存键与**独立复算的旧公式**逐字节相同；
+#     B 真路由端到端：桩 argv 里 `-vf …:flags=lanczos,fps=…`、落盘产物名 == transcodeKey(...)|s:lanczos、
+#       默认档 argv 无 flags 且产物名 == 旧公式、`scale=evil`⇒400、既有 1920 降采样收口仍在、
+#       进度键含 flags（用"失败任务顶替 lastTranscodeProgress"做分辨力）、同参第二次命中缓存；
+#     C 客户端：默认关 / 物理宽纯函数（×dpr、夹 [640,3840]）/ 目标宽（关⇒0）/ 四处接线 / 文案 / 登记；
+#     D 变异自证 6 组（vf 去 flags / 键去 `|s:` / 白名单照单全收 / 默认档翻成开 / URL 不传 scale / 闸门拆掉）。
+#   档位登记：docs/TRANSCODE-RESOURCE.md §3 一行（档名/默认关/依据）+ 代码内 /probe limits.scaleFlags。
+node tools/transcode-prescale-test.mjs || fail=1
 
 # ①(第16项) 发布前完整性自检：必需文件/package.json 字段/files 白名单/个人路径/凭据形态/图标/门禁脚本在位
 step "6/12 发布完整性自检（第16项：文件齐全、元数据、白名单、无个人路径与凭据）"
@@ -236,6 +293,29 @@ node tools/scene-audio-route-test.mjs || fail=1
 #   落盘缓存文件名（hash 公式）与内容 sha256 与改前一致（升级后不重抽）。
 step "8/12 scene 视频索引（应用壁纸关键路径；旧实现逐项一致 + 缓存 + 缓存文件同名同内容）"
 node tools/scene-video-test.mjs || fail=1
+# ①(2026-09-23 资源审计 #1，docs/RESOURCE-AUDIT-20260923.md §2.1) 上一条用的是"真机语料"
+#   （本机 ../allwallpaper/dd 2.3GB，B/C 段会整包读）—— 本机可用内存只有 ~4GB，常驻门禁不能只靠它。
+#   于是**同一个 step** 下再挂一条纯自造夹具的测试（夹具合计 3.71MiB、峰值堆 <64MB、
+#   无浏览器/无网络/不读语料，实测 297ms），钉住 `sceneVideoScanCache`（`lib/pkg-extract.js`）的
+#   **字节预算 / 逐出 / 回收 / 接线**：
+#   那个缓存里存的是**整段视频字节**，审计时只有"条数 64"一道闸门（最坏 64 × 单条体积常驻），
+#   且 `clearSceneVideoScanCache()` 全仓零调用。
+#   判据：默认闸门（64MB / 单条 32MB / 64 条 / TTL 10min）/ 预算内小条目行为逐键不变（回归）/
+#   6×300KiB 写进 1MB 预算 ⇒ 逐出且总字节 ≤ 预算 / 逐出后旧 `video` 引用不再被缓存持有（快照身份比对）/
+#   单条超上限不入缓存但仍完整返回 / 整条读**之前**腾位置（preReadEvictions）/ TTL 过期与"命中刷新"/
+#   `lib/index.js` 换 scene 目录时真的调了清理 —— 并配**四个变异体各自必红**（去掉字节闸门 /
+#   去掉读前腾位置 / 去掉 TTL sweep / 删掉 index.js 的清理调用）。40 通过 / 0 失败。
+node tools/scene-video-cache-test.mjs || fail=1
+# ①(2026-09-23 静默失败审计 #3，../docs/SILENT-FAILURE-AUDIT-20260923.md §A-3 表 #3/#4) 上面两条门禁测的是
+#   "探测得对 / 缓存得对"，这一条测"探测或落盘**失败时不许说谎**"：`ensureSceneVideo` 改前把三种状态
+#   压成一个 `null` —— ② 两级探测都抛也写 `{hash:null}` 负缓存（/custom-scene-video-check 永久回
+#   200 has:false，错误答案粘死）；③ 落盘失败静默吞掉、照写索引 + 照返回 path（客户端拿到必然 404
+#   的 <video>）。判据：A 真·无视频仍 200 has:false 且第二次走负缓存（不重探）/ B 两级都抛 ⇒ 两次都
+#   500 且不留负缓存 / C DATA_DIR/scene-videos 被普通文件占位 ⇒ check 与 /custom-scene-video 都 500、
+#   落盘产物确实不存在 / D 回归（正常可写 ⇒ 200 has:true + 文件真的在 + 字节一致）+ "目录不在"仍是
+#   200 has:false 与 404 —— 并配**两个变异体各自必红**（删探测失败的抛错 ⇒ B 红；删落盘失败的抛错
+#   ⇒ C 红）。纯自造夹具（<8KiB、无浏览器/网络/ffmpeg、不读语料），实测 20 通过 / 0 失败、512ms。
+node tools/scene-video-probe-fail-test.mjs || fail=1
 
 # ①(2026-09-16 第三个视觉 bug 定案轮) 「顶栏磨砂 / 顶栏描边 / 时间线条」的**真机复刻 A/B**：
 #   宿主 CSS（真产物）+ 我们的 buildCss 产物 + 无头 Firefox 取 computed 值。

@@ -5,10 +5,24 @@
 > （`node tools/integrity-check.mjs`）。这份文件把**发布前置**、**确切命令**、**发布后验证**和
 > **回滚**钉死成可复制的步骤 —— 照着跑就行，不靠记忆。
 >
+> 状态（2026-09-22 22:1x 实测）：本地 `package.json` = **3.13.1**（= 仓库 HEAD `7e2f3ed`）；
+> npm 官方 registry 上 `latest` = **3.13.1**、`version` = **3.13.1**
+> （`npm view dsh-mpkg-wallpaper dist-tags --registry=https://registry.npmjs.org/` ⇒ `{ latest: '3.13.1' }`；
+> `npm view dsh-mpkg-wallpaper version --registry=https://registry.npmjs.org/` ⇒ `3.13.1`）。
+> 发布时间（registry `time` 字段实测）：`3.13.0` = `2026-09-21T17:46:36.317Z`、`3.13.1` = `2026-09-22T03:43:51.328Z`
+> （= 2026-09-22 01:46:36 / 11:43:51 +0800）。
+> ⇒ **本地版本号 == 已发布版本号 ⇒ 现在直接 `npm publish` 必然 403**
+> （`cannot publish over the previously published versions: 3.13.1`）⇒ **必须先 bump 版本号**（见第 0 节）。
+> 历史：3.9.0 → 3.9.1 → 3.10.0 → 3.10.1 → 3.11.0 → 3.12.0 → **3.13.0** → **3.13.1**。
+> **tag 缺口（实测）**：本仓 tag 共 **21** 个、最新 `v3.12.0`；**`v3.13.0` / `v3.13.1` 本地与远端都没有**
+> （`git tag -l 'v3.13*'` 无输出、`git tag --points-at HEAD` 无输出、`git ls-remote --tags origin 'v3.13*'` 无输出；
+> 对照 `git ls-remote --tags origin 'v3.12*'` 有 2 条）⇒ 待打 tag 的目标提交与命令见文末「待打 tag」节
+> （**只给命令，本轮未执行任何写 git 的操作**）。
+>
+> 下面两段是**历史状态记录（已过期）**，保留以便对照当时的判断过程：
+>
 > 状态（2026-09-20 05:0x 实测）：本地 `package.json` = **3.10.1**；npm 官方 registry 上 `latest` = **3.10.0**
 > ⇒ 本地 > 已发布 ⇒ 可以直接发（发包前**必须**重跑第 1 节全部命令）。历史：3.8.0 → 3.8.1 → 3.8.2 → **3.9.0**。
->
-> （下面这一段是 2026-09-19 的原始状态记录，保留以便对照当时的判断过程）
 >
 > 状态（2026-09-19 12:37 实测）：本地 `package.json` = **3.7.3**；npm 官方 registry 上 `latest` = **3.7.3**
 > （`npm view dsh-mpkg-wallpaper dist-tags --registry=https://registry.npmjs.org` ⇒ `{ latest: '3.7.3' }`）
@@ -17,6 +31,9 @@
 > 是否发布仍由用户拍板；未确认前不要执行第 2 节。
 
 ## 0. 版本号是否要动
+
+> ⚠ 本节下面的「现状」是 **2026-09-19 的实测**（历史快照，保留推理过程）；**当前状态以文件顶部那段为准**
+> （本地 = registry = `3.13.1` ⇒ 要发新版**必须先 bump**）。
 
 - 规则：`package.json.version` 必须**严格大于**官方 registry 上的 `latest`（否则 `npm publish` 直接 403）。
 - 现状（2026-09-19 实测）：registry 已有 `…3.7.0, 3.7.1, 3.7.2, 3.7.3`，`latest = 3.7.3`；本地 `package.json`
@@ -90,7 +107,7 @@ cd <仓库根> && npm publish --registry=https://registry.npmjs.org
 ## 3. 发布后验证
 
 ```bash
-# 把 <新版号> 换成发布时用的号（已发布的是 3.7.3；下一版见第 0 节建议）
+# 把 <新版号> 换成发布时用的号（已发布的是 3.13.1；下一版必须先 bump，见第 0 节）
 npm view dsh-mpkg-wallpaper version --registry=https://registry.npmjs.org      # ⇒ <新版号>
 npm view dsh-mpkg-wallpaper dist-tags --registry=https://registry.npmjs.org     # ⇒ { latest: '<新版号>' }
 # 真装一遍（另建临时 profile，别动用户的 web profile）
@@ -117,7 +134,8 @@ bash <DSHAREA>/update-plugin.sh                                   # ⇒ 同步�
 GitHub 侧（可选，但方式四的用户需要它）：
 
 1. `node tools/build-bundle.mjs` 生成 `dist/dsh-mpkg-wallpaper.bundle.mjs`；
-2. 建 release（tag = `v<新版号>`，本仓已有 tag 到 `v3.7.1`；**3.7.2/3.7.3 未打 tag**），**附上该 .mjs**，并在 release 说明里贴
+2. 建 release（tag = `v<新版号>`；**实测**：本仓 tag 共 21 个、最新 `v3.12.0`，**`v3.13.0`/`v3.13.1` 未打 tag**
+   —— 补齐的目标提交与命令见文末「待打 tag」节），**附上该 .mjs**，并在 release 说明里贴
    `tools/probe-out/bundle-manifest.json` 里的 `bytes` / `sha256`（用户可自行复算：
    `sha256sum dist/dsh-mpkg-wallpaper.bundle.mjs`）；
 3. 用户侧更新：`dsh plugin --profile web update dsh-mpkg-wallpaper` → 重启 `dsh web` → 浏览器 Ctrl+F5。
@@ -127,12 +145,12 @@ GitHub 侧（可选，但方式四的用户需要它）：
 - **不要** `npm unpublish`（24h 限制 + 会破坏已装用户的 lockfile）。
 - 小问题：立刻发补丁版（`<新版号>+1`），并在 README「安装」处保留旧版安装方式说明。
 - 严重问题：`npm deprecate dsh-mpkg-wallpaper@<新版号> "原因 + 建议版本"`，同时让用户把 profile 里
-  的依赖钉回**上一个已知good版本（当前 = `3.7.3`）**（`"dsh-mpkg-wallpaper": "3.7.3"` 后
+  的依赖钉回**上一个已知good版本（2026-09-22 实测 = `3.13.1`）**（`"dsh-mpkg-wallpaper": "3.13.1"` 后
   `pnpm --dir $DSH_HOME/profiles/web install`）。
 - **只回退 dist-tag（不动包内容）**：把 `latest` 指回旧版，装默认档的新用户就不会拿到坏版本
   （已升级的用户仍停在坏版本，需要上面那条"钉版本"）：
   ```bash
-  npm dist-tag add dsh-mpkg-wallpaper@3.7.3 latest --registry=https://registry.npmjs.org
+  npm dist-tag add dsh-mpkg-wallpaper@3.13.1 latest --registry=https://registry.npmjs.org
   npm view dsh-mpkg-wallpaper dist-tags --registry=https://registry.npmjs.org   # 复核
   ```
 - 本机开发档回退：`bash <DSHAREA>/update-plugin.sh` 是从**仓库源码**同步的，
@@ -544,3 +562,119 @@ $ git tag -a v3.8.2 && git push origin v3.8.2          ⇒ [new tag] v3.8.2
    不一致且画不出帧（跨源/被拒）时**如实退化成留边**，不伪造底色。
 5. `loading="lazy"` 被去掉（元素"先藏着"时 Firefox 的惰性加载永不发请求 —— 真机读数 0 次 `/custom-mpkg-preview`）；
    代价是列表项变多时预览请求更早发出（每项一次小请求，已无容器字节那种大请求）。
+
+---
+
+## 发布动作与发布后验证补记：3.13.0（补记于 2026-09-22；内容面见上一节）
+
+3.13.0 那一节的**内容**（改了什么、逐面真机读数、门禁读数）在上面；这里补的是**发布动作本身**：
+版本号、提交哈希、npm 实测、发布时间。
+
+**版本号提交**（`git log -S'"version": "3.13.0"' --oneline --all -- package.json` ⇒ `776b67b`）：
+
+```
+$ git log -1 --format='%H%n%ci%n%s' 776b67b
+776b67b4ee26913f32059565272474fce24c6040
+2026-09-22 01:19:58 +0800
+fix(thumb/np/bg): 缩略图显隐单一事实源 + 卡片时间轴改用媒体时长 + 壁纸层"有源无画"补画（3.13.0）
+$ git show 776b67b^:package.json | grep '"version"'    # 父提交
+  "version": "3.12.0",
+$ git show 776b67b:package.json | grep '"version"'
+  "version": "3.13.0",
+```
+
+| 项 | 实测（命令 ⇒ 输出） |
+| --- | --- |
+| 发布时间（registry `time`） | `npm view dsh-mpkg-wallpaper time --registry=https://registry.npmjs.org/` ⇒ `'3.13.0': '2026-09-21T17:46:36.317Z'`（= **2026-09-22 01:46:36 +0800**，比版本号提交晚 **26 分 38 秒**）；`npm view … versions` ⇒ `… '3.12.0', '3.13.0', '3.13.1'` |
+| 发布面 | `npm view dsh-mpkg-wallpaper@3.13.0 dist --registry=https://registry.npmjs.org/` ⇒ `fileCount: 16`、`unpackedSize: 2237392`、`shasum: 0b6e4074c7f57b3f602904e6bc8ae7194d7d247a` |
+| **发布内容对应哪个提交**（不看 metadata，逐文件对拍） | `npm pack dsh-mpkg-wallpaper@3.13.0 --registry=https://registry.npmjs.org/` ⇒ `dsh-mpkg-wallpaper-3.13.0.tgz`（765 614 B，sha256 `91c298d1b9eb6d530090206ed6c01b372a30f4bde7047f00290892c47fe57ec8`）；解包 16 个文件与 **`f9e7210`（发布面与 `97e06b4`、`5325385` 相同）** 的 tree **16/16 逐字节相同**；与 `776b67b` 的 tree 差 **1 个文件**（`lib/audio-bus.js`，它在 `5325385` 才落盘） |
+| 结论 | 3.13.0 的**版本号**由 `776b67b` 定，但**发布动作发生在它之后**（发布面 = `f9e7210` 时刻的树，`package.json` 仍是 `3.13.0`）⇒ 打 tag 时要在"版本号提交"与"可复现发布内容的提交"之间**明确选一个**（见文末） |
+| tag | **未打**：本地 `git tag -l 'v3.13*'` 无输出、远端 `git ls-remote --tags origin 'v3.13*'` 无输出 |
+
+## 发布记录：3.13.1（2026-09-22 · 帧内总线级静音接线 + 场景帧活档位分辨率）
+
+**为什么是 patch**：3.13.0 之后落的 6 个提交里，两条是**用户可见的修复**（① Web 帧内"静音设置开着却还在响"的
+总线级静音接线；② 场景帧此前**一个分辨率参数都不发** ⇒ 窗口物理像素超过 1920×1080 时画布被 CSS 放大出图、
+任何场景包都糊），其余是配套探针与门禁 ⇒ 按 semver「修复 = patch」取 **3.13.1**。
+
+| 提交 | 时间（+0800） | 一句话 |
+| --- | --- | --- |
+| `5325385` | 2026-09-22 01:22:23 | `feat(audio): 总线级静音内核 lib/audio-bus.js + 离线门禁（37/0），先落盘待接线` |
+| `97e06b4` | 2026-09-22 01:25:28 | `test(live-probe): np-axis 探针补 --check-volume（共享面：音量拖完刷新不重置）并把 npVolume/npPaused 纳入复原校验` |
+| `f9e7210` | 2026-09-22 01:46:56 | `chore(gate): 把 audio-bus-test 登记进 tools/check.sh（复用既有步骤，不新增 step 编号）` |
+| `c1263a5` | 2026-09-22 02:41:07 | `feat(audio): 总线级静音接线进单文件产物（生成器 + 漂移门禁 + 接线门禁）` |
+| `9133c0e` | 2026-09-22 02:56:50 | `fix(audio): 帧内总线模式提升为 1（真机探针抓到"帧里根本没静音"）+ 自上报真机探针` |
+| `7e2f3ed` | 2026-09-22 11:41:54 | `fix(scene): 场景帧显式请求渲染器活档位分辨率（常规 &res=dpr / 低内存 &res=auto）` |
+
+**相对 3.13.0 的发布面变化**（`git diff --stat f9e7210 7e2f3ed -- lib package.json`）：
+`lib/client.js` **+523**、`lib/audio-bus.js` 8 行、`package.json` 版本号 1 行 —— **共 3 个文件**
+（其余改动都在 `tools/`，不进发布面）。
+
+**版本号提交与发布时间（实测）**
+
+```
+$ git log -1 --format='%ci' 7e2f3ed
+2026-09-22 11:41:54 +0800
+$ git show 7e2f3ed^:package.json | grep '"version"'   # 父提交
+  "version": "3.13.0",
+$ git show 7e2f3ed:package.json | grep '"version"'
+  "version": "3.13.1",
+$ npm view dsh-mpkg-wallpaper dist-tags --registry=https://registry.npmjs.org/
+{ latest: '3.13.1' }
+$ npm view dsh-mpkg-wallpaper version --registry=https://registry.npmjs.org/
+3.13.1
+$ npm view dsh-mpkg-wallpaper time --registry=https://registry.npmjs.org/ | grep 3.13
+  '3.13.0': '2026-09-21T17:46:36.317Z',
+  '3.13.1': '2026-09-22T03:43:51.328Z',      # = 2026-09-22 11:43:51 +0800（提交之后 1 分 57 秒）
+$ npm view dsh-mpkg-wallpaper@3.13.1 dist --registry=https://registry.npmjs.org/
+{ shasum: 'ed162e36c77bc5202839e1a290eab7f95fb00cfc', fileCount: 16, unpackedSize: 2268181, integrity: 'sha512-MwWINB4U…' }
+```
+
+**发布内容逐文件核对（不看 metadata）**：`npm pack dsh-mpkg-wallpaper@3.13.1 --registry=https://registry.npmjs.org/`
+⇒ `dsh-mpkg-wallpaper-3.13.1.tgz`（776 385 B，sha256 `438fb2f1e5fa49d35b9313ffd8df81facb49429615d35d8ec2f4c2ff5dfa7c27`）；
+解包 16 个文件与 **`7e2f3ed` 的 tree 逐文件 16/16 逐字节相同（0 个不同）** ⇒ **3.13.1 的发布内容 == HEAD `7e2f3ed`**，
+提交与发布一一对应（复算脚本：对每个文件比 `git hash-object <解包文件>` 与 `git rev-parse 7e2f3ed:<路径>`）。
+
+**版本钉住的读数（把 `7e2f3ed` 的 tree 导出到临时目录再跑，与工作区解耦）**：
+`git archive 7e2f3ed | tar -x -C /tmp/…` 后 `node tools/audio-bus-test.mjs` ⇒ **39 通过 / 0 失败**
+（3.13.0 发布面对应的 `f9e7210` tree 同法 ⇒ **37 通过 / 0 失败**，与 `5325385` 提交信息里的 37/0 一致）。
+
+**诚实清单（本轮）**
+1. `v3.13.0` / `v3.13.1` **都没有 tag**（本地与 GitHub 远端都无）—— 本文只给命令，**没有执行** `git tag`/`git push`。
+2. **`bash tools/check.sh`（12 步，含无头 Firefox）与真机探针本轮未跑**（硬约束：不起浏览器、不跑全量套件）；
+   上面只有**离线**门禁读数。
+3. **发布后"用户侧真的装到 3.13.1"未核验**：本轮没跑 `dsh plugin update` / `update-plugin.sh`，也没起浏览器。
+4. 测"工作区可发"旁证时（`node tools/integrity-check.mjs` ⇒ 72/0、`node tools/secret-scan-test.mjs` ⇒ 干净、
+   `tools/audio-bus-test.mjs` ⇒ 60/0），工作区**已被另一条并行线的未提交改动覆盖**
+   （`git status --porcelain` ⇒ `M lib/audio-bus.js`、`M lib/client.js`、`M lib/pkg-extract.js`、`M tools/audio-bus-test.mjs`）
+   ⇒ 这三条**不代表 3.13.1 已发布内容**，只作"仓库当下可发"的旁证；本文里凡是钉 3.13.1 的读数一律用上面的
+   `git archive 7e2f3ed` 干净树。
+
+## 待打 tag：`v3.13.0` / `v3.13.1`（**命令已列，尚未执行**）
+
+**实测缺口（2026-09-22 22:1x）**：
+
+```
+$ git tag -l 'v3.13*'                       # 无输出
+$ git tag --points-at HEAD                  # 无输出（HEAD = 7e2f3ed）
+$ git tag -l | wc -l                        # 21（最新 v3.12.0）
+$ git ls-remote --tags origin 'v3.13*'      # 无输出（exit 0，远端也无）
+$ git ls-remote --tags origin 'v3.12*'      # 对照：d18a363… refs/tags/v3.12.0 / 7e4d5d9… refs/tags/v3.12.0^{}
+```
+
+本仓 tag 先例：**annotated tag 指向「版本号提交」**（`v3.12.0` → `7e4d5d9` = `chore(release): 3.12.0 …`）。
+
+**建议命令（由主对话统一执行；本文档不执行任何写 git 的操作）：**
+
+```bash
+cd <仓库根>
+git tag -a v3.13.0 776b67b4ee26913f32059565272474fce24c6040 -m "3.13.0"
+git tag -a v3.13.1 7e2f3eda94790699e70af9ebaccd217c5ca9eaa0 -m "3.13.1"
+git push origin v3.13.0 v3.13.1
+git tag -l 'v3.13*'; git tag --points-at HEAD    # 复核：v3.13.0 / v3.13.1，且 HEAD 上是 v3.13.1
+```
+
+| tag | 目标提交 | 理由 / 注意 |
+| --- | --- | --- |
+| `v3.13.0` | `776b67b4ee26913f32059565272474fce24c6040` | 版本号提交（`3.12.0` → `3.13.0`），与 `v3.12.0` → `7e4d5d9` 的先例一致。**注意**：该 tree **不含** `lib/audio-bus.js` ⇒ 这个 tag **不能逐字节复现已发布的 3.13.0 tarball**；若要求"tag 能复现发布内容"，改指 **`f9e7210`**（发布面与 `97e06b4`/`5325385` 相同，取三者中最晚、最贴近发布时刻的 `f9e7210`） |
+| `v3.13.1` | `7e2f3eda94790699e70af9ebaccd217c5ca9eaa0` | = HEAD；已发布 tarball 与该 tree **16/16 逐字节相同**（本文档已复算）⇒ 无歧义 |

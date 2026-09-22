@@ -711,6 +711,87 @@ console.log('\n== I. .mpw_np 宽度必须 = 组件的 W（否则 scale 的原点
   }
 }
 
+/* ══════════════ J. blob 兜底 URL 的 revoke（①(2026-09-23 资源审计 #2)） ══════════════
+   审计原话（docs/RESOURCE-AUDIT-20260923.md §2.1 #2）：`lib/client.js` 的 np 播放器 blob 兜底
+   `URL.createObjectURL(...)` 建完 URL **从不 revoke** —— 全仓 11 处 `revokeObjectURL` 没有一处
+   覆盖它；blob URL 只在 `revokeObjectURL` 或**文档卸载**时释放 ⇒ 自动连播 N 首 = 每支 ≤32MiB 的
+   Blob 常驻到页面卸载（单调增长）。同文件壁纸档（`lastBgSig`）早已修过同一处，np 档是漏网。
+   本组钉住四件事：①"先设新 src、再 revoke 旧 URL"的顺序；②台账只保留当前那一支；
+   ③换曲（npLoadTrack）释放上一支；④清 src（npAudioHardReset）/卸载（npDropAudio）释放并清空台账。 */
+console.log('\n== J. np blob 兜底 URL：换曲/清 src/卸载都必须 revoke 上一支（否则每曲 ≤32MiB 常驻到卸载）==')
+{
+  const created = [], revoked = []
+  let seq = 0
+  let el = null
+  /** revoke 那一刻元素指向谁 —— 这是"先设新 src 再 revoke 旧 URL"的唯一判据（顺序反了必红）。 */
+  const curSrc = () => { try { return String((el && el.getAttribute('src')) || '') } catch { return 'ERR' } }
+  /** 桩 fetch：/raw 的 content-type 在真机上是 octet-stream（部分浏览器据此拒播）⇒ blob 兜底是常态路径。 */
+  const blobFetch = async () => ({
+    ok: true, status: 200,
+    json: async () => ({}), text: async () => '', arrayBuffer: async () => new ArrayBuffer(0),
+    blob: async () => new Blob([new Uint8Array([1, 2, 3, 4])], { type: 'audio/mpeg' }),
+  })
+  try {
+    const F = freshPlugin({ settings: SEC_WEB, fetch: blobFetch })
+    await settle()
+    /* ⚠ 桩环境是**每次 loadPlugin 重新安装**的（`_stub.installStubs` 会重写 `URL.createObjectURL`）⇒
+       必须在 freshPlugin **之后**再接管这两个函数；先接管会被桩覆盖成恒 'blob:stub'（本组会假红）。 */
+    globalThis.URL.createObjectURL = () => { const u = 'blob:np-' + (++seq); created.push(u); return u }
+    globalThis.URL.revokeObjectURL = (u) => { revoked.push({ url: String(u), srcAtRevoke: curSrc() }) }
+    const T = F.T
+    /* 桩的 addEventListener 是**共享表**（所有元素一个 map）⇒ 只认"造成 npAudio 之后新增"的 error 处理器 */
+    const beforeErr = (F.stubs.listeners['error'] || []).slice()
+    T.seedTracks(SEC_WEB, [{ path: 'a.ogg', size: 1000, mime: 'audio/mpeg' }])
+    T.load(0)
+    el = T.audio()
+    /* 桩元素的 `.src` 属性与属性表是两套；真 DOM 里 `el.src = x` 会同时写属性表（生产代码两条路都用：
+       npLoadTrack 走 setAttribute、blob 兜底走 `.src =`）。补一个与真 DOM 同语义的访问器，
+       否则"revoke 那一刻元素指向谁"根本断言不到（假绿温床）。 */
+    try { Object.defineProperty(el, 'src', { configurable: true, get() { return this.getAttribute('src') || '' }, set(v) { this.setAttribute('src', String(v)) } }) } catch { /* 已定义过就跳过 */ }
+    const npErr = (F.stubs.listeners['error'] || []).filter((f) => beforeErr.indexOf(f) < 0)
+    const fireError = async () => { for (const f of npErr) { try { f({ type: 'error' }) } catch { /* 生产代码自己有兜底 */ } } await settle() }
+    await fireError()
+    ok('J1 兜底生效：src = blob URL、台账记下这一支，且此刻**零** revoke（它还在用）',
+      curSrc() === created[0] && T.blobUrl() === created[0] && revoked.length === 0,
+      JSON.stringify({ src: curSrc(), ledger: T.blobUrl(), created: created.slice(), revoked: revoked.length }))
+    /* 第二次兜底：同一作用域换了清单条目 ⇒ 换了曲目 URL（**不经过 npLoadTrack**）——
+       这正是"blob → blob 直接换手、台账里还握着上一支"的场景。 */
+    T.seedTracks(SEC_WEB, [{ path: 'a2.ogg', size: 1200, mime: 'audio/mpeg' }])
+    await fireError()
+    ok('J2 第二次兜底 revoke 上一支，且发生在**新 src 装上之后**（revoke 那一刻 src 已是新 blob）',
+      revoked.length === 1 && revoked[0].url === created[0] && revoked[0].srcAtRevoke === created[1],
+      JSON.stringify(revoked))
+    ok('J3 台账只保留"当前那一支"（自动连播 N 首不再累积 N 支 ≤32MiB 的 Blob）',
+      T.blobUrl() === created[1] && created.length === 2, JSON.stringify({ ledger: T.blobUrl(), created: created.slice() }))
+    /* 换曲（npLoadTrack）：装的是普通曲目 URL ⇒ 上一支 blob 在"新 src 已装上"之后释放。 */
+    T.load(0)
+    const urlB = T.trackUrl(SEC_WEB, 'a2.ogg')
+    ok('J4 换曲（npLoadTrack）释放上一支：revoke 那一刻 src = 新曲目 URL（非空、且不是被回收的那支）',
+      revoked.length === 2 && revoked[1].url === created[1] && revoked[1].srcAtRevoke === urlB && T.blobUrl() === '',
+      JSON.stringify({ revoked: revoked[1], expectSrc: urlB, ledger: T.blobUrl() }))
+    /* 清 src 路径（npAudioHardReset：换壁纸前的硬归零）。 */
+    T.seedTracks(SEC_WEB, [{ path: 'c.ogg', size: 1300, mime: 'audio/mpeg' }])
+    await fireError()
+    T.hardReset('test')
+    ok('J5 清 src（npAudioHardReset）释放并清空台账：revoke 那一刻 src 已经为空',
+      revoked.length === 3 && revoked[2].url === created[2] && revoked[2].srcAtRevoke === '' && T.blobUrl() === '',
+      JSON.stringify({ revoked: revoked[2], ledger: T.blobUrl() }))
+    /* 卸载路径（npDropAudio：NP 开关被关掉/拆除时）。 */
+    T.seedTracks(SEC_WEB, [{ path: 'd.ogg', size: 1400, mime: 'audio/mpeg' }])
+    await fireError()
+    T.dropAudio()
+    ok('J6 卸载（npDropAudio）释放并清空台账（旧写法只 removeAttribute ⇒ URL 活到页面卸载）',
+      revoked.length === 4 && revoked[3].url === created[3] && T.blobUrl() === '',
+      JSON.stringify({ revoked: revoked[3], ledger: T.blobUrl() }))
+    T.dropAudio()
+    ok('J7 幂等：没有 blob 时再卸载一次不会重复 revoke（台账已空 ⇒ 零副作用）', revoked.length === 4, 'revoked=' + revoked.length)
+  } finally {
+    /* 桩环境是全局的：还原 createObjectURL/revokeObjectURL，避免影响后面的组 */
+    delete globalThis.URL.createObjectURL
+    delete globalThis.URL.revokeObjectURL
+  }
+}
+
 /* ══════════════ G. 分辨力自证（RED-if-reverted） ══════════════ */
 const MUTS = [
   {
@@ -800,10 +881,29 @@ const MUTS = [
     mut: (s) => s.replace("did = npStepTrack(op === \"next\" ? 1 : -1, true) ? \"step\" : \"step(nolist)\";",
       "if (false) npStepTrack(1, true);"),
   },
+  /* ══ ①(2026-09-23 资源审计 #2) blob 兜底 URL 的三条 revoke 路径，各来一个变异 ══ */
+  {
+    id: 'np-blob-url-never-revoked-on-swap', expect: 'J', file: 'client',
+    why: '①(资源审计 #2) 把 blob 兜底里的 `npBlobUrlSet(obj)` 删掉（= 审计原样：建完 URL 从不 revoke）'
+      + '⇒ 每兜底一次就钉住一支 ≤32MiB 的 Blob 到页面卸载，自动连播 N 首 = 32MiB × N 单调增长',
+    mut: (s) => s.replace("npAudio.src = obj;\n\t\t\t\t\tnpBlobUrlSet(obj);", "npAudio.src = obj;"),
+  },
+  {
+    id: 'np-blob-url-never-revoked-on-track-change', expect: 'J', file: 'client',
+    why: '①(资源审计 #2) 把 npLoadTrack（换曲）里的 `npBlobUrlSet("")` 删掉 ⇒ 上一支 blob URL 在换曲后'
+      + '仍然留在 registry（元素已经指向新曲目 URL，那支 Blob 再也无人回收）',
+    mut: (s) => s.replace('\t\t\t\tnpBlobUrlSet("");\n\t\t\t\tconst st = readSection();', '\t\t\t\tconst st = readSection();'),
+  },
+  {
+    id: 'np-blob-url-never-revoked-on-drop', expect: 'J', file: 'client',
+    why: '①(资源审计 #2) 把 npDropAudio（卸载）里的 `npBlobUrlSet("")` 删掉 ⇒ 关掉 NP/拆除播放器后'
+      + 'blob URL 活到页面卸载（旧写法只 removeAttribute("src")，不释放 Blob）',
+    mut: (s) => s.replace('\t\t\tnpBlobUrlSet("");\n\t\t\tnpAudio = null;', '\t\t\tnpAudio = null;'),
+  },
 ]
 if (!NO_MUT) {
   console.log('\n== G. 分辨力自证：' + MUTS.length + ' 组变异必须各自让**指定那一组**变红（副本在 mkdtemp，真树不动）==')
-  const GROUPS = { A: /✗ A\d/, B: /✗ B\d/, C: /✗ C\d/, D: /✗ D\d/, E: /✗ E\d/, F: /✗ F\d/, H: /✗ H\d/, I: /✗ I\d/ }
+  const GROUPS = { A: /✗ A\d/, B: /✗ B\d/, C: /✗ C\d/, D: /✗ D\d/, E: /✗ E\d/, F: /✗ F\d/, H: /✗ H\d/, I: /✗ I\d/, J: /✗ J\d/ }
   for (const m of MUTS) {
     const src = m.file === 'np' ? npSrc : clientSrc
     const mutated = m.mut(src)

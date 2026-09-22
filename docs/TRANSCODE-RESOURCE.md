@@ -78,9 +78,11 @@ ffprobe -v error -select_streams a -show_entries stream=codec_name,profile,chann
 | **内存准入阈值** | **1024 MB** | `DSH_WE_TRANSCODE_MIN_AVAIL_MB` | 可用内存低于此值 ⇒ **拒绝本次转码**（抛错让客户端直读原片），而不是起一个必 OOM 的进程把整机拖进 swap |
 | ffmpeg 错误日志 | 50 个 | `DSH_WE_FFMPEG_ERR_KEEP` | 0 字节的空日志直接删 |
 | src/`.tmp` 残留 | mtime>1h 即删 | — | 崩溃残留清理 |
+| **视频预缩档**（`section.preScale`） | **关（`0`）** | — | 档名 `preScale`：`0`=关（默认）/`1`=按屏幕物理尺寸预缩。开启后**复用既有 `/transcode` 通道**（不新起一套）：客户端传 `maxW=<屏幕物理宽>&scale=lanczos`（`scale` 白名单见 `/probe` 的 `limits.scaleFlags`；默认档不传 ⇒ ffmpeg 默认 bicubic，缓存键 `…\|maxW\|s:<flag>` 只在给了 flags 时追加 ⇒ 既有产物继续命中）。依据：`docs/USER-ITEMS-20260921.md` 第 19 条实测「一次直降」的闪烁是「逐级减半」的 1.6~2.7×、细节低 1.4~1.9× ⇒ **取舍，默认关** |
 
 **缓存命中判据**（可复用、不含时间戳）：
 `tc_<sha256(srcId | round(mtime_ms) | fps | maxW)[:20]>.mp4`
+—— 预缩档额外追加 `|s:<scale flag>`（且只在 `maxW>0` 时）；**不传 flags 的键与改动前逐字节相同** ⇒ 升级不重转。
 —— `srcId` = 绝对路径（file）或 `mpkg:<包路径>:<条目 index>`。
 **只含影响播放的字段**：改设置（fps/maxW）会正确失效，重放同一规格会命中。
 清理时**受保护**：本轮刚转好的产物用 `pruneTranscodeCache(cachePath)` 排除，绝不被自己删掉。
