@@ -283,6 +283,85 @@ function callSites(src, name) {
     JSON.stringify({ 块外JSONparse: bad, 正向残留: rawResidual, 读取点: calls.length, 未记账: unaccounted }))
 }
 
+/* ── S1-7..S1-9：宿主侧**另外两个模块**（收口线 2026-09-24）─────────────────────────────────────────
+   `lib/web-wallpaper.js:readProjectJson`（WE 目录的 project.json = **包旁**）与
+   `lib/index.js` 的 Steam 库扫描（`<壁纸目录>/project.json` = **包旁**）原来是严格 `JSON.parse` + 静默/半静默跳过；
+   现在走 `mpwParseWeJson` + `mpwWeJsonSwallowed`（**复用** `lib/pkg-extract.js` 那一份，不写第三份实现）。
+   这两处以前**不在**本文件的覆盖面里（白名单只扫 client.js / pkg-extract.js）⇒ 本轮补上：
+   · 逐站点归类（包内/包旁严格残留 == 0；非包内的必须落进**带理由**的白名单，且每条规则必须仍然命中）；
+   · 包内解析点清单（2 处）逐条按模式存在且都走 `mpwParseWeJson`；
+   · 凡"吞"的 catch 里都有 `mpwWeJsonSwallowed`（计数 + 一行诊断，不许静默）。 */
+const WW = path.join(REPO, 'lib', 'web-wallpaper.js')
+const IDX = path.join(REPO, 'lib', 'index.js')
+const wwSrc = fs.readFileSync(WW, 'utf8')
+const idxSrc = fs.readFileSync(IDX, 'utf8')
+
+/* 非包内白名单（每条**带理由**，且必须仍然命中 —— 与 client.js 那套同一纪律：台账不腐烂）。 */
+const HOST_NONPKG_RULES = [
+  { id: 'index-other-plugin-meta', why: '探测**别的插件**（dsh-better-sidebar）在 dsh profile 里的 package.json 版本号：第三方宿主元数据，不是 WE 包', test: (s) => /better-sidebar|detectBetterSidebarVersion|profilesDir/.test(s.arg + ' ' + s.ctx) },
+  { id: 'index-plugin-meta', why: '本插件自己的 package.json / 线上 fetch 回来的 package.json（宿主插件元数据，不是 WE 包）', test: (s) => /package\.json|fetchRaw\(|JSON\.parse\(pkg\)/.test(s.arg + ' ' + s.ctx) },
+  { id: 'index-host-state', why: '本插件自己在你机上的状态（DATA_DIR 下的 custom-dir.json / settings.json / web-store.json / media-audio.json）—— 宿主设置"读失败 ≠ 没存过"，宽容会把损坏糊成"能读"', test: (s) => /DATA_DIR|settings\.json|custom-dir|web-store\.json|media-audio\.json|readJsonFile/.test(s.arg + ' ' + s.ctx) },
+  { id: 'index-request-body', why: 'HTTP 请求体（`body` / `raw`）：客户端发坏 JSON 必须 400，宽容会把客户端 bug 糊成"服务端读懂了"', test: (s) => /JSON\.parse\(\s*(body|raw)\b/.test('JSON.parse(' + s.arg) || /\b(body|raw)\b/.test(s.arg) },
+  { id: 'index-we-app-config', why: '**WE 安装目录**的 `config.json`（官方应用自己的配置：播放列表）—— 不属"包内/包旁"（它是应用状态，不是随包发布的作者产物；带尾逗号的是官方**手写随包**资产，见 effect.json）。本仓判定：保持严格，理由写在这里，改口径要有依据', test: (s) => /cfgPath|installDir, 'config\.json'|WE_APPID/.test(s.arg + ' ' + s.ctx) },
+]
+{
+  const scan = (src, label) => {
+    const { sites, skipped } = jsonParseSites(src)
+    const pkgSites = [], unclassified = [], matched = new Map()
+    for (const s of sites) {
+      /* 包内/包旁判据：站点上下文出现这些名字就一定是在读 WE 的包（这条优先于白名单）。 */
+      if (/readProjectJson|readPkgEntryHeadJson|mpwParseWeJson|project\.json|effect\.json|scene\.json/.test(s.arg + ' ' + s.ctx)) { pkgSites.push({ line: s.line, arg: s.arg.slice(0, 50) }); continue }
+      const w = HOST_NONPKG_RULES.find((r) => r.test(s))
+      if (!w) { unclassified.push({ line: s.line, arg: s.arg.slice(0, 60) }); continue }
+      matched.set(w.id, (matched.get(w.id) || 0) + 1)
+    }
+    return { label, sites, skipped, pkgSites, unclassified, matched }
+  }
+  const rWw = scan(wwSrc, 'lib/web-wallpaper.js'), rIdx = scan(idxSrc, 'lib/index.js')
+  const rawResidual = [
+    /JSON\.parse\s*\(\s*readFileSync\(p,\s*'utf8'\)\s*\)/.test(wwSrc) ? 'web-wallpaper: JSON.parse(readFileSync(p))' : null,
+    /JSON\.parse\s*\(\s*readFileSync\(proj,\s*'utf8'\)\s*\)/.test(idxSrc) ? 'index: JSON.parse(readFileSync(proj))' : null,
+  ].filter(Boolean)
+  check('S1-7', '`lib/web-wallpaper.js` + `lib/index.js`：每一处代码区 `JSON.parse(` 都被归类；**包内/包旁严格残留 0 处**'
+    + '（自推导扫描 + 与扫描器无关的正向模式两路都过）',
+    rWw.pkgSites.length === 0 && rIdx.pkgSites.length === 0 && rWw.unclassified.length === 0 && rIdx.unclassified.length === 0 &&
+      rawResidual.length === 0,
+    JSON.stringify({ 包内残留: { ww: rWw.pkgSites, idx: rIdx.pkgSites }, 未分类: { ww: rWw.unclassified, idx: rIdx.unclassified }, 正向残留: rawResidual }))
+  const deadRules = HOST_NONPKG_RULES.filter((r) => !rIdx.matched.get(r.id)).map((r) => r.id)
+  check('S1-7b', '`lib/index.js` 的非包内白名单每条都仍然命中（台账不腐烂；' + HOST_NONPKG_RULES.length + ' 条各带理由）',
+    deadRules.length === 0, JSON.stringify({ 命中: Object.fromEntries(rIdx.matched), 失效: deadRules, 跳过: rIdx.skipped.map((s) => s.line + ':' + s.why) }))
+  /* 包内解析点清单（宿主侧 2 处）：模式 + 记账 where 串一起断言（"改走 mpwParseWeJson 并记账"两件事都钉住）。 */
+  const HOST_PKG_INVENTORY = [
+    { id: 'web-wallpaper:readProjectJson(WE 目录 project.json)', re: /mpwParseWeJson\(text\)[\s\S]{0,400}?mpwWeJsonSwallowed\('web-wallpaper:readProjectJson\('/ },
+    { id: 'index:steam-inventory(<Steam 壁纸目录>/project.json)', re: /mpwParseWeJson\(readFileSync\(proj, 'utf8'\)\)[\s\S]{0,400}?mpwWeJsonSwallowed\('\[steam-inventory\]/ },
+  ]
+  const missing = HOST_PKG_INVENTORY.filter((x) => !x.re.test(wwSrc + idxSrc)).map((x) => x.id)
+  check('S1-8', '宿主侧包内/包旁解析点清单（' + HOST_PKG_INVENTORY.length + ' 处）逐条在：都走 `mpwParseWeJson` 且都记账',
+    missing.length === 0, JSON.stringify({ 缺: missing }))
+  /* **不复制第三份实现**：这两个文件里不许出现 `function mpwParseWeJson` 之类的新实现；它们必须 import 同一份。 */
+  const thirdCopy = [
+    /function\s+mpwParseWeJson\s*\(/.test(wwSrc) || /function\s+mpwParseWeJson\s*\(/.test(idxSrc) ? '本文件内定义 mpwParseWeJson' : null,
+    /mpwWeJsonRepair\s*\(/.test(wwSrc + idxSrc) ? '本文件内出现 mpwWeJsonRepair' : null,
+  ].filter(Boolean)
+  check('S1-8b', '这两处是**复用**宿主侧那一份实现（import 自 `./pkg-extract.js`），没有第三份拷贝',
+    thirdCopy.length === 0 && /import \{[^}]*mpwParseWeJson[^}]*\} from '\.\/pkg-extract\.js'/.test(wwSrc) &&
+      /import \{[^}]*mpwParseWeJson[^}]*\} from '\.\/pkg-extract\.js'/.test(idxSrc),
+    JSON.stringify({ 第三份: thirdCopy }))
+  const acct = [
+    ...callSites(wwSrc, 'mpwParseWeJson').map((s) => ({ file: 'web-wallpaper.js', ...s })),
+    ...callSites(idxSrc, 'mpwParseWeJson').map((s) => ({ file: 'index.js', ...s })),
+  ]
+  const unaccounted = acct.filter((s) => s.sawCatch && !s.accounted)
+  check('S1-9', '宿主侧 ' + acct.length + ' 处读取点：凡"吞"的 catch 里都有 `mpwWeJsonSwallowed`（计数 + 一行诊断，不静默）',
+    acct.length === 2 && acct.every((s) => s.sawCatch && s.accounted) && unaccounted.length === 0,
+    JSON.stringify({ 读取点: acct, 未记账: unaccounted }))
+  console.log('  · PLUGIN-WEJSON-SCAN ' + JSON.stringify({
+    pkgStrictResidual: rWw.pkgSites.length + rIdx.pkgSites.length, unclassified: rWw.unclassified.length + rIdx.unclassified.length,
+    sites: { webWallpaper: rWw.sites.length, index: rIdx.sites.length },
+    nonPkgByRule: Object.fromEntries(rIdx.matched), hostPkgInventory: HOST_PKG_INVENTORY.length,
+  }))
+}
+
 /* ═══════════════════════ S2：行为夹具（与渲染器同一套输入） ═══════════════════════ */
 
 /* 夹具表：**逐条抄自**渲染器 `tests/we-json-tolerance-test.mjs`（S2 段），只在末尾追加一条
@@ -430,6 +509,95 @@ for (const f of FIXTURES) {
   }
 }
 
+/* ── S2-E2EH：收口线两处**真实现**端到端（不是切片）：WE 目录 project.json + Steam 库路由 ──────────
+   ① `lib/web-wallpaper.js` 的 `readProjectJson(dir)` / `detectWallpaperDir(dir)`（真导出函数）：
+      合成"尾逗号 + 注释"的 WE 目录 project.json ⇒ 改前 null（判定只剩文件名启发式 reason='html-entry'），
+      改后读得到（reason='declared-html'，title/general.file 都在）。
+   ② `lib/index.js` 的**真路由** `/api/mpkg-wallpaper/steam-inventory`（真 apply() + 桩 req/res）：
+      夹具 Steam 安装目录里的 `<壁纸目录>/project.json`（尾逗号）⇒ 改前 catch 跳过该壁纸（wallpapers 少一条），
+      改后列进去且 title 是文件里写的那个。
+   ⚠ 夹具全在 os.tmpdir() 下；`DSH_HOME`/`HOME` 都指到夹具（`locateWallpaperEngine()` 的候选由
+     `os.homedir()` 推导 ⇒ 只可能命中夹具；本机没有真 Steam 目录时才有意义 —— 若候选里出现了别的
+     安装目录，就如实 SKIP 而不是假装断言过）。 */
+{
+  const HOST_FX = fs.mkdtempSync(path.join(os.tmpdir(), 'mpw-wejson-host-'))
+  process.on('exit', () => { try { fs.rmSync(HOST_FX, { recursive: true, force: true }) } catch { /* 忽略 */ } })
+  const OLD_HOME = process.env.HOME
+  const OLD_DSH = process.env.DSH_HOME
+  const TC_WEB_DIR = path.join(HOST_FX, 'webtc')
+  fs.mkdirSync(TC_WEB_DIR, { recursive: true })
+  fs.writeFileSync(path.join(TC_WEB_DIR, 'project.json'),
+    '{\n  "type": "web",\n  "title": "尾逗号网页壁纸",\n  "file": "index.html",\n  "general": { "type": "web", "file": "index.html", "properties": { "color": { "type": "color", "value": "1 1 1", }, }, },\n}')
+  fs.writeFileSync(path.join(TC_WEB_DIR, 'index.html'), '<!doctype html><title>tc</title>')
+  const steamInstall = path.join(HOST_FX, '.local', 'share', 'Steam', 'steamapps', 'common', 'wallpaper_engine')
+  fs.mkdirSync(path.join(steamInstall, 'projects', 'myprojects', 'tc-steam'), { recursive: true })
+  fs.writeFileSync(path.join(steamInstall, 'wallpaper32.exe'), 'fixture')
+  fs.writeFileSync(path.join(steamInstall, 'projects', 'myprojects', 'tc-steam', 'project.json'),
+    '{\n  "type": "video",\n  "title": "Steam 尾逗号夹具",\n  "file": "clip.mp4",\n}')
+  fs.writeFileSync(path.join(steamInstall, 'projects', 'myprojects', 'tc-steam', 'clip.mp4'), 'FAKE-MP4')
+  fs.mkdirSync(path.join(steamInstall, 'projects', 'defaultprojects', 'healthy-steam'), { recursive: true })
+  fs.writeFileSync(path.join(steamInstall, 'projects', 'defaultprojects', 'healthy-steam', 'project.json'),
+    JSON.stringify({ type: 'web', title: 'Steam 健康夹具', file: 'index.html' }))
+  fs.writeFileSync(path.join(steamInstall, 'projects', 'defaultprojects', 'healthy-steam', 'index.html'), '<!doctype html>')
+  process.env.DSH_HOME = HOST_FX                       // DATA_DIR 落在夹具里（绝不碰用户数据）
+  process.env.HOME = HOST_FX                           // locateWallpaperEngine 的候选由 os.homedir() 推导
+  try {
+    /* ① readProjectJson / detectWallpaperDir（真导出函数） */
+    const ww = await import('file://' + WW)
+    const raw = fs.readFileSync(path.join(TC_WEB_DIR, 'project.json'), 'utf8')
+    let strictOk = true
+    try { JSON.parse(raw) } catch { strictOk = false }
+    const proj = ww.readProjectJson(TC_WEB_DIR)
+    const det = ww.detectWallpaperDir(TC_WEB_DIR, { sizes: false })
+    console.log('  · 读数 S2-E2EH-WW readProjectJson(尾逗号 project.json) → ' + (proj ? 'title=' + JSON.stringify(proj.title) : 'null')
+      + '；detectWallpaperDir → kind=' + det.kind + ' reason=' + det.reason + ' 严格 JSON.parse=' + (strictOk ? '成功' : '失败'))
+    check('S2-E2EH-WW', '`readProjectJson`（真实现）吃"尾逗号 + 注释"的 WE 目录 project.json：严格 `JSON.parse` 抛，它读得到'
+      + '（title/general 都在）且内容优先判定用上了声明入口（reason=declared-html；改前是 null + html-entry）',
+      strictOk === false && !!proj && proj.title === '尾逗号网页壁纸' && proj.general && proj.general.file === 'index.html' &&
+        det.kind === 'web' && det.reason === 'declared-html' && !!det.project,
+      JSON.stringify({ strictOk, proj: proj && { title: proj.title, file: proj.file }, kind: det.kind, reason: det.reason }))
+
+    /* ② 真路由 /steam-inventory（真 apply() + 桩 req/res；与 lib/index.js 的既有路由测试同一套桩） */
+    const { apply } = await import('file://' + IDX)
+    const routes = []
+    apply({ webServer: { register: (r) => routes.push(r) }, loader: null, logger: { info() {}, warn() {}, error() {} } })
+    const R = routes.find((x) => x.kind === 'exact' && x.path === '/api/mpkg-wallpaper/steam-inventory')
+    if (!R) {
+      check('S2-E2EH-STEAM', '`apply()` 注册了 /steam-inventory 路由（防改名后判据静默失效）', false, '路由不在注册表里')
+    } else {
+      const body = { chunks: [], status: 0, headers: {} }
+      const res = {
+        writeHead(code, headers) { body.status = code; Object.assign(body.headers, headers || {}); return this },
+        setHeader(k, v) { body.headers[String(k).toLowerCase()] = v; return this },
+        write(c) { body.chunks.push(Buffer.from(c)); return true },
+        end(c) { if (c) body.chunks.push(Buffer.from(c)); body.done = true; return this },
+        on() { return this }, once() { return this }, emit() { return true },
+      }
+      await R.handler({ method: 'GET', url: '/api/mpkg-wallpaper/steam-inventory', headers: {} }, res)
+      for (let i = 0; i < 50 && !body.done; i++) await new Promise((r) => setTimeout(r, 20))     // handler 是 async：等它 flush
+      const json = (() => { try { return JSON.parse(Buffer.concat(body.chunks).toString('utf8')) } catch { return null } })()
+      const items = (json && json.wallpapers) || []
+      const hit = items.find((w) => w.title === 'Steam 尾逗号夹具')
+      const install = json && json.installDir
+      console.log('  · 读数 S2-E2EH-STEAM GET ' + R.path + ' → status=' + body.status + ' installDir=' + install
+        + ' wallpapers=' + items.length + ' titles=' + JSON.stringify(items.map((w) => w.title)))
+      if (install !== steamInstall) {
+        console.log('  · S2-E2EH-STEAM SKIP —— `locateWallpaperEngine()` 命中的不是夹具安装目录（' + String(install)
+          + '）⇒ 本机有别的候选，端到端这条按条件项跳过（不假绿）')
+      } else {
+        check('S2-E2EH-STEAM', '真路由 `/steam-inventory`：尾逗号 project.json 的壁纸**列得进来**（title 读自该文件；改前 catch 跳过 ⇒ 少一条）',
+          body.status === 200 && !!hit && hit.type === 'video' && items.length === 2 && items.some((w) => w.title === 'Steam 健康夹具'),
+          JSON.stringify({ status: body.status, installDir: install, items }))
+      }
+    }
+  } catch (e) {
+    check('S2-E2EH-WW', '宿主侧真实现端到端（尾逗号 project.json）', false, String((e && e.message) || e))
+  } finally {
+    if (OLD_HOME === undefined) delete process.env.HOME; else process.env.HOME = OLD_HOME
+    if (OLD_DSH === undefined) delete process.env.DSH_HOME; else process.env.DSH_HOME = OLD_DSH
+  }
+}
+
 /* ── S2-OFF：官方真样本（本机装了 WE 才跑；没装就 SKIP —— 不假绿） ── */
 {
   const WE = process.env.MPW_WE_ASSETS || path.join(REPO, '..', 'wallpaper_engine', 'assets')
@@ -504,7 +672,7 @@ function replaceFunctionBody(src, name, newBody) {
 }
 
 const fn = fileURLToPath(import.meta.url)
-const FILE_SHA = { client: sha(CLIENT), pkgx: sha(PKGX) }
+const FILE_SHA = { client: sha(CLIENT), pkgx: sha(PKGX), ww: sha(WW), idx: sha(IDX) }
 
 if (!NO_MUT) {
   console.log('\n== 变异自证（隔离副本；真树一个字节都不动）==')
@@ -532,28 +700,70 @@ if (!NO_MUT) {
       build: (src) => src.replace('return mpwWeJsonSwallowed("extractProjectInfo:project.json", e);', 'return null;'),
       want: () => ['S1-5'],
     },
+    /* ── 收口线（2026-09-24）：宿主侧两个模块 ─────────────────────────────────────────────────────
+       M4/M5 = **改回去**（包旁退回严格 JSON.parse）⇒ 静态清单 + 端到端读数都必须翻回旧值；
+       M6     = 把记账拿掉（回到静默吞）⇒ 静态记账反查必红。 */
+    {
+      id: 'M4',
+      name: '把 `lib/web-wallpaper.js` 的 readProjectJson 退回严格 `JSON.parse`（= 收口前的行为）',
+      target: 'ww',
+      before: true,
+      build: (src) => src.replace("    const obj = mpwParseWeJson(text);", "    const obj = JSON.parse(text);"),
+      /* `S1-9`（记账反查）也会红：退回严格后那个 `mpwParseWeJson(` 站点整个消失 ⇒ 读取点数 2→1。 */
+      want: () => ['S1-7', 'S1-8', 'S1-9', 'S2-E2EH-WW'],
+    },
+    {
+      id: 'M5',
+      name: '把 `lib/index.js` 的 Steam 库 project.json 退回严格 `JSON.parse`（= 收口前的行为）',
+      target: 'idx',
+      before: true,
+      build: (src) => src.replace("                  try { return mpwParseWeJson(readFileSync(proj, 'utf8')); }\n                  catch (e) { mpwWeJsonSwallowed('[steam-inventory] ' + proj, e); throw e; }\n                })();",
+        "                  return JSON.parse(readFileSync(proj, 'utf8'));\n                })();"),
+      /* `S1-9`（记账反查）同样红：退回严格后 `mpwParseWeJson(` 站点消失 ⇒ 读取点数 2→1。 */
+      want: () => ['S1-7', 'S1-8', 'S1-9', 'S2-E2EH-STEAM'],
+    },
+    {
+      id: 'M6',
+      name: '把 `lib/web-wallpaper.js` 吞点的 `mpwWeJsonSwallowed` 拿掉（回到静默：坏文件只当"没有"）',
+      target: 'ww',
+      build: (src) => src.replace("    return mpwWeJsonSwallowed('web-wallpaper:readProjectJson(' + p + ')', e);", '    return null;'),
+      want: () => ['S1-8', 'S1-9'],
+    },
   ]
+  const ORIG = { client: clientSrc, pkgx: pkgxSrc, ww: wwSrc, idx: idxSrc }
   for (const mu of mutants) {
     const root = path.join(TMP, mu.id.toLowerCase(), 'repo')
     fs.mkdirSync(path.join(root, 'lib'), { recursive: true })
-    const orig = mu.target === 'client' ? clientSrc : pkgxSrc
+    /* ①(2026-09-24 收口线) 副本必须**整份 lib/**（`index.js` → pkg-extract/web-wallpaper/media-session，
+       `web-wallpaper.js` → web-interaction/pkg-extract）：逐个 copyFileSync（本机 /tmp 是 tmpfs，
+       递归 fs.cpSync 会 EINVAL —— 本仓既有教训）；`*.bak*` 与子目录不拷（不是运行期依赖）。
+       随后只把**被变异的那一个**文件覆盖成变异体。 */
+    for (const f of fs.readdirSync(path.join(REPO, 'lib'))) {
+      if (!/\.js$/.test(f) || /\.bak/.test(f)) continue
+      fs.copyFileSync(path.join(REPO, 'lib', f), path.join(root, 'lib', f))
+    }
+    const orig = ORIG[mu.target]
     const mutated = mu.build(orig)
     if (typeof mutated !== 'string' || mutated === orig) {
       check('S3-' + mu.id, '变异（' + mu.name + '）—— 变异锚点命中（可替换）', false, '锚点没命中（变异体构造失败）')
       continue
     }
-    fs.writeFileSync(path.join(root, 'lib', 'client.js'), mu.target === 'client' ? mutated : clientSrc)
-    fs.writeFileSync(path.join(root, 'lib', 'pkg-extract.js'), mu.target === 'client' ? pkgxSrc : mutated)
+    const MUT_FILE = { client: 'client.js', pkgx: 'pkg-extract.js', ww: 'web-wallpaper.js', idx: 'index.js' }[mu.target]
+    fs.writeFileSync(path.join(root, 'lib', MUT_FILE), mutated)
     const r = spawnSync(process.execPath, [fn, '--no-mutations', '--repo', root], { encoding: 'utf8' })
     const reds = (r.stdout || '').split('\n').filter((l) => l.includes('✗')).map((l) => (/✗\s*(S\d[^\s]*)/.exec(l) || [])[1]).filter(Boolean)
     const want = mu.want()
     const same = reds.length === want.length && want.every((x) => reds.includes(x))
+    /* ①(2026-09-24 收口线) 把子进程的**端到端读数**原样带出来：M4/M5 是"改回去"的变异体
+       （= 收口前的行为）⇒ 这几行就是任务书要的**改前读数**，不必再手工复现一次。 */
+    const reads = (r.stdout || '').split('\n').filter((l) => l.includes('· 读数')).map((l) => '      ' + l.trim())
+    if (reads.length) console.log('    ' + (mu.before ? '改动前读数（变异体 = 收口前的行为）' : '子进程读数（与真树同值；这条变异只动记账/静态面）') + '：\n' + reads.join('\n'))
     check('S3-' + mu.id, '变异（' + mu.name + '）⇒ **期望红集 == 实际红集**',
       same, 'exit=' + r.status + ' 期望=' + JSON.stringify(want) + ' 实际=' + JSON.stringify(reds.slice(0, 14)))
     if (same) console.log('    MUTANT-RED-OK ' + mu.id + ' 红集=' + JSON.stringify(reds))
   }
-  check('S3-M4', '真树 lib/client.js + lib/pkg-extract.js 未被变异触碰（sha256 逐字节相同）',
-    FILE_SHA.client === sha(CLIENT) && FILE_SHA.pkgx === sha(PKGX))
+  check('S3-M7', '真树 lib/{client,pkg-extract,web-wallpaper,index}.js 未被变异触碰（sha256 逐字节相同）',
+    FILE_SHA.client === sha(CLIENT) && FILE_SHA.pkgx === sha(PKGX) && FILE_SHA.ww === sha(WW) && FILE_SHA.idx === sha(IDX))
   console.log('  · 两仓对拍（S2-SRC/S2-P2）：渲染器仓' + (rendererAvailable ? '**在场**，已逐条对拍' : '不在场，本轮跳过（不假绿）'))
 }
 
