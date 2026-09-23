@@ -167,6 +167,7 @@ node tools/switch-wiring-test.mjs || fail=1
 #      （资源审计 #2：修前该 URL 从不 revoke，自动连播每曲钉一支 ≤32MiB 的 Blob 到页面卸载）。
 #   判据：34 通过 / 0 失败，纯自造桩环境（无浏览器/网络/ffmpeg/语料，约 8s）+ **7 组变异各自必红**。
 node tools/silent-failure-guards-test.mjs || fail=1
+node tools/we-json-tolerance-test.mjs || fail=1
 # ①(2026-09-18 §5 第3项)「诊断自证闭环」：payload 补齐关键子系统（磨砂/侧栏/时间线是否被影响、
 #   壁纸类型与路径、shim 是否注入、视频解码、表面 token、场景健康），**每个字段带来源（provenance）**，
 #   读不到 ⇒ 字段仍在 + value:null + degraded.reason（部分子来源缺 ⇒ degraded.partial）——绝不静默省略；
