@@ -5,19 +5,15 @@
 > （`node tools/integrity-check.mjs`）。这份文件把**发布前置**、**确切命令**、**发布后验证**和
 > **回滚**钉死成可复制的步骤 —— 照着跑就行，不靠记忆。
 >
-> 状态（2026-09-22 22:1x 实测）：本地 `package.json` = **3.13.2**（= 仓库 HEAD `7e2f3ed`）；
-> npm 官方 registry 上 `latest` = **3.13.1**、`version` = **3.13.1**
-> （`npm view dsh-mpkg-wallpaper dist-tags --registry=https://registry.npmjs.org/` ⇒ `{ latest: '3.13.1' }`；
-> `npm view dsh-mpkg-wallpaper version --registry=https://registry.npmjs.org/` ⇒ `3.13.1`）。
-> 发布时间（registry `time` 字段实测）：`3.13.0` = `2026-09-21T17:46:36.317Z`、`3.13.1` = `2026-09-22T03:43:51.328Z`
-> （= 2026-09-22 01:46:36 / 11:43:51 +0800）。
-> ⇒ **本地版本号 == 已发布版本号 ⇒ 现在直接 `npm publish` 必然 403**
-> （`cannot publish over the previously published versions: 3.13.1`）⇒ **必须先 bump 版本号**（见第 0 节）。
-> 历史：3.9.0 → 3.9.1 → 3.10.0 → 3.10.1 → 3.11.0 → 3.12.0 → **3.13.0** → **3.13.1**。
-> **tag 缺口（实测）**：本仓 tag 共 **21** 个、最新 `v3.12.0`；**`v3.13.0` / `v3.13.1` 本地与远端都没有**
-> （`git tag -l 'v3.13*'` 无输出、`git tag --points-at HEAD` 无输出、`git ls-remote --tags origin 'v3.13*'` 无输出；
-> 对照 `git ls-remote --tags origin 'v3.12*'` 有 2 条）⇒ 待打 tag 的目标提交与命令见文末「待打 tag」节
-> （**只给命令，本轮未执行任何写 git 的操作**）。
+> 状态（2026-09-23 12:50 +0800 实测）：本地 `package.json` = **3.13.3**（= 仓库 HEAD `784e2d5`）；
+> npm 官方 registry 上 `latest` = **3.13.3**（`npm view dsh-mpkg-wallpaper dist-tags --registry=https://registry.npmjs.org/`
+> ⇒ `{ latest: '3.13.3' }`）。发布时间（registry `time` 字段实测）：`3.13.2` = `2026-09-22T20:13:24.727Z`、
+> **`3.13.3` = `2026-09-23T04:50:11.553Z`**（= 2026-09-23 04:13:24 / 12:50:11 +0800）。
+> **本地版本号 == 已发布版本号 ⇒ 现在直接 `npm publish` 必然 403** ⇒ 下次发版**必须先 bump**（见第 0 节）。
+> 本轮已部署：工作区根的 `update-plugin.sh`（`bash update-plugin.sh`）⇒ 15 个文件 md5 全部一致（刷新页面即生效，无需重启 dsh）。
+> 历史：3.9.0 → 3.9.1 → 3.10.0 → 3.10.1 → 3.11.0 → 3.12.0 → 3.13.0 → 3.13.1 → 3.13.2 → **3.13.3**。
+> **tag 缺口（实测）**：本仓 tag 最新仍为 `v3.12.0`；`v3.13.0` / `v3.13.1` / `v3.13.2` / `v3.13.3`
+> 本地与远端都没有 ⇒ 待打 tag 的目标提交与命令见文末「待打 tag」节（**只给命令，本轮未执行任何写 git 的操作**）。
 >
 > 下面两段是**历史状态记录（已过期）**，保留以便对照当时的判断过程：
 >
