@@ -211,6 +211,7 @@ node tools/persist-test.mjs || fail=1
 #   宿主侧同一条契约（PUT 合并不替换）另有源码守卫 + 行为断言；6 组变异各自必红。
 #   根因链/修法/判据/诚实清单：docs/SETTINGS-PERSIST.md
 node tools/settings-persist-test.mjs || fail=1
+node tools/blob-media-retry-test.mjs || fail=1
 
 if [ "${1:-}" != "--quick" ]; then
   step "3/12 CSS 组合矩阵（512 全组合 + 600 随机 + 边界；8 类历史回归断言）"
