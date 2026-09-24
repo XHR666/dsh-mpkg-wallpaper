@@ -326,7 +326,7 @@ node tools/build-bundle.mjs
 | `aquaTintStrength` | 45 | 面板取色的壁纸主色混合比例；运行时读取（`lib/client.js:5575`），无控件 |
 | `glassColor` / `glassAlpha` | 空 / 12 | 早期 WebGL 液态玻璃的遗留键：只随备份导出/导入与「恢复默认」走动，**无控件、无读取点**（`lib/client.js:11968`、`:11986`） |
 | `webInteraction` | `pointer` | 网页壁纸交互档位（`off`/`pointer`/`full`）：**无面板控件**，用 URL `?mpwinteract=…` 或写存档 |
-| `sceneRendererUrl` | `http://127.0.0.1:8899/` | 场景渲染器地址，可覆盖（`lib/client.js:3129-3132`） |
+| `sceneRendererUrl` | `http://127.0.0.1:8902/webloader/` | 场景渲染器地址，可覆盖（默认 = 一站式测试台 :8902 自己直供的 `/webloader/`；旧默认是 `:8899`，2026-09-25 改） |
 | `npVolume` | 100 | Now playing 卡片里的**音量电平**（0..100，落到真实元素）；默认档**从不写元素音量**，只有你动过才写 |
 | `glassWindow` | — | **已退役删除**（2026-09-19）：无控件、无读取点，功能已被 `settingsBlur` + `dialogBlur`/`popoverBlur` 覆盖；源码与 zh/en 字典 0 残留 |
 
@@ -407,7 +407,7 @@ node tools/build-bundle.mjs
 这两个数字口径不同，别混：
 
 - **主表共 158 个开关**，在**渲染器仓**的 [`we-scene-demo/docs/README-DIAGNOSTICS.md`](../we-scene-demo/docs/README-DIAGNOSTICS.md)（由 `diag-flag-check.mjs` 生成、与 `web/diag-flags.json` 对拍）。
-- 插件面板里只放**常用/逃生口那一张小表**（10 个，`common:true` 集合），拼在渲染器地址后面用，例如 `http://127.0.0.1:8899/?id=3719111841&audit=3`：
+- 插件面板里只放**常用/逃生口那一张小表**（10 个，`common:true` 集合），拼在渲染器地址后面用，例如 `http://127.0.0.1:8902/webloader/?id=3719111841&audit=3`：
 
 | 开关 | 用途 | 默认 |
 |---|---|---|
@@ -465,7 +465,7 @@ node tools/build-bundle.mjs
 
 插件提供两条路径：
 
-1. **外部渲染器 iframe（首选）**：本机 `:8899` 的 we-scene 渲染器在线时，场景以 iframe 挂载（`lib/client.js:3133-3190`）。渲染器离线/首帧超时则由**看门狗**回退静态帧并在提示条说明，可手动「重新挂载渲染器」。渲染器地址可用 `sceneRendererUrl` 覆盖。
+1. **外部渲染器 iframe（首选）**：本机渲染器（默认 `http://127.0.0.1:8902/webloader/`，旧默认 `:8899`）在线时，场景以 iframe 挂载（`lib/client.js:3133-3190`）。渲染器离线/首帧超时则由**看门狗**回退静态帧并在提示条说明，可手动「重新挂载渲染器」。渲染器地址可用 `sceneRendererUrl` 覆盖。
 2. **容器内素材提取（兜底，`lib/pkg-extract.js`，MIT，采用自 [elysia395/dsh-wallpaper-engine](https://github.com/elysia395/dsh-wallpaper-engine)）**：
    - **静态帧**：解析 PKG（LZ4 解压）+ TEX 纹理解码，按"面积 × 格式权重 × 路径惩罚"选主纹理（`lib/pkg-extract.js:1422-1491`）
    - **图层合成**：解析 `scene.json` 的全部 image 图层，按源坐标/尺寸在 canvas 上合成（最多 24 层，`lib/pkg-extract.js:1734-1829`）
