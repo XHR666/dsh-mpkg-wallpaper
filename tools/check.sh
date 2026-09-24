@@ -193,6 +193,10 @@ node tools/frost-rail-test.mjs || fail=1
 #   无条件清 src ⇒ "图层在但没有画面"，真机表现为刷新后图片/GIF 壁纸不显示）；`?bgwrapfix=legacy` 回退开关接线。
 #   判据/证据/复测方法：docs/BGWRAP-VISIBILITY.md；真机测量器 tools/bgwrap-display-probe.mjs。
 node tools/bgwrap-visible-test.mjs || fail=1
+#  ①(2026-09-25 P-184 同类普查) 慢判（12s"有 src 但一直没有画面 ⇒ 强制重挂一次"）判的必须是**真的画出来了**：
+#   section 档原判据 `canvas.width>0` 会退化成"元素存在"（draw() 一开始就按视口设宽高，图层 URL 全 404 时也成立）
+#   ⇒ 自愈永不触发、永久空白且无告警。判据/读数/改前改后矩阵：tools/bgpaint-heal-test.mjs。
+node tools/bgpaint-heal-test.mjs || fail=1
 # ①(2026-09-17 独立成线) 壁纸**刷新不丢**（持久化）：壁纸 dataURL 常内联在 STORE_KEY 的整串 JSON 里，
 #   而 localStorage 单值硬顶 256KB（超限**拒写**）、宿主 /settings 又明确跳过 image ⇒ 落在
 #   (256KB, 2MB] 的壁纸（本机语料实测 **34/34 全部命中**，量法见 tools/persist-size-scan.mjs）

@@ -168,3 +168,47 @@ node tools/bgwrap-visible-test.mjs --client <改动前的 client.js>   # 必须�
   `mpwLsSafeSet()` 会**拒绝写 localStorage**（只保留旧值，宿主端也不存 `image`）⇒ 刷新后可能丢壁纸选择。
   这是"大图应走 IndexedDB"分支的阈值问题（`storeImage` 的 2MB 与 256KB 上限不一致），**未修**，
   留待持久化线单独处置。
+
+## 追加（2026-09-25 P-184）：慢判（12s）的判据从 `canvas.width>0` 换成**画过戳**
+
+**缺陷**：慢判「有 src 但**一直没有画面** ⇒ 强制重挂一次」对 section 档（canvas 合成）原判据是
+`!!(canvas && (canvas.width || 0) > 0)`，而 `showSceneEl()` 的 `draw()` **一开始**就按视口给 canvas
+设宽高、`clearRect` 之后才逐层 `drawImage` ⇒ **所有图层都加载失败时**（真机形态：图层 URL 404 /
+宿主 token 失效 / 清单里全是坏 url）宽高照样被设上，判据退化成"元素存在"：
+慢判恒为"画出来了" ⇒ **12s 自愈永不触发**，表现是永久空白且一行告警都没有。
+反向也会错：canvas 还没参与/被宿主重建（width=0）时会把"正常"误判成坏。
+
+**改法**（`lib/client.js`）：
+* 新增两个只用 canvas 普通字段的小函数（便于门禁单独切出来跑真实现）：
+  * `mpwScenePaintStamp(canvas, key, drawn)` —— 落"画过戳"：`__mpwBgDrawnLayers`（真的 `drawImage` 了几层）+
+    `__mpwBgDrawnKey`（画的是哪份清单）+ `__mpwBgDrawnAt`；
+  * `mpwScenePainted(canvas, key)` —— 判据：层数 > 0 **且** key 与当前 `section.sceneKey` 相同。
+* `draw()` 逐层计数（`drawn++`）并在画完后落戳；**清单里一层都没有**时也落一次 0 层戳
+  （否则会留着上一份同 key 清单的旧戳，把"这份清单没画面"误读成"画出来了"）。
+* `mpwBgPaintedNow()` 的 scene 分支改读 `mpwScenePainted(canvas, section.sceneKey)`；
+  图片档（`complete && naturalWidth>0`）、视频档（`readyState>=2 && videoWidth>0`）、
+  web 档（不越权判死）与 `wrap`/`canvas` 缺失时的口径**逐条不变**（见下面的改前/改后矩阵）。
+* 取证接口 `window.__mpwBgWrapState()` 增加 `drawn:{layers,key,at}`（真机可读同一处口径）。
+
+**判据**（`tools/bgpaint-heal-test.mjs`，已进 `tools/check.sh`；13 断言）：从源码按括号配平切出三个真函数，
+在假 `bgElements` 上断言五档 —— ① 有宽高但一层没画成 ⇒ **false**（缺陷本体）② 画成 3 层且 key 相同 ⇒ true
+③ 旧 key 的戳 ⇒ false ④ 0 层戳 ⇒ false ⑤ `wrap` 在而 canvas 不在 ⇒ false（与改前一致）、`wrap` 不在 ⇒ true；
+外加其它三档判据不变 + 四条源码级钉子（逐层计数、0 层落戳、慢判仍经 `mpwBgPaintedNow`、探针读同一处口径）。
+
+**改前/改后逐条矩阵**（真源码切片；改前 = 钉死 `5b1a1ea` 的 `lib/client.js`，不能用 `HEAD` —— 一提交
+`HEAD` 就变成"改后"，自证会恒绿）：
+
+| 档位 | 改前 | 改后 |
+|---|---|---|
+| 有宽高但**一层都没画成** | `true`（缺陷本体） | `false` |
+| 真画了 3 层、key 与当前 sceneKey 相同 | `true` | `true` |
+| 戳是**异 key**（上一份清单留下） | `true`（吃旧戳） | `false` |
+| 显式 **0 层**戳 | `true`（不敏感） | `false` |
+| `wrap` 在、canvas 不在 | `false` | `false` |
+| `wrap` 不在 | `true` | `true` |
+
+**诚实边界**：① 戳落在 canvas 元素上 ⇒ 宿主把 canvas 整个重建后戳会丢，慢判会**多补一次 + 一行告警**
+（有界，同签名只做一次）；② "清单一层都没有"从此会被判成"没画出来"并触发一次补画 + 告警 —— 这是**有意**
+如实报出（有源却没有画面），但如果将来确认存在"合法空清单"的壁纸，应当在清单层就把它标成"无可画内容"
+而不是放宽这里；③ 本测试是**源码切片 + 假 DOM**，没有跑真浏览器的像素级验证（真机像素判据在本机
+`llvmpipe` 下不可信，与本文档原有口径一致）。
