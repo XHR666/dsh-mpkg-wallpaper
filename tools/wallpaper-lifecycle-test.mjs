@@ -626,7 +626,9 @@ console.log('\n== J. ⑤ 切页/隐藏页：我们的音频与帧内音频一起
   ok('J1 DEFAULT_POW_PAUSE_HIDDEN 默认 true（浏览器基本礼仪，不是可选优化）', /const DEFAULT_POW_PAUSE_HIDDEN = true;/.test(src))
   ok('J2 visibilitychange / pagehide / pageshow 三条都接线', /addEventListener\("visibilitychange"/.test(src) && /addEventListener\("pagehide"/.test(src) && /addEventListener\("pageshow"/.test(src))
   ok('J3 隐藏时把**我们自己的**播放器也停住（powHidNpWasPlaying 记账）', /powHidNpWasPlaying/.test(src) && /if \(powHidNpWasPlaying && npAudio\) npAudio\.pause\(\)/.test(src))
-  ok('J4 恢复时按**原状态**续播（隐藏前在放才续播）', /if \(powHidNpWasPlaying && npAudio && npAudio\.paused && !npCardPaused\)/.test(src))
+  /* H(2026-09-25) 这条的锚点跟着实现一起**加强**：原来只钉 `!npCardPaused`，现在多了 hidden 那一道
+     （`!mpwHiddenAudioBlock()`）—— 断言同时要求"按原状态"与"隐藏期间一个字节都不放"两条都在。 */
+  ok('J4 恢复时按**原状态**续播（隐藏前在放才续播）+ 隐藏期间不许放', /if \(powHidNpWasPlaying && npAudio && npAudio\.paused && !npCardPaused && !mpwHiddenAudioBlock\(\)\)/.test(src))
   ok('J5 帧内暂停有记账（恢复只撤销我们按下的暂停，不动作者自己的暂停）', /webFramePausedByUs/.test(src) && /if \(!webFramePausedByUs\) return;/.test(src))
   ok('J6 帧内音频恢复尊重卡片口径（resumeWallpaperVideo 里回落 npApplyFrameMute）', /resumeWebFrame\(\);\s*\n\s*\/\* ⑤ 静音回落/.test(src) || /npApplyFrameMute\(\); \} catch \(e\) \{\}/.test(src))
   // 迁移：默认档只抬"从没显式设过"的存量用户

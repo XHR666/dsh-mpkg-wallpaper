@@ -18,6 +18,16 @@ for f in lib/*.js; do
 done
 
 step "2/12 面板冒烟（含 CSS 模板闭合 / h 声明 / 花括号配平 / 渲染）+ P-66 面板健壮性/语言回归 + 选择器（第13条）回归 + 壁纸层可见性（.mpw-bgWrap）回归 + 壁纸持久化（刷新不丢）回归"
+# ⓪(2026-09-25 门禁自身 exit=1 的根因) **世界隔离**：`tools/_stub.mjs` 造的一次 loadPlugin 就是一个"世界"
+#   （新 document/新 localStorage/独立求值的 client.js）。桩原来只换全局对象、没让上一个世界停下来 ⇒
+#   旧世界排的定时器（补挂校验 1.2s/12s、boot 3.5s、np 台账 249ms、系统媒体 2s、rAF 链）触发时打到**新世界**
+#   的 DOM 上（`bgElements()` 走全局 document：lib/client.js:3103；`readSection()` 是模块级 sectionCache：
+#   lib/client.js:673 ⇒ 旧世界仍按**自己**的档位判"有源但没挂上"并 applyFromStorageInner() + video.play()）。
+#   现场：`np-control-test.mjs` 单独跑 106/0、进门禁 105/1 —— `V4 … 壁纸媒体零变化  — plays=0→1`，
+#   紧挨着还有一条旧档位签名的「检测到有壁纸源但媒体未挂上 → 补一次: …3582362359…」。
+#   修法：六个定时器标识符作为**参数**注入插件源码 ⇒ 每世界一张表，换代即取消上一世界的未触发定时器
+#   （用例自己的 sleep 走全局 setTimeout，不受影响）。这条判据钉住"隔离在位 + 关掉必红（定点 L1/L2/L3）"。
+node tools/world-isolation-test.mjs || fail=1
 node tools/panel-smoke.mjs || fail=1
 # ①(2026-09-24 用户 bug「壁纸配置里 WE 自带的选项只显示一项、展不开」) 官方 user properties
 #   面板回归（离线；真包语料 3509243656：233 条 / 21 组 / condition 与非空/空串都覆盖）：
@@ -226,6 +236,19 @@ node tools/persist-test.mjs || fail=1
 #   根因链/修法/判据/诚实清单：docs/SETTINGS-PERSIST.md
 node tools/settings-persist-test.mjs || fail=1
 node tools/blob-media-retry-test.mjs || fail=1
+# H(2026-09-25 真机"后台挂载期起播") 隐藏闸门：Android 把后台标签冻结→丢弃→**在后台重新加载**时，
+#   页面在 `document.hidden === true` 下走了一遍完整挂载；而 C 那轮的闸门只挂在"上一轮省电跑过"
+#   （`powPaused`）与三条补起播入口上，**14 处 play() 一处都没查 document.hidden** ⇒ 后台重载那条路
+#   等于没有闸门。本步用桩把 hidden **置在挂载那一刻**，断言：挂载路径 play() 零调用 / 隐藏时
+#   pause+帧 park+我们自己的 audio 停 / 可见时按策略恢复（区分"从没起播过"与"被隐藏暂停过"）/
+#   `freeze`(Android 冻结) 与 hidden 同一待遇 / 两条逃生门（`?hiddengate=legacy`、`powPauseHidden=false`）
+#   / hidden 期间起播**无论 owner 是谁**都留一条（含 owner/src/栈，且随 /diag 落盘）。
+#   判据/根因链/真机信标读数：docs/WALLPAPER-LIFECYCLE.md §6.4；8 组变异各自必红。
+#   真浏览器档（**不入常驻门禁**，与其它真机探针同规矩，必须串行）：
+#     flock /tmp/.mpw-firefox.lock -c 'node tools/hidden-gate-browser-probe.mjs'
+#   它用真 Firefox + 真 `<video>` + 真 `visibilitychange` 事件证明同一件事（17 通过 / 0 失败），
+#   且不导航到任何在跑的服务（页面由 page.route 本地 fulfil，fetch 被换成桩）。
+node tools/hidden-gate-test.mjs || fail=1
 
 if [ "${1:-}" != "--quick" ]; then
   step "3/12 CSS 组合矩阵（512 全组合 + 600 随机 + 边界；8 类历史回归断言）"

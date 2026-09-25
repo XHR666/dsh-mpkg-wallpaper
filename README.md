@@ -401,6 +401,7 @@ node tools/build-bundle.mjs
 | `?mpwstore=0\|mem` | 关帧内存储 facade / 只留内存不落盘 |
 | `?mpwpersist=legacy` | 设置持久化回旧行为 |
 | `?bgwrapfix=legacy`、`?hdrfrostwatch=off` | 壁纸层可见性 / 磨砂看门狗 |
+| `?hiddengate=legacy` | **隐藏闸门整族回旧行为**（后台挂载/冻结/切页时不再拦我们的起播与重试；A/B 与线上救急用。默认档＝页面隐藏时一律不起播、隐藏时停住所有我们的出声面、回到可见按当时策略恢复；详见 [`docs/WALLPAPER-LIFECYCLE.md`](docs/WALLPAPER-LIFECYCLE.md) §6.4） |
 
 ### 渲染器侧诊断开关（纯 Scene 壁纸）
 

@@ -255,6 +255,123 @@ npPrimePlay 是唯一起播入口，它的闸门只有 wallUserPaused / powPause
 **与 web 档的关系（一句话）**：同一条通道也覆盖 web 帧 —— 能直控就直控（同源档），
 跨源只能发 `policy/pause` 意图（沙箱档），并保留"交互音由壁纸自己播"的能力（我们只压背景音）。
 
+### 6.4 H 后台挂载期起播（2026-09-25：Android 冻结→丢弃→**在后台重新加载**）
+
+用户现场（与 6.3 那次**不是**同一件事）：
+
+> 「手机后台只有 Termux + Via 在跑；在哔哩哔哩 App 里看视频时**突然冒出声音**，而且与 B 站音频
+> 叠加（B 站没有被暂停）。回到 Via，发现 **DSH 页面需要重新加载**（= 页面此前被 Android
+> 冻结/丢弃/静默重载过）。」
+
+#### 6.4.1 首要假设的证实与证伪（先定性，再改代码）
+
+假设：「页面在后台被恢复/重载 ⇒ 壁纸挂载路径在 `document.hidden === true` 时仍然起播」。
+
+| 判断 | 结论 | 依据 |
+| --- | --- | --- |
+| **机制** | ✅ **证实** | C 那轮只收口了 3 条"补起播"入口（`npPrimePlay` / 手势重试 / `applyNowPlaying` 的补起播），**其余 14 处 `play()` 只查 `!(wallUserPaused \|\| powPaused)`，一处都没查 `document.hidden`**；而 `powPaused` 是"上一轮省电跑过"的**快照**，冻结/丢弃/后台重载这条路上它从来没被置真 ⇒ C 的闸门在这条路径上等于没有。真机信标已实锤这条链**真的会跑**：`diag-1790178218326.json`（09-23 23:43）`hidden-transition / kind=play / hidden=true / owner=ours / #mpw-bgVideo`。 |
+| **这次的可听性** | ❌ **证伪**（本档） | 用户档 `mute=true` ⇒ `npWantMuted()` 在"没有用户手势"（后台重载必然是）时**恒为 true**，`#mpw-bgVideo` / 我们的 `<audio>` 全程 muted。09-23 那条 hidden play 的真机读数正是 `muted=true` ⇒ 不发声。 |
+| **外部旁证** | ✅ 同页确有**不受我们 `mute` 管辖**的声源 | 信标全量盘点（9 条）：`mute-on-but-audible` 5 条**全部** `owner=whale-widget`（`/dsh-whale/sound/press.mp3`，`muted=false vol=1`，且 `np.mute=true`）—— 第三方插件的 `<audio>` 元素不在我们的静音面内（总线只管 WebAudio）。详见 [`AUDIO-SOURCES.md`](AUDIO-SOURCES.md) §7。 |
+
+**"谁起的"最终判定**：见 [`AUDIO-SOURCES.md`](AUDIO-SOURCES.md) §7（本轮把"信标全量盘点 + 归属表"补齐）。
+一句话：**本次的可听漏音没有一条信标指向我们自己的面**；我们的隐藏闸门有真实缺口（已修），
+但在 `mute=true` 这一档上它只造成"隐藏期间有人调 `play()`"（audit 里 `hidden:true muted=true` 那种），
+**不产生声音**。
+
+#### 6.4.2 逐点表：谁在什么条件下会起播（修前 → 修后）
+
+`lib/client.js` 的全量 `play()` 落点（22 处，含注释里 2 处引用）：
+
+| 落点（符号名，行号随版本漂移） | 修前门控 | 修后门控 |
+| --- | --- | --- |
+| `npPrimePlay`（唯一"正式"起播入口） | `wallUserPaused / powPaused / npUserPausedOf / npCardPaused / mpwHiddenAudioBlock` | 同上（不变） |
+| `npPlayRetryMuted`（被拒后 muted 重试一次） | **无** | `mpwPlayBlockedBy("prime-retry-muted")` |
+| `showVideoEl` 尾部 prime | `mpwHiddenAudioBlock`（在 npPrimePlay 内） | **+ 挂载期 `mpwHiddenBootGate`**（在它之前） |
+| `mpwAutoRefreshAfterApply`（120ms 延迟重放里的 `video.load()+play()`） | **无** | `mpwPlayBlockedBy("auto-refresh")` |
+| `mpwBlobMediaRetry` 的 tick（blob 元数据挂起兜底） | **无** | `mpwPlayBlockedBy("blob-retry")`（`typeof` 守卫保持该块可独立求值） |
+| `applyFromStorageInner` 的转码/直读/404/超时/aggressive 共 **7 处** `vid.play()` | `!(wallUserPaused \|\| powPaused)` | `!mpwMediaPlayBlocked()`（= 加 hidden） |
+| `npWatchVideo` 的 `pause` 事件补播（audio-blocked 兜底） | **无**（只查 pow/wallUserPaused） | `mpwPlayBlockedBy("pause-replay")`（**在置 `npSoundBlocked` 之前**，否则回可见时没人再装手势重试） |
+| `npEnsureAudio` 的 `ended` 单曲循环 | **无** | `mpwPlayBlockedBy("audio-loop")` |
+| `npAudioError` 的 blob 兜底起播 | **无** | `mpwPlayBlockedBy("audio-blob-retry")` |
+| `npLoadTrack(play=true)`（换曲/next） | **无** | `mpwPlayBlockedBy("npLoadTrack")` |
+| `npTransport` 的 `play`（卡片 / 系统媒体键） | **无** | `mpwPlayBlockedBy("transport:play")` |
+| `applyNowPlaying` 的 link-align `npAudio.play()` | **无** | `mpwPlayBlockedBy("link-align")` |
+| `resumeWebFrame`（帧内元素 play） | 只查 `webFramePausedByUs` | **+ `mpwHiddenAudioBlock()` 早退** |
+| `resumeWallpaperVideo` 的 video / npAudio 两行 | video 有 hidden 闸；**audio 没有** | 两行都 `+ !mpwHiddenAudioBlock()` |
+| web 帧 / 场景帧内**作者自己**起播（`?audio=1` 的音轨、网页壁纸 BGM） | 只有 `applyWebMute` 的 muted，**没有 park** | **+ hidden ⇒ `sendRendererAudioPolicy(frame,true,true)` park**（挂载后立即下发；见 `showWebEl`） |
+| 第三方插件（鲸鱼挂件等）的 `<audio>` | 不归我们管 | 仍不归我们管 —— 但 hidden 期间照**如实记一条**（owner/src/栈 + 独立台账 + 进 `/diag`） |
+
+#### 6.4.3 修法（五层，缺一层就还剩一半）
+
+1. **唯一判据实时化**：`mpwHiddenAudioBlock()` = `?hiddengate=legacy` 短路 ∧ `powPauseHidden` ∧
+   `mpwHiddenLive()`；`mpwHiddenLive()` = `mpwHiddenFrozen ∨ powHiddenNow ∨ document.hidden`（**实时读
+   `document.hidden`**，不再依赖"上一轮省电跑过"这个快照）。
+2. **统一闸门**：`mpwPlayBlockedBy(where)`（拦住 = true，并记一条带 `where` 的台账）；
+   `mpwMediaPlayBlocked()` 是 C 那轮 7 处旧写法的等价加强版。上面表里所有"无门控"的落点全部收口。
+3. **启动期状态机**（本次现场的正面回答）：
+   - `mpwHiddenBootGate(where)`：挂在 `showVideoEl` / `showWebEl` / `showSceneEl` 三个**真挂载点**上；
+     hidden ⇒ **一律不起播**，只记**一条** `boot-hidden-no-autoplay`（含 `where` 与 `state`）；
+   - 两种状态**必须可区分**：`never-started`（`mpwHiddenBootBlocked`，从没起播过）与
+     `paused-by-hidden`（`mpwHiddenPausedByUs`，隐藏前在播、被我们停的）；
+   - 恢复口两个：第一次 `visibilitychange → visible`（`updatePowerPause` 里调 `mpwHiddenBootResume`）
+     或用户手势（`npArmGestureRetry` 的 once 里）；恢复**按当时策略**（用户暂停 / 卡片暂停 / 被策略拒 ⇒ 不动）。
+4. **隐藏/冻结/丢弃时的停手**：`visibilitychange`(hidden) / `pagehide` / **`freeze`（新增，Android 冻结）**
+   ⇒ `updatePowerPause()` → `pauseWallpaperVideo()`（video.pause + web 帧 park/shim pause + 我们自己的
+   audio.pause + 强制 muted）；`freeze/resume` 走**同一条状态机**（单独 pause 会让画面永久冻在冻结那一刻）。
+   `AudioContext.suspend()`：我们自己的面里没有 AudioContext（唯一的 WebAudio 是帧内作者的，跨源只能靠
+   `park` 让渲染器自己 suspend），**不碰别人的 ctx**，只如实记账。
+5. **可归因**：`window.__mpwHiddenLedger`（有界 64：`boot-hidden-no-autoplay` / `pause` / `freeze` /
+   `frame-park` / `hidden-play` / `play-blocked(where)` / `boot-visible-resume` / `frame-mute-unreachable`…）、
+   `window.__mpwHiddenPlays`（hidden 期间的起播，**owner 是谁都记**）、
+   `window.__mpwUnreachableFrames`（不透明源且无 shim ⇒ 我们**一个通道都到不了**的帧，绝不假装静音）；
+   前两份随 `/diag` 的 `audio-audit` 信标落盘（页面在后台被丢弃/重载也丢不掉）。
+
+#### 6.4.4 判据与变异（`node tools/hidden-gate-test.mjs`，接入 `tools/check.sh` 第 2 步）
+
+| 组 | 钉什么 | 读数 |
+| --- | --- | --- |
+| A | hidden **挂载** ⇒ 挂载路径 `play()` **零调用** + 只记一条台账 + `where=showVideoEl` + `never-started` | **63 通过 / 0 失败**（含变异） |
+| B | 可见挂载 ⇒ 正常起播（闸门不是"永久禁播"） | 同上 |
+| C | `visibilitychange → hidden` ⇒ 真的 `pause()` + `paused-by-hidden` + 台账 | 同上 |
+| D | 回可见 **按原状态**：在播才续播；原本暂停的一个字节都不放 | 同上 |
+| E | `never-started` ⇒ 第一次可见**补上**（与 D 是两条独立状态）；`npPaused=true` ⇒ 不补 | 同上 |
+| F | `freeze` ⇒ 与 hidden 同待遇；`resume` ⇒ 闸门放开且**画面没有永久冻住** | 同上 |
+| G | 逃生门两条：`?hiddengate=legacy` / `powPauseHidden=false` | 同上 |
+| H | hidden ⇒ 对已挂载的帧下发 **park**（`posted=true`）+ 可见时不 park + 够不着的帧如实记账 | 同上 |
+| I / I2 | hidden 期间起播**无论 owner** 都留一条；我们自己的 BGM（换曲 / link-align）在 hidden 时零起播 + 可见正对照 | 同上 |
+| J | 源码锚点：旧写法 `!(wallUserPaused \|\| powPaused)` 代码里 0 残留、三个挂载点都有闸门、无"裸 `play()`" | 同上 |
+| K | **8 组变异各自必红**：`gate-reads-live-hidden-dropped`(A,E,F,H,I)、`boot-gate-removed`(A,E,J)、`play-gate-hidden-branch-removed`(I)、`frame-park-removed`(H)、`freeze-listeners-removed`(F)、`boot-resume-removed`(E)、`hidden-plays-ledger-removed`(I)、`npaudio-regate-removed`(I,J) | 8/8 红 |
+
+**真浏览器档**（不入常驻门禁；与其它真机探针同规矩，必须串行 —— 跑前先 `pgrep -af 'run-all-tests|check.sh'`）：
+
+```sh
+flock /tmp/.mpw-firefox.lock -c 'node tools/hidden-gate-browser-probe.mjs'
+# ⇒ 17 通过 / 0 失败（真 Firefox + 真 <video> + 真 visibilitychange 事件）
+```
+
+它把"node 桩里 `document.hidden` 是 `defineProperty` 出来的假值"这条质疑堵掉：B0 hidden 可控、
+B1 插件在真 Firefox 里装载并 apply、B2 真 DOM 里壁纸层与 `<video>` 都在、**B4 hidden 挂载 ⇒ 真媒体
+元素 `play()` 零调用**、B5 状态是 `never-started`、B7 真 `visibilitychange` 回可见才补起播、
+B10 转 hidden ⇒ 真 `pause()`、B12 回可见按原状态续播、B13 帧 park 报文逐字段正确、
+B14 正对照（可见时重挂载真的 `play()`）、B15 零 pageerror。
+**不碰任何在跑的服务**：页面由 `page.route` 本地 fulfil（中性源 `127.0.0.1:3199`）、`window.fetch`
+换成桩、`localStorage` 预置本档设置 ⇒ 全程不出网、不写 `~/.dsh-mpkg-wallpaper/settings.json`。
+
+#### 6.4.5 未验证边界（如实）
+
+- **真机 Adreno / Via / Android WebView 的实际冻结-丢弃-重载时序无法在本机复刻**：本机只有
+  node 桩（无浏览器）。本轮能证明的是"**代码路径**在 `document.hidden === true` 的挂载期不再调
+  `play()`"与"可见/隐藏两个方向的落点都对"，**不能**证明"Via 的后台重载一定会派发/不派发哪些事件"
+  （那正是本闸门不去依赖事件、改读实时 `document.hidden` 的原因）。
+- **`freeze` / `resume` 事件在目标浏览器上是否真的派发**：Chromium 系（Via/Chrome Android）支持，
+  但本机无法验证；不支持时只是挂了两个永不触发的监听（无害，不抛错），闸门仍由
+  `visibilitychange` + 实时 `document.hidden` 承担。
+- **不透明源（无 shim 的 strict sandbox）帧的音频**：我们**没有**任何通道能静音/暂停它
+  （`frame.muted` 对 iframe 不是标准语义、`contentDocument` 为 null、shim 不存在）；本轮只做到
+  **如实记账**（`__mpwUnreachableFrames` + `frame-mute-unreachable`）。要真管住它，需要宿主在
+  渲染器侧实现 `mpw-audio-policy` 的接收（场景渲染器已有；普通网页壁纸没有）。
+- **第三方插件（鲸鱼挂件）的 `<audio>`**：明确**不控制**（用户要求的边界）；只记录。
+
 ---
 
 ## 7. A 交互音/角色语音不进播放器清单
@@ -458,6 +575,148 @@ currentTime, hidden, np{on,link,mute}}`，写进**有界环形**（≤200 条，
 | 开关 / 参数 | 默认 | 作用 |
 | --- | --- | --- |
 | 「省电·页面隐藏/切页暂停」（`powPauseHidden`） | **true**（本轮改；未设过的存量档自动迁移） | hidden 时暂停+静音我们与帧内能控的音频；**并拦住我们自己的起播/重试**；回到可见按原状态续播 |
+| `?hiddengate=legacy` | 不写 = 闸门生效 | **整族隐藏闸门回旧行为**（后台挂载/冻结/切页时不再拦我们的起播与重试）；A/B 与线上救急；判据见 §6.4.4 G 组 |
 | 「播放/暂停同时控制壁纸」（`npLinkWallpaper`） | true | 关＝卡片只控自己的音频（副标题如实说明）；**关的那一刻不碰壁纸**；再开按卡片状态对齐 |
 | `?npvoice=keep \| drop` | 不写 = auto | auto：判为交互音的排除、判不准的保留；`drop`：判不准的也排除；`keep`：一条都不排除 |
 | 无声源时的行为 | — | 层隐藏 + 面板人话 + `data-mpw-bg-error` / `window.__mpwBgArmError`（绝不把错误页当壁纸） |
+
+---
+
+## 12. 门禁自身：`check.sh` 第 2 步 `exit=1` 的根因 —— 无浏览器桩的「世界隔离」（2026-09-25）
+
+### 12.1 症状：同一个脚本、同一个 cwd，单独跑绿、进门禁红
+
+`bash tools/check.sh` 当时 `exit=1`（日志 `/tmp/plugin-check-3139.log`，末行「存在失败项 ✗」）。两个读数：
+
+| 跑法 | 读数 |
+| --- | --- |
+| `node tools/np-control-test.mjs`（单独） | `结果: 106 通过, 0 失败` |
+| 同一文件在 `check.sh` 第 2 步里 | `结果: 105 通过, 1 失败` —— `V4 曲目档 prev 两次 ⇒ 从 2/6 回到 6/6（环形）…且壁纸媒体零变化  — idx=5 video.src=null plays=0→1 pauses=0→0` |
+
+> **先纠一条读日志的坑**：`/tmp/plugin-check-3139.log:86-92` 那七行 `✗ B1/B2/B2b/B3/B3b/B4/B4b`
+> （`[行数=0 期望=10]`、`[分组按钮=0]`、`[开关=0 range=0 color=0 text=0 combo=0]`、`[propEdits={}]`）
+> **不是基线**，是 `props-panel-wiring-test.mjs` 的 **M1 变异**（"把默认展开改回旧行为"）**预期要红**的读数：
+> 紧跟其后的 `:94 ✓ M1 必红（期望 B1）` 就是这条变异的记分；基线在 `:44-64`，`:66 基线：18/18 通过`。
+> 真正让门禁红的只有一处：`:1306 ✗ V4`（`:1373 结果: 105 通过, 1 失败`）。**怀疑对象（props）是假线索，
+> 真凶在 np-control-test 的 V 组。**
+
+### 12.2 根因：桩的"世界模型"缺了 teardown —— 旧世界的定时器打到新世界的 DOM 上
+
+`tools/_stub.mjs` 的一次 `loadPlugin()` = 一个**世界**：新 `document`、新 `localStorage`、一份独立求值的
+`lib/client.js`（各自一套模块级状态）。真浏览器里"换页/重载"会连旧页的定时器一起带走；桩里只换全局对象，
+**旧世界的 setTimeout 回调还活着**，触发时读到的是**新世界**的全局：
+
+| 通道 | 位置 | 后果 |
+| --- | --- | --- |
+| `bgElements()` 走全局 `document` | `lib/client.js:3103-3111` | 旧世界拿到的是**新世界**的 `#mpw-bgWrap` / `#mpw-bgVideo` |
+| `readSection()` 是**模块级** `sectionCache` | `lib/client.js:673-685` | 旧世界仍按**自己**的 `image/mpkgKey` 判定（不会读到新世界的档位） |
+| `mpwBgArmedNow()` mp4 档 = "有 src 才算挂上" | `lib/client.js:6374-6385`（mp4 在 `:6382`） | 新世界那枚刚建好、还没 src 的 `<video>` ⇒ 判成"有源但没挂上" |
+| 补挂校验：快判 1.2s / 慢判 12s | `lib/client.js:6444-6462`，判定 `:6464-6497` | 到点就 `applyFromStorageInner()`（**旧档位**）⇒ `showVideoEl` ⇒ `video.play()` |
+
+**门禁日志里的现场（`:1300-1306`，逐行对得上）**：
+
+```
+:1302  [dsh-mpkg-wallpaper] 检测到有壁纸源但媒体未挂上 → 补一次: host:?custom=1&folder=3582362359&file=Mid-Autumn%20Hoshino.mp4|custom|3582362359   ← 旧世界那条 1.2s 快判，签名还是**旧档位**
+:1303  [dsh-mpkg-wallpaper] hybrid 背景: mp4 /api/mpkg-wallpaper/custom-folder/3582362359/Mid-Autumn%20Hoshino.mp4                                  ← 旧档位被挂到新世界上
+:1304  [dsh-mpkg-wallpaper] 壁纸状态 = direct（未设帧率/分辨率上限 → 直读原片）
+:1305    ✓ V3 曲目档 next ⇒ …
+:1306    ✗ V4 曲目档 prev 两次 ⇒ …  — idx=5 video.src=null plays=0→1 pauses=0→0                                              ← "零变化"被旧世界的补挂打破
+```
+
+`V4` 的两条主判据（下标环形到 6/6、`getAttribute("src")` 仍为空）**过了**，红的只有"play 次数零变化"——
+正是旧世界补挂时那一次 `play()`。
+
+**为什么"顺序/负载敏感"**：1.2s 的期限到点时，**当前是哪个世界**完全由墙钟决定。单独跑时 E→V 那几组
+的 25ms `settle()` 加起来不到 1.2s（期限落在 V 之后）；门禁里机器更热/更慢，同样的代码路径就把期限落进了
+V3/V4 之间。用诊断钩子（排程时记下 `globalThis.document`、触发时比对）把这条泄漏整个照了出来 ——
+同一个进程里跨世界触发的定时器不止一条：
+
+```
+[PROBE] STALE TIMER: document changed since scheduling; ms=1200
+    at mpwBgSrcHealSchedule (eval at loadPlugin (…/_stub.mjs), <anonymous>:6451:25)   ← §12.2 那条快判
+    at applyFromStorage (…:6362) → applyInner (…:22810)
+[PROBE] STALE TIMER … ms=249   at npReportAudio (…:5147) ← npApplyVolume (…:5115)
+[PROBE] STALE TIMER … ms=2000  at npSysTimerSet (…:9489) ← npSystemMediaStart (…:9561)
+[PROBE] STALE TIMER … ms=3500  ← mpwBootTimer（lib/client.js:615）
+[PROBE] STALE TIMER … ms=0     at raf (…:14136) ← rAF 链（requestAnimationFrame → setTimeout(…,0) 自我续期）
+```
+
+把前奏按 6× 拉长（同一钩子，只放慢用例自己的 25ms `settle()`）后，**同一条泄漏**在
+`node tools/np-control-test.mjs --no-mutations` 上一次打出 3 条红：`A13`（帧内 policy 少了 volume）、
+`D4` / `D5c`（`plays=1`，联动关掉后画面仍被 play）—— 与 `V4` 同一根因，只是落点随墙钟漂移。
+**这就是"环境/顺序依赖"的全貌：不是 env、不是 cwd、不是 `tools/probe-out/`、不是别人留下的磁盘状态，
+而是同一个 node 进程里上一个"世界"没被关掉。**
+
+### 12.3 修法：定时器按世界分表，换代即取消（生产代码零改动）
+
+`tools/_stub.mjs`：
+
+* 插件里这六个标识符**全是裸用法**（`setTimeout` 54 处 / `clearTimeout` 37 / `setInterval` 14 /
+  `clearInterval` 18 / `requestAnimationFrame` 6 / `cancelAnimationFrame` 6；`window.` 前缀 **0** 处）
+  ⇒ 把它们作为**参数**注入被求值的源码：`new Function('require','module','exports','setTimeout',…,src)`，
+  每个世界一张表（`createWorldTimers()`）。
+* `installStubs()` 在新世界开始时把上一世界**还没触发**的定时器全部 `clearTimeout`（= 旧页面随文档消失），
+  并把取消条数记在 `world.retiredFromPrev` / `worldIsolationStats()` 上（判据可读）。
+* **用例自己的** `sleep()`/`wait()` 走全局 `setTimeout`，不在表里、不会被取消 ⇒ 不会把等待挂死。
+* `setInterval` 注入的仍是桩里那个恒不触发的实现（语义与改动前一字不差）。
+* 逃生口 `loadPlugin({ isolateWorlds: false })`：只为对照/变异自证保留。
+
+为什么这让它对顺序/环境不敏感：泄漏的**唯一通道**（旧世界的异步回调 → 新世界的全局 DOM）被切断；
+剩下的差异只有墙钟，而墙钟不再能改变任何断言的结果。生产代码（`lib/client.js`）一行未改 ——
+浏览器里"换页 ⇒ 旧页定时器消失"本来就是免费的，缺这一环的只有桩。
+
+### 12.4 判据 + 变异自证
+
+`tools/world-isolation-test.mjs`（已进 `check.sh` 第 2 步的**第一条**：先证明桩环境在位，再跑靠它的用例）：
+
+| 判据 | 内容 | 隔离在位读数 |
+| --- | --- | --- |
+| L1 | 换代取消了上一世界未触发的定时器（不是"恰好还没到点"） | `retired=5`（快判 1.2s / 慢判 12s / boot / np 台账 / 系统媒体…） |
+| L2 | 新世界的壁纸媒体零动作（play 0 次 / src 仍空 / 没被 pause） | `plays=0 pauses=0 src=null` |
+| L3 | 没有**旧档位签名**（`3582362359` / `Mid-Autumn`）的补挂告警 | `旧签名告警=0` |
+| L4 | 控制项：新世界**自己**的定时器照常触发（隔离 ≠ 停掉一切） | `ownTick=1 fired=3` |
+| M | 变异 `--no-isolate`（= 把守卫去掉）子进程必红且**定点** | `exit=1 红=[L1,L2,L3] 绿=[L4]`，读数 `play=1` + `旧签名告警 1 条` |
+
+**"去掉守卫 ⇒ 门禁必红"的实测**（把 `_stub.mjs:70` 的取消那一句短路成 `false &&`）：
+
+```
+$ node tools/world-isolation-test.mjs        # 守卫被去掉
+  · 换代读数：取消上一世界定时器 0 条；新世界壁纸 play=1 src=null        ← V4 的同一条症状
+  ✗ L1 retired=0   ✗ L2 plays=1   ✗ L3 旧签名告警=1   ✓ L4 ownTick=1
+✗ 世界隔离判据失败：通过 3 / 失败 3      ⇒ check.sh 的 `|| fail=1` ⇒ 门禁红
+```
+
+### 12.5 `check.sh` 第 2 步的执行顺序结论（`hidden-gate-test.mjs` ↔ `props-panel-wiring-test.mjs`）
+
+* 第 2 步的每个脚本都是**独立 node 进程**（`node tools/x.mjs || fail=1`）⇒ 进程之间**不共享**任何 JS
+  全局/桩状态；`document.hidden`、`__mpwHiddenPlays`、`__mpwSectionTest` 这类桩只活在各自进程里。
+* 跨进程唯一可能的耦合是磁盘。实测两者都不写共享目录：`props-panel-wiring-test.mjs` 只**读**语料
+  `<ws>/allwallpaper/0917/*/project.json`，临时文件写在 `os.tmpdir()` 下且名字带 pid+随机
+  （`mpw-props-test-<pid>-<rand>.js`）；`hidden-gate-test.mjs` 的变异只写自己 `mkdtemp` 出来的目录
+  （`mut-<name>.js`）。**都不写 `tools/probe-out/`，都不碰 `~/.dsh*`。**
+* 位置上也隔得最远：`hidden-gate-test.mjs` 是第 2 步的**最后一条**，`props-panel-wiring-test.mjs` 在**最前**
+  （前面只多一条 `world-isolation-test.mjs`）。⇒ **顺序无关**，不需要为它们调整次序。
+* 真正的"顺序依赖"不在进程之间，而在**进程内部的世界之间**（§12.2）；修在 `_stub.mjs` 里，
+  所有用这个桩的用例一起受益。
+
+### 12.6 诚实边界
+
+1. 隔离覆盖的是**注入的那六个定时器标识符**（`setTimeout` / `clearTimeout` / `setInterval` /
+   `clearInterval` / `requestAnimationFrame` / `cancelAnimationFrame` 的**裸用法**）。**没**覆盖
+   `win.requestAnimationFrame(...)` 这条：`lib/client.js:14133-14136` 的 `raf()` 走的是
+   `win.requestAnimationFrame`，而桩里 `globalThis.window === globalThis`（一个对象，只有属性被换代），
+   所以旧世界的补间链会继续按**当前**世界的 rAF 续期（诊断钩子实测仍有 `ms=0` 的 STALE TIMER，
+   栈为 `raf (…:14136) → step (…:14175)`）。它在两轮门禁里都**没有**造成任何红（形态是"卡片补间多跑几拍"），
+   但属于同一类通道；要彻底关掉得给每个世界一个自己的 `window`（Proxy），代价与风险另算 —— 本轮未做。
+2. 还没覆盖**微任务/Promise 链**（如 `fetch().then(...)`）：桩的 `fetch` 立即 resolve，实测无跨世界残留；
+   真浏览器里也不存在"旧页面的 Promise 改新页面 DOM"这种形态。
+3. `setInterval` 在桩里**本来就不触发**（全局被换成 `() => 0`），所以世界隔离对它没有额外作用，
+   也没改这个既有语义。
+4. 与本次修复**无关**的一条残留（写明，免得下次误判）：把**用例自身**的节奏人为拖慢到每拍 >60ms 时，
+   D 组仍会红 —— `✗ D4 / D5c … plays=1`。它的栈是
+   `npPrimePlay (…:5180) ← applyNowPlaying (…:9685) ← setTimeout(…,60) (…:9460) ← 世界表`：
+   `npTransport` 打完一次传输键后**自己**排的 60ms 重放会在窗口里起播一次（插件自己的起播预演），
+   与"旧世界的定时器打到新世界"不是一回事 —— 这条在**修前**的同一实验里也是红的（当时是
+   `A13 + D4 + D5c`，修后只剩 `D4 + D5c`）。正常节奏与两轮门禁实测都绿；本轮**没有**去动 D 组的断言。
+5. 这条判据证明的是"旧世界的定时器不会落到新世界上"。它**不**证明断言的数值本身正确 ——
+   各组的业务判据（V1..V4、B1..B5…）一条没放宽，仍是原来的口径。

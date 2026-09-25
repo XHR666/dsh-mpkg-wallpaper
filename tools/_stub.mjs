@@ -8,7 +8,73 @@ import { fileURLToPath } from 'node:url'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 
+/* ══════════════════════════════════════════════════════════════════════════════
+   世界（world）隔离 —— 每个"世界"一份自己的定时器表
+   ──────────────────────────────────────────────────────────────────────────────
+   一次 loadPlugin() = 一个**世界**：新 document / 新 localStorage / 一份独立求值的 lib/client.js
+   （各自一套模块级状态）。真浏览器里"换页/重载"会连旧页的定时器一起带走；桩里 globalThis 被后来者
+   覆盖，旧世界的 setTimeout 回调却还活着 —— 触发时它读到的是**新世界**的全局：
+     · bgElements()（lib/client.js:3103-3111）走全局 document ⇒ 打到新世界的 `<video>`/`<img>` 上；
+     · readSection() 有模块级 `sectionCache`（lib/client.js:673-685）⇒ 旧世界仍按**自己**的档位
+       （image/webUrl/mpkgKey）判定"有源但没挂上"，于是 applyFromStorageInner() 把旧壁纸挂到
+       新世界上，顺带 `video.play()`。
+   实测后果（tools/np-control-test.mjs 的 V 组）：旧世界那条 1.2s"快判补挂"（lib/client.js:6444-6452）
+   落进新世界的断言窗口 ⇒ `V4 曲目档 prev 两次 … 壁纸媒体零变化  — plays=0→1` 变红：
+   同一个脚本、同一个 cwd，单独跑绿、进门禁红（负载/顺序敏感）。同一条泄漏还打到过 A13/D4/D5c。
+   对策：把 setTimeout/clearTimeout/setInterval/clearInterval/requestAnimationFrame/cancelAnimationFrame
+   作为**参数**注入被求值的插件源码（插件里这六个标识符全是裸用法，`window.` 前缀 0 处）
+   ⇒ 每个世界一张表；新世界开始时把上一世界**还没触发**的定时器全部取消（= 真的把旧页面关掉）。
+   用例自己的 sleep/wait 走全局 setTimeout，**不受影响**（不会把用例的等待取消掉）。
+   判据/变异自证：tools/world-isolation-test.mjs（`--no-isolate` 那一跑必须红）。
+   `loadPlugin({ isolateWorlds: false })` 可关掉 —— 只为对照/变异自证保留。
+   边界（详见 docs/WALLPAPER-LIFECYCLE.md §12.6）：`win.requestAnimationFrame(...)` 这类**带前缀**的
+   调用不经过这里（桩里 `window === globalThis`）⇒ 旧世界的补间链仍会按当前世界的 rAF 续期；
+   实测不改变任何判据的结论，彻底关掉要给每个世界一个自己的 `window`。
+   ══════════════════════════════════════════════════════════════════════════════ */
+let __mpwWorld = null
+export function createWorldTimers() {
+  const pending = new Set()
+  let fired = 0, cancelled = 0
+  const world = {
+    seq: 0,
+    /* 注入口：与全局同名同参，插件那头零感知。回调抛错按原语义冒泡（真 setTimeout 的行为）。 */
+    setTimeout(fn, ms, ...args) {
+      const h = globalThis.setTimeout(() => { pending.delete(h); fired++; return fn.apply(null, args) }, ms)
+      pending.add(h)
+      return h
+    },
+    clearTimeout(h) { pending.delete(h); try { globalThis.clearTimeout(h) } catch { /* 已经触发过 */ } },
+    requestAnimationFrame(f) { return world.setTimeout(() => f(Date.now()), 0) },
+    cancelAnimationFrame(h) { world.clearTimeout(h) },
+    /* 桩里 setInterval 恒不触发（下面 installStubs 把全局换成 () => 0）——注入同款，语义一字不变 */
+    setInterval: () => 0,
+    clearInterval: () => {},
+    pending: () => pending.size,
+    /** 世界换代：把这张表里还没触发的定时器全部取消（= 旧页面随文档一起消失）。返回取消条数。 */
+    cancelAll() {
+      let n = 0
+      for (const h of pending) { try { globalThis.clearTimeout(h) } catch { /* ignore */ } n++ }
+      pending.clear()
+      cancelled += n
+      return n
+    },
+    stats: () => ({ seq: world.seq, pending: pending.size, fired, cancelled }),
+  }
+  return world
+}
+/** 当前世界的隔离读数（用例/探针可读；不改变任何行为）。 */
+export function worldIsolationStats() {
+  const s = __mpwWorld ? __mpwWorld.stats() : { seq: 0, pending: 0, fired: 0, cancelled: 0 }
+  return Object.assign({}, s, { retiredFromPrev: __mpwWorld ? __mpwWorld.retiredFromPrev : 0 })
+}
+
 export function installStubs(opts = {}) {
+  /* 世界换代：上一个世界没触发的定时器随"页面"一起消失（真浏览器语义）。 */
+  const retiredFromPrev = (opts.isolateWorlds !== false && __mpwWorld) ? __mpwWorld.cancelAll() : 0
+  const world = createWorldTimers()
+  world.seq = (__mpwWorld ? __mpwWorld.seq : 0) + 1
+  world.retiredFromPrev = retiredFromPrev
+  __mpwWorld = world
   /* ---------- 桩 React ---------- */
   const mkEl = (type, props, ...kids) => ({ __el: true, type, props: props || {}, kids: kids.flat(9) })
   const hookState = []
@@ -125,12 +191,15 @@ export function installStubs(opts = {}) {
       try { if (String(url).indexOf('/diag') >= 0 && opts2 && opts2.body) diagEvents.push(JSON.parse(opts2.body)) } catch {}
       return { ok: false, status: 404, json: async () => ({}), text: async () => '', arrayBuffer: async () => new ArrayBuffer(0) }
     }
-  return { react, ReactDOM, doc, listeners, fetchCalls, diagEvents }
+  return { react, ReactDOM, doc, listeners, fetchCalls, diagEvents, world }
 }
 
 /**
  * 载入插件并 apply()。
- * @param {{clientPath?:string, search?:string, settings?:object, quiet?:boolean, fetch?:Function}} opts
+ * @param {{clientPath?:string, search?:string, settings?:object, quiet?:boolean, fetch?:Function,
+ *          isolateWorlds?:boolean}} opts
+ *   isolateWorlds=false 只为**对照/变异自证**（tools/world-isolation-test.mjs --no-isolate）保留：
+ *   关掉之后旧世界的定时器会打到新世界的 DOM 上（这正是本桩要防的那种顺序敏感）。
  */
 export function loadPlugin(opts = {}) {
   const stubs = installStubs(opts)
@@ -153,7 +222,13 @@ export function loadPlugin(opts = {}) {
     if (name === 'react-dom/client') return { createRoot: () => ({ render: () => {}, unmount: () => {} }) }
     return {}
   }
-  new Function('require', 'module', 'exports', src)(stubRequire, { exports: {} }, {})
+  /* 世界专属的定时器以**参数**注入（插件里全是裸标识符；`window.` 前缀 0 处）⇒ 每个世界一张表，
+     世界换代时上一张表整个取消。用例自己的 sleep/wait 走全局 setTimeout，不受影响。 */
+  new Function('require', 'module', 'exports', 'setTimeout', 'clearTimeout', 'setInterval', 'clearInterval',
+    'requestAnimationFrame', 'cancelAnimationFrame', src)(
+    stubRequire, { exports: {} }, {},
+    stubs.world.setTimeout, stubs.world.clearTimeout, stubs.world.setInterval, stubs.world.clearInterval,
+    stubs.world.requestAnimationFrame, stubs.world.cancelAnimationFrame)
   if (!registry.length) throw new Error('插件未向 __ModuleLoader__ 注册')
   let plugin = null
   for (const reg of registry) {

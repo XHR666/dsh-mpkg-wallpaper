@@ -118,6 +118,66 @@ node tools/audio-source-hunt-live-probe.mjs --selftest
 **仍然抓不到的（如实）**：①跨源（沙箱）帧内的 WebAudio —— 浏览器不允许装钩子，只能标 `foreign`；
 ②不在浏览器里的声音（系统/别的 App）；③`<audio>` 之外的原生控件（本机没有）。
 
+## 5c. 2026-09-25 复查：**信标全量盘点**回答"这个漏音究竟由谁引起"
+
+新现场（用户报）：后台只有 Termux + Via；在 **B 站 App** 里看视频时**突然冒出声音**、与 B 站音频叠加
+（B 站没被暂停）；回到 Via 发现 **DSH 页面需要重新加载**（= 页面此前被 Android 冻结/丢弃/重载过）。
+设置档（已核对）：`mute=true`、`powPauseHidden=true`、`powPauseBlur/Battery=false`、
+壁纸 = video 档（`custommpkg|小鸟游星野01_04.mpkg` / `bgcs_abydos03.mp4`）、`npPaused=true`、`webUrl=""`。
+
+**做法**：把 `~/.dsh/.dsh-mpkg-wallpaper/diag-*.json`（50 个文件）**全量**扫一遍，取所有
+`audio-audit` 信标（9 条），逐条读 `trigger / kind / hidden / el.muted / el.paused / el.volume /
+np.mute / el.owner`。
+
+| 时间（本地） | trigger | kind | hidden | el.muted | el.paused | vol | np.mute | owner |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 09-21 21:58 ×3 | `audible-playback` | unmute / np-apply-mute | false | **false** | false | 0.33 | **false** | ours（#mpw-bgVideo） |
+| 09-23 21:45 | `mute-on-but-audible` | play | false | **false** | false | 1 | true | **whale-widget** |
+| 09-23 22:16 | `mute-on-but-audible` | play | false | **false** | false | 1 | true | **whale-widget** |
+| 09-23 23:43 | `hidden-transition` | play | **true** | **true** | **true** | 0.33 | true | ours（#mpw-bgVideo） |
+| 09-24 16:40 | `mute-on-but-audible` | play | false | **false** | false | 1 | true | **whale-widget** |
+| 09-24 18:51 | `mute-on-but-audible` | volume | false | **false** | false | 1 | true | **whale-widget** |
+| 09-24 20:20 | `mute-on-but-audible` | play | false | **false** | false | 1 | true | **whale-widget** |
+
+**三条判据（可直接引用）**：
+
+1. **`mute=true` 的那些日子里，唯一"静音设置开着却真的可听"的 owner 是 `whale-widget`**（5 条，
+   全部 `muted=false / vol=1`）。第三方插件的 `<audio>`（`new Audio('/dsh-whale/sound/press.mp3')`）
+   **不在我们的静音面内**：我们的 `mute` 只写我们自己的元素；音频总线只管 WebAudio（`connect`/增益），
+   管不到别人的 `HTMLMediaElement`。这是"面板写着静音却仍有声音"的**唯一有信标支持的 owner**。
+2. **我们自己的元素在 hidden 期间只出现过一次 `play()`，且当时 `muted=true`（不发声）**
+   （09-23 23:43，`#mpw-bgVideo`，`paused=true` —— 一次"对还没起播的元素调 play"，形态与
+   "被节流的重试/延迟重放落到隐藏之后"完全一致）。⇒ 本插件的漏音**机制**确实存在（见
+   `WALLPAPER-LIFECYCLE.md` §6.4），但在 `mute=true` 这一档上它**不产生声音**。
+3. **本次现场（09-25）没有任何信标**（最后一封是 09-25 15:51，与漏音无关）⇒ 两种可能：
+   ①漏音在我们页面的**旧实例**里发生，而页面随后被 Android 丢弃/重载 ⇒ **内存里的 200 条环形缓冲
+   随页面一起没了**，只有 `suspicious` 命中且 POST 成功的那一条才会落盘；②声源在我们的钩子之外
+   （跨源帧 / 别的 App / 系统）。
+
+**结论（回答"这个漏音究竟由谁引起"）**：**当前证据不能指认到本插件**；能指认的、有信标支持的可听
+owner 只有 `whale-widget`（第三方，且按用户要求**不由我们控制**）。要让下一次**可定案**，本轮补了
+两样（`WALLPAPER-LIFECYCLE.md` §6.4.3 第 5 条）：`window.__mpwHiddenPlays`（hidden 期间起播，
+owner 是谁都记，**含 owner/src/栈**）与 `window.__mpwHiddenLedger`（我们自己的隐藏闸门台账），
+两份都随 `/diag` 落盘 ⇒ **页面在后台被丢弃/重载也丢不掉**。
+
+**下一次发生时的最小观测（30 秒）**：回到 Via 的 DSH 页面后，在控制台跑
+
+```js
+// ① 隐藏期间到底有谁起播过（owner 是谁、什么 src、什么调用栈）
+window.__mpwHiddenPlays        // 空数组 = 隐藏期间没有任何 play/取消静音
+// ② 我们自己的闸门做了什么（挂载被挡 / pause / freeze / park / 被哪一处挡住）
+window.__mpwHiddenLedger.slice(-12)
+// ③ 仍然存活的那 200 条审计（若页面**没有**被重载过）
+window.__mpwAudioAudit.list.filter(r => r.hidden)
+// ④ 我们够不着的帧（不透明源 + 无 shim ⇒ 它的声音我们管不了）
+window.__mpwUnreachableFrames
+```
+
+若 ① 非空且 `owner` 不是 `ours` ⇒ 直接照 owner 找那个插件；若 ① 为空而 ② 显示
+`boot-hidden-no-autoplay` ⇒ 是"后台重载挂载被挡"（本轮已修，说明闸门在干活）；
+若两份都是空而声音仍出现 ⇒ 声源在浏览器之外（别的 App/系统），或页面已被重载（此时看宿主侧
+`~/.dsh/.dsh-mpkg-wallpaper/diag-*.json` 里有没有新的 `audio-audit` 信标）。
+
 ## 6. 诚实边界
 
 1. **跨源 iframe 内的声音装不进钩子**（浏览器安全模型）：记录会标 `foreign:true`，我们能说"这段声音来自一个跨源帧"，

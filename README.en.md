@@ -400,6 +400,7 @@ Start here when something is wrong: one click sends state back to the local host
 | `?mpwstore=0\|mem` | Disable the in-frame storage facade / keep it in memory without persisting |
 | `?mpwpersist=legacy` | Settings persistence back to the old behaviour |
 | `?bgwrapfix=legacy`, `?hdrfrostwatch=off` | Wallpaper-layer visibility / frost watchdog |
+| `?hiddengate=legacy` | **Whole hidden-gate family back to the old behaviour** (no more blocking our autoplay/retries while the page is hidden, frozen or background-reloaded; for A/B and emergencies. Default = never start playback while hidden, stop every sound surface we own when hidden, resume per policy on return; see [`docs/WALLPAPER-LIFECYCLE.md`](docs/WALLPAPER-LIFECYCLE.md) §6.4) |
 
 ### Renderer-side diagnostics flags (pure Scene wallpapers)
 

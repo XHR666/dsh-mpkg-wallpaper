@@ -15,7 +15,8 @@
 | 条件显示丢失 | 同上 | `condition` **完全没有提取**（真包语料 `3509243656` 有 4 条带字段、2 条非空；`3195212886` 也有） |
 | 控件量程丢失 | 同上 | `min/max/step/precision` 未提取 ⇒ 想渲染滑杆也没有量程 |
 
-真包语料统计（`/root/Desktop/DSHarea/allwallpaper/**`，70 个 `project.json`）：
+真包语料统计（`<DSHAREA>/allwallpaper/**`，70 个 `project.json`；本机工作区根按脚本自身位置推导，
+仓库里不写绝对路径 —— 与 `docs/SETTINGS-PERSIST.md` 同一口径）：
 `slider 890 / bool 825 / color 410 / text 222 / combo 177 / group 124 / textinput 99 / scenetexture 86 /
 usershortcut 61 / 无 type 102`。渲染器侧同名面板（`we-scene-demo` 的 MPW-PROPS-PANEL + `propsPanelModel`，
 **只读参考行为口径、未复制代码**）这些能力都有；插件侧一条都没有 ⇒ 两边口径差 = 本 bug。
