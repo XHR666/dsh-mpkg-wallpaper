@@ -234,6 +234,14 @@ function freshPlugin(opts = {}) {
   const innerAudio = doc.createElement('audio'); innerAudio.muted = true
   const frameDoc = { querySelectorAll: (sel) => (String(sel).indexOf('audio') >= 0 ? [innerAudio] : []) }
   frame.contentDocument = frameDoc
+  /* ①(2026-09-25 任务 ㉑) `contentWindow` 是真浏览器里**永远存在**的那个对象（哪怕跨源）：
+     它是"图级音频策略"通道（`postMessage({type:'mpw-audio-policy'})`）的唯一投递面。
+     夹具把它显式建出来（`postMessage` 记账 + 同源 `__wp.setAudioPolicy` 记账）——
+     否则"策略有没有下发到帧里"就只能靠读源码，而那正是本轮要判红的旧状态。 */
+  frame.contentWindow = {
+    postMessage: (msg, origin) => { (frame.__posted = frame.__posted || []).push({ msg: msg, origin: origin }) },
+    __wp: { setAudioPolicy: (p) => { frame.__wpPolicy = p } },
+  }
   frame.querySelector = () => null
   wrap.querySelector = (sel) => (String(sel).indexOf('iframe') >= 0 ? frame : null)
   wrap.appendChild(video); wrap.appendChild(frame)
@@ -499,6 +507,110 @@ console.log('\n== D. 静音落点：设置项 + video/audio/帧内元素（真�
   await sleep(30)
   ok('D4 我们的播放器在放音（设置 mute=false）时 ⇒ 帧内**强制静音**（防同一首叠着放两遍），且 ownsSound=true',
     F4.frame.muted === true && F4.T.ownsSound() === true, JSON.stringify({ frame: F4.frame.muted, owns: F4.T.ownsSound() }))
+  /* ══════════════ D5–D9 ①(2026-09-25 任务 ㉑) 图级音频策略通道（`mpw-audio-policy`）══════════════
+     为什么单独有这一组：`frame.muted`（expando）、`contentDocument` 逐元素、shim policy 三条通道
+     对**跨源的场景渲染器帧**（8902 vs 3080）一条都到不了；真机读数（静音=开 + 场景档 + 刷新）：
+     帧内 4 条 `<audio>` 全 `muted:false`、AudioContext running、destination 抽头 rms≈0.013。
+     `postMessage` 是那条唯一可达的通道，本组钉住"发得对、刷新后必发、值没变不重发"。 */
+  const policyMsgs = (F) => (F.frame.__posted || []).map((x) => x.msg).filter((m) => m && m.type === 'mpw-audio-policy')
+  {
+    /* D5：设置 mute=true ⇒ 策略下发 muted:true（图级静音；并带上宿主音量档） */
+    const F5 = freshPlugin({ settings: Object.assign({}, SEC_WEB, { mute: true }) })
+    await settle()
+    try { F5.T.applyMute() } catch (e) {}
+    await sleep(20)
+    const msgs = policyMsgs(F5)
+    ok('D5 ★ 静音=开 ⇒ 向帧内下发 `{type:"mpw-audio-policy", muted:true}`（跨源唯一可达的图级通道）',
+      msgs.length >= 1 && msgs[msgs.length - 1].muted === true && msgs[msgs.length - 1].volume !== undefined,
+      JSON.stringify(msgs.slice(-2)))
+    ok('D5b ★ 同源时那条**真能力** API 也走一遍（`__wp.setAudioPolicy`，幂等由渲染器侧保证）',
+      !!F5.frame.__wpPolicy && F5.frame.__wpPolicy.muted === true, JSON.stringify(F5.frame.__wpPolicy))
+    /* D6：设置 mute=false 且我们没在放音 ⇒ 下发 muted:false（帧内那份该响就响） */
+    const F6 = freshPlugin({ settings: Object.assign({}, SEC_WEB, { mute: false }) })
+    await settle()
+    try { F6.T.applyMute() } catch (e) {}
+    await sleep(20)
+    ok('D6 静音=关 ⇒ 下发 muted:false（不是"永远静音"）',
+      (policyMsgs(F6).slice(-1)[0] || {}).muted === false, JSON.stringify(policyMsgs(F6).slice(-1)))
+    /* D7：**刷新后必发** —— 换 `contentWindow`（= 帧重载/刷新后的新文档）⇒ 即使值没变也重发一次 */
+    const n0 = policyMsgs(F6).length
+    F6.frame.contentWindow = { postMessage: (msg) => { (F6.frame.__posted = F6.frame.__posted || []).push({ msg: msg }) }, __wp: { setAudioPolicy: () => {} } }
+    try { F6.T.applyMute() } catch (e) {}
+    await sleep(20)
+    ok('D7 ★★ 帧刷新（`contentWindow` 换了）⇒ **即使值没变也重新下发一次**（旧写法只挂载/切歌时下发）',
+      policyMsgs(F6).length === n0 + 1, JSON.stringify({ before: n0, after: policyMsgs(F6).length }))
+    /* D8：幂等 —— 同一 contentWindow、同值反复 apply（800ms/2s 周期就是这样）⇒ 计数不增长 */
+    const n1 = policyMsgs(F6).length
+    try { F6.T.applyMute(); F6.T.applyMute(); F6.T.applyMute() } catch (e) {}
+    await sleep(20)
+    ok('D8 ★ 幂等：同一文档、同值再 apply 3 次 ⇒ postMessage **一条都不多发**（周期重压无副作用）',
+      policyMsgs(F6).length === n1, JSON.stringify({ before: n1, after: policyMsgs(F6).length }))
+    ok('D8b 台账可机读（探针读它）：`window.__mpwRendererAudioPush` 记录次数/最后一次/是否跨源',
+      (() => { const r = globalThis.__mpwRendererAudioPush; return !!r && r.n >= 1 && r.last && typeof r.last.stale === 'boolean' })(),
+      JSON.stringify(globalThis.__mpwRendererAudioPush && globalThis.__mpwRendererAudioPush.last))
+    /* ══════ D10/D11 ①(2026-09-25 任务 ㉑ 追加) 「响的不是当前壁纸的音频」：隐藏/切走 ⇒ 停源 ══════
+       真机现场（用户原话）："又开始播放音频了，这个音频并不是我当前壁纸的音频（没动音频、也没刷新页面）"。
+       机制：宿主"**隐藏但保留**"跨源渲染器 iframe（看门狗兜底 `sceneFallbackActivate` 等迟到首帧、
+       总开关关掉、省电暂停），而 `display:none` 不停媒体、跨源帧又读不到 DOM/expando ⇒ 旧帧一直响。 */
+    {
+      /* D10：场景看门狗兜底（隐藏 iframe 等迟到首帧）⇒ 必须向帧内下发 `park:true` */
+      const F10 = freshPlugin({ settings: Object.assign({}, SEC_WEB, { mute: false, converted: 'scene', sceneKey: 'scene|probe', webUrl: 'http://127.0.0.1:8902/webloader/?pkgurl=x&embed=1&audio=1' }) })
+      await settle()
+      try { F10.T.applyMute() } catch (e) {}
+      await sleep(20)
+      const before10 = policyMsgs(F10).length
+      let fb = null
+      try { fb = globalThis.__mpwLifecycleTest.sceneFallback('test-hook') } catch (e) { fb = String(e && e.message || e) }
+      await sleep(20)
+      const msgs10 = policyMsgs(F10)
+      const last10 = msgs10[msgs10.length - 1] || {}
+      ok('D10 ★★ 看门狗兜底（隐藏渲染器 iframe 等迟到首帧）⇒ 下发 `park:true`（**停源**，不是只压增益）',
+        last10.park === true && last10.muted === true && msgs10.length > before10,
+        JSON.stringify({ fb: fb, last: last10, n: msgs10.length }))
+      ok('D10b 兜底停源留痕（探针/面板可查"为什么当时有声音"）',
+        (() => { try { return !!(globalThis.__mpwSceneFallbackPark && globalThis.__mpwSceneFallbackPark.at) } catch (e) { return false } })(),
+        JSON.stringify(globalThis.__mpwSceneFallbackPark || null))
+      /* D11：跨源帧的"暂停"（shim 到不了、contentDocument 也读不到）⇒ 必须走 park，并如实记账
+         （否则恢复时会去 play 作者自己停着的媒体 —— ⑤ 的既有纪律） */
+      const F11 = freshPlugin({ settings: Object.assign({}, SEC_WEB, { mute: false }) })
+      await settle()
+      F11.frame.contentDocument = null                       // 不透明源/跨源：父页读不到帧内 DOM
+      try { F11.T.applyMute() } catch (e) {}
+      await sleep(20)
+      const before11 = policyMsgs(F11).length
+      let n11 = null
+      try { n11 = globalThis.__mpwLifecycleTest.pauseWebFrame() } catch (e) { n11 = String(e && e.message || e) }
+      await sleep(20)
+      const last11 = policyMsgs(F11).slice(-1)[0] || {}
+      ok('D11 ★★ 跨源帧暂停：shim 与 contentDocument 两条都到不了 ⇒ 走 `park:true` 通道（旧写法这两条都"成功返回 0"、什么都没停）',
+        last11.park === true && policyMsgs(F11).length > before11, JSON.stringify({ n: n11, last: last11 }))
+      try { globalThis.__mpwLifecycleTest.resumeWebFrame() } catch (e) {}
+      await sleep(20)
+      const last11b = policyMsgs(F11).slice(-1)[0] || {}
+      ok('D11b 恢复：把"我们自己按下的 park"撤掉（`park:false`），且**不**无条件 play 帧内媒体',
+        last11b.park === false, JSON.stringify(last11b))
+    }
+    /* D9：`npFrameSoundBlocked()` 的口径 = "**真的在放音**"（元素在放但被 muted/音量 0 ⇒ 不算占用） */
+    const F9 = freshPlugin({ settings: Object.assign({}, SEC_WEB, { mute: false }) })
+    await settle()
+    F9.T.seedTracks(SEC_WEB, [{ path: 'backgroundmuisc.mp3', size: 1665645, mime: 'audio/mpeg' }])
+    F9.T.load(0)
+    F9.T.transport('play', SEC_WEB)
+    await sleep(20)
+    const ownsAudible = F9.T.ownsSound()
+    const el = F9.T.audio()
+    let blockedWhenPlaying = null, blockedWhenMuted = null
+    try { blockedWhenPlaying = globalThis.__mpwLifecycleTest.frameSoundBlocked() } catch (e) { /* 钩子缺席 */ }
+    try { if (el) el.muted = true } catch (e) {}
+    try { globalThis.__mpwNpTest.syncAudio() } catch (e) {}
+    try { blockedWhenMuted = globalThis.__mpwLifecycleTest.frameSoundBlocked() } catch (e) { /* ignore */ }
+    if (blockedWhenPlaying === null || blockedWhenMuted === null) {
+      ok('D9 `npFrameSoundBlocked()` 口径 = 真的在出声（元素 muted 后不再占用帧内）', false, 'LifecycleTest.frameSoundBlocked 钩子缺席')
+    } else {
+      ok('D9 ★ `npFrameSoundBlocked()` 口径 = **真的在出声**：在放 ⇒ 压帧内；元素被 muted ⇒ 不再占用',
+        blockedWhenPlaying === true && blockedWhenMuted === false, JSON.stringify({ ownsAudible: ownsAudible, playing: blockedWhenPlaying, muted: blockedWhenMuted }))
+    }
+  }
 }
 
 /* ══════════════ E. 让位（默认开的配套：不抢别人的位置） ══════════════ */
@@ -899,6 +1011,41 @@ const MUTS = [
     why: '①(资源审计 #2) 把 npDropAudio（卸载）里的 `npBlobUrlSet("")` 删掉 ⇒ 关掉 NP/拆除播放器后'
       + 'blob URL 活到页面卸载（旧写法只 removeAttribute("src")，不释放 Blob）',
     mut: (s) => s.replace('\t\t\tnpBlobUrlSet("");\n\t\t\tnpAudio = null;', '\t\t\tnpAudio = null;'),
+  },
+  /* ══ ①(2026-09-25 任务 ㉑) 图级音频策略通道（跨源唯一可达）：两个变异各自让 D 组变红 ══ */
+  {
+    id: 'renderer-audio-policy-not-sent', expect: 'D', file: 'client',
+    why: '①(任务 ㉑) 把 `applyWebMute` 里那次 `sendRendererAudioPolicy(frame, mute)` 删掉'
+      + '（= 修前状态：跨源的场景渲染器帧**一条静音通道都没有** —— contentDocument/frame.muted/shim 全到不了）'
+      + '⇒ 静音=开时帧内的 WebAudio 图照样出声（真机读数：destination 抽头 rms≈0.013，元素 muted:false）',
+    mut: (s) => s.replace('\t\t\t\ttry { sendRendererAudioPolicy(frame, mute); } catch {}\n', ''),
+  },
+  {
+    id: 'renderer-audio-policy-not-resent-after-reload', expect: 'D', file: 'client',
+    why: '①(任务 ㉑) 把"帧重载（`contentWindow` 换了）⇒ 即使值相同也重发"那半条判据删掉'
+      + '（`stale = !prev || prev.win !== cw` → `stale = !prev`）⇒ **刷新之后新文档收不到静音策略**，'
+      + '壁纸又开始出声（用户原话："网页刚刷新之后…还是会有声音"）',
+    mut: (s) => s.replace('const stale = !prev || prev.win !== cw;', 'const stale = !prev;'),
+  },
+  {
+    id: 'scene-fallback-does-not-park-frame-audio', expect: 'D', file: 'client',
+    why: '①(任务 ㉑ 追加) 把 `sceneFallbackActivate` 里那次 `sendRendererAudioPolicy(f0, true, true, "scene-fallback:...")` 删掉'
+      + '（= 修前状态：看门狗把渲染器 iframe 藏起来等迟到首帧，而隐藏的帧里音频照放）'
+      + '⇒ 用户听到"**不是当前壁纸的**那段声音"（真机现场原话）',
+    mut: (s) => s.replace('\t\t\ttry { const f0 = bgElements().frame; if (f0) sendRendererAudioPolicy(f0, true, true, "scene-fallback:" + String(why || "")) } catch (e) {}\n', ''),
+  },
+  {
+    id: 'cross-origin-frame-pause-does-nothing', expect: 'D', file: 'client',
+    why: '①(任务 ㉑ 追加) 把 `pauseWebFrame` 里那条"两条老通道都到不了 ⇒ 走 park"的分支删掉'
+      + '（= 修前状态：跨源帧的暂停"成功返回 0"却什么都没停）',
+    mut: (s) => s.replace('\t\t\t\tif ((!isShimFrame || !shimOk) && n === 0) { try { parked = sendRendererAudioPolicy(frame, true, true, "pause-frame") } catch (e) { parked = false } }\n', ''),
+  },
+  {
+    id: 'np-frame-sound-blocked-uses-paused-only', expect: 'D', file: 'client',
+    why: '①(任务 ㉑) 把 `npFrameSoundBlocked()` 的口径退回"只看 paused"（`npOwnAudible()` → `npAudioOwns()`）'
+      + '⇒ 元素在放但被 muted/音量 0 时也白占帧内，壁纸自带的 BGM 被无谓压住',
+    mut: (s) => s.replace('\t\t\t\treturn npOwnAudible();\n\t\t\t} catch (e) { return false }\n\t\t}',
+      '\t\t\t\treturn npAudioOwns();\n\t\t\t} catch (e) { return false }\n\t\t}'),
   },
 ]
 if (!NO_MUT) {

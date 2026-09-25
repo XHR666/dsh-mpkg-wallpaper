@@ -957,7 +957,7 @@ const MUTATIONS = [
   { id: 'clear-bg-undefined-weburl', expect: 'F', why: '清空退回 `webUrl: undefined`（= 不覆盖 + 粘性带回来）⇒ 点清除后壁纸被重新加载（修前现场）', mut: (s) => s.replace('webUrl: null, sceneKey: null }), true);', 'webUrl: undefined, sceneKey: undefined }), true);') },
   { id: 'arm-probe-ignores-okfalse', expect: 'G', why: '验活只看 r.ok（不看 {ok:false}）⇒ 真机那条 404 的 JSON 不再被判不可用', mut: (s) => s.replace("if (body && body.ok === false) return rec({ ok: false, status: status, url: u, error: String(body.error || \"\").slice(0, 120) });", '') },
   { id: 'sandbox-fallback-unconditional', expect: 'H', why: '降级判据退化成"任何错误都降级"⇒ 沙箱隔离价值被一次无关报错换掉', mut: (s) => s.replace("return /SecurityError|sandbox|opaque|not allowed|denied|Failed to construct 'Worker'|Blocked|insecure|Operation is insecure/i.test(msg);", 'return true;') },
-  { id: 'card-pause-does-not-gate-frame', expect: 'I', why: '帧内归属不再看"卡片暂停"（修前 NP-3 形态）⇒ 卡片暂停后壁纸 BGM 继续响（真机第 ④ 条）', mut: (s) => s.replace('if (npCardPaused) return true;\n\t\t\t\treturn npAudioOwns();', 'return npAudioOwns();') },
+  { id: 'card-pause-does-not-gate-frame', expect: 'I', why: '帧内归属不再看"卡片暂停"（修前 NP-3 形态）⇒ 卡片暂停后壁纸 BGM 继续响（真机第 ④ 条）', mut: (s) => s.replace('if (npCardPaused) return true;\n\t\t\t\treturn npOwnAudible();', 'return npOwnAudible();') },
   /* C3 的两道防线（换档硬归零 + 早退收口）互为兜底：只拆一道仍然不红 = 设计如此；
      变异必须把两道一起退回（= 修前的完整形态）才算有分辨力。 */
   { id: 'np-paused-not-restored', expect: 'R', why: '刷新后不按持久化意图恢复（把它退回"内存态、刷新即播放"）⇒ 用户的暂停被换成播放', mut: (s) => s.replace('try { npApplyPersistedPause(s); } catch (e) {}', '') },

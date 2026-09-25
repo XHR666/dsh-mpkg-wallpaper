@@ -19,6 +19,15 @@ done
 
 step "2/12 面板冒烟（含 CSS 模板闭合 / h 声明 / 花括号配平 / 渲染）+ P-66 面板健壮性/语言回归 + 选择器（第13条）回归 + 壁纸层可见性（.mpw-bgWrap）回归 + 壁纸持久化（刷新不丢）回归"
 node tools/panel-smoke.mjs || fail=1
+# ①(2026-09-24 用户 bug「壁纸配置里 WE 自带的选项只显示一项、展不开」) 官方 user properties
+#   面板回归（离线；真包语料 3509243656：233 条 / 21 组 / condition 与非空/空串都覆盖）：
+#   默认展开（该显示 N 项就 N 项；旧行为 = 0 行、只剩一个「展开全部」按钮）+ 分组头可折叠
+#   + condition 显隐（含传递闭包；白名单外表达式按"未知"照显示并记账）+ 每类属性都有**真控件**
+#   （bool 开关 / slider 量程 / combo 下拉 / color 取色 / textinput 文本框）+ 控件**真的写进
+#   propEdits**（`setProp` 原来是 0 处调用的死代码）+ 5 条变异必红（M1 改回默认折叠 / M2 改回
+#   只读文本行 / M3 丢掉 group·condition / M4 setProp 空实现 / M5 分组头退化成普通行）。
+#   基线 18 通过 / 0 失败；变异 M1..M5 全红（读数打印在测试末尾）。
+node tools/props-panel-wiring-test.mjs || fail=1
 # ①(2026-09-21 真机第12/13条) 预览框：**媒体不裁切 + 与占位不并排 + 同框可见 ≤ 1**。
 #   真机现场：暂停键左边的预览图被切掉一块、右边约 1/4 是白块写着 `mp4`（换目录后同形，白块不走）。
 #   根因：`.mpw_wallThumb` 是 flex 行，`<img>/<video>`（width:100% + object-fit:cover）与类型占位
