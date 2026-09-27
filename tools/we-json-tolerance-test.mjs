@@ -330,10 +330,13 @@ const HOST_NONPKG_RULES = [
   const deadRules = HOST_NONPKG_RULES.filter((r) => !rIdx.matched.get(r.id)).map((r) => r.id)
   check('S1-7b', '`lib/index.js` 的非包内白名单每条都仍然命中（台账不腐烂；' + HOST_NONPKG_RULES.length + ' 条各带理由）',
     deadRules.length === 0, JSON.stringify({ 命中: Object.fromEntries(rIdx.matched), 失效: deadRules, 跳过: rIdx.skipped.map((s) => s.line + ':' + s.why) }))
-  /* 包内解析点清单（宿主侧 2 处）：模式 + 记账 where 串一起断言（"改走 mpwParseWeJson 并记账"两件事都钉住）。 */
+  /* 包内解析点清单（宿主侧 3 处）：模式 + 记账 where 串一起断言（"改走 mpwParseWeJson 并记账"两件事都钉住）。
+     ①(2026-09-27 类型判定轮) 第 3 处 = `/custom-dir` 的**容器内容探测**（`probeContainerKind` 读容器内
+     `project.json`：只作线索、不作依据，但坏 JSON 同样必须记账 —— 判据 tools/type-detect-test.mjs）。 */
   const HOST_PKG_INVENTORY = [
     { id: 'web-wallpaper:readProjectJson(WE 目录 project.json)', re: /mpwParseWeJson\(text\)[\s\S]{0,400}?mpwWeJsonSwallowed\('web-wallpaper:readProjectJson\('/ },
     { id: 'index:steam-inventory(<Steam 壁纸目录>/project.json)', re: /mpwParseWeJson\(readFileSync\(proj, 'utf8'\)\)[\s\S]{0,400}?mpwWeJsonSwallowed\('\[steam-inventory\]/ },
+    { id: 'index:probeContainerKind(容器内 project.json)', re: /mpwParseWeJson\(b\.toString\('utf8'\)\)[\s\S]{0,900}?mpwWeJsonSwallowed\('probeContainerKind:project\.json\('/ },
   ]
   const missing = HOST_PKG_INVENTORY.filter((x) => !x.re.test(wwSrc + idxSrc)).map((x) => x.id)
   check('S1-8', '宿主侧包内/包旁解析点清单（' + HOST_PKG_INVENTORY.length + ' 处）逐条在：都走 `mpwParseWeJson` 且都记账',
@@ -353,7 +356,7 @@ const HOST_NONPKG_RULES = [
   ]
   const unaccounted = acct.filter((s) => s.sawCatch && !s.accounted)
   check('S1-9', '宿主侧 ' + acct.length + ' 处读取点：凡"吞"的 catch 里都有 `mpwWeJsonSwallowed`（计数 + 一行诊断，不静默）',
-    acct.length === 2 && acct.every((s) => s.sawCatch && s.accounted) && unaccounted.length === 0,
+    acct.length === 3 && acct.every((s) => s.sawCatch && s.accounted) && unaccounted.length === 0,
     JSON.stringify({ 读取点: acct, 未记账: unaccounted }))
   console.log('  · PLUGIN-WEJSON-SCAN ' + JSON.stringify({
     pkgStrictResidual: rWw.pkgSites.length + rIdx.pkgSites.length, unclassified: rWw.unclassified.length + rIdx.unclassified.length,
@@ -709,7 +712,7 @@ if (!NO_MUT) {
       target: 'ww',
       before: true,
       build: (src) => src.replace("    const obj = mpwParseWeJson(text);", "    const obj = JSON.parse(text);"),
-      /* `S1-9`（记账反查）也会红：退回严格后那个 `mpwParseWeJson(` 站点整个消失 ⇒ 读取点数 2→1。 */
+      /* `S1-9`（记账反查）也会红：退回严格后那个 `mpwParseWeJson(` 站点整个消失 ⇒ 读取点数 3→2。 */
       want: () => ['S1-7', 'S1-8', 'S1-9', 'S2-E2EH-WW'],
     },
     {
@@ -719,7 +722,7 @@ if (!NO_MUT) {
       before: true,
       build: (src) => src.replace("                  try { return mpwParseWeJson(readFileSync(proj, 'utf8')); }\n                  catch (e) { mpwWeJsonSwallowed('[steam-inventory] ' + proj, e); throw e; }\n                })();",
         "                  return JSON.parse(readFileSync(proj, 'utf8'));\n                })();"),
-      /* `S1-9`（记账反查）同样红：退回严格后 `mpwParseWeJson(` 站点消失 ⇒ 读取点数 2→1。 */
+      /* `S1-9`（记账反查）同样红：退回严格后 `mpwParseWeJson(` 站点消失 ⇒ 读取点数 3→2。 */
       want: () => ['S1-7', 'S1-8', 'S1-9', 'S2-E2EH-STEAM'],
     },
     {

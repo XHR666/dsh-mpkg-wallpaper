@@ -8,7 +8,7 @@
 //   ④ lib/** 里没有硬编码个人绝对路径 /root/、/home/、Windows 用户目录
 //   ⑤ lib/** 里没有常见凭据形态（私钥头、sk-、ghp_、AKIA、password=、Authorization: Bearer 字面量）
 //   ⑥ 图标文件存在且是 SVG/PNG；package.json 的 icon 指向的文件存在
-//   ⑦ 自检脚本与门禁脚本在位（tools/check.sh、tools/panel-smoke.mjs、tools/scene-watchdog-test.mjs、tools/scene-sandbox-test.mjs、tools/host-sandbox-token-test.mjs）
+//   ⑦ 自检脚本与门禁脚本在位（tools/check.sh、tools/panel-smoke.mjs、tools/scene-watchdog-test.mjs、tools/scene-sandbox-test.mjs、tools/host-sandbox-token-test.mjs、tools/stale-scene-commit-test.mjs）
 //   ⑧ 元数据一致性（历史踩坑：包名 `we-scene-renderer` 与仓库名不一致）：package.name ↔
 //      repository/homepage/bugs 的仓库名 ↔ LICENSE 首行 ↔ README 无旧包名残留
 //   ⑨ **发布包内容清单**（`npm pack --dry-run --json`，历史踩坑：`files:["lib"]` 会把
@@ -84,7 +84,7 @@ const svg = read('icon.svg') || ''
 ok(/<svg[\s>]/i.test(svg), 'icon.svg 是 SVG')
 
 console.log('\n== ⑦ 门禁脚本在位 ==')
-for (const f of ['tools/check.sh', 'tools/panel-smoke.mjs', 'tools/scene-watchdog-test.mjs', 'tools/scene-sandbox-test.mjs', 'tools/host-sandbox-token-test.mjs', 'tools/integrity-check.mjs', 'tools/secret-scan-test.mjs']) ok(exists(f), f)
+for (const f of ['tools/check.sh', 'tools/panel-smoke.mjs', 'tools/scene-watchdog-test.mjs', 'tools/scene-sandbox-test.mjs', 'tools/host-sandbox-token-test.mjs', 'tools/stale-scene-commit-test.mjs', 'tools/integrity-check.mjs', 'tools/secret-scan-test.mjs']) ok(exists(f), f)
 
 console.log('\n== ⑧ 元数据一致性（包名 ↔ 仓库名 ↔ LICENSE ↔ README）==')
 const repoSlug = String((pkg.repository && pkg.repository.url) || '').replace(/\.git$/, '').replace(/\/+$/, '').split('/').pop()

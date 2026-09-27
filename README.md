@@ -220,14 +220,16 @@ node tools/build-bundle.mjs
 | 静音（网页壁纸） | `mute` | 开 | 网页壁纸音频；关 = 放壁纸声音 | 关 |
 | **Now playing（左侧栏「设置」上方）** | `npNowPlaying` | **开** | 左侧栏挂可展开播放器（传输行 = 壁纸声音控制）；**关掉仍是零注入**；同一位置被别的插件占用时自动让位（`data-mpw-np-yield`） | 关 / 恢复默认 |
 | 播放/暂停同时控制壁纸 | `npLinkWallpaper` | 开 | Now playing 的播放/暂停与进度同时驱动壁纸自身；关 = 只驱动本插件播放器（壁纸媒体是唯一声源时控件**如实 disabled**） | 关 |
-| Web 帧模式（网页壁纸） | `webFrameMode` | `auto` | 网页壁纸 iframe 的**三档**：`auto` = 隔离沙箱，被浏览器策略挡住才一次性降级兼容（默认）；`sandbox` = 强制隔离，**不**自动降级（原因写进状态，可查）；`compat` = 兼容档（不带 shim 标记）。判定表只有一份（`lib/web-wallpaper.js`），状态见 `window.__mpwWebFrame` 与 `#mpw-bgWrap[data-mpw-webframe-mode\|-reason\|-attr\|-degraded]`（详见 [docs/WEB-WALLPAPER.md](docs/WEB-WALLPAPER.md) §3.0） | 选 `auto`；也可用 `?webframe=auto\|sandbox\|compat` 临时覆盖（不改设置） |
+| Web 帧模式（网页壁纸） | `webFrameMode` | `auto` | 网页壁纸 iframe 的**三档**：`auto` = 隔离沙箱，被浏览器策略挡住 / shim 没报到时**只在沙箱内降档**（去掉 shim 标记重载，仍是不透明源），**不会自动升同源**（默认）；`sandbox` = 强制隔离，**不**自动降档（原因写进状态，可查）；`compat` = 兼容档（同源 + 不带 shim 标记，**只有用户显式选它才到得了**）。判定表只有一份（`lib/web-wallpaper.js`），状态见 `window.__mpwWebFrame` 与 `#mpw-bgWrap[data-mpw-webframe-mode\|-reason\|-attr\|-fallback\|-autocompat\|-degraded]`，台账 `window.__mpwWebFrameGuard`（详见 [docs/WEB-WALLPAPER.md](docs/WEB-WALLPAPER.md) §3.0） | 选 `auto`；也可用 `?webframe=auto\|sandbox\|compat` 临时覆盖（不改设置） |
+| 自动降级到兼容档（高风险） | `webFrameAutoCompat` | 关 | **风险回退口**：打开后 auto 档才允许在"被策略挡住"时自动降 `compat` —— 那意味着**这张第三方壁纸的脚本与 DSH 同源**（可读宿主界面/本地存储、可带 cookie 打插件路由）。关着时只记账 + 面板提示手动切。判据 `tools/web-frame-origin-guard-test.mjs`（详见 [docs/SECURITY-ROUTES.md](docs/SECURITY-ROUTES.md) F5） | 关 |
+| 渲染器上游白名单 | `sceneUrlWhitelist` | 空 | **跨源回退口**：`sceneRendererUrl`/`sceneExtUrl` 默认只允许 http(s) **回环**（127.0.0.1/localhost/::1）与"和页面同主机的字面 IP"；跨源上游必须把它的 **origin** 填在这里（逗号/空格分隔）才会被使用，否则一律拒绝并回落 `127.0.0.1:8902`（记账 + 日志，不静默）。⚠ 登记进来的上游会**连同场景令牌 `st` 一起放行**（详见 [docs/SECURITY-ROUTES.md](docs/SECURITY-ROUTES.md) F6） | 清空 = 只允许回环 |
 | 水平翻转（镜像） | `flipX` | 关 | 壁纸左右镜像 | 关 |
 | 垂直翻转（镜像） | `flipY` | 关 | 壁纸上下镜像 | 关 |
 | 解码帧率上限 | `fpsCap` | 无限制 | 源帧率超限时宿主 ffmpeg 抽帧转码（24/30/48/60） | 选「无限制」 |
 | 分辨率上限 | `resMax` | 原始分辨率 | ffmpeg 缩放（720p/1080p/2K，保持宽高比） | 选「原始分辨率」 |
 | 视频倍速 | `playbackRate` | 1x | 0.5–2x（档位 0.5/0.75/1/1.25/1.5/2） | 1x |
 | ffmpeg 状态 | — | — | 显示系统/缓存/环境变量来源；未装可下载，缓存装的可卸载（不动系统） | — |
-| 可调参数（折叠区） | `propEdits` | 空 | mpkg 只读展示；网页壁纸可改（分辨率/语言/音量等，见下） | 壁纸级重置 |
+| 可调参数（折叠区） | `propEdits` | 空 | **可改且改完即生效**：mpkg 场景壁纸走 P-203 跨源属性通道（`mpw-user-props`，渲染器回执确认；见 `docs/WE-USER-PROPS.md` §3）；网页壁纸走 shim 同源通道（分辨率/语言/音量等，见下） | 壁纸级重置 |
 | 磨砂模糊 | `blur` | 12px | 壁纸层模糊（0–40） | 0 |
 | 镜头缩放 | `zoom` | 100% | 10–2000% | 100% |
 | 画面亮度 | `brightness` | 100% | 50–150% 滤镜 | 100% |
@@ -377,6 +379,46 @@ node tools/build-bundle.mjs
 - **零依赖**：只用 `node:child_process`；`package.json` 里没有新增任何依赖。
 - **环境变量**：`MPW_MEDIA_ADAPTER`（强指适配器）、`MPW_MEDIA_PLAYER`（钉播放器名）、`MPW_MEDIA_TIMEOUT_MS`。
 
+### 宿主路由的来源闸门（P-204，2026-09-27）
+
+插件挂在 DSH 宿主上的路由此前**零鉴权、零 Origin 校验**，`/raw` 还会对**任意 Origin** 回显 `Access-Control-Allow-Origin` +
+`Allow-Credentials: true` ⇒ 任意网页可以「盲改自定义目录 → 跨源读回本机文件」。现在：
+
+- **三处 ACAO 回显白名单化**（`/raw`、场景音频、缩略图上报，外加 `/lg` 静态 JS）：只放 `Origin: null`（沙箱帧）
+  与 `http://127.0.0.1:3080|8899|8902`（含 `localhost`）；非白名单**一个 `Access-Control-Allow-*` 都不发**；
+- **非 GET 写请求过闸门**：`Sec-Fetch-Site`（有则必须 `same-origin`/`none`）+ `Origin` 白名单；`/scene-thumb-token`
+  与 `/settings` 连 GET 也过闸，且**令牌只签给本机真实存在的场景**、不透明源不能自签；
+- **`/custom-dir` 拒敏感目录**（点开头的路径段、家目录自身、系统目录）；**`/raw` 的 `file` 有扩展名白名单**
+  （容器/图片/视频/音频/json）；
+- **回退口**（默认关，排障用）：`MPW_CSRF=0`、`MPW_CORS_LEGACY=1`、`MPW_CORS_ORIGINS=a,b`、
+  `MPW_CUSTOM_DIR_ALLOW_ANY=1`；`GET /api/mpkg-wallpaper/security` 只读播报当前生效值。
+
+完整规格（漏洞 → 修法 → 回退口 → 判据 → 未验证边界）见 [`docs/SECURITY-ROUTES.md`](docs/SECURITY-ROUTES.md)，
+判据 `node tools/sec-route-guard-test.mjs`（45 断言，含审计那条攻击链的修前/修后对拍）。
+
+### 网页帧同源逃逸 + 可控上游（P-205，2026-09-28）
+
+审计里剩下的两条（当时 `lib/client.js` 被并行线占用 ⇒ 留给本轮）：
+
+- **F5 网页壁纸同源逃逸**：改前入站只校验 `ev.source === frame.contentWindow`，而两条自动兜底
+  （2.5s shim 没报到 / 帧内上报"策略类错误"）会把 iframe 的 `sandbox` 换成含 `allow-same-origin` 的
+  兼容集 ⇒ **作者页一条 `postMessage` 就能把第三方脚本升到与 DSH 同源**。现在：自动降档落点恒为
+  沙箱档（`allow-scripts`，不透明源）；入站消息**同时**校验 `ev.origin` 与"这个帧应有的来源"
+  （按我们自己写的 `src`/`sandbox` 推导；不符即拒收并记账）；`compat` 只能由用户显式设置，
+  风险回退口 = 设置项 `webFrameAutoCompat`（默认关，打开时台账标 `risk:"same-origin"`）。
+- **F6 可控上游 + `st` 下发**：改前 `sceneRendererUrl`/`sceneExtUrl` 读到什么就拼进渲染器 iframe，
+  宿主签发的场景令牌 `st` 也随 `pkgurl` 一路下发。现在：设置里的外链只认 http(s) **回环** /
+  "与页面同主机的字面 IP" / **显式白名单**（设置项 `sceneUrlWhitelist`）；`st` 只在目标过闸门时下发；
+  非法目标一律拒绝使用（回落默认回环）+ 记账（`window.__mpwSceneUrlGuard`）+ `console.warn` + `/diag` 信标。
+
+判据（都注册在 `tools/check.sh` 第 5 步，各自带**变异自证**子进程）：
+`node tools/web-frame-origin-guard-test.mjs`（45 断言：伪造 policy 错误/来源不符 ⇒ 不降档且记账、
+显式 `compat` 零回归、回退口打开才降 compat、3 组变异必红）与
+`node tools/scene-url-token-guard-test.mjs`（41 断言：回环带 `st` / 跨源拒绝且 URL 里 0 处攻击者源 /
+白名单放行带 `st` / 同主机字面 IP 口径 / 非 http(s) 拒绝 / 4 组变异必红）。
+本仓**没有新增 env / URL / localStorage 开关**（两个回退口都是设置项）⇒ 渲染器仓
+`tests/diag-flag-check.mjs` 的双向比对读数不变（0/0）。
+
 ⚠ **接线现状（如实）**：该模块**尚未接进插件**——`lib/index.js` / `lib/client.js` / `tools/build-bundle.mjs` 都没有 import 它，也没有 `/media-session`、`/media-control` 之类的宿主路由，所以 **Now playing 控件显示的仍是「壁纸自己的媒体」，不是系统播放器**。宿主路由与 UI 展示已在 [`docs/MEDIA-SESSION.md`](docs/MEDIA-SESSION.md) §9/§10 规划但标注为未做。判据：`node tools/media-session-test.mjs`（95 断言 = 89 主体 + 6 变异自证），**目前未接入 `tools/check.sh`**。
 
 ## 诊断与排障
@@ -495,7 +537,7 @@ node tools/build-bundle.mjs
 - **WE API shim（10 个全局，注入在作者脚本之前）**：`wallpaperPropertyListener`、`wallpaperRegisterAudioListener`、`wallpaperRegisterMedia{Properties,Thumbnail,Playback,Timeline,Status}Listener`、`wallpaperRequestRandomFileForProperty`、`wallpaperMediaIntegration`、`wallpaperPluginListener`（`lib/web-wallpaper.js:540-551`、`:498-517`）
 - **存储持久化**：帧内 facade（真 `localStorage` 一读就抛时安装）+ 宿主 `POST/GET /api/mpkg-wallpaper/web-store`，按壁纸隔离（`sha1(label|wallKey|relFile)` 前 12 位）；上限 64 键 / 单值 4096 字符 / 每壁纸 64KB / 最多 64 张壁纸，落 `~/.dsh-mpkg-wallpaper/web-store.json`
 - **风险预检**：`⚠重动画`（目录里有 `.skel/.atlas` 或名字含 spine/live2d，深度 ≤3）与 `🌐外网`（入口 HTML 前 256KB 含 `http(s)://`），只在 `type === "web"` 时显示（`lib/index.js:1937-1953`、`lib/client.js:12867-12868`）
-- **CSP**：命中阻断型 CSP 时**不注入** shim、回原字节并加 `x-mpw-shim-skipped: csp`（`lib/web-wallpaper.js:424-439`，这一处**照抄**上游 `web-rewrite.ts:26-43`，MIT，登记在 `THIRD-PARTY.md` §5）；客户端 2.5 秒没收到 ready 则去掉标记、切兼容沙箱、重载一次
+- **CSP**：命中阻断型 CSP 时**不注入** shim、回原字节并加 `x-mpw-shim-skipped: csp`（`lib/web-wallpaper.js:424-439`，这一处**照抄**上游 `web-rewrite.ts:26-43`，MIT，登记在 `THIRD-PARTY.md` §5）；客户端 2.5 秒没收到 ready 则去掉标记**在沙箱档内**重载一次（`sandbox` 属性保持 `allow-scripts`，**不**自动升同源；①P-205 F5）
 - **交互模式**：壁纸层是背景层（不吃指针），点右下角「交互」按钮或 URL `?mpwinteract=1` 后，指针/滚轮/触摸（`full` 档再含键盘与文本输入）会被送进壁纸内的作者脚本；**一定会退出**——60 秒无操作 / 180 秒总时长 / `Esc` / 右上角「退出交互」/ 切换壁纸。⚠ **窗口失焦不会退出**（只释放按键、发 `op:"blur"`，`lib/client.js:2732-2769`）；`?mpwinteract=full` 只改档位、**不自动进入**，自动进入只认 `1|on`。交互**不放宽沙箱**（仍只要 `allow-scripts`）、**不读帧内 DOM**；`F5/F11/F12/浏览器前进后退刷新`、`Tab`、`Backspace`、`Ctrl/Cmd+R/W/T/N/Q/L/P` 被拦下
 - **作者脚本报错不拖垮插件**：帧内 shim 兜住 listener 异常 / 全局 `error` / 未捕获 Promise，限流上报父页（`console.warn` + `/diag`）
 - **已知限制**：音频频谱通道仍为空（WE 的频谱语义是**系统音频**，拿壁纸自身声音当频谱是语义造假，故不伪造）；媒体通道已实现但未接系统媒体会话；`innerHTML` 里拼出来的 `file:///` 不覆盖；绝对系统路径映射不了；被导航到外部的页面拿不到 shim
@@ -507,7 +549,7 @@ node tools/build-bundle.mjs
 
 这节说明壁纸自带的参数在插件里能读到什么、能改什么。
 
-- **mpkg 壁纸**：项目自带的**可调参数**在「壁纸设置 → 可调参数」折叠区**只读展示**（浏览器显示的是预渲染素材，改参数不会改变画面），供对照。
+- **mpkg 壁纸**：项目自带的**可调参数**在「壁纸设置 → 可调参数」折叠区**可改且改完即生效** —— 场景壁纸由浏览器里的场景渲染器出画，改动走 P-203 跨源属性通道即时下发（渲染器回执确认，见 `docs/WE-USER-PROPS.md` §3）；静态帧/视频类 mpkg（浏览器只有预渲染素材）的画面仍要等下次应用才可能反映
 - **网页壁纸（部分已接入，Live2D 立绘类）**：含 `loadJson.json` / `SettingModel` 的网页壁纸，其设置项已接入**同一个折叠区**：分辨率（2k/4k/8k，重载生效）、语言（按壁纸实际提供）、背景音乐与语音音量（实时）、显示触摸区域框/文本框等开关。改动写入壁纸 iframe 的存储（沙箱模式下走 facade → `/web-store`），重载生效。
 - **隐藏壁纸自带设置面板**：这类壁纸右上角自带「设置」按钮且无法交互，插件在 iframe 加载后自动隐藏它，防挡住画面。
 - **未适配的**：依赖外网 SDK / 特殊交互逻辑的网页壁纸，其内置设置项尚未接入，插件内的可调参数不可用（可正常显示）。
@@ -535,7 +577,7 @@ node tools/build-bundle.mjs
 
 - **默认无被动对外网络请求**：插件后台不主动访问外部网络；日常播放只与本机 DSH 宿主（`127.0.0.1`）通信。例外都是**用户显式触发**：检查更新/一键更新访问 GitHub（`raw.githubusercontent.com`、`api.github.com`）、下载 ffmpeg 访问 GitHub Releases / npm 二进制镜像；**打开设置面板后 0.8s 会自动静默检查一次版本**（只点亮徽标，不弹窗、不下载、不上传）。此外用户手输的网络图片 URL、网页壁纸自身加载的资源也属外部访问。
 - **无敏感内容**：源码不含路径、密钥、令牌、个人信息；`node tools/secret-scan-test.mjs` 扫描全部 tracked 文件（凭据 12 条模式、本机路径 3 条模式）必须 0 命中。
-- **网页壁纸沙箱**：默认模式下 iframe 是不透明源，作者脚本读不到宿主 DOM / `localStorage` / cookie，也摘不掉自己的 sandbox；帧↔父页只走 `postMessage`（op 白名单 + 只认父窗口来源）。壁纸资源的跨源读取**只对 `Origin: null`**放行。
+- **网页壁纸沙箱**：默认模式下 iframe 是不透明源，作者脚本读不到宿主 DOM / `localStorage` / cookie，也摘不掉自己的 sandbox；帧↔父页只走 `postMessage`（op 白名单 + **`ev.source` 与 `ev.origin` 双重校验**，期望来源按我们自己写的 `src`/`sandbox` 推导）。壁纸资源的跨源读取**只对 `Origin: null`**放行。**自动路径不会把帧升到同源**（①P-205 F5：降档落点恒为沙箱档；`compat` 只由用户显式设置），每次拒收/拦截/降档都写进 `window.__mpwWebFrameGuard`。
 - **网页壁纸交互**：交互事件只从插件建的**交互舞台**发出（舞台默认 `display:none`，未开交互时一个事件都不注入）；开启才给宿主页面打 `data-mpw-interact="on"`（此时宿主界面整体让位，右上角常驻退出按钮）；60s 无操作 / 180s 总时长 / `Esc` / 切壁纸都会退出；交互**不放宽沙箱**、**不读帧内 DOM**。
 - **宿主路由**：自定义目录/库路由都做了路径穿越校验（`..`、绝对路径、前导点一律拒），`/raw` 只服务已登记的容器条目。
 - **数据边界**：所有解析在本机完成；`localStorage` 只存背景与参数；设置另存宿主端 `~/.dsh-mpkg-wallpaper/settings.json`；网页壁纸的帧内存储在 `~/.dsh-mpkg-wallpaper/web-store.json`。
@@ -590,7 +632,8 @@ dsh-mpkg-wallpaper/
 │                     #   np-sidebar-live-probe.mjs、np-media-live-probe.mjs（真机探针，需 :3080 + headless Firefox）/
 │                     #   bundle-equivalence-test.mjs / pre-commit.sh + ../.githooks/pre-commit
 ├── docs/             # 研发笔记（**不进发布包**）：WEB-WALLPAPER.md / NOW-PLAYING-DSH.md / MEDIA-SESSION.md /
-│                     #   DIAGNOSTICS.md / RELEASE.md / STYLE-SCOPE-GUARD.md / TOKEN-NAMESPACE.md / PRE-COMMIT.md …
+│                     #   DIAGNOSTICS.md / RELEASE.md / STYLE-SCOPE-GUARD.md / TOKEN-NAMESPACE.md / PRE-COMMIT.md /
+│                     #   SCENE-STALE-COMMIT.md（B1 迟到 8s 的旧 scene 翻盘：根因/修法/判据/未验证边界）…
 └── dist/             # 构建产物（**不入库、不进包**）：dsh-mpkg-wallpaper.bundle.mjs（方式四用，现生成）
 ```
 
@@ -727,6 +770,16 @@ MPW_SKIP_PRECOMMIT=1 git commit -m …   # 单次绕过（走脚本内显式口�
 **修法**：新增**可播性闸门**（`/probe` 只读元数据、不起 ffmpeg；判据 = 编码/容器白名单 + MP4 里 h264+opus、HEVC Main10 这类确定性缺口；探测不出来一律不改行为）——可直读就**直读原片**，只有真吃不下才转码。顺带修掉三个真 bug：旧 `direct-spec` 直读判据**不看编码**（HEVC 会被直读→黑屏）、字节上限淘汰**从最新开始删**（刚转好的产物被自己删掉 ⇒ 缓存永久 miss）、**取消后仍换编码器重试**。资源上限集中一处：产物 12 个 / **512MB**、并发 **1**、排队 30s、单任务 15min、**转码默认降采样到 1920 宽**（实测 4K 656MB → 1080p 275MB）、**内存准入 1024MB**；启动清理一次并打日志；三种状态（直读/转码中/已缓存）写进日志与 `window.__mpwWallpaperState`。
 
 > 细节、判据表与内存实测：[`docs/TRANSCODE-RESOURCE.md`](docs/TRANSCODE-RESOURCE.md)；回退开关 `?mpwtranscode=legacy|aggressive`；回归 `node tools/transcode-limit-test.mjs`（43 断言，门禁第 5/12 步）。
+
+**②（2026-09-28）「切档 → 立刻切回 ⇒ 壁纸加载不出来，过一会儿又好了」+「关掉预缩档后感觉过曝」**
+
+**根因（两层，都已修）**：①**宿主**——一次 `/transcode` 实际来**两个**请求（`<video>` 播放请求 + 客户端 `Range: bytes=0-0` 验活请求），旧实现两者命中**同一份** in-flight 转码 ⇒ 播放请求一断开（用户切档）就 `kill` 掉共享 ffmpeg，**验活请求**反而收到 `502 {ok:false,error:'cancelled'}` ⇒ 客户端把"被取消"读成"源不可用"⇒ 撤 `src` + 把壁纸层 `display:none`；②**客户端**——验活裁决**没有代际**（迟到的 `{ok:false}` 撤掉已经换好的原片），且否定答案被缓存 **20s** ⇒ 期间每次 apply（**刷新壁纸 / 清空重选 / 无关设置落点**）都复发，20s 过期后才自愈 ＝ 用户说的"过一会儿又能加载出来"（另：`refreshBg` 的 `&_t=` 只击穿直读 URL ⇒ 转码档上"刷新壁纸"完全没动作，也一并修）。
+
+**修法**：宿主侧 `TRANSCODE_INFLIGHT` 升级为 **引用计数 + 代际**（`acquire/releaseTranscodeRef`、`gen`、`killTranscodeProcs` 只杀本任务），验活请求走独立角色 **`player=verify`**（有产物给产物、没有回 `202 pending`，**绝不为它起/续 ffmpeg**），产物命中判据收紧为「最终名 + ≥1024B + ISO-BMFF `ftyp` 魔数」（0 字节/垃圾一律删掉重转），取消是**独立终态** `phase:'cancelled'`（写台账 + `/transcode-progress` 可读）；客户端侧裁决过 `mpwArmVerdictApplies`（URL + 挂载签名双闸门）、否定 TTL 收到 **3s**、换源即 `abort` 悬挂验活并清缓存、回退原片收敛到**唯一落点** `mpwFallbackToDirect`（内含清"源不可用"状态 ⇒ 换回来的原片看得见）。
+
+**色彩（"过曝"）实测**：8bit 源**不丢色彩**——tv·bt709 标签逐字保留、YAVG Δ **−0.05/255**；全范围 `pc` 源产物仍 `pc`、Δ **+0.21/255**；未标注语料（4K→1920）Δ **+0.02/255**（阈值 1.0/255）。真问题是 **>8bit / HDR**：旧 argv 不带 `-pix_fmt` ⇒ 产物**仍是 `High 10 / yuv420p10le`**（多数浏览器无 High10 解码器 ⇒ 黑屏，而这条路的理由正是"浏览器吃不下才转"）；现按 `transcodeColorPlan` 显式降 8bit + 声明 `bt709/tv` 并**记台账**（8bit 源一个参数都不加 ⇒ 既有产物继续命中、与改动前逐字节相同）。回退口 `DSH_WE_TRANSCODE_COLOR=legacy|force8`。
+
+> 细节、链路图、逐条 ffmpeg 路径排查表与全部读数：[`docs/TRANSCODE-LIFECYCLE.md`](docs/TRANSCODE-LIFECYCLE.md)；回归 `node tools/prescale-switch-race-test.mjs`（44 断言）+ `node tools/transcode-color-fidelity-test.mjs`（24 断言，含 7+4 组变异）。
 
 ### 选择文件夹 / 选择文件：行为契约与快捷键（2026-09-17）
 

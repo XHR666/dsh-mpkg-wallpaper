@@ -76,6 +76,20 @@
 `req.destroy()` ⇒ 客户端拿不到 413（实测 `status=0 err=ECONNRESET`）。
 ⚠ 另一个坑写在实现注释里：**别用 `req.pause()`**（请求体没读完 ⇒ `end` 永不触发 ⇒ 请求挂死，实测 curl 卡满 25s）。
 
+## 4b. 两条安全闸门的**只读状态面**（①P-205 F5/F6，2026-09-28）
+
+这两个不是诊断开关（不改行为），是"为什么被拒/被拦"的现场证据，`/diag` 与探针都可以直接读：
+
+| 全局 | 形状 | 回答什么 |
+|---|---|---|
+| `window.__mpwWebFrameGuard` | `{ rejects, rejectReasons, lastReject, downgrades, lastDowngrade, autoBlocked, lastAutoBlocked, reloads, lastReload, autoCompat, events[] }` | 网页帧入站消息**被拒了几次、为什么**（`rejectReasons.origin` / `.source`，`lastReject.expected` = 我们期望的来源）；自动降档**被拦了几次**；真换档（`lastDowngrade.risk="same-origin"` 表示升到了同源）；只去 shim 标记重载几次 |
+| `window.__mpwSceneUrlGuard` | `{ allowed, rejected, rejectReasons, lastAllow, lastReject, whitelist, events[] }` | 场景渲染器/扩展钩子的目标**放行了谁 / 拒了谁**（`lastReject.where` = `sceneRendererUrl` / `sceneExtUrl`，`kind` = `cross-origin` / `bad-scheme` / …）；白名单解析结果（垃圾条目带 `bad`） |
+
+另外 `window.__mpwWebFrame` 新增 `autoCompat` / `fallbackMode` 两个字段（现场一眼看出"自动路径能不能进 compat"），
+DOM 对应 `#mpw-bgWrap[data-mpw-webframe-fallback|-autocompat]`。规格/回退口/判据见
+[`docs/SECURITY-ROUTES.md`](SECURITY-ROUTES.md) 的 F5 / F6 两节；判据 `tools/web-frame-origin-guard-test.mjs`
+与 `tools/scene-url-token-guard-test.mjs`（都带变异自证）。
+
 ## 5. 判据怎么跑（都是单文件秒级）
 
 ```bash

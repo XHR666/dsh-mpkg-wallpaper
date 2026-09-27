@@ -521,8 +521,14 @@ console.log('\n== G. ② 武装前验活：只有宿主明确回 {ok:false} 才�
 
 /* ══════════════════════════════════════════════════════════════════════════════════
    H. ③ 沙箱档降级
+   ⚠(2026-09-25 F5 契约更新，旧 → 新；两处理由同 `docs/SECURITY-ROUTES.md` F5 与 `lib/client.js:6307` 的注释)
+     旧契约：auto 档被浏览器策略挡住 ⇒ **自动**降级到 compat（同源）。
+     新契约：默认 **不自动升同源**（auto 档被挡住 = 保持沙箱档 + 把原因写成可判定状态，不静默、不偷偷换档）；
+             只有用户在设置里显式打开 `webFrameAutoCompat`（风险回退口）才走那条自动降级路。
+     所以 H4/H5 拆成两档**都测**：默认档测"不换源 + 有原因"，回退口档把旧 H4/H5 的判据**逐字保留**
+     （那条路仍然被测，不是被删掉）。变异 `sandbox-fallback-unconditional` 期望 H 组变红 —— 仍然成立。
    ══════════════════════════════════════════════════════════════════════════════════ */
-console.log('\n== H. ③ 沙箱档被浏览器策略挡住 ⇒ 一次性降级到兼容档 ==')
+console.log('\n== H. ③ 沙箱档降级（默认不自动升同源 / 回退口才降级） ==')
 {
   const { L } = boot({})
   ok('H1 SecurityError / Worker 类错误判为"策略挡住"',
@@ -535,19 +541,54 @@ console.log('\n== H. ③ 沙箱档被浏览器策略挡住 ⇒ 一次性降级�
   const frame = L.frame()
   ok('H3 夹具里有 web 帧（bgElements().frame）', !!frame)
   if (frame) {
+    const SHIM_SRC = '/api/mpkg-wallpaper/custom-folder/X/index.html?mpwshim=1&mpwmute=1&mpwspeed=1&mpwpause=0'
+    frame.setAttribute('src', SHIM_SRC)
+    frame.setAttribute('sandbox', 'allow-scripts')
+    const r1 = L.webSandboxFallback('script-error', 'SecurityError: Worker blocked')
+    ok('H4 ★ 默认档（`webFrameAutoCompat` 关）：**不**自动升同源 —— 返回 false、src 与 sandbox **一字不改**（没偷偷换档）', r1 === false
+      && String(frame.getAttribute('src')) === SHIM_SRC
+      && frame.getAttribute('sandbox') === 'allow-scripts',
+      JSON.stringify({ r1, src: frame.getAttribute('src'), sb: frame.getAttribute('sandbox') }))
+    ok('H5 ★ 默认档**不静默**：层上有可判定状态（`data-mpw-webframe-autocompat=0` + 原因里写明"不自动升同源"）',
+      wrap && wrap.getAttribute('data-mpw-webframe-autocompat') === '0'
+      && /不自动升同源/.test(String(wrap.getAttribute('data-mpw-webframe-reason') || ''))
+      && String(wrap.getAttribute('data-mpw-webframe-degraded') || '') === '',
+      JSON.stringify({ auto: wrap && wrap.getAttribute('data-mpw-webframe-autocompat'), reason: wrap && wrap.getAttribute('data-mpw-webframe-reason') }))
+    ok('H6 默认档没有降级痕迹（`__mpwSandboxFallback` / `__mpwShimFellBack` 都不许被写上）',
+      !frame.__mpwSandboxFallback && !frame.__mpwShimFellBack,
+      JSON.stringify({ fb: frame.__mpwSandboxFallback, fell: frame.__mpwShimFellBack }))
+  }
+}
+{
+  /* 回退口打开：`webFrameAutoCompat: true` ⇒ **旧的 H4/H5 判据逐字保留**（一次性降级到 compat）。 */
+  const { L } = boot({ settings: { webFrameAutoCompat: true } })
+  const wrap = L.wrap()
+  const frame = L.frame()
+  ok('H7 回退口档夹具就位（真 web 帧）', !!frame)
+  if (frame) {
     frame.setAttribute('src', '/api/mpkg-wallpaper/custom-folder/X/index.html?mpwshim=1&mpwmute=1&mpwspeed=1&mpwpause=0')
     frame.setAttribute('sandbox', 'allow-scripts')
     const r1 = L.webSandboxFallback('script-error', 'SecurityError: Worker blocked')
-    ok('H4 降级生效：src 去掉 mpwshim 与策略参数 + 换成兼容属性集', r1 === true
+    ok('H8 ★ 回退口档：降级生效（src 去掉 mpwshim 与策略参数 + 换成兼容属性集）—— 旧 H4 判据逐字保留', r1 === true
       && !/mpwshim=1/.test(String(frame.getAttribute('src')))
       && !/mpwmute=/.test(String(frame.getAttribute('src')))
       && frame.getAttribute('sandbox') === L.compatAttrs,
       JSON.stringify({ src: frame.getAttribute('src'), sb: frame.getAttribute('sandbox') }))
-    ok('H5 可判定状态：frame.__mpwSandboxFallback（含原因）+ __mpwShimFellBack', !!(frame.__mpwSandboxFallback && frame.__mpwSandboxFallback.why === 'script-error') && frame.__mpwShimFellBack === true, JSON.stringify(frame.__mpwSandboxFallback))
+    /* 追加（2026-09-25）：残留分隔符也要收干净 —— 改前 `replace(/[?&]$/)` 只削一个字符，实测产物是
+       `…/X/index.html?&`（本判据第一次跑出来的读数）。加严：降级后的 URL 不许以 `?`/`&` 结尾。 */
+    ok('H8b ★ 降级后的 URL 不带残留分隔符（不许出现 `…index.html?&` 这种尾巴）',
+      !/[?&]$/.test(String(frame.getAttribute('src'))) && /X\/index\.html$/.test(String(frame.getAttribute('src'))),
+      JSON.stringify({ src: frame.getAttribute('src') }))
+    ok('H9 ★ 回退口档：可判定状态 `frame.__mpwSandboxFallback`（含原因）+ `__mpwShimFellBack` —— 旧 H5 判据逐字保留',
+      !!(frame.__mpwSandboxFallback && frame.__mpwSandboxFallback.why === 'script-error') && frame.__mpwShimFellBack === true,
+      JSON.stringify(frame.__mpwSandboxFallback))
+    ok('H10 回退口档：层上标出"回退口是开着的"（`data-mpw-webframe-autocompat=1`，现场可查）',
+      wrap && wrap.getAttribute('data-mpw-webframe-autocompat') === '1',
+      JSON.stringify({ auto: wrap && wrap.getAttribute('data-mpw-webframe-autocompat') }))
     const r2 = L.webSandboxFallback('script-error', 'again')
-    ok('H6 只降级一次（第二次 no-op，绝不来回切）', r2 === false)
+    ok('H11 只降级一次（第二次 no-op，绝不来回切）', r2 === false)
     const wwSrc = fs.readFileSync(path.join(repoRoot, 'lib', 'web-wallpaper.js'), 'utf8')
-    ok('H7 帧内 shim 具备能力自证（caps 上报：worker/storage/offscreen，随 ready/pong 回父页）',
+    ok('H12 帧内 shim 具备能力自证（caps 上报：worker/storage/offscreen，随 ready/pong 回父页）',
       /function probeCaps\(\)/.test(wwSrc) && /out\.worker = /.test(wwSrc) && (wwSrc.match(/caps: probeCaps\(\)/g) || []).length >= 2,
       'caps 上报点 ' + (wwSrc.match(/caps: probeCaps\(\)/g) || []).length + ' 处')
   }

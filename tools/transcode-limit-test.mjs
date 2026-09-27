@@ -125,7 +125,8 @@ const t0 = Date.now();
 const iv = setInterval(() => {
   if (Date.now() - t0 < ms) return;
   clearInterval(iv);
-  try { fs.writeFileSync(out, Buffer.alloc(4096, 0x41)); } catch {}   // 4KB 产物（夹具 ≤1MB）
+  // ①(2026-09-28 H1) 4KB 产物，**带 ISO-BMFF ftyp 头**（插件新增的产物有效性判据会挡"纯填充"）
+  try { const b = Buffer.alloc(4096, 0x41); b.writeUInt32BE(24, 0); b.write('ftyp', 4, 'latin1'); b.write('mp42', 8, 'latin1'); fs.writeFileSync(out, b); } catch {}
   bump(-1);
   log('transcode-end');
   process.exit(0);
@@ -177,7 +178,15 @@ async function call(route, url, { method = 'GET', headers = {}, abortAfterMs = 0
 const stubLines = () => { try { return fs.readFileSync(STUB_LOG, 'utf8').trim().split('\n').filter(Boolean); } catch { return []; } };
 const spawnCount = () => stubLines().filter((l) => l.startsWith('transcode-start')).length;
 const tcFiles = () => fs.readdirSync(TC).filter((n) => n.startsWith('tc_') && n.endsWith('.mp4'));
-const seed = (name, bytes, ageMin) => { const f = path.join(TC, name); fs.writeFileSync(f, Buffer.alloc(bytes, 1)); const t = new Date(Date.now() - ageMin * 60000); fs.utimesSync(f, t, t); };
+// ①(2026-09-28 H1) `mp4Head=true` 时给夹具加 ISO-BMFF `ftyp` 头：插件新增的"产物有效性"
+//   判据（大小 + 魔数）会正当地把"纯填充字节"的假 `tc_*.mp4` 当垃圾删掉；真 ffmpeg 产物恒有 ftyp。
+const seed = (name, bytes, ageMin, mp4Head) => {
+  const f = path.join(TC, name);
+  const b = Buffer.alloc(bytes, 1);
+  if (mp4Head) { b.writeUInt32BE(24, 0); b.write('ftyp', 4, 'latin1'); b.write('mp42', 8, 'latin1'); }
+  fs.writeFileSync(f, b);
+  const t = new Date(Date.now() - ageMin * 60000); fs.utimesSync(f, t, t);
+};
 const probeUrl = (file) => '/api/mpkg-wallpaper/probe?src=' + encodeURIComponent('host:?custom=1&folder=&file=' + file);
 const tcUrl = (file, extra = '') => '/api/mpkg-wallpaper/transcode?src=' + encodeURIComponent('host:?custom=1&folder=&file=' + file) + extra;
 const jsonOf = (res) => { try { return JSON.parse(res.body); } catch { return {}; } };
@@ -309,9 +318,10 @@ if (process.argv.includes('--startup-cleanup-child')) {
   // C3a 启动清理的**语义**（字节上限 + 最旧先删 + 受保护的新产物）：
   //  直接用上限函数验（它就是 apply() 启动时调用的同一个函数），不依赖跨进程目录可见性。
   for (const n of fs.readdirSync(TC)) { try { fs.unlinkSync(path.join(TC, n)); } catch {} }
-  for (let i = 0; i < 6; i++) seed('tc_boot' + i + '.mp4', 4096, 55 - i * 5);   // 55..30 分钟前（都 <1h ⇒ 不算残留）
+  for (let i = 0; i < 6; i++) seed('tc_boot' + i + '.mp4', 4096, 55 - i * 5, true);   // 55..30 分钟前（都 <1h ⇒ 不算残留）
   seed('src_stale_1.bin', 2048, 120);                                            // 120min ⇒ 超期残留
-  const fresh = path.join(TC, 'tc_fresh.mp4'); fs.writeFileSync(fresh, Buffer.alloc(4096, 2));
+  const fresh = path.join(TC, 'tc_fresh.mp4');
+  { const b = Buffer.alloc(4096, 2); b.writeUInt32BE(24, 0); b.write('ftyp', 4, 'latin1'); b.write('mp42', 8, 'latin1'); fs.writeFileSync(fresh, b); }   // ①(H1) 产物形状 = 真 mp4（带 ftyp）
   const removed = __mpwTest.pruneTranscodeCache(fresh);   // ④ 受保护的新产物
   await sleep(200);
   const files = tcFiles();
@@ -326,7 +336,7 @@ if (process.argv.includes('--startup-cleanup-child')) {
   // C3e 启动清理**接线**：apply() 一开始就调用清理（子进程里预置超限态，看启动日志的产物数下降）。
   //  子进程只证明"接线上电了"，字节语义已由 C3a–C3d 独立验证。
   for (const n of fs.readdirSync(TC)) { try { fs.unlinkSync(path.join(TC, n)); } catch {} }
-  for (let i = 0; i < 6; i++) seed('tc_boot' + i + '.mp4', 4096, 40);
+  for (let i = 0; i < 6; i++) seed('tc_boot' + i + '.mp4', 4096, 40, true);   // ①(H1) 带 ftyp 头（产物形状）
   const childTmp = path.join(os.tmpdir(), 'mpw-tc-child-' + process.pid);
   const child = spawnSync(process.execPath, [fileURLToPath(import.meta.url), '--startup-cleanup-child', '--data-dir=' + DATA, '--child-tmp=' + childTmp], {
     encoding: 'utf8', timeout: 90000,

@@ -718,7 +718,17 @@ console.log('\n══ E 变异自证（8 组，各自必红）══');
       expect('E5 去掉"上传成功即回收"⇒ 4 份副本全留着（C1 变红）', uploadNames(H.dataDir).length === 4, 'count=' + uploadNames(H.dataDir).length);
     } finally { await H.stop(); }
   }
-  // E6（G4 reason：**根修 + 消费点兜底**两处各自承重 —— 三档变异）
+  // E6（G4 reason：**根修 + 消费点兜底**多处各自承重 —— 四档变异）
+  //   ①(2026-09-27 类型判定轮) 新增了**第三处**兜底：`/custom-dir` 按**容器内容**定"依据文案"
+  //   （`lib/index.js` 的 `kindReasonOverride = 'scene-container'`，判据见 tools/type-detect-test.mjs）。
+  //   于是这一组的口径更新为："关掉任意**一处**仍应得到 scene-container；**三处全关**才回到 scene-json"。
+  //   三处锚点：web-wallpaper.js 的根修 / index.js 的内容裁决 / index.js 的 scene-json 兜底。
+  const MUT_ROOT = "ANY_PKG_RE.test(signals.scene) ? 'scene-container' : 'scene-json'";
+  const MUT_ROOT_TO = "SCENE_PKG_RE.test(signals.scene) ? 'scene-container' : 'scene-json'";
+  const MUT_CONTENT = 'if (ck.ok && ck.hasScene) {';
+  const MUT_CONTENT_TO = 'if (false && ck.ok && ck.hasScene) {';
+  const MUT_CONSUMER = "const kindReason = kindReasonOverride || ((det.reason === 'scene-json' && /\\.(pkg|mpkg)$/i.test(String(media || '')))\n                  ? 'scene-container' : det.reason);";
+  const MUT_CONSUMER_TO = 'const kindReason = det.reason;';
   const reasonOf = async (lib) => {
     const H = await bootHost(lib, { env: {} });
     try {
@@ -729,24 +739,32 @@ console.log('\n══ E 变异自证（8 组，各自必红）══');
   };
   {
     const lib = copyLib('reason-root');
-    const inj1 = mutate(path.join(lib, 'web-wallpaper.js'), "ANY_PKG_RE.test(signals.scene) ? 'scene-container' : 'scene-json'", "SCENE_PKG_RE.test(signals.scene) ? 'scene-container' : 'scene-json'");
+    const inj1 = mutate(path.join(lib, 'web-wallpaper.js'), MUT_ROOT, MUT_ROOT_TO);
     const got = await reasonOf(lib);
-    expect('E6a 只把根修（web-wallpaper）改回去 ⇒ 仍 scene-container（lib/index.js 的消费点兜底承重，不是单点）',
+    expect('E6a 只把根修（web-wallpaper）改回去 ⇒ 仍 scene-container（其余兜底承重，不是单点）',
       inj1 && got === 'scene-container', 'reason=' + got);
   }
   {
     const lib = copyLib('reason-consumer');
-    const inj2 = mutate(path.join(lib, 'index.js'), "const kindReason = (det.reason === 'scene-json' && /\\.(pkg|mpkg)$/i.test(String(media || '')))\n                  ? 'scene-container' : det.reason;", 'const kindReason = det.reason;');
+    const inj2 = mutate(path.join(lib, 'index.js'), MUT_CONSUMER, MUT_CONSUMER_TO);
     const got = await reasonOf(lib);
-    expect('E6b 只把消费点兜底改回去 ⇒ 仍 scene-container（web-wallpaper 的根修承重）',
+    expect('E6b 只把 scene-json 兜底改回去 ⇒ 仍 scene-container（内容裁决/根修承重）',
       inj2 && got === 'scene-container', 'reason=' + got);
   }
   {
-    const lib = copyLib('reason-both');
-    mutate(path.join(lib, 'web-wallpaper.js'), "ANY_PKG_RE.test(signals.scene) ? 'scene-container' : 'scene-json'", "SCENE_PKG_RE.test(signals.scene) ? 'scene-container' : 'scene-json'");
-    mutate(path.join(lib, 'index.js'), "const kindReason = (det.reason === 'scene-json' && /\\.(pkg|mpkg)$/i.test(String(media || '')))\n                  ? 'scene-container' : det.reason;", 'const kindReason = det.reason;');
+    const lib = copyLib('reason-content');
+    const inj3 = mutate(path.join(lib, 'index.js'), MUT_CONTENT, MUT_CONTENT_TO);
     const got = await reasonOf(lib);
-    expect('E6c 两处都改回去 ⇒ 任意名容器又被标成 scene-json（B5c 变红：这一对就是修复的全部）',
+    expect('E6b2 只关掉"内容裁决" ⇒ 仍 scene-container（既有两处兜底承重）',
+      inj3 && got === 'scene-container', 'reason=' + got);
+  }
+  {
+    const lib = copyLib('reason-both');
+    mutate(path.join(lib, 'web-wallpaper.js'), MUT_ROOT, MUT_ROOT_TO);
+    mutate(path.join(lib, 'index.js'), MUT_CONTENT, MUT_CONTENT_TO);
+    mutate(path.join(lib, 'index.js'), MUT_CONSUMER, MUT_CONSUMER_TO);
+    const got = await reasonOf(lib);
+    expect('E6c 三处全改回去 ⇒ 任意名容器又被标成 scene-json（B5c 变红：这几处就是修复的全部）',
       got === 'scene-json', 'reason=' + got);
   }
   // E7/E8（G10 容器族：**两处判据各自承重** —— parsePkg（条目读取）与 readPkgTable（目录表））

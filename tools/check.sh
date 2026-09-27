@@ -38,6 +38,11 @@ node tools/panel-smoke.mjs || fail=1
 #   只读文本行 / M3 丢掉 group·condition / M4 setProp 空实现 / M5 分组头退化成普通行）。
 #   基线 18 通过 / 0 失败；变异 M1..M5 全红（读数打印在测试末尾）。
 node tools/props-panel-wiring-test.mjs || fail=1
+# ①(P-203 2026-09-25) 场景帧属性下发通道：`setProp` / 场景帧 `onload`（新文档强制重发）与同 URL 重入 /
+#   恢复默认三处接线 + 跨源 op `mpw-user-props` 的载荷形状 + 幂等（同帧同值不重发）+ 回执驱动的退避重试
+#   （有上限、不留常驻定时器）+ `proppush=legacy` 回退口 + 帧不在/空表如实记账；真源码切片离线驱动，
+#   8 组变异各自必红。判据见 docs/WE-USER-PROPS.md §4.2（基线 73 通过 / 0 失败）。
+node tools/scene-props-push-test.mjs || fail=1
 # ①(2026-09-21 真机第12/13条) 预览框：**媒体不裁切 + 与占位不并排 + 同框可见 ≤ 1**。
 #   真机现场：暂停键左边的预览图被切掉一块、右边约 1/4 是白块写着 `mp4`（换目录后同形，白块不走）。
 #   根因：`.mpw_wallThumb` 是 flex 行，`<img>/<video>`（width:100% + object-fit:cover）与类型占位
@@ -79,6 +84,18 @@ node tools/thumb-chain-test.mjs || fail=1
 #       的包这两者一般是缺失的）；
 #     E 变异自证 6 组（accept / 嗅探 / preview 路由 / 失败清理 / 回收 / reason 两处各自承重）。
 node tools/pkg-import-test.mjs || fail=1
+# ①(2026-09-27 类型判定轮) 同一路线的**类型判定**判据（`/custom-dir` 目录级判定）：用户点名
+#   「包含 mp4 的 scene 壁纸的 MPKG 形式会不会被只识别成 MP4、丢掉 scene 效果」。
+#   实测错判（真机可复现）：`signals.scene` 第三顺位是**任意 `.pkg/.mpkg`** ⇒ "是容器就是场景"；
+#   逐容器拆条又被 `!det.signals.video` 关掉 ⇒ `wallpaperE/伊蕾娜`（5 容器 + 松散 VID_*.mp4）
+#   整目录塌成 **1 条 `scene`**、media 还是随手挑中的**纯视频**容器 ⇒ 其余容器（含真场景）全部
+#   不可达，点"使用"走的还是那条松散视频。修法：容器逐条拆（只看直接子项，绕开递归表的
+#   嵌套路径陷阱）+「唯一 scene 信号是容器」时按**容器内容**定档；另外补上 `listWallpaperFiles`
+#   对 `Dirent` d_type 不可信（软链 / f2fs 误报）的 stat 兜底 —— 那一格会让整张壁纸**消失**。
+#   判据 48 条（合成判定表 + 7 个真包实测 + 客户端档位/分流顺序 + 回退口 + 3 组变异必红）：
+#   `node tools/type-detect-test.mjs`（离线、不读大视频、语料缺失自动 SKIP）；判定表与实测对照
+#   见 `docs/TYPE-DETECT.md`。回退口：`typedetect=legacy`（请求体）/`DSH_WE_TYPEDETECT=legacy`（env）。
+node tools/type-detect-test.mjs || fail=1
 # 真机探针的**纯判据**（--selftest）常驻在这里：探针本身不进门禁（要用户 :3080 在跑），
 # 但"探针的判据还有没有分辨力"是秒级的 —— 不常驻的话探针会悄悄退化成恒绿。
 node tools/scan-switch-live-probe.mjs --selftest || fail=1
@@ -264,10 +281,49 @@ node tools/scene-watchdog-test.mjs || fail=1
 # 契约 we-scene-demo/RENDERER-SANDBOX-CONTRACT.md；两侧各自回归，宿主侧只走拒绝路径（不落盘）。
 # ①(2026-09-16 I 项) 网页（web）壁纸：类型判定（内容优先）/ sandbox 最小必要集 /
 #   shim 注入顺序 / shim API 与参考实现的差异 / 作者脚本抛错兜底 / 无 GPL 代码 —— 见 docs/WEB-WALLPAPER.md
-step "5/12 B6 沙箱与场景 token + 网页壁纸 shim 沙箱（客户端模式/回退 + 宿主签发与 Origin:null 闸门）"
+step "5/12 B6 沙箱与场景 token + 网页壁纸 shim 沙箱（客户端模式/回退 + 宿主签发与 Origin:null 闸门）+ P-204/P-205 安全闸门（路由来源 F1–F4 / 网页帧同源逃逸 F5 / 可控上游+st 下发 F6）"
 node tools/scene-sandbox-test.mjs || fail=1
 node tools/host-sandbox-token-test.mjs || fail=1
 node tools/web-wallpaper-test.mjs || fail=1
+# ①(2026-09-28 B1 迟到翻盘修复) **切到 scene 后 1 秒内切走 ⇒ 约 8s 后档位/画面/两处存储被改回旧 scene**
+#   （压测报告 docs/reverse/STRESS-RAPID-SWITCH-20260925.md §S2/S4/S5，真机已复现）。
+#   根因：`mpwSandboxArmStrictWatch` 的 8s 一次性定时器**换档不取消** + `mpwSandboxFail`/`mpwSandboxMaybeUpgrade`
+#   到点**无条件** `applySceneViaRenderer(旧 meta)`。修法：换档/切走成对 clearTimeout + 重挂前用既有
+#   `sectionSigNow()` 核对当前档（不是它 ⇒ 丢弃 + 记账，且不把该 ident 记成 strict-failed）。
+#   判据：G1 挂载即武装 → G2 切走后取消 + 把（未取消时就会到点的）真回调推到点 ⇒ 档位保持最后一次选择
+#   （内存 + localStorage 两处）→ G3 切回同一 scene 合法重挂照旧 → G4 token 迟到的同族路径 →
+#   G5 6 组变异各自必红。74 通过 / 0 失败，~1s。规格/回退口/未验证边界见 docs/SCENE-STALE-COMMIT.md
+node tools/stale-scene-commit-test.mjs || fail=1
+# ⓪①(2026-09-27 P-204 安全审计 F1–F4) 宿主路由的**来源闸门**（三处 ACAO 回显白名单化 / 非 GET 的
+#   Sec-Fetch-Site+Origin 闸门 / customDir 敏感目录黑名单 / `/raw` 扩展名白名单 / 令牌按真身份签发）。
+#   判据：A 段把审计报告 §4.1 那条**已复现的攻击链**自动化（修后 403、无 ACAO；回退档
+#   `MPW_CSRF=0`+`MPW_CORS_LEGACY=1`+`MPW_CUSTOM_DIR_ALLOW_ANY=1` 下同一发请求 200 + ACAO 回显 +
+#   密文读回 = 旧行为逐条重现），B 段纯函数矩阵，C 段 4 组变异必红。45 通过 / 0 失败，~1s。
+#   规格/回退口/未验证边界：docs/SECURITY-ROUTES.md
+node tools/sec-route-guard-test.mjs || fail=1
+# ①(2026-09-28 P-205 安全审计 F5) 网页壁纸**同源逃逸**（审计时因 lib/client.js 被并行线占用留到本轮）：
+#   改前两条自动降档路径（`webShimArm` 的 2.5s 兜底 / `mpwWebSandboxFallback` 的"策略类错误"兜底）把帧的
+#   sandbox 属性写成 allow-scripts+allow-same-origin ⇒ 作者页 `parent.postMessage` 一条含
+#   `SecurityError/sandbox/Worker` 的 error 就能让第三方脚本升到**与 DSH 同源**（入站只校验 ev.source，
+#   而消息确实来自我们自己那个 frame ⇒ 挡不住）。修法：自动降档落点恒为 sandbox（plan.fallbackAttr）、
+#   入站 source+origin 双校验（期望来源按我们自己写的 src/sandbox 推导）、拒绝/拦截/降档全程记账
+#   （`window.__mpwWebFrameGuard`）；compat 只由用户显式设置，风险回退口 = 设置项 `webFrameAutoCompat`。
+#   判据：A 伪造 policy 错误/来源不符 ⇒ 不降档 + 记账 + 属性一字不改；B 显式 compat/sandbox 零回归；
+#   C 回退口打开才降 compat 且台账标 risk=same-origin；D 3 组变异必红（去 origin 校验/去 source 校验/
+#   强制自动进 compat）。45 通过 / 0 失败，~9s。
+#   规格/回退口/未验证边界：docs/SECURITY-ROUTES.md 的 F5 一节
+node tools/web-frame-origin-guard-test.mjs || fail=1
+# ①(2026-09-28 P-205 安全审计 F6) **可控上游 + `st` 下发**（同一轮）：
+#   改前 `sceneRendererUrl`/`sceneExtUrl` 读到什么就拼进渲染器 iframe（`?extbase=`），宿主签发的场景
+#   token `st` 也随 `pkgurl` 一路下发 ⇒ 设置被改到攻击者源就等于把令牌送出去。修法：设置里的外链只认
+#   http(s) 回环（127.0.0.0/8、::1、localhost）/"与页面同主机的字面 IP"/**显式白名单**
+#   （设置项 `sceneUrlWhitelist`，回退口）；`st` 只在目标过闸门时下发；非法目标如实记账
+#   （`window.__mpwSceneUrlGuard`）+ console.warn + `/diag` 的 scene-url-guard 信标。
+#   判据：A 回环 ⇒ 带 st；B 跨源非白名单 ⇒ 拒绝 + 回落默认回环 + URL 里 0 处攻击者源 + 记账/日志；
+#   C 白名单放行档 ⇒ 带 st（回退口）；D 同主机字面 IP 放行、域名不算（DNS 重绑定）；E 非 http(s) 拒绝；
+#   F 纯函数矩阵；G 4 组变异必红（去目标闸门/去目标+st 双闸门 ⇒ 令牌真外发/白名单任意放行/同主机恒真）。
+#   41 通过 / 0 失败，~4s。规格/回退口/未验证边界：docs/SECURITY-ROUTES.md 的 F6 一节
+node tools/scene-url-token-guard-test.mjs || fail=1
 # ①(2026-09-16 第 11 条) 网页壁纸**交互注入**：坐标换算 / 事件整形（button:-1 哨兵、click 边缘合成）/
 #   注入开关状态机（60s idle + 180s maxAge + Esc/失焦/卸载都能关）/ 沙箱边界（交互不放宽 sandbox、
 #   不读帧内 DOM）/ 舞台契约（默认不挡宿主）/ 与 client.js 内嵌段逐字段对拍。见 docs/WEB-WALLPAPER.md §11
@@ -294,6 +350,24 @@ node tools/transcode-limit-test.mjs || fail=1
 #     D 变异自证 6 组（vf 去 flags / 键去 `|s:` / 白名单照单全收 / 默认档翻成开 / URL 不传 scale / 闸门拆掉）。
 #   档位登记：docs/TRANSCODE-RESOURCE.md §3 一行（档名/默认关/依据）+ 代码内 /probe limits.scaleFlags。
 node tools/transcode-prescale-test.mjs || fail=1
+# ①(2026-09-28 用户第 2 项「切档 → 立刻切回 ⇒ 壁纸加载不出来，过一会儿又好了」) **切档竞态回归**：
+#   根因两层：①验活请求（`Range: bytes=0-0`）与 `<video>` 播放请求命中**同一份** in-flight 转码
+#   ⇒ 播放请求一断开（用户切档）就 kill 共享 ffmpeg，验活反而收 502 {ok:false} ⇒ 客户端把"被取消"
+#   读成"源不可用" ⇒ 撤 src + 隐藏壁纸层；②客户端验活裁决**没有代际**，且否定答案被缓存 20s
+#   ⇒ 迟到的裁决把已经换好的原片撤掉，且 20s 内每次 apply（刷新/清空重选）都复发（"过一会儿又好"）。
+#   判据：A 客户端真切片（裁决代际/否定 TTL 3s/换源作废/关档=原文件/回退落点唯一）；
+#         B 宿主真路由端到端（桩 ffmpeg）：切档断开只 kill 本任务、验活拿 202 不起 ffmpeg、
+#           半成品不进缓存、台账 phase=cancelled+代际可读、归属（A 断开不误杀 B）、原文件字节一致；
+#         C 变异 7 组各自必红（去代际/否定 TTL 回 20s/去产物魔数/去引用计数/拆验活角色/取消写成 error/关档判成转码）。
+node tools/prescale-switch-race-test.mjs || fail=1
+# ①(2026-09-28 用户第 2 项「感觉壁纸过曝了 / 可能还在跑 FFMpeg 转译后的状态」) **色彩/位深保真回归**：
+#   读数（真 ffmpeg + 合成源，量程归一）：8bit tv/bt709 源标签逐字保留、YAVG Δ=-0.05/255；
+#   全范围 pc 源产物仍 pc、Δ=+0.21/255 ⇒ **"过曝"在 8bit 源上复现不出来**（结论写进 docs）；
+#   唯一真问题：>8bit/HDR 源旧命令**原样吐 10bit**（High 10 / yuv420p10le ⇒ 浏览器黑屏）——
+#   现按 `transcodeColorPlan` 显式降 8bit + 声明 bt709/tv 并记台账；8bit 源**一个参数都不加**
+#   （既有产物继续命中、与改动前逐字节相同）。回退口 `DSH_WE_TRANSCODE_COLOR=legacy|force8`。
+#   判据 24 条（含 4 组变异必红）；本机无 ffmpeg 时相关段**显式 SKIP 并计数**，不冒充通过。
+node tools/transcode-color-fidelity-test.mjs || fail=1
 
 # ①(第16项) 发布前完整性自检：必需文件/package.json 字段/files 白名单/个人路径/凭据形态/图标/门禁脚本在位
 step "6/12 发布完整性自检（第16项：文件齐全、元数据、白名单、无个人路径与凭据）"

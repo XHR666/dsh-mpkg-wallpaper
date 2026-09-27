@@ -5,8 +5,25 @@
 //   H3 /raw：正确 token → 越过 token 闸门（后续 404/文件缺失都算通过）
 //   H4 /raw：非 "null" 来源（旧插件 iframe / 同源 UI）→ 不因 token 被拒（零回归）
 //   H5 POST /custom-scene-thumb：`Origin: null` 无 token / 错场景 token → 403
-// 说明：本测试**不写任何文件**（只走拒绝路径），也不依赖 custom 目录是否存在。
-import { apply } from '../lib/index.js'
+//   H6 ⓪①(P-204 安全审计 F1/F4)：签发**只对本机真实存在的场景**（`docs/SECURITY-ROUTES.md`）——
+//      不透明源（Origin:null）自签 → 403、身份指不到真文件 → 403、非媒体扩展名 → 403；
+//      `/raw` 对非白名单 Origin **不回显 ACAO**（F1：任意网页跨源读回）。
+// 说明：本测试只在 `os.tmpdir()` 下造夹具（真 `custom-dir.json` + 真 `f1/scene.pkg`），
+//      **不碰用户真实数据**；P-204 起"身份必须真实存在"是签发前提，所以夹具是必需的。
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'mpw-token-home-'))
+const customRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'mpw-token-dir-'))
+fs.mkdirSync(path.join(customRoot, 'f1'), { recursive: true })
+fs.mkdirSync(path.join(customRoot, 'f2'), { recursive: true })
+fs.writeFileSync(path.join(customRoot, 'f1', 'scene.pkg'), 'PKGV0022-fixture-f1')
+fs.writeFileSync(path.join(customRoot, 'f2', 'scene.pkg'), 'PKGV0022-fixture-f2')
+fs.writeFileSync(path.join(customRoot, 'f1', 'notes.txt'), 'FIXTURE-DO-NOT-USE')
+fs.mkdirSync(path.join(tmpHome, '.dsh-mpkg-wallpaper'), { recursive: true })
+fs.writeFileSync(path.join(tmpHome, '.dsh-mpkg-wallpaper', 'custom-dir.json'), JSON.stringify({ dir: customRoot }))
+process.env.DSH_HOME = tmpHome
+const { apply } = await import('../lib/index.js')
 
 let pass = 0, fail = 0
 const ok = (cond, name) => { if (cond) { pass++; console.log('  ✓ ' + name) } else { fail++; console.error('  ✗ ' + name) } }
@@ -48,10 +65,18 @@ const mj = jbody(mint)
 ok(!!mj.ok && typeof mj.token === 'string' && mj.token.length > 20, 'H1 返回 token 字符串')
 ok(typeof mj.exp === 'number' && mj.exp * 1000 > Date.now(), 'H1 exp 在未来（短期有效）')
 eq(mj.scene, 'custom|f1|scene.pkg', 'H1 回显绑定场景')
-const mint2 = call(BASE + '/scene-thumb-token?scene=' + encodeURIComponent('custom|OTHER|scene.pkg'))
+const mint2 = call(BASE + '/scene-thumb-token?scene=' + encodeURIComponent('custom|f2|scene.pkg'))
 const otherToken = jbody(mint2).token
-ok(!!otherToken && otherToken !== mj.token, 'H1 不同场景 → 不同 token')
+ok(!!otherToken && otherToken !== mj.token, 'H1 不同场景 → 不同 token（f2 也是真场景）')
 eq(call(BASE + '/scene-thumb-token').code, 400, 'H1 缺 scene 参数 → 400')
+
+/* H6 ⓪①(P-204 F4) 签发收口：身份必须是真的；不透明源不许自签 */
+console.log('\n== H6 P-204 签发收口（身份真实 + 同源）==')
+eq(call(BASE + '/scene-thumb-token?scene=' + encodeURIComponent('custom|f1|nope.pkg')).code, 403, 'H6 身份指向不存在的文件 → 403')
+eq(call(BASE + '/scene-thumb-token?scene=' + encodeURIComponent('custom||notes.txt')).code, 403, 'H6 身份是 .txt（非容器/媒体）→ 403')
+eq(call(BASE + '/scene-thumb-token?scene=' + encodeURIComponent('custom|f1|scene.pkg'), { origin: 'null' }).code, 403, 'H6 Origin:null（沙箱帧）自签 → 403（改前 200，令牌门形同虚设）')
+eq(call(BASE + '/scene-thumb-token?scene=' + encodeURIComponent('custom|f1|scene.pkg'), { origin: 'http://127.0.0.1:8899' }).code, 200, 'H6 白名单源（渲染器 :8899）签发 → 200（跨源严格档链路仍通）')
+eq(call(BASE + '/scene-thumb-token?scene=' + encodeURIComponent('custom|..|scene.pkg'), { origin: 'http://127.0.0.1:8899' }).code, 403, 'H6 folder 带 `..` → 403')
 
 /* H2/H3/H4 /raw */
 console.log('\n== H2–H4 /raw 的 Origin:null 闸门 ==')
@@ -69,6 +94,9 @@ const rawLegacy = call(RAW)
 ok(rawLegacy.code !== 403, 'H4 无 Origin 头（旧链路）→ 不因 token 被拒（零回归，code=' + rawLegacy.code + '）')
 const rawLegacyOrigin = call(RAW, { origin: 'http://127.0.0.1:8899' })
 ok(rawLegacyOrigin.code !== 403, 'H4 legacy iframe 来源（:8899）→ 不因 token 被拒（零回归）')
+ok(String(rawLegacyOrigin.headers['access-control-allow-origin'] || '') === 'http://127.0.0.1:8899', 'H4b 白名单源回显 ACAO（跨源读得回）')
+const rawEvil = call(RAW, { origin: 'https://evil.example' })
+ok(rawEvil.code !== 403 && !rawEvil.headers['access-control-allow-origin'], 'H4c 非白名单源 → **没有 ACAO**（P-204 F1：任意网页不再能跨源读回本机文件）')
 
 /* H5 POST 缩略图上报 */
 console.log('\n== H5 POST /custom-scene-thumb ==')

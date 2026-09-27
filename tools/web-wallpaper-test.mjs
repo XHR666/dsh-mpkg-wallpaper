@@ -194,12 +194,24 @@ console.log('\n== B7. 网页帧模式三档：属性 / shim 标记 / 自动降�
   eq(planTable,
     'auto/sandbox/shim/can-degrade sandbox/sandbox/shim/no-degrade compat/compat/no-shim/no-degrade',
     'B7b 判定表逐档：auto=沙箱+shim+可降级 / sandbox=沙箱+shim+**不**降级 / compat=兼容+无 shim')
+  /* ①(P-205 2026-09-28 F5) **自动降档的落点**：默认必须是 sandbox（不透明源）；只有显式回退口
+     `autoCompatAllowed`（= 设置项 `webFrameAutoCompat`，默认关）才允许落 compat（同源 = 越权面）。 */
+  eq(webFramePlan('auto').fallbackMode + '/' + (webFramePlan('auto').fallbackAttr === WEB_SANDBOX_ATTR ? 'sandbox-attr' : 'compat-attr') + '/autoCompat=' + webFramePlan('auto').autoCompat,
+    'sandbox/sandbox-attr/autoCompat=false',
+    'B7b2 F5：auto 档自动降档落点 = **sandbox**（不换源），默认不开 autoCompat')
+  eq(webFramePlan('auto', { autoCompatAllowed: true }).fallbackMode + '/' + (webFramePlan('auto', { autoCompatAllowed: true }).fallbackAttr === WEB_SANDBOX_COMPAT_ATTR ? 'compat-attr' : 'sandbox-attr') + '/autoCompat=' + webFramePlan('auto', { autoCompatAllowed: true }).autoCompat,
+    'compat/compat-attr/autoCompat=true',
+    'B7b2 F5：显式回退口打开后 auto 档才允许自动降 compat（有风险，见 docs/SECURITY-ROUTES.md）')
+  eq(['sandbox', 'compat'].map((m) => webFramePlan(m, { autoCompatAllowed: true }).fallbackMode).join(','),
+    'sandbox,compat',
+    'B7b2 F5：显式档的 fallbackMode 永远是它自己（用户显式选的档不会被自动换）')
   eq(resolveWebFrameMode({ query: 'compat', section: 'sandbox' }).mode, 'compat', 'B7c URL 显式指定 > 设置项')
   eq(resolveWebFrameMode({ query: '', section: 'sandbox' }).source, 'setting', 'B7c 没写 URL 参数时听设置项')
   eq(resolveWebFrameMode({}).source + '/' + resolveWebFrameMode({}).mode, 'default/auto', 'B7c 都没有 ⇒ 默认档 auto')
   const st = webFrameStatus({ section: 'sandbox' })
-  eq(Object.keys(st).sort().join(','), 'at,attr,degradable,degraded,mode,queryMode,reason,requested,shim,source,why'.split(',').sort().join(','), 'B7d 状态形状固定（面板/探针/文档共用）')
+  eq(Object.keys(st).sort().join(','), 'at,attr,autoCompat,degradable,degraded,fallbackMode,mode,queryMode,reason,requested,shim,source,why'.split(',').sort().join(','), 'B7d 状态形状固定（面板/探针/文档共用；①F5 起含 autoCompat/fallbackMode）')
   eq(st.attr, WEB_SANDBOX_ATTR, 'B7d 状态里的 attr 就是 iframe 要写的 sandbox 属性')
+  eq(webFrameStatus({}).autoCompat + '/' + webFrameStatus({}).fallbackMode, 'false/sandbox', 'B7d F5：默认可查状态如实播报"自动降档不会换源"')
 
   /* 客户端镜像对拍：同一份判定表在 lib/client.js 里必须给出**同一个**答案（否则用户切档不生效） */
   /* 复用 B6 已经装载好的客户端钩子（同一次会话里再 loadPlugin 会因单实例守卫找不到注册）。 */
@@ -207,6 +219,7 @@ console.log('\n== B7. 网页帧模式三档：属性 / shim 标记 / 自动降�
   ok(!!Tc && typeof Tc.framePlan === 'function', 'B7e 客户端测试钩子暴露 framePlan（镜像可对拍）')
   const mirror = WEB_FRAME_MODES.concat(['bogus', '', ' SANDBOX ']).map((m) => {
     const c = Tc.framePlanFor(m), h = webFramePlan(normalizeWebFrameMode(m)), hn = normalizeWebFrameMode(m)
+    const cAC = Tc.framePlanFor(m, true), hAC = webFramePlan(normalizeWebFrameMode(m), { autoCompatAllowed: true })
     return [String(m || '(空)'),
       c.mode === hn ? 'mode=' : 'mode!',
       c.attr === h.attr ? 'attr=' : 'attr!',
@@ -214,9 +227,12 @@ console.log('\n== B7. 网页帧模式三档：属性 / shim 标记 / 自动降�
       c.degradable === h.degradable ? 'degrade=' : 'degrade!',
       Tc.frameNorm(m) === hn ? 'norm=' : 'norm!',
       Tc.frameAttrFor(m) === webFrameSandboxAttr(m) ? 'attrfn=' : 'attrfn!',
+      /* ①(F5) 新增两列：自动降档落点 + 回退口打开时的落点（客户端与宿主模块必须逐项一致） */
+      c.fallbackMode === h.fallbackMode && c.autoCompat === h.autoCompat && c.fallbackAttr === h.fallbackAttr ? 'fallback=' : 'fallback!',
+      cAC.fallbackMode === hAC.fallbackMode && cAC.fallbackAttr === hAC.fallbackAttr ? 'fallbackAC=' : 'fallbackAC!',
     ].join('')
   }).join(' ')
-  ok(!/!/.test(mirror), 'B7e 三档（含非法值）在客户端与宿主模块逐项一致：档/属性/shim/可降级/归一化', mirror)
+  ok(!/!/.test(mirror), 'B7e 三档（含非法值）在客户端与宿主模块逐项一致：档/属性/shim/可降级/归一化/自动降档落点（含回退口打开）', mirror)
   eq(Tc.frameShimWanted(true, 'index.html', 'auto') + '/' + Tc.frameShimWanted(true, 'index.html', 'sandbox') + '/'
     + Tc.frameShimWanted(false, 'index.html', 'sandbox') + '/' + Tc.frameShimWanted(false, 'index.html', 'auto'),
     'true/true/true/false',
@@ -1206,6 +1222,16 @@ const CORPUS_SKIP = new Set(['node_modules', '.git', 'dist', 'build', '.cache'])
 /** 真语料扫描（有界：深度 6 / 每张壁纸最多 400 个文本文件 / 单文件 ≤4MB 才读）。
  *  判定用**生产实现** detectWallpaperDir（不重写一份判定，免得量的是另一套规则）。 */
 function scanWebCorpus(root) {
+  /* ①(2026-09-27 类型判定轮) **测量仪器的同一口锅**：语料所在 fs（本机 f2fs）会把刚写入的普通文件
+     的 d_type 报成 `DT_LNK`（`Dirent.isFile()=false`、`lstat` 却是普通文件、`readlink` 报 EINVAL）
+     ⇒ 旧写法按 `e.isFile()` 过滤会**静默漏文件**，于是本文件的语料计数比文档里的快照少（L5 变红，
+     而 `walls`/`sha256` 一致 ⇒ 是漏文件不是语料变了）。这里与 `lib/web-wallpaper.js` 的
+     `listWallpaperFiles` 同口径兜底：类型拿不准就 `statSync` 兜一次（软链跟随 / 断链跳过）。 */
+  const kindOf = (p, e) => {
+    if (e.isDirectory()) return 'dir'
+    if (e.isFile()) return 'file'
+    try { const st = fs.statSync(p); return st.isDirectory() ? 'dir' : st.isFile() ? 'file' : 'other' } catch { return 'other' }
+  }
   const listFiles = (dir, depth, out) => {
     if (depth > 6 || out.length > 400) return
     let ents = []
@@ -1213,8 +1239,9 @@ function scanWebCorpus(root) {
     for (const e of ents) {
       if (e.name.startsWith('.')) continue
       const p = path.join(dir, e.name)
-      if (e.isDirectory()) { if (!CORPUS_SKIP.has(e.name)) listFiles(p, depth + 1, out) }
-      else if (e.isFile() && CORPUS_TEXT_RE.test(e.name)) out.push(p)
+      const k = kindOf(p, e)
+      if (k === 'dir') { if (!CORPUS_SKIP.has(e.name)) listFiles(p, depth + 1, out) }
+      else if (k === 'file' && CORPUS_TEXT_RE.test(e.name)) out.push(p)
     }
   }
   const dirs = []
@@ -1223,9 +1250,9 @@ function scanWebCorpus(root) {
     try { ents = fs.readdirSync(d, { withFileTypes: true }) } catch { return }
     if (ents.some((x) => x.name === 'project.json')) dirs.push(d)
     if (depth >= 4) return
-    for (const e of ents) if (e.isDirectory() && !CORPUS_SKIP.has(e.name) && !e.name.startsWith('.')) find(path.join(d, e.name), depth + 1)
+    for (const e of ents) if (kindOf(path.join(d, e.name), e) === 'dir' && !CORPUS_SKIP.has(e.name) && !e.name.startsWith('.')) find(path.join(d, e.name), depth + 1)
   }
-  for (const e of fs.readdirSync(root, { withFileTypes: true })) if (e.isDirectory()) find(path.join(root, e.name), 0)
+  for (const e of fs.readdirSync(root, { withFileTypes: true })) if (kindOf(path.join(root, e.name), e) === 'dir') find(path.join(root, e.name), 0)
   const apis = {}, signals = {}, nonApi = {}, entries = []
   const bump = (bag, id, hits) => { bag[id] = bag[id] || { hits: 0, walls: 0 }; bag[id].hits += hits; bag[id].walls++ }
   for (const dir of dirs) {

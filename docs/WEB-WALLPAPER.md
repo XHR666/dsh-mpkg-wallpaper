@@ -89,17 +89,33 @@ iframe（`lib/client.js` 的 `showWebEl`）——没有任何 WE API，于是所
 
 | 档 | iframe `sandbox` | `mpwshim=1` 标记 | 策略挡住 / shim 没报到时 |
 |---|---|---|---|
-| `auto`（默认） | `allow-scripts` | 带 | **一次性降级「兼容」档**并重载（= 改动前的既有行为，零回归） |
-| `sandbox` | `allow-scripts` | 带（记录里没有标记的 html 入口也**补上**，否则"强制沙箱"名不副实） | **不降级**（用户明确要隔离）：原因写进状态，面板提示"需要的话手动切兼容" |
-| `compat` | `allow-scripts allow-same-origin allow-pointer-lock` | **不带**（同源裸 iframe） | n/a（已是最宽档） |
+| `auto`（默认） | `allow-scripts` | 带 | **只在沙箱内降档**：去掉 `mpwshim=1` 重载一次，`sandbox` 属性**仍是** `allow-scripts`（不透明源）；原因写进状态 + 台账（`__mpwWebFrameGuard`），面板提示"需要就手动切兼容" |
+| `sandbox` | `allow-scripts` | 带（记录里没有标记的 html 入口也**补上**，否则"强制沙箱"名不副实） | **不降档**（用户明确要隔离）：原因写进状态，面板提示"需要的话手动切兼容" |
+| `compat` | `allow-scripts allow-same-origin allow-pointer-lock` | **不带**（同源裸 iframe） | n/a（已是最宽档；**只有用户显式选它才到得了**） |
+
+> ①(P-205 2026-09-28 安全审计 F5) **自动路径进不了 `compat`**：改前 auto 档的两条自动兜底
+> （2.5s shim 没报到 / 帧内上报"策略类错误"）会把 `sandbox` 换成含 `allow-same-origin` 的兼容集
+> ⇒ 第三方壁纸脚本升到**与 DSH 同源**（作者页只要 `parent.postMessage` 一条带
+> `SecurityError/sandbox/Worker` 字样的 error 就能触发；入站当时只校验 `ev.source`，而消息确实来自
+> 我们自己那个 frame）。现在：自动降档落点 = `webFramePlan().fallbackAttr`（恒为 `allow-scripts`）；
+> 入站消息**同时**校验 `ev.origin` 与"这个帧应有的来源"（按我们自己写的 `src`/`sandbox` 推导，
+> 不透明源 ⇒ `"null"`）；拒绝/拦截/降档全程记账。**风险回退口**（默认关，设置页开关）：
+> `webFrameAutoCompat` —— 打开后 auto 档才会自动降 `compat`，且状态/台账标 `risk:"same-origin"`。
+> 判据：`node tools/web-frame-origin-guard-test.mjs`；完整规格见 `docs/SECURITY-ROUTES.md` 的 F5 一节。
 
 **可查状态**（面板/探针/测试台读同一份，不自己算）：
 
-- `window.__mpwWebFrame` = `{ mode, requested, source, queryMode, attr, shim, degradable, degraded, why, reason, at }`
+- `window.__mpwWebFrame` = `{ mode, requested, source, queryMode, attr, shim, degradable, autoCompat, fallbackMode, degraded, why, reason, at }`
   - `mode` = 当前实际用的档；`source` ∈ `query|setting|default`（"为什么是这档"）；
-  - `degraded/why`：真的发生过"自动档被策略挡住 ⇒ 降级"时才有值（`sandbox` 档永不置位）；
+  - `degraded/why`：真的发生过"自动降档"时才有值（显式档永不置位）；
+  - `autoCompat/fallbackMode`：自动降档会不会换源（①F5：默认 `false`/`sandbox`；只有
+    `webFrameAutoCompat` 打开才是 `true`/`compat`）；
   - `attr` = 真正写到 iframe 上的 `sandbox` 属性值（与 §3 表格同源）。
-- DOM：`#mpw-bgWrap[data-mpw-webframe-mode|-reason|-attr|-degraded]`（探针不必求值 JS 也能读）。
+- DOM：`#mpw-bgWrap[data-mpw-webframe-mode|-reason|-attr|-fallback|-autocompat|-degraded]`
+  （探针不必求值 JS 也能读）。
+- 台账：`window.__mpwWebFrameGuard` = `{ rejects, rejectReasons, lastReject, downgrades, lastDowngrade,
+  autoBlocked, lastAutoBlocked, reloads, lastReload, autoCompat, events[] }` —— 入站被拒（source/origin）、
+  自动降档被拦、真降档（含 `risk`）、只去标记重载，各自的计数与最近详情。
 
 面板：「壁纸设置」页的**Web 帧模式**一行（三个按钮，当前档高亮）+ 状态行（当前档 / 由谁指定 /
 是否降级过）。**切换不弹模态、不阻塞**；`?webframe=` 只影响当前这次页面加载。

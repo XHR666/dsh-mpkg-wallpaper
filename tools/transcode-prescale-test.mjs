@@ -57,7 +57,10 @@ if (isVersion) process.exit(0);
 const failIf = process.env.STUB_FAIL_IF || '';
 if (failIf && args.some((a) => String(a).includes(failIf))) process.exit(1);   // 模拟"这个源转不动"
 const out = args[args.length - 1];
-try { fs.writeFileSync(out, Buffer.alloc(4096, 0x42)); } catch {}
+// ①(2026-09-28 H1) 产物必须**像真 mp4**（ISO-BMFF ftyp 头）：插件新增的产物有效性判据
+//   （大小 + 魔数）会正当地挡住"纯填充字节"的假产物 —— 真 ffmpeg 也永远不会产出那种文件。
+const buf = Buffer.alloc(4096, 0x42); buf.writeUInt32BE(24, 0); buf.write('ftyp', 4, 'latin1'); buf.write('mp42', 8, 'latin1');
+try { fs.writeFileSync(out, buf); } catch {}
 process.exit(0);
 `);
 fs.writeFileSync(STUB, '#!/bin/sh\nexec ' + JSON.stringify(process.execPath) + ' ' + JSON.stringify(STUB_JS) + ' "$@"\n', { mode: 0o755 });
@@ -259,20 +262,30 @@ const CF = new Function(physFn + '\n' + preFn + '\nreturn { mpwPhysicalWidth, mp
     && CF.mpwPrescaleTargetW(1, 0, 2560) === 2560 && CF.mpwPrescaleTargetW(1, 1920, 2560) === 1920
     && CF.mpwPrescaleTargetW(1, 3840, 2560) === 2560 && CF.mpwPrescaleTargetW(1, 0, 0) === 0,
     JSON.stringify([CF.mpwPrescaleTargetW(0, 0, 2560), CF.mpwPrescaleTargetW(1, 0, 2560), CF.mpwPrescaleTargetW(1, 1920, 2560)]));
+  /* ①(2026-09-28 H1/H2 轮) 规格决策已抽成纯函数 `mpwTranscodeSpec`（唯一判据）⇒ 这里改成
+     **切片跑真实现**的行为断言（比原来的源码正则更强；正则只留"接线点还在"这一半）。 */
+  const specFn = sliceFn(clientSrc, 'mpwTranscodeSpec');
+  const SF = new Function('ALLOWED_FPS', 'HOST_BASE', 'encodeURIComponent',
+    specFn + '\nreturn { mpwTranscodeSpec };')([24, 30, 48, 60], BASE, encodeURIComponent);
+  const specCase = (w, r, f, img, scene, host) => SF.mpwTranscodeSpec(w, r, f, img || 'host:?ltoken=t&file=a.mp4', !!scene, host || '/custom-media?file=a.mp4');
   ok('C4 接线：useTranscode 把预缩档算进去；URL 只在使用转码时追加 maxW / scale',
     /const preScaleW = mpwPrescaleTargetW\(preScaleN, resMaxN, physW\);/.test(clientSrc)
-    && /\(fpsCapN > 0 \|\| resMaxN > 0 \|\| preScaleW > 0\)/.test(clientSrc)
-    && /const transcodeMaxW = preScaleW > 0 \? preScaleW : resMaxN;/.test(clientSrc)
-    && /const transcodeScale = preScaleW > 0 \? "lanczos" : "";/.test(clientSrc)
-    && /\+ \(transcodeMaxW > 0 \? "&maxW=" \+ transcodeMaxW : ""\)/.test(clientSrc)
-    && /\+ \(transcodeScale \? "&scale=" \+ transcodeScale : ""\)/.test(clientSrc));
+    && /const transcodeSpec = mpwTranscodeSpec\(preScaleW, resMaxN, fpsCapN, image, isSceneVideo, hostUrl\);/.test(clientSrc)
+    && /const useTranscode = transcodeSpec\.useTranscode;/.test(clientSrc)
+    && /const playUrl0 = transcodeSpec\.playUrl;/.test(clientSrc)
+    && (() => { const s = specCase(1280, 0, 0); return s.useTranscode === true && s.maxW === 1280 && s.scale === 'lanczos'
+      && s.fps === 60 && /\/transcode\?src=/.test(s.playUrl) && /&maxW=1280/.test(s.playUrl) && /&scale=lanczos/.test(s.playUrl); })()
+    && (() => { const s = specCase(0, 0, 0); return s.useTranscode === false && s.playUrl === '/custom-media?file=a.mp4' && s.fps === 0 && s.maxW === 0 && s.scale === ''; })()
+    && (() => { const s = specCase(1920, 0, 0, 'host:?sv=1&file=a.mp4', true); return s.useTranscode === false && s.playUrl === '/custom-media?file=a.mp4'; })());
   ok('C5 进度轮询与缓存探测也带 scale（三处同参数，否则进度永远查不到）',
     /mpwProbeTranscodeCache\(image, transcodeFps, transcodeMaxW, transcodeScale\)/.test(clientSrc)
     && /pollTranscodeProgress\(image, transcodeFps, transcodeMaxW, transcodeScale\)/.test(clientSrc)
     && /function pollTranscodeProgress\(src, fps, maxW, scale\)/.test(clientSrc)
     && /function mpwProbeTranscodeCache\(src, fps, maxW, scale\)/.test(clientSrc));
   ok('C6 开档时 fps 缺省给 60（"预缩不降帧"；让宿主既有直读闸门在源不比屏幕大时判直读）',
-    /ALLOWED_FPS\.includes\(fpsCapN\) \? fpsCapN : \(resMaxN > 0 \? 30 : \(preScaleW > 0 \? 60 : 0\)\)/.test(clientSrc));
+    specCase(1280, 0, 0).fps === 60 && specCase(0, 1920, 0).fps === 30 && specCase(0, 0, 0).fps === 0
+    && specCase(1280, 0, 48).fps === 48 && specCase(1280, 3840, 60).maxW === 1280 && specCase(0, 1920, 0).maxW === 1920,
+    JSON.stringify([specCase(1280, 0, 0).fps, specCase(0, 1920, 0).fps, specCase(0, 0, 0).fps]));
   ok('C7 UI 一行档位（沿用既有 mpw_reset 按钮风格）+ setter 写 section.preScale 并重放',
     /t\("preScale"\)/.test(clientSrc) && /onClick: \(\) => setPreScale\(o\.v\)/.test(clientSrc)
     && /const setPreScale = \(v\) => \{ commit\(\{ preScale: v \}, true\); try \{ applyFromStorage\(\); \} catch \{\} \};/.test(clientSrc));
@@ -342,10 +355,22 @@ console.log('\n══ D 变异自证（5 组，各自必红）══');
   // D5 客户端不再传 scale
   {
     const lib = mutLib('url');
-    const inj = mutate(path.join(lib, 'client.js'), '+ (transcodeScale ? "&scale=" + transcodeScale : "")', '');
+    const inj = mutate(path.join(lib, 'client.js'), '+ (scale ? "&scale=" + scale : "")', '');
     const src = fs.readFileSync(path.join(lib, 'client.js'), 'utf8');
-    ok('D5 URL 不再传 scale ⇒ C4 变红（档开了却不生效）',
-      inj && !/\+ \(transcodeScale \? "&scale=" \+ transcodeScale : ""\)/.test(src));
+    const fn = sliceFn(src, 'mpwTranscodeSpec');
+    const got = new Function('ALLOWED_FPS', 'HOST_BASE', 'encodeURIComponent',
+      fn + '\nreturn mpwTranscodeSpec;')([24, 30, 48, 60], BASE, encodeURIComponent)(1280, 0, 0, 'host:?x', false, '/d').playUrl;
+    ok('D5 URL 不再传 scale ⇒ C4 变红（档开了却不生效）', inj && !/&scale=lanczos/.test(got), got.slice(0, 100));
+  }
+  // D5b 客户端把"关档"判成"仍要转码"（H2：关档必须回退原文件）
+  {
+    const lib = mutLib('offback');
+    const inj = mutate(path.join(lib, 'client.js'), 'const useTranscode = !isSceneVideo && (f > 0 || r > 0 || w > 0)', 'const useTranscode = !isSceneVideo && (f >= 0 || r >= 0 || w >= 0)');
+    const src = fs.readFileSync(path.join(lib, 'client.js'), 'utf8');
+    const fn = sliceFn(src, 'mpwTranscodeSpec');
+    const s = new Function('ALLOWED_FPS', 'HOST_BASE', 'encodeURIComponent',
+      fn + '\nreturn mpwTranscodeSpec;')([24, 30, 48, 60], BASE, encodeURIComponent)(0, 0, 0, 'host:?x', false, '/d');
+    ok('D5b 关档仍判成转码 ⇒ C4 的"关档=原文件"变红（会继续吃转码产物）', inj && s.useTranscode === true && s.playUrl !== '/d', JSON.stringify(s).slice(0, 120));
   }
   // D6 真路由：白名单闸门拆掉 ⇒ 任意 scale 都放行（B3 变红）
   {
