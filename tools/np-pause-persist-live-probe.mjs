@@ -41,6 +41,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { execFileSync } from 'node:child_process'
+import { withAudioMute } from './_audio-mute.mjs'   // ①(P-225) 探针浏览器一律静音（用户实测幽灵声音）
 
 const argv = process.argv.slice(2)
 const arg = (n, d) => { const i = argv.indexOf('--' + n); return i >= 0 && argv[i + 1] ? argv[i + 1] : d }
@@ -123,7 +124,7 @@ const ok = (c, label, extra = '') => { if (c) { pass++; console.log('PASS ' + la
 const NP = '[data-mpw-now-playing]'
 const LEAD = NP + ' .mpw_np_lead'
 
-const browser = await firefox.launch({ headless: true })
+const browser = await firefox.launch({ headless: true, firefoxUserPrefs: withAudioMute() })
 try {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } })
   await ctx.addCookies([{ name: cookie.name, value: cookie.value, domain: '127.0.0.1', path: '/', httpOnly: true, sameSite: 'Strict' }])

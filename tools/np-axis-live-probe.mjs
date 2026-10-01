@@ -40,6 +40,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { execFileSync, execSync } from 'node:child_process'
+import { withAudioMute } from './_audio-mute.mjs'   // ①(P-225) 探针浏览器一律静音（用户实测幽灵声音）
 
 const argv = process.argv.slice(2)
 const arg = (n, d) => { const i = argv.indexOf('--' + n); return i >= 0 && argv[i + 1] ? argv[i + 1] : d }
@@ -145,7 +146,7 @@ const ok = (c, label, extra = '') => { if (c) { pass++; console.log('PASS ' + la
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const evidence = { at: new Date().toISOString(), authority: AUTHORITY, mode: MODE, steps: {} }
 
-const browser = await firefox.launch({ headless: true })
+const browser = await firefox.launch({ headless: true, firefoxUserPrefs: withAudioMute() })
 let originalSection = null
 let page = null
 /* 宿主侧持久化副本的原值：声明在 try 外 —— 复原在 finally 里做（作用域内声明会 ReferenceError，

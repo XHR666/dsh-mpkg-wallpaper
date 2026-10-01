@@ -31,6 +31,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { execFileSync } from 'node:child_process'
+import { withAudioMute } from './_audio-mute.mjs'   // ①(P-225) 探针浏览器一律静音（用户实测幽灵声音）
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.resolve(here, '..')
@@ -85,7 +86,7 @@ const px = (img, x, y) => {
 const diff = (a, b) => (a && b ? Math.max(Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1]), Math.abs(a[2] - b[2])) : null)
 
 const url = 'http://127.0.0.1:3080/' + (SWITCHES ? '?' + SWITCHES : '')
-const browser = await firefox.launch({ headless: true })
+const browser = await firefox.launch({ headless: true, firefoxUserPrefs: withAudioMute() })
 const ctx = await browser.newContext({ viewport: { width: 1292, height: 810 }, deviceScaleFactor: 1 })
 await ctx.addCookies([{ name: cookie.name, value: cookie.value, domain: '127.0.0.1', path: '/', httpOnly: true, sameSite: 'Strict' }])
 

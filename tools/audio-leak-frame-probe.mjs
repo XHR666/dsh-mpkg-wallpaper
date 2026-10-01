@@ -23,6 +23,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { pathToFileURL } from 'node:url'
+import { withAudioMute } from './_audio-mute.mjs'   // ①(P-225) 探针浏览器一律静音（用户实测幽灵声音）
 
 const argv = process.argv.slice(2)
 const has = (n) => argv.includes('--' + n)
@@ -151,7 +152,7 @@ const prefs = Object.assign(
 const browser = await firefox.launch({
   headless: false,
   env: Object.assign({}, process.env, { DISPLAY: process.env.MPW_X11_DISPLAY || ':0', MOZ_WEBGL_FORCE_SOFTWARE: '1', LIBGL_ALWAYS_SOFTWARE: '1' }),
-  firefoxUserPrefs: prefs,
+  firefoxUserPrefs: withAudioMuteIfAllowed(prefs),
 })
 const out = { authority: AUTHORITY, permissive: PERMISSIVE, configure: CONFIGURE, refresh: REFRESH, steps: [] }
 let originalSection = null, originalHost = null, page = null

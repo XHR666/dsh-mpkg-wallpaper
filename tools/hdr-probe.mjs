@@ -248,6 +248,7 @@ function pageCollector() {
 function diffStats(pngA, pngB, box) {
   const py = `
 import json,sys
+import { withAudioMute } from './_audio-mute.mjs'   // ①(P-225) 探针浏览器一律静音（用户实测幽灵声音）
 from PIL import Image, ImageChops, ImageStat
 a=Image.open(sys.argv[1]).convert('RGB'); b=Image.open(sys.argv[2]).convert('RGB')
 x,y,w,h=[int(float(v)) for v in sys.argv[3].split(',')]
@@ -272,7 +273,7 @@ print(json.dumps({"box":list(box),"meanAbsDiff":round(mean,3),"maxDiff":mx,"chan
 // ---------- 主流程 ----------
 const { firefox } = await loadPlaywright()
 const cookie = readCookie()
-const browser = await firefox.launch({ headless: !HEADED, firefoxUserPrefs: { 'gfx.webrender.all': true } })
+const browser = await firefox.launch({ headless: !HEADED, firefoxUserPrefs: withAudioMute({ 'gfx.webrender.all': true } })
 const ctx = await browser.newContext({ viewport: { width: 1292, height: 810 }, deviceScaleFactor: 1 })
 await ctx.addCookies([{ name: cookie.name, value: cookie.value, domain: '127.0.0.1', path: '/', httpOnly: true, sameSite: 'Strict' }])
 const page = await ctx.newPage()

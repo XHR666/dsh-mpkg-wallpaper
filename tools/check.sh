@@ -124,6 +124,11 @@ node tools/audio-bus-test.mjs || fail=1
 #   （顶层缺省 `redirect` 只归因 / 帧内缺省 `1` 真压 / 显式档照办 / 帧内不接受 `redirect`）、静音跟随设置
 #   `mute` 同步（800ms 轮询 + 走模块 API）、三条分辨力自证。20 断言，~0.1s，无浏览器。
 node tools/audio-bus-wiring-test.mjs || fail=1
+# ①(P-225 2026-09-30 用户实测"幽灵声音") 探针侧静音纪律：tools/*.mjs 里每个 `firefox.launch`/
+#   `chromium.launch` 调用点都必须带 `_audio-mute.mjs` 的三件套（volume_scale=0 + 禁自动播放 +
+#   音频通道默认静音）——无头 Firefox(Nightly) 加载测试台/插件面时自动播放会真的建出 PulseAudio 流。
+#   静态扫（纯 Node ~0.1s）+ 三件套逐键钉值 + 反例自证（改坏必红）+ MPW_PROBE_AUDIO 逃生门。
+node tools/audio-mute-discipline-test.mjs || fail=1
 # ①(第13条 用户点名"长期没修好"的 bug) 选择文件夹/选择文件的选择器：
 #   滚动位置（重渲染/容器被重建后不跳顶）、不抢焦点、键盘导航、500 项大目录、滚轮不串联宿主。
 #   A 组源码级（**同一套断言对 `git show HEAD:lib/client.js` 必须变红** ⇒ 证明用例有分辨力）

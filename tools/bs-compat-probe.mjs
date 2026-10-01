@@ -28,6 +28,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { withAudioMute } from './_audio-mute.mjs'   // ①(P-225) 探针浏览器一律静音（用户实测幽灵声音）
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.resolve(here, '..')
@@ -116,7 +117,7 @@ const cookie = JSON.parse(fs.readFileSync(COOKIE_FILE, 'utf8'))
 const host = (() => { try { return new URL(URL0).hostname } catch { return '127.0.0.1' } })()
 
 const { firefox } = await loadPlaywright()
-const browser = await firefox.launch({ headless: !HEADED })
+const browser = await firefox.launch({ headless: !HEADED, firefoxUserPrefs: withAudioMute() })
 const bctx = await browser.newContext({ viewport: { width: 1292, height: 810 }, deviceScaleFactor: 1 })
 await bctx.addCookies([{ name: cookie.name, value: cookie.value, domain: host, path: '/', httpOnly: true, sameSite: 'Strict' }])
 const page = await bctx.newPage()

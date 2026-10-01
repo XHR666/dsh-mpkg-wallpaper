@@ -23,6 +23,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
+import { withAudioMute } from './_audio-mute.mjs'   // ①(P-225) 探针浏览器一律静音（用户实测幽灵声音）
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.resolve(here, '..')
@@ -251,7 +252,7 @@ if (!fs.existsSync(COOKIE)) {
 }
 const cookie = JSON.parse(fs.readFileSync(COOKIE, 'utf8'))
 const { firefox } = await import('playwright')
-const browser = await firefox.launch({ headless: !HEADED, firefoxUserPrefs: { 'gfx.webrender.all': true, 'general.smoothScroll': false } })
+const browser = await firefox.launch({ headless: !HEADED, firefoxUserPrefs: withAudioMute({ 'gfx.webrender.all': true, 'general.smoothScroll': false }) })
 let result = { before: null, after: null }
 try {
   // ① 先把旧实现装回 profile（**必须在任何 goto 之前**）：

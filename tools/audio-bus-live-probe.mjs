@@ -22,6 +22,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
+import { withAudioMute } from './_audio-mute.mjs'   // ①(P-225) 探针浏览器一律静音（用户实测幽灵声音）
 
 const argv = process.argv.slice(2)
 const SELFTEST = argv.includes('--selftest')
@@ -80,7 +81,7 @@ const pw = await import('playwright')
 const firefox = (pw.default && pw.default.firefox) || pw.firefox
 if (!firefox) { console.log('SKIP audio-bus-live-probe — playwright 没有 firefox 导出'); process.exit(0) }
 
-const browser = await firefox.launch({ headless: true })
+const browser = await firefox.launch({ headless: true, firefoxUserPrefs: withAudioMute() })
 let originalSection = null, originalMode = null
 try {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } })

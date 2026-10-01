@@ -190,7 +190,7 @@ const ok = (c, label, extra = '') => { if (c) { pass++; console.log('PASS ' + la
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const evidence = { at: new Date().toISOString(), authority: AUTHORITY, group: GROUP, phases: {}, net: [], console: [], errors: [], criteria: [] }
 
-const browser = await firefox.launch({ headless: true })
+const browser = await firefox.launch({ headless: true, firefoxUserPrefs: withAudioMute() })
 let originalSection = null
 let page = null
 /* 网络记账（只留插件路由）：判"扫描之后是不是真的重新发了请求、回的是什么码、花了多久"。
@@ -340,6 +340,7 @@ print(json.dumps({"meanAbsDiff":round(sum(st.mean)/3.0,3),"maxDiff":max(st.extre
     } catch (e) { return { err: 'shot:' + String((e && e.message) || e).slice(0, 80) } }
     const py = `
 import json,sys
+import { withAudioMute } from './_audio-mute.mjs'   // ①(P-225) 探针浏览器一律静音（用户实测幽灵声音）
 from PIL import Image, ImageStat
 im=Image.open(sys.argv[1]).convert('RGB'); W,H=im.size
 def col(x0,x1):

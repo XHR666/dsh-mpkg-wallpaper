@@ -30,6 +30,7 @@ import zlib from 'node:zlib'
 import { fileURLToPath } from 'node:url'
 import { execFileSync } from 'node:child_process'
 import { loadPlugin } from './_stub.mjs'
+import { withAudioMute } from './_audio-mute.mjs'   // ①(P-225) 探针浏览器一律静音（用户实测幽灵声音）
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.resolve(here, '..')
@@ -204,7 +205,7 @@ async function runOne(variant) {
   const html = pageHtml(css)
   fs.writeFileSync(path.join(dir, 'replica.html'), html)
   const { firefox } = await import(new URL('../node_modules/playwright/index.mjs', import.meta.url).href)
-  const b = await firefox.launch({ headless: true })
+  const b = await firefox.launch({ headless: true, firefoxUserPrefs: withAudioMute() })
   const p = await (await b.newContext({ viewport: { width: 900, height: 620 }, deviceScaleFactor: 1 })).newPage()
   await p.goto('file://' + path.join(dir, 'replica.html'), { waitUntil: 'load' })
   await p.addScriptTag({ content: injectLayerScript(variant) })

@@ -26,6 +26,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { withAudioMute } from './_audio-mute.mjs'   // ①(P-225) 探针浏览器一律静音（用户实测幽灵声音）
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const repoRoot = path.join(here, '..')
@@ -52,7 +53,7 @@ const ok = (cond, label, extra = '') => {
   else { fail++; console.log('FAIL ' + label + (extra ? '  ' + extra : '')) }
 }
 
-const browser = await firefox.launch({ headless: true })
+const browser = await firefox.launch({ headless: true, firefoxUserPrefs: withAudioMute() })
 try {
   const ctx = await browser.newContext()
   const page = await ctx.newPage()
