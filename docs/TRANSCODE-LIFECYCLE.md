@@ -194,7 +194,7 @@
    （压测探针开过 `:3080`，插件启动会正常 PUT `/settings`），之后用户在界面上自己换过壁纸/开关
    （含"视频预缩档"来回切）。当前盘上这份 `719f570e…` 97 键、`preScale: 0`、`source: bgcs_abydos03.mp4`、
    `srcRoot: container`，与用户描述的最终状态一致；本会话内字节与 mtime 均未变（没有任何线去写它）。
-   见 `/root/Desktop/DSHarea/docs/STATUS-ALL-ITEMS.md` 附录 B.3 的同一条结论。
+   见 `<工作区>/docs/STATUS-ALL-ITEMS.md` 附录 B.3 的同一条结论。
 
 ## 8. 本轮改动文件
 
