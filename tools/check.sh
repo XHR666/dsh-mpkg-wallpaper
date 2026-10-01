@@ -129,6 +129,8 @@ node tools/audio-bus-wiring-test.mjs || fail=1
 #   音频通道默认静音）——无头 Firefox(Nightly) 加载测试台/插件面时自动播放会真的建出 PulseAudio 流。
 #   静态扫（纯 Node ~0.1s）+ 三件套逐键钉值 + 反例自证（改坏必红）+ MPW_PROBE_AUDIO 逃生门。
 node tools/audio-mute-discipline-test.mjs || fail=1
+#  ①(2026-10-01) 半透明主题适配（应用外框 / 输入框磨砂 / ≥4K 提示）——issue #4 的 (A)(B)(C) 收口判据（纯 Node 桩 DOM，23 断言 + 5 组变异自证）
+node tools/theme-assist-test.mjs || fail=1
 # ①(第13条 用户点名"长期没修好"的 bug) 选择文件夹/选择文件的选择器：
 #   滚动位置（重渲染/容器被重建后不跳顶）、不抢焦点、键盘导航、500 项大目录、滚轮不串联宿主。
 #   A 组源码级（**同一套断言对 `git show HEAD:lib/client.js` 必须变红** ⇒ 证明用例有分辨力）
