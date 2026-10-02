@@ -394,6 +394,11 @@ node tools/desktop-compat-test.mjs || fail=1
 #  基色=宿主自己的表面色、四表面同色同透同半径、**透明度 0 ⇒ 完全不覆盖宿主**（含聊天区顶栏
 #  不注入磨砂层）、单独动过即独立（*UserSet）+「恢复跟随」（74 断言含 7 组变异自证，纯 Node 桩 DOM）
 node tools/fog-model-test.mjs || fail=1
+# ①(P1B 2026-10-03) 左栏收起动画卡顿：全文档扫描类重活的共享闸门（mpwHeavyGate，动画在跑
+#   ⇒ 跳过 + 400ms 补跑；sblur/popTag/hdrBlur 三工人接线）+ ?mpwperf=off 测量对照档。
+#   判据 16 条：闸门行为（拦下/零布局/补跑/账目）+ 接线静态断言 + 变异自证。
+#   读数与机制：docs/ANIMATION-PERF.md（P1A 探针 tools/sidebar-anim-probe.mjs）
+node tools/anim-guard-test.mjs || fail=1
 # ①(第13条 用户点名"长期没修好"的 bug) 选择文件夹/选择文件的选择器：
 #   滚动位置（重渲染/容器被重建后不跳顶）、不抢焦点、键盘导航、500 项大目录、滚轮不串联宿主。
 #   A 组源码级（**同一套断言对 `git show HEAD:lib/client.js` 必须变红** ⇒ 证明用例有分辨力）
@@ -633,6 +638,10 @@ node tools/ffprobe-provision-test.mjs || fail=1
 #   该形状必须判成半残档（旧判据要求有 mpkgKey/source 线索 ⇒ 漏判）+ 从 token 反推身份 key
 #   （mpkg 名 / ltoken / folder 三种形状）+ 不许误伤完整档与空档 + 自愈链真的用这个 key 尝试过。
 node tools/source-heal-token-test.mjs || fail=1
+# ①(P3 修复 2026-10-03) 弹层玻璃 backdrop root 被截断（读数 docs/POPOVER-BLUR.md）：
+#   mpwPopUntruncSync 给第一个带 blur 的截断祖先打 data-mpw-pop-untrunc + 静态 !important 规则，
+#   弹层关即撤（宿主逐字还原）；判据 11 条：打标/幂等/还原/硬前提/健康弹层/多层只标第一个/变异自证
+node tools/popover-untrunc-test.mjs || fail=1
 # ①(2026-09-23 用户第 1 项 B) 视频「按屏幕物理尺寸预缩（ffmpeg lanczos）」档 —— **默认关**：
 #   依据 ../docs/USER-ITEMS-20260921.md 第 19 条实测（`3588989102` 2558×1438@60）：非全屏尺寸上
 #   「一次直降」的**闪烁**是「逐级减半」的 1.6~2.7×，代价是细节低 1.4~1.9× ⇒ 取舍，默认不翻。

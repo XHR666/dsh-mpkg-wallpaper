@@ -106,3 +106,11 @@ node tools/switch-wiring-test.mjs      # 开关接线审计（含 accent/aquaTex
   所以 `shim` 段给的是"宿主侧可观测"的证据（src 标记 / 握手标志 / sandbox 属性），不是帧内状态；
 * "像素级/观感"类结论不在这里（本机无 GPU，无头 Firefox 不合成 `backdrop-filter`）；
 * 字段里的路径/URL 只保留尾部 160–200 字符（够定位、防 payload 被撑爆），要看完整值请同时提供 `section` 段。
+
+## 5. URL 测量开关（P1A 对照组，2026-10-03）
+
+| 开关 | 取值 | 语义 |
+| --- | --- | --- |
+| `?mpwperf=off` | `off` | 本次页面加载**完全不装**插件的 CSS / MutationObserver / 壁纸（`apply()` 幂等守卫之后直接 return，一行 CSS 都不产出）。用途 = 「侧栏动画卡顿」等运行期开销的 A/B 对照（探针 `tools/sidebar-anim-probe.mjs` 的"页内中性化"同口径的**官方开关**）；带这个参数的页面里 `__mpwSectionTest` / `__mpwPersist` 照常存在（模块级安装），但界面外壳/壁纸/观察器全部缺席。诊断 payload 不受影响；不带参数时行为与历史版本逐字节一致。 |
+
+判据：`tools/anim-guard-test.mjs` C 组（off ⇒ applyInner 未执行：`__mpwHeavyTest` 缺席；默认 ⇒ 全部就位）。
