@@ -54,7 +54,7 @@
 **我们自己的**侧栏磨砂层（`sblurObserver` 只摘 sidebarCol 内的近全屏弹窗）。`uV2eYG_card` 的 `blur(14px)` 是**宿主自己的规则**，
 一直都在——之前没人往「弹层自己的 blur 被它截断」这个方向量过。
 
-## 6. B 档修复方向（等 3.15.5 之后再动 `lib/client.js`；按结论 A 执行，理由如上）
+## 6. B 档修复（✅ 已实现，3.15.6；按结论 A 执行，理由如上）
 
 - **候选 1（推荐）**：弹层打开期间，向 head **临时注入**一条带 `!important` 的规则把 `uV2eYG_card`（及其同族卡片的 bf）中性化，
   弹层关闭/移动到 body 外即移除（实验③已验证该路径有效且可逆）。必须：只在弹层打开期间、逐字还原、
@@ -62,7 +62,12 @@
   **不要 reparent 宿主节点**（React 管的 DOM；实验①只允许作为测量手段）。
 - **候选 2**：把「模糊」提到造成 root 的那一层（卡片本身）做——风险高（改的是宿主视觉栈），不推荐。
 - 结论 B（背后实心 → 改实心表面）**不成立**，无需考虑。
-- 判据落点：`host-popover-probe` 新读数 + 一条纯函数/桩判据挂进 `tools/check.sh` 既有步骤（不新增步骤号）+ 变异自证。
+- **已落地**：`mpwPopUntruncSync()`（`lib/client.js`）——只扫已打 `data-mpw-pop-bg` 的表面，
+  沿祖先链找第一个带 blur 的截断祖先打 `data-mpw-pop-untrunc` 属性 + 静态 `!important` 规则
+  （候选 1 的属性标记变体：比注入逐案选择器更抗类名漂移）；挂在 prun（rAF 合并 + mpwHeavyGate
+  闸门）随突变重算，弹层关即摘属性撤规则。**没有 reparent 宿主节点**（实验①只作测量手段）。
+- 判据：`tools/popover-untrunc-test.mjs`（11 条，挂 check.sh 第 5 步：打标/幂等/关闭还原/
+  硬前提/健康弹层不标/多层只标第一个/变异自证）+ `host-popover-probe` 的 `truncatedBy` 等读数。
 
 ## 7. 未验证边界
 
