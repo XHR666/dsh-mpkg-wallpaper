@@ -366,10 +366,18 @@ const POPOVER_SUBTREE = (sel) => {
   }
   add(root, 'container')
   for (const e of root.querySelectorAll('*')) add(e, 'descendant')
+  /* 祖先链：判断 `[class*="_overlayLayer"]` 这类规则会不会命中弹层的祖先（并看有没有会改变
+     backdrop 采样根/包含块的属性：filter / transform / contain / will-change / isolation）。 */
+  const ancestors = []
+  for (let e = root.parentElement, i = 0; e && i < 40; e = e.parentElement, i++) {
+    const c = getComputedStyle(e); const r = e.getBoundingClientRect()
+    const cls = String(e.className || '')
+    ancestors.push({ sel: pathOf(e), tag: e.tagName, cls: cls.slice(0, 56), rect: [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)], z: c.zIndex, position: c.position, bg: c.backgroundColor, bf: c.backdropFilter, bgImage: String(c.backgroundImage).slice(0, 40), filter: c.filter, transform: c.transform === 'none' ? 'none' : 'set', contain: c.contain, willChange: c.willChange, isolation: c.isolation, overflow: c.overflow, opacity: c.opacity, pointerEvents: c.pointerEvents, hitOverlayLayer: cls.indexOf('_overlayLayer') >= 0, hitOverlay: cls.indexOf('_overlay') >= 0 })
+  }
   return {
     sel, found: true, containerCls: String(root.className), containerId: root.id || null, containerTokens: tokOf(root),
     containerRect: (() => { const r = root.getBoundingClientRect(); return [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)] })(),
-    itemCount: items.length, items,
+    itemCount: items.length, items, ancestors,
     menuitems: Array.from(root.querySelectorAll('[role="menuitem"],[role="option"]')).slice(0, 8).map((e) => { const c = getComputedStyle(e); const r = e.getBoundingClientRect(); return { sel: pathOf(e), cls: String(e.className).slice(0, 50), text: String(e.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 26), bg: c.backgroundColor, bf: c.backdropFilter, bgImage: String(c.backgroundImage).slice(0, 40), rect: [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)], tokens: tokOf(e) } }),
   }
 }
@@ -844,6 +852,7 @@ try {
           const tok = (p.dump.containerTokens || {})
           console.log('SURFACE ' + t.id + ' → ' + (p.blocked || 'ok') + '  items=' + p.dump.itemCount + '  containerTokens=' + JSON.stringify(tok) + '  patch(avg/lumaStd)=' + JSON.stringify([p.pixels && p.pixels.avg, p.pixels && p.pixels.lumaStd]))
           for (const it of (p.dump.items || []).slice(0, 8)) console.log('    · ' + (it.why === 'container' ? '[容器] ' : '[子] ') + it.tag + '.' + String(it.cls).split(' ')[0] + '  role=' + it.role + '  bg=' + it.bg + '  bf=' + it.bf + '  bgImage=' + String(it.bgImage).slice(0, 26) + '  rect=' + JSON.stringify(it.rect) + '  z=' + it.z + '  tokens=' + JSON.stringify(it.tokens))
+          for (const a of (p.dump.ancestors || []).slice(0, 12)) console.log('    ↑ ' + a.tag + '.' + String(a.cls).split(' ')[0] + '  rect=' + JSON.stringify(a.rect) + '  z=' + a.z + '  pos=' + a.position + '  bg=' + a.bg + '  bf=' + a.bf + '  filter=' + a.filter + '  transform=' + a.transform + '  contain=' + a.contain + '  isolation=' + a.isolation + '  pe=' + a.pointerEvents + '  hitOverlayLayer=' + a.hitOverlayLayer)
         } catch (e) { p.blocked = 'blocked:exception ' + String(e && e.message || e).slice(0, 140) }
         rec.popovers.push(p)
         try { await page.keyboard.press('Escape') } catch (e) { /* ignore */ }

@@ -445,6 +445,34 @@ function runAqua(section, text) {
 }
 
 /* ══════════════════════════════════════════════════════════════════
+   F8 组：**静默被丢弃的 CSS 值**（2026-10-02 真机定案的那类 bug）
+   病：`--mpw-surface-pop: rgba(var(--mpw-chrome-bg, 255,255,255), 0.94)` —— 而
+   `--mpw-chrome-bg` 早已改成**颜色**（`var(--dsw-specific-sidebar-fill)`）而不是三元组 ⇒
+   解析成 `rgba(var(--dsw-…), .94)` 属非法值，整条声明在 computed-value 阶段被**静默丢弃**
+   ⇒ 所有弹层"只有模糊、没有底"（用户第 3 条「完全透明、文字重叠」的真根因，探针在真机
+   Firefox 里逐条验过：非法形态 computed = rgba(0,0,0,0)）。
+   判据：产物里凡出现 `rgba(var(--mpw-X), …)`，被引用的 `--mpw-X` 必须是**三元组**（`r,g,b`）；
+   否则判红并指出是哪一枚 token。
+   ══════════════════════════════════════════════════════════════════ */
+{
+  const css = boot({ enabled: true, image: true })
+  const flat = STRIP(css)
+  const tripletOk = new Set()
+  for (const m of flat.matchAll(/--(mpw-[\w-]+)\s*:\s*([^;}]+)/g)) {
+    const name = m[1], val = String(m[2]).trim()
+    if (/^\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}$/.test(val)) tripletOk.add(name)
+  }
+  const bad = []
+  for (const m of flat.matchAll(/rgba\(\s*var\(\s*--(mpw-[\w-]+)\s*[,)]/g)) {
+    if (!tripletOk.has(m[1])) bad.push(m[1])
+  }
+  ok('F8 没有"引用了非三元组 token 的 rgba(var(--mpw-…))"——这类值会被浏览器静默丢弃（弹层"只有模糊没有底"的真根因）',
+    bad.length === 0, JSON.stringify([...new Set(bad)]))
+  ok('F8b 弹层表面与右栏整块表面都是合法颜色表达式（color-mix / 具体色），不是 rgba(var(…))',
+    /--mpw-surface-pop:\s*color-mix\(/.test(flat) && /--mpw-surface-rs-full:\s*color-mix\(/.test(flat))
+}
+
+/* ══════════════════════════════════════════════════════════════════
    E 组：变异自证（真源零改动；改坏关键判断 ⇒ 对应判据必红）
    ⚠️ 锚点纪律：`mutant()` 现在**强制锚点唯一**（split/join 会一次改多处 ⇒ 自证失效）。
       ①(2026-10-02 f470590 后复查) E1 `Math.max(0, planHdr…)` / E2 `sideAlpha = planAqua…` /
