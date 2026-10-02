@@ -390,7 +390,12 @@ function checkScenario(sc, r) {
     t('★ 注入层 z-index=0（不是 -1：负层会画在顶栏背景之下被盖住）', cssProp(r.cssText, 'z-index') === '0')
     t('内联 backdropFilter = blur(30px) saturate(140%)', r.backdropFilter === 'blur(30px) saturate(140%)')
     t('webkitBackdropFilter 同步设置', r.webkitBackdropFilter === 'blur(30px) saturate(140%)')
-    t('我们命名空间的半透明底色 --mpw-hdr-frost-bg 已写入', /rgba\(255,\s*255,\s*255,\s*0\.38\)/.test(r.hdrFrostBg))
+    /* ①(2026-10-02 表面模型重做) 底色不再是写死的 `rgba(255,255,255,0.38)`（那正是用户报的
+       "标题栏固定白底、不受滑条影响"），而是「宿主底色 × 生效不透明度」的 color-mix：
+       `color-mix(in srgb, var(--dsw-alias-bg-base) NN%, transparent)`。
+       判据同步成"确实写入、且指向宿主 token、且是 color-mix"——比旧式写死 rgba 更强。 */
+    t('我们命名空间的半透明底色 --mpw-hdr-frost-bg 已写入（宿主底色 × 不透明度，不再是写死白）',
+      /color-mix\(in srgb,\s*var\(--dsw-alias-bg-base\)\s*[\d.]+%,\s*transparent\)/.test(r.hdrFrostBg))
     t('computed 采到 header 底色（诊断用）', typeof r.state.headerBg === 'string' && r.state.headerBg.length > 0)
     // ①(2026-09-16 要求1) "看不见的链路变可见"：用户按诊断/上报时 payload 里必须带磨砂字段
     const d = r.diag || {}
