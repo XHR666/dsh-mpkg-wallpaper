@@ -72,6 +72,28 @@ const ALLOW_HOST_WRITES = has('allow-host-writes') // 默认**拦掉**插件往�
 const OPEN_SESSION = has('open-session')
 const OPEN_RIGHT = has('open-right')
 const KEY4 = String(arg('key4', 'a0-s0-f1,a0-s45-f1,a30-s0-f1,a30-s45-f1')).split(',').map((x) => x.trim()).filter(Boolean)
+/* 视口：**别用 1440×900** —— 实测这个宽度下宿主会把右栏记成 `data-rightbar-collapsed=true`
+   （右栏/dock 在 DOM 里但 `visibility:hidden`，开关还渲染在视口外 x≈2034）⇒ 四个表面量不全。
+   默认给一个桌面宽度；需要复刻用户窗口时用 `--viewport 1600x900` 覆盖（会如实记进 JSON）。 */
+/* 应用方式：`reload` = 写 localStorage 后刷新（复刻"改完刷新页面"那条路）；
+   `live` = 走插件自己的**用户写入口**（`__mpwSectionTest.write(patch)` = `writeSection(next, true)` +
+   `__mpwPersist.apply()`）——**不刷新**，因此宿主的会话/右栏/dock 布局不会被 reload 打回收起态。
+   为什么需要它：实测 `--open-session` 打开右栏后，一 reload 宿主就把右栏记成
+   `data-rightbar-collapsed=true`（元素在 DOM 里但 `visibility:hidden`）⇒ 只有 live 档量得到"可见态"。
+   默认 `auto`：开了 `--open-session/--open-right` 就用 live，否则用 reload（与主对话最初的要求一致）。 */
+const APPLY_MODE = (() => {
+  const m = String(arg('apply-mode', 'auto'))
+  if (m === 'reload' || m === 'live') return m
+  return (OPEN_SESSION || OPEN_RIGHT) ? 'live' : 'reload'
+})()
+/* 聊天列（会话视图）根选择器：标题栏就在它顶部。默认 `.wSkVaW_root`（这一版宿主里存在；
+   本仓 tools/css-matrix.mjs 也把 `.wSkVaW_header` 当标题栏锚点）。拿不到就退回
+   `.wSkVaW_scrollBody` 的最近定位祖先（见 CHAT_TOP_SCAN 内的 fallback）。 */
+const CHAT_ROOT_SEL = String(arg('chat-root', '.wSkVaW_root'))
+const VIEWPORT = (() => {
+  const m = String(arg('viewport', '1920x1200')).match(/^(\d+)x(\d+)$/)
+  return m ? { width: Number(m[1]), height: Number(m[2]) } : { width: 1920, height: 1200 }
+})()
 /* 用户真机的 settings.json（插件会把设置写回这里）。默认：拦掉写回 + 跑前跑后快照比对，
    变了就按快照原样还原 —— 探针只该改浏览器里那份 localStorage，不该动用户的真档。 */
 const SETTINGS_JSON = path.resolve(arg('settings', path.join(os.homedir(), '.dsh-mpkg-wallpaper', 'settings.json')))
@@ -188,11 +210,74 @@ const COLLECT = () => {
         const c = csOf(e)
         const b = (() => { try { const r = e.getBoundingClientRect(); return { w: Math.round(r.width), h: Math.round(r.height) } } catch (err) { return null } })()
         return { cls: String(e.className).slice(0, 80), bg: c.backgroundColor, bf: c.backdropFilter, display: c.display, rect: b,
+          path: pathOf(e),
           visible: !!(b && b.w > 2 && b.h > 2) && c.display !== 'none' && c.visibility !== 'hidden' }
       }
       const pick = (sel, n) => { try { return Array.from(document.querySelectorAll(sel)).slice(0, n || 4).map(brief) } catch (e) { return [{ err: String(e && e.message || e) }] } }
+      /* 元素路径（最多 6 层）：给"让用户认元素"用 —— 选择器字符串由 Node 侧的 selectorOf() 拼（可离线单测）。 */
+      const pathOf = (el) => {
+        try {
+          const out = []
+          let cur = el, depth = 0
+          while (cur && cur.nodeType === 1 && depth < 6 && cur !== document.documentElement) {
+            const parent = cur.parentElement
+            const idx = parent ? Array.prototype.indexOf.call(parent.children, cur) + 1 : 1
+            out.push({
+              tag: String(cur.tagName || '').toLowerCase(), id: cur.id || null, idx,
+              cls: String(cur.className || '').split(/\s+/).filter(Boolean).slice(0, 4),
+              attrs: Array.from(cur.attributes || []).map((a) => a.name).filter((n) => /^data-/.test(n)).slice(0, 4),
+            })
+            cur = parent; depth++
+          }
+          return out.reverse()
+        } catch (e) { return [] }
+      }
+      /* 顶部横带清单（比 frostedTop 宽）：视口顶部 220px 内、可见、宽≥100 高≥12，且**有底色或磨砂**的元素。
+         为什么要它：用户说的"标题栏"在当前宿主布局里不是 `.wSkVaW_header`（那个 hidden+0×0）⇒ 得让用户
+         按"选择器 + rect + 颜色/模糊"来指认。按面积降序取前 12，并去重（同 rect+同底色只留一个）。 */
+      const topBand = (() => {
+        try {
+          const list = []
+          for (const e of document.querySelectorAll('body *')) {
+            const c = csOf(e)
+            if (!c || c.display === 'none' || c.visibility === 'hidden' || Number(c.opacity) === 0) continue
+            const r = e.getBoundingClientRect()
+            if (r.top < -4 || r.top > 220 || r.width < 100 || r.height < 12) continue
+            const col = c.backgroundColor || ''
+            const transparent = /rgba?\(\s*0,\s*0,\s*0,\s*0\s*\)|^transparent$|color\(srgb 0 0 0 \/ 0\)/.test(col)
+            if (transparent && c.backdropFilter === 'none') continue
+            if (!transparent && /,\s*0\)$/.test(col) && c.backdropFilter === 'none') continue
+            list.push(Object.assign({ path: pathOf(e), rect: [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)], bg: col, bf: c.backdropFilter, z: c.zIndex, op: c.opacity }, { cls: String(e.className).slice(0, 80) }))
+          }
+          list.sort((a, b) => (b.rect[2] * b.rect[3]) - (a.rect[2] * a.rect[3]))
+          const seen = new Set(); const out = []
+          for (const x of list) {
+            const k = x.rect.join(',') + '|' + x.bg + '|' + x.bf
+            if (seen.has(k)) continue
+            seen.add(k); out.push(x)
+            if (out.length >= 12) break
+          }
+          return out
+        } catch (e) { return [{ err: String(e && e.message || e) }] }
+      })()
+      const frostedTop = (() => {
+        const out = []
+        try {
+          for (const e of document.querySelectorAll('body *')) {
+            const c = csOf(e); if (!c || c.backdropFilter === 'none') continue
+            const r = e.getBoundingClientRect()
+            if (r.width < 80 || r.height < 8 || r.top < -4 || r.top > 220) continue
+            if (c.display === 'none' || c.visibility === 'hidden' || Number(c.opacity) === 0) continue
+            out.push({ cls: String(e.className).slice(0, 60), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height), bg: c.backgroundColor, bf: c.backdropFilter })
+            if (out.length >= 8) break
+          }
+        } catch (e) { return [{ err: String(e && e.message || e) }] }
+        return out
+      })()
       return {
-        headerLike: pick('[class*="_header"]'),
+        headerLike: pick('[class*="_header"]').map((x) => Object.assign({}, x)),
+        topBand,
+        frostedTop,
         dockLike: pick('[class*="dock"]', 3),
         rightPanelLike: pick('[data-sidebar-right-panel],[class*="rightPanel"],[class*="rightPanel"]', 3),
         counts: {
@@ -247,6 +332,88 @@ const intentFromCss = (patch) => {
   } catch (e) { return { err: String(e && e.message || e) } }
 }
 
+/** "到底有没有选中一条会话"的真读数（不猜）：会话行选中态 / 聊天列有没有内容 / 标题栏状态 / URL。 */
+/* 判定"这条会话真的打开了（不是空会话欢迎页）"：
+   空会话欢迎页的 chatRootTopText 是"探索未至之境…描述你想要构建的内容…"那种（很短），
+   `.wSkVaW_header` 也会被宿主保持 `wSkVaW_headerHidden`。所以判据 = 标题栏不再 hidden，
+   或聊天列正文长度超过欢迎页的量级（阈值只用于**选行**，不参与任何交付读数）。 */
+const SESSION_HAS_CONTENT = (st) => !!(st && (st.headerHidden === false || (st.chatRootTextLen || 0) > 300))
+
+const SESSION_STATE = () => {
+  try {
+    const q = (sel) => { try { return Array.from(document.querySelectorAll(sel)) } catch (e) { return [] } }
+    const vis = (e) => { try { const r = e.getBoundingClientRect(); const c = getComputedStyle(e); return r.width > 2 && r.height > 2 && c.display !== 'none' && c.visibility !== 'hidden' } catch (err) { return false } }
+    const rows = q('[class*="sessionRow"]')
+    const selRows = rows.filter((e) => vis(e) && (e.getAttribute('aria-selected') === 'true' || /selected|active|current/i.test(String(e.className))))
+    const root = document.querySelector('.wSkVaW_root') || document.querySelector('.wSkVaW_scrollBody')
+    const hdr = document.querySelector('.wSkVaW_header')
+    const hdrC = hdr ? getComputedStyle(hdr) : null
+    const hdrR = hdr ? hdr.getBoundingClientRect() : null
+    const modelSel = root ? Array.from(root.querySelectorAll('*')).filter((e) => vis(e) && /创造模式|模型|model|Agent/i.test(String(e.textContent || '').trim().slice(0, 12)))[0] : null
+    return {
+      url: location.href,
+      rows: rows.length, rowsVisible: rows.filter(vis).length, rowsSelected: selRows.length,
+      selectedCls: selRows[0] ? String(selRows[0].className).slice(0, 60) : null,
+      chatRoot: root ? (String(root.className).slice(0, 40)) : null,
+      chatRootTextLen: root ? String(root.textContent || '').length : null,
+      chatRootTopText: root ? String(root.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 100) : null,
+      modelSelector: modelSel ? String(modelSel.textContent || '').trim().slice(0, 24) : null,
+      headerFound: !!hdr, headerCls: hdr ? String(hdr.className) : null,
+      headerDisplay: hdrC ? hdrC.display : null,
+      headerRect: hdrR ? [Math.round(hdrR.width), Math.round(hdrR.height)] : null,
+      headerHidden: !!(hdr && hdrC && hdrC.display === 'none'),
+      editors: q('[contenteditable="true"]').length,
+    }
+  } catch (e) { return { err: String(e && e.message || e) } }
+}
+
+/** 聊天列**顶部 120px** 内"可见 + 有底色或有磨砂"的元素 —— 用来把用户说的"标题栏"钉出来。 */
+const CHAT_TOP_SCAN = (rootSel) => {
+  try {
+    const root = document.querySelector(rootSel) || (() => {
+      const sb = document.querySelector('.wSkVaW_scrollBody')       // fallback：往上找最近的定位祖先
+      let cur = sb ? sb.parentElement : null
+      while (cur && getComputedStyle(cur).position === 'static') cur = cur.parentElement
+      return cur || sb
+    })()
+    if (!root) return { found: false, why: 'no-chat-root', rootSel }
+    const rr = root.getBoundingClientRect()
+    /* 就地写一份路径描述（页面函数之间不共享作用域；选择器字符串由 Node 侧 selectorOf() 拼） */
+    const pathOf = (el) => {
+      try {
+        const out = []
+        let cur = el, depth = 0
+        while (cur && cur.nodeType === 1 && depth < 6 && cur !== document.documentElement) {
+          const parent = cur.parentElement
+          const idx = parent ? Array.prototype.indexOf.call(parent.children, cur) + 1 : 1
+          out.push({ tag: String(cur.tagName || '').toLowerCase(), id: cur.id || null, idx, cls: String(cur.className || '').split(/\s+/).filter(Boolean).slice(0, 4), attrs: Array.from(cur.attributes || []).map((a) => a.name).filter((n) => /^data-/.test(n)).slice(0, 4) })
+          cur = parent; depth++
+        }
+        return out.reverse()
+      } catch (e) { return [] }
+    }
+    const out = []
+    for (const e of root.querySelectorAll('*')) {
+      const c = getComputedStyle(e)
+      if (c.display === 'none' || c.visibility === 'hidden' || Number(c.opacity) === 0) continue
+      const r = e.getBoundingClientRect()
+      if (r.width < 120 || r.height < 12) continue
+      const topRel = r.top - rr.top
+      if (topRel < -4 || topRel > 120) continue
+      const col = c.backgroundColor || ''
+      const transparent = /rgba?\(\s*0,\s*0,\s*0,\s*0\s*\)|^transparent$|color\(srgb 0 0 0 \/ 0\)/.test(col)
+      if (transparent && c.backdropFilter === 'none') continue
+      out.push({ cls: String(e.className).slice(0, 70), path: pathOf(e), rect: [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)], topRel: Math.round(topRel), bg: col, bf: c.backdropFilter, z: c.zIndex, text: String(e.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 36) })
+    }
+    out.sort((a, b) => (b.rect[2] * b.rect[3]) - (a.rect[2] * a.rect[3]))
+    return {
+      rootSel, rootCls: String(root.className).slice(0, 60), rootRect: [Math.round(rr.x), Math.round(rr.y), Math.round(rr.width), Math.round(rr.height)],
+      found: out.length > 0, candidates: out.slice(0, 8),
+      headerExact: (() => { const h = root.querySelector('[class*="_header"]') || document.querySelector('.wSkVaW_header'); if (!h) return null; const c = getComputedStyle(h); const r = h.getBoundingClientRect(); return { cls: String(h.className), path: pathOf(h), display: c.display, bg: c.backgroundColor, bf: c.backdropFilter, rect: [Math.round(r.width), Math.round(r.height)], visible: r.width > 2 && r.height > 2 && c.display !== 'none' } })(),
+    }
+  } catch (e) { return { found: false, err: String(e && e.message || e) } }
+}
+
 /** 当前布局读数（会话/标题栏/右栏/dock 到底在不在、可不可见）。 */
 const LAYOUT = () => {
   const vis = (e) => { try { const r = e.getBoundingClientRect(); const c = getComputedStyle(e); return r.width > 2 && r.height > 2 && c.display !== 'none' && c.visibility !== 'hidden' } catch (err) { return false } }
@@ -269,10 +436,10 @@ const LAYOUT = () => {
 }
 
 /** 打开/进入会话：优先已有会话行（无副作用），否则点"新建会话"真按钮（会新建一条空会话，如实记）。 */
-const OPEN_SESSION_FN = async () => {
+const OPEN_SESSION_FN = async (idx) => {
   const vis = (e) => { try { const r = e.getBoundingClientRect(); const c = getComputedStyle(e); return r.width > 2 && r.height > 2 && c.display !== 'none' } catch (err) { return false } }
   const rows = Array.from(document.querySelectorAll('[class*="sessionRow"]')).filter(vis)
-  if (rows.length) { rows[0].click(); return { clicked: 'existing-session-row', rows: rows.length } }
+  if (rows.length) { const i = ((idx || 0) % rows.length + rows.length) % rows.length; rows[i].click(); return { clicked: 'existing-session-row', index: i, rows: rows.length } }
   const btns = Array.from(document.querySelectorAll('button[aria-label="新建会话"]')).filter(vis)
   if (!btns.length) return { clicked: 'none', why: 'no-new-session-button' }
   const prefer = btns.filter((e) => String(e.className).indexOf('newSession') >= 0)
@@ -283,17 +450,40 @@ const OPEN_SESSION_FN = async () => {
 
 /** 补开右栏/dock：把可见的候选控件逐个试，返回哪一个把它带出来了。 */
 const OPEN_RIGHT_FN = () => {
-  const vis = (e) => { try { const r = e.getBoundingClientRect(); const c = getComputedStyle(e); return r.width > 2 && r.height > 2 && c.display !== 'none' } catch (err) { return false } }
-  if (document.querySelectorAll('[data-dockkit-strip],[data-sidebar-right-panel]').length) return { clicked: 'already-open' }
-  const PATS = [/展开右侧|右侧边栏|右侧面板/, /视图选项/, /菜单|menu/, /dock|工具面板/i]
+  const vis = (e) => { try { const r = e.getBoundingClientRect(); const c = getComputedStyle(e); return r.width > 2 && r.height > 2 && c.display !== 'none' && c.visibility !== 'hidden' } catch (err) { return false } }
+  const target = Array.from(document.querySelectorAll('[data-dockkit-strip],[data-dockkit-pane],[data-sidebar-right-panel]'))
+  if (target.length && target.some(vis)) return { clicked: 'already-visible' }
+  /* 注意：reload 之后这些元素常常**在 DOM 里但 visibility:hidden**（宿主把右栏记成收起态）
+     ⇒ 判据必须是"可见"，不是"存在"，否则会误记 already-open 而量到一堆隐藏值。 */
+  /* 候选顺序（从"最像右栏开关"到"兜底菜单"）；dock 的 tab 条与右栏容器里的按钮也试 —— 宿主把
+     右栏收起后，"展开"控件要么在右栏容器内、要么就是 dock 条上的某个 tab。 */
+  /* 收起态的右栏是**0 宽**的列（`pI_x6G_rightbarCol` rect=0×900）⇒ 它里面的展开控件也是 0 宽，
+     `vis()` 会把它们全滤掉。这里对**容器内**的按钮不做尺寸过滤：程序化 `.click()` 不需要可见。 */
+  const inDock = Array.from(document.querySelectorAll('[data-dockkit-strip] button,[data-dockkit-strip] [role="tab"],[data-rightbar-col] button,[data-rightbar-col] [role="button"],[class*="rightbarCol"] button,[class*="rightbarCol"] [role="button"]'))
+  if (inDock.length) {
+    const el = inDock[0]
+    el.click()
+    return { clicked: 'dock-or-rightbar-container', cls: String(el.className).slice(0, 40), aria: el.getAttribute('aria-label'), candidates: inDock.length, zeroSized: !vis(el) }
+  }
+  const PATS = [/展开右侧/, /右侧边栏|右侧面板/, /视图选项/, /菜单|menu/, /dock|工具面板/i, /面板|panel/i]
   const all = Array.from(document.querySelectorAll('button,[role="button"],[tabindex]')).filter(vis)
+  const tried = []
   for (const p of PATS) {
     const hit = all.find((e) => p.test(((e.getAttribute && (e.getAttribute('aria-label') || e.getAttribute('title'))) || '') + ' ' + (e.textContent || '').trim().slice(0, 24)))
     if (!hit) continue
+    const aria = hit.getAttribute('aria-label')
+    tried.push(aria || String(hit.className).slice(0, 24))
     hit.click()
-    return { clicked: 'by-pattern', pattern: String(p), cls: String(hit.className).slice(0, 40), aria: hit.getAttribute('aria-label') }
+    /* 两步：有些控件点开的是菜单/弹层，真正的"显示右侧栏"项在菜单里 */
+    const items = Array.from(document.querySelectorAll('[role="menuitem"],[role="option"],li,button')).filter(vis)
+    const item = items.find((e) => /右侧栏|右侧面板|显示右侧|right (sidebar|panel)|面板|panel/i.test(((e.getAttribute && (e.getAttribute('aria-label') || e.getAttribute('title'))) || '') + ' ' + (e.textContent || '').trim().slice(0, 20)))
+    if (item && item !== hit) {
+      item.click()
+      return { clicked: 'menu-item', pattern: String(p), via: aria, itemText: (item.textContent || '').trim().slice(0, 20), cls: String(item.className).slice(0, 40) }
+    }
+    return { clicked: 'by-pattern', pattern: String(p), cls: String(hit.className).slice(0, 40), aria, tried }
   }
-  return { clicked: 'none', why: 'no-candidate', visibleControls: all.map((e) => e.getAttribute('aria-label') || String(e.className).slice(0, 24)).filter(Boolean).slice(0, 25) }
+  return { clicked: 'none', why: 'no-candidate', tried, visibleControls: all.map((e) => e.getAttribute('aria-label') || String(e.className).slice(0, 24)).filter(Boolean).slice(0, 25) }
 }
 
 /* 设置面板：点"设置/Settings"入口（自底向上取最内层可见命中），拿不到就记 skipped。 */
@@ -338,23 +528,36 @@ const layoutReady = async (page, ms) => {
 }
 
 /** 按开关把"可见态"弄出来（会话布局 / 右栏 dock），每一步点谁都如实记。 */
-const ensureLayout = async (page) => {
+const ensureLayout = async (page, pref) => {
   const before = await page.evaluate(LAYOUT)
   const clicks = []
+  const prefRow = pref && Number.isFinite(pref.rowIdx) ? pref.rowIdx : null
   if (OPEN_SESSION) {
-    const need = before.editors === 0 && before.dockStrip === 0 && before.sessionRows === 0
-    if (!need) clicks.push({ session: 'already-present' })
-    for (let i = 0; need && i < 2; i++) {
-      const r = await page.evaluate(OPEN_SESSION_FN)
-      r.waitedMs = await layoutReady(page, 20000)
-      clicks.push({ session: r })
-      const now = await page.evaluate(LAYOUT)
-      if (now.editors > 0 || now.dockStrip > 0 || now.sessionRows > 0) break
+    /* "打开会话" ≠ "选中了会话" ≠ "选中了**有内容**的会话"：三层都要验。
+       实测坑：点第 0 行会选中一条**空会话**（聊天列是"描述你想要构建的内容…"欢迎页），
+       此时 `.wSkVaW_header` 仍被宿主保持 `wSkVaW_headerHidden`+0×0 ⇒ 标题栏量不到。
+       ⇒ 首轮**扫会话行**（默认最多 6 行）直到 `SESSION_HAS_CONTENT`，记住那一行的下标，
+       后面每个场景只点那一行（不重复扫，省时间）。 */
+    const st0 = await page.evaluate(SESSION_STATE)
+    if (SESSION_HAS_CONTENT(st0)) {
+      clicks.push({ session: 'already-content-selected', session0: { rows: st0.rows, selected: st0.rowsSelected, headerHidden: st0.headerHidden, textLen: st0.chatRootTextLen } })
+    } else {
+      const maxRows = Math.max(1, Math.min(Number(arg('session-scan', '6')), st0.rows || 1))
+      const order = prefRow === null ? Array.from({ length: maxRows }, (_, i) => i) : [prefRow]
+      for (const idx of order) {
+        const r = await page.evaluate(OPEN_SESSION_FN, idx)
+        r.waitedMs = await layoutReady(page, 20000)
+        r.session = await page.evaluate(SESSION_STATE)
+        const good = SESSION_HAS_CONTENT(r.session)
+        clicks.push({ session: r, hasContent: good })
+        if (good) { clicks[clicks.length - 1].pickedRowIdx = idx; break }
+        await page.waitForTimeout(600)
+      }
     }
   }
   if (OPEN_RIGHT) {
     const now = await page.evaluate(LAYOUT)
-    if (now.dockStrip > 0 || now.rightPanel > 0) clicks.push({ right: 'already-open' })
+    if (now.dockStripVisible > 0 || now.rightPanelVisible > 0) clicks.push({ right: 'already-visible' })
     else {
       const r = await page.evaluate(OPEN_RIGHT_FN)
       r.waitedMs = await layoutReady(page, 12000)
@@ -413,7 +616,7 @@ try {
   }
 
   browser = await firefox.launch({ headless: !HEADED, firefoxUserPrefs: withAudioMute() })
-  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1, locale: 'zh-CN' })
+  const ctx = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 1, locale: 'zh-CN' })
   await ctx.addCookies([{ name: cookie.name, value: cookie.value, domain: '127.0.0.1', path: '/', httpOnly: true, sameSite: 'Strict' }])
   const page = await ctx.newPage()
   /* 默认拦掉"插件 → 宿主 settings.json"的写回：探针只量 CSS，没理由改用户真档。
@@ -441,9 +644,11 @@ try {
     blocked('plugin-not-active', '页面打开了但没有 __mpwSectionTest/__mpwPersist ⇒ 该页没装/没启用本插件')
   }
   result.page = { title: await page.title(), status }
-  result.layoutPlan = { openSession: OPEN_SESSION, openRight: OPEN_RIGHT, key4: KEY4 }
+  result.layoutPlan = { openSession: OPEN_SESSION, openRight: OPEN_RIGHT, key4: KEY4, viewport: VIEWPORT, applyMode: APPLY_MODE, settleMs: SETTLE, hostWaitMs: HOST_WAIT }
   if (OPEN_SESSION || OPEN_RIGHT) {
-    result.layoutInitial = await ensureLayout(page)      // 先弄一次，后面每个场景 reload 后按需补
+    result.layoutInitial = await ensureLayout(page, {})   // 先弄一次（会扫行找"有内容"的会话）
+    const picked = (result.layoutInitial.clicks || []).map((c) => c.pickedRowIdx).filter((x) => Number.isFinite(x))
+    if (picked.length) { result.pickedRowIdx = picked[0]; console.log('  · 选中的会话行下标 = ' + picked[0] + '（后续场景复用）') }
     await page.waitForTimeout(SETTLE)
   }
 
@@ -456,17 +661,28 @@ try {
   for (const sc of scenarios) {
     const rec = { id: sc.id, patch: sc.patch, ok: false }
     try {
-      const raw = await page.evaluate(({ k, patch }) => {
-        let cur = {}
-        try { cur = JSON.parse(localStorage.getItem(k) || '{}') || {} } catch (e) { cur = {} }
-        const next = Object.assign({}, cur, patch)
-        localStorage.setItem(k, JSON.stringify(next))
-        return localStorage.getItem(k)
-      }, { k: STORE, patch: sc.patch })
-      rec.wroteLen = raw ? raw.length : 0
+      if (APPLY_MODE === 'live') {
+        /* 走插件自己的写入口（与用户拖滑条同一条路：writeSection(next, true) + applyFromStorage），不刷新 */
+        rec.write = await page.evaluate(({ patch }) => {
+          try {
+            const w = globalThis.__mpwSectionTest && globalThis.__mpwSectionTest.write ? globalThis.__mpwSectionTest.write(patch) : 'no-hook'
+            const a = globalThis.__mpwPersist && globalThis.__mpwPersist.apply ? globalThis.__mpwPersist.apply() : 'no-hook'
+            return { write: w, apply: a }
+          } catch (e) { return { err: String(e && e.message || e) } }
+        }, { patch: sc.patch })
+      } else {
+        const raw = await page.evaluate(({ k, patch }) => {
+          let cur = {}
+          try { cur = JSON.parse(localStorage.getItem(k) || '{}') || {} } catch (e) { cur = {} }
+          const next = Object.assign({}, cur, patch)
+          localStorage.setItem(k, JSON.stringify(next))
+          return localStorage.getItem(k)
+        }, { k: STORE, patch: sc.patch })
+        rec.wroteLen = raw ? raw.length : 0
 
-      await page.reload({ waitUntil: 'domcontentloaded', timeout: 60000 })
-      await page.waitForFunction(() => !!(globalThis.__mpwSectionTest && globalThis.__mpwPersist), null, { timeout: 30000 })
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 60000 })
+        await page.waitForFunction(() => !!(globalThis.__mpwSectionTest && globalThis.__mpwPersist), null, { timeout: 30000 })
+      }
       /* 宿主外壳是异步渲染的：`state:'attached'` 等它进 DOM（标题栏在用户布局里可能是 display:none，
          用默认的 'visible' 会白等满超时）。等不到也如实记 found:false，不拿别的元素顶替。 */
       const waitT0 = Date.now()
@@ -476,8 +692,12 @@ try {
       await page.waitForTimeout(SETTLE)
       rec.hostChromeWaitMs = Date.now() - waitT0
       /* 可见态：reload 会把宿主的会话/dock 布局丢掉 ⇒ 按开关补回来（补的每一步都记在 rec.layout.clicks） */
-      rec.layout = (OPEN_SESSION || OPEN_RIGHT) ? await ensureLayout(page) : { after: await page.evaluate(LAYOUT), clicks: [] }
+      rec.layout = (OPEN_SESSION || OPEN_RIGHT)
+        ? await ensureLayout(page, { rowIdx: result.pickedRowIdx })
+        : { after: await page.evaluate(LAYOUT), clicks: [] }
       rec.headerVisible = rec.layout.after.headerExactVisible > 0 || rec.layout.after.headerAnyVisible > 0
+      rec.session = await page.evaluate(SESSION_STATE).catch(() => null)
+      rec.headerProbe = { rootSel: CHAT_ROOT_SEL, closed: await page.evaluate(CHAT_TOP_SCAN, CHAT_ROOT_SEL).catch(() => null), open: null }
 
       rec.intent = await page.evaluate(intentFromCss, sc.patch)
       rec.closed = await page.evaluate(COLLECT)
@@ -507,6 +727,7 @@ try {
       if (state.open) {
         await page.waitForTimeout(400)
         rec.dialogCollect = await page.evaluate(COLLECT)
+        rec.headerProbe.open = await page.evaluate(CHAT_TOP_SCAN, CHAT_ROOT_SEL).catch(() => null)
         /* 设置面板开/关对左栏的影响（用户报"设置打开时左栏变黑"）——只记有界字段，便于人读 */
         const pick = (surf) => (surf && surf.found ? { bg: surf.backgroundColor, bf: surf.backdropFilter, display: surf.display } : null)
         rec.dialogDelta = {
@@ -535,6 +756,7 @@ try {
       left: rec.closed ? rec.closed.surfaces.sidebarCol : null,
       header: rec.closed ? rec.closed.surfaces.headerFrost : null,
       tokens: rec.closed ? rec.closed.tokens.onBody : null,
+      session: rec.session ? { rows: rec.session.rows, selected: rec.session.rowsSelected, headerHidden: rec.session.headerHidden, chatText: rec.session.chatRootTopText } : null,
     }))
   }
 
@@ -590,6 +812,20 @@ try {
 
 /* ── 4 落盘 + 人读表 ───────────────────────────────────────────────────────────── */
 fs.writeFileSync(OUT, JSON.stringify(result, null, 1) + '\n')
+
+/** 把页面侧的"路径描述"拼成能直接粘进 Playwright 的选择器（纯函数；见文件尾的自测）。 */
+const selectorOf = (pathArr) => {
+  if (!Array.isArray(pathArr) || !pathArr.length) return null
+  return pathArr.map((p, i) => {
+    const last = i === pathArr.length - 1
+    let s = p && p.tag ? p.tag : '*'
+    if (p && p.id) s += '#' + p.id
+    else if (last && p && p.cls && p.cls.length) s += '.' + p.cls[0]
+    if (last && p && p.attrs && p.attrs.length) s += '[' + p.attrs[0] + ']'
+    if (!(p && p.id)) s += ':nth-child(' + ((p && p.idx) || 1) + ')'
+    return s
+  }).join(' > ')
+}
 
 const parseColor = (s) => {
   const raw = String(s === undefined || s === null ? '' : s).trim()
@@ -650,6 +886,76 @@ for (const rec of result.scenarios) {
     return (hidden + (anyHidden ? ' / ' + String(anyHidden.cls).split(' ')[0] + ' ' + String(anyHidden.bg).replace(/\s+/g, '') : '')).slice(0, 60)
   })()
   console.log(rec.id.padEnd(14) + '| ' + fmt(g('sidebarCol')).padEnd(34) + '| ' + hdrCell.padEnd(62) + '| ' + fmt(g('rightPanel')).padEnd(30) + '| ' + fmt(g('dockStrip')).padEnd(26) + '| ' + chat)
+}
+
+/* ── 顶部横带并集（给用户认"你说的标题栏是哪一个"） ─────────────────────────────
+   每个场景都有 topBand；这里按"选择器 + 颜色 + 模糊"去重合并，附第一次出现的场景与 rect。 */
+{
+  const seen = new Map()
+  for (const rec of result.scenarios) {
+    const tb = (rec.closed && rec.closed.discovered && rec.closed.discovered.topBand) || []
+    for (const x of tb) {
+      if (!x || !x.path) continue
+      const sel = selectorOf(x.path)
+      const key = sel + '|' + x.bg + '|' + x.bf
+      if (!seen.has(key)) seen.set(key, { selector: sel, cls: x.cls, rect: x.rect, bg: x.bg, bf: x.bf, z: x.z, firstSeenIn: rec.id })
+    }
+  }
+  result.topBand = [...seen.values()]
+  console.log('\n===== 顶部横带清单（视口顶部 220px 内、可见、有底色或磨砂；给用户认"标题栏是哪一个"）=====')
+  if (!result.topBand.length) console.log('  （空：这一版页面顶部没有任何"有底色或磨砂"的横带）')
+  for (const x of result.topBand) {
+    console.log('  · ' + x.selector)
+    console.log('      rect=' + JSON.stringify(x.rect) + '  bg=' + x.bg + '  backdrop-filter=' + x.bf + '  z=' + x.z + '  首次出现在 ' + x.firstSeenIn)
+  }
+}
+
+/* ── 聊天列顶部候选（把用户说的"标题栏"钉出来） ─────────────────────────────── */
+{
+  const seen = new Map()
+  for (const rec of result.scenarios) {
+    for (const state of ['closed', 'open']) {
+      const c = rec.headerProbe && rec.headerProbe[state]
+      for (const x of (c && c.candidates) || []) {
+        const key = x.cls + '|' + x.bg + '|' + x.bf + '|' + x.rect.join(',')
+        if (!seen.has(key)) seen.set(key, Object.assign({}, x, { state, firstSeenIn: rec.id }))
+      }
+    }
+  }
+  result.headerCandidates = [...seen.values()]
+  console.log('\n===== 聊天列顶部 120px 候选（"可见 + 有底色或有磨砂"；用户说的标题栏应是其中之一）=====')
+  if (!result.headerCandidates.length) console.log('  （空：聊天列顶部 120px 内没有"有底色或磨砂"的可见横条）')
+  for (const x of result.headerCandidates) {
+    console.log('  · ' + selectorOf(x.path) + '   [' + x.cls + ']' + (x.text ? '  text="' + x.text + '"' : ''))
+    console.log('      rect=' + JSON.stringify(x.rect) + ' topRel=' + x.topRel + '  bg=' + x.bg + '  backdrop-filter=' + x.bf + '  z=' + x.z + '  (' + x.state + ' 态，首次 ' + x.firstSeenIn + ')')
+  }
+}
+
+/* ── 标题栏：关键 4 档 × 关设置 / 开设置 ─────────────────────────────────────── */
+{
+  const exact = (rec, state) => {
+    const sf = (state === 'open' ? (rec.dialogCollect || {}) : (rec.closed || {})).surfaces || {}
+    const h = sf.header, f = sf.headerFrost
+    const one = (x, n) => (!x || !x.found) ? (n + ' 不在 DOM') : (n + ' ' + String(x.backgroundColor).replace(/\s+/g, '') + ' bf=' + x.backdropFilter + ' ' + JSON.stringify(x.rect) + (x.display === 'none' ? ' [display:none]' : ''))
+    return one(h, '.wSkVaW_header') + '  |  ' + one(f, '.mpw-hdrFrost')
+  }
+  const top = (rec, state) => {
+    const c = rec.headerProbe && rec.headerProbe[state]
+    if (!c) return '（未采）'
+    if (!c.found) return '（无候选' + (c.why ? '：' + c.why : '') + '）'
+    const x = c.candidates[0]
+    return (selectorOf(x.path) || x.cls) + ' ' + JSON.stringify(x.rect) + ' bg=' + x.bg + ' bf=' + x.bf
+  }
+  console.log('\n===== 标题栏：关键 4 档 × 关设置 / 开设置（原文读数）=====')
+  for (const id of KEY4) {
+    const rec = result.scenarios.find((x) => x.id === id)
+    if (!rec) { console.log('  ' + id + '（不在本次矩阵里）'); continue }
+    console.log('  ' + id)
+    console.log('     关设置: ' + exact(rec, 'closed'))
+    console.log('            顶部候选: ' + top(rec, 'closed'))
+    console.log('     开设置: ' + exact(rec, 'open'))
+    console.log('            顶部候选: ' + top(rec, 'open'))
+  }
 }
 
 /* ── 关键档小表（主对话要的"左栏/标题栏/右栏 × 关键 4 档"） ───────────────────── */
