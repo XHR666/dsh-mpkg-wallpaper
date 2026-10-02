@@ -8,8 +8,8 @@
 
 | # | 现象 | 根因（实测） |
 |---|---|---|
-| A | 壁纸层健康（`#mpw-bgWrap` fixed/整窗/opacity 1、`#mpw-bgVideo` `readyState 4`、未暂停、无 error；`body/html` 透明）但**整屏看不见壁纸** | 应用外框节点 `[class*="_frame"]` 在壁纸层（`z-index:-1`）之上刷了一层**不透明**底色。宿主版本不同、取色变量不同：**本机 0.1.5-rc.2** = `pI_x6G_frame{background:var(--dsw-alias-bg-base)}`；**报告者 0.2.0-rc.2** 上该节点背景 = `--dsw-specific-sidebar-fill`（`#f9fafb`）。把该节点背景改 `transparent` ⇒ 壁纸立刻出现；改回 ⇒ 又消失（可逆复现） |
-| B | 正文从输入框底下透出来糊进输入框 | 宿主 `[class*="composerSeat"]`：`background: linear-gradient(180deg, color-mix(in srgb, var(--dsw-alias-bg-base) 0%, transparent) 0px, var(--dsw-alias-bg-base) 36px); position: sticky; bottom: 0`（本机 0.1.5-rc.2 与报告者引用**逐字一致**）。遮罩终点跟着 `bg-base` 走 ⇒ 底色 20% 时遮罩也只有 20% |
+| A | 壁纸层健康（`#mpw-bgWrap` fixed/整窗/opacity 1、`#mpw-bgVideo` `readyState 4`、未暂停、无 error；`body/html` 透明）但**整屏看不见壁纸** | 应用外框节点 `[class*="_frame"]` 在壁纸层（`z-index:-1`）之上刷了一层**不透明**底色。宿主版本不同、取色变量不同：**宿主构建甲** = `…_frame{background:var(--dsw-alias-bg-base)}`；**宿主构建乙** = 同一节点背景 `--dsw-specific-sidebar-fill`（两者算出来是同一个颜色）。把该节点背景改 `transparent` ⇒ 壁纸立刻出现；改回 ⇒ 又消失（可逆复现） |
+| B | 正文从输入框底下透出来糊进输入框 | 宿主 `[class*="composerSeat"]`：`background: linear-gradient(180deg, color-mix(in srgb, var(--dsw-alias-bg-base) 0%, transparent) 0px, var(--dsw-alias-bg-base) 36px); position: sticky; bottom: 0`（两个宿主构建里逐字一致）。遮罩终点跟着 `bg-base` 走 ⇒ 底色 20% 时遮罩也只有 20% |
 | C | 4K@30fps 源 + 壁纸层虚化（`blur` 12px、`unifyAmount` 30px）⇒ 明显卡顿 | 解码 + 每帧 backdrop 的代价叠加；把「分辨率上限」降到 1080p（宿主 ffmpeg 转码）+ 关掉两个模糊即恢复。**不是 bug，是默认值/提示问题** |
 
 **为什么必须运行期探测**：宿主类名带**内容哈希**（前缀每次构建都变）；取色变量也随版本变（见上表 A）。
@@ -56,8 +56,8 @@ window.__mpwThemeAssist
 
 ## 5. 未验证边界（如实）
 
-1. **本机是 Android + DSH 0.1.5-rc.2（web profile）**，不是报告者的 Windows/macOS + 0.2.0-rc.2 桌面版 ⇒ 三处都只在**桩 DOM** 与宿主 bundle 的**静态规则**上验证，**没有真机复测**；
-2. 外框在 0.2.0-rc.2 桌面端的**节点结构**（是否仍是 `[class*="_frame"]` 前缀、是否铺满视口）**未实测** ⇒ 若结构变了，`mode` 会如实变成 `assist-no-frame`（不猜、不乱改）；
+1. **开发机的宿主构建与桌面版构建不同** ⇒ 三处都只在**桩 DOM** 与宿主 bundle 的**静态规则**上验证，**没有真机复测**；
+2. 桌面版构建里外框的**节点结构**（是否仍是 `[class*="_frame"]` 前缀、是否铺满视口）**未实测** ⇒ 若结构变了，`mode` 会如实变成 `assist-no-frame`（不猜、不乱改）；
 3. 输入框卡片的节点前缀 `[class*="_card"]` 同理：找不到就只是"去掉色带、没加上模糊"（仍比原来好，但不是最终形态）；
-4. `backdrop-filter` 在 Electron 44（Windows/macOS）上的代价未测（4K 源下可能更贵）；
+4. `backdrop-filter` 在桌面壳（Electron）里的代价未测（4K 源下可能更贵）；
 5. 单显示器/单窗口前提：多窗口/多屏下"铺满视口 ≥90%"的判据可能需要放宽（会先记 `assist-no-frame`，不误改）。

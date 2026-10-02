@@ -3,6 +3,9 @@
 # 这是 `dsh.bundle.patch` 层：通过官方 CLI 安装时——
 #
 #   dsh plugin --profile <name> add dsh-mpkg-wallpaper
+#   ⚠ 桌面版（DSH Desktop / macOS / Windows）：`desktop` profile 由 Electron 壳独占，官方 CLI **拒绝**它的
+#   插件管理请求 ⇒ 桌面上不要用上面这条命令；请按 README「桌面版怎么装」两条之一（桌面 App 的插件入口，或
+#   手动放进桌面 profile 的依赖树 + 保留本文件的挂载行）。
 #
 # ——CLI 会读取本声明把插件行追加到 bundle 栈，profile 启动时合并本 patch。
 # 若 profile 里还留着旧的手动挂载行（@local/dsh-mpkg-wallpaper），

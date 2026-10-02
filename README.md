@@ -21,6 +21,21 @@
 | 三 GitHub 克隆 | 开发者 / 离线 / 要改代码 | `git pull` | 完整 |
 | 四 单文件 bundle | 离线应急；给非 DSH 宿主复用路由 | 重新生成并替换那个 `.mjs` | **只有宿主端** |
 
+### ⚠ 桌面版（DSH Desktop）怎么装（2026-10-02 补）
+
+DSH 桌面包目前只有 **macOS / Windows**。官方 README 写明：**`desktop` 这个 profile 名由 Electron 壳独占，
+CLI 会拒绝它的 `boot` / `config-dump` / 插件管理请求** ⇒ 桌面上**不能**照抄 `dsh plugin --profile desktop add …`。
+桌面档请按下面两条之一走（按你手上那个桌面版本的界面为准）：
+
+1. **桌面 App 自带的插件入口**（若有）：在设置/插件页添加 npm 包名 `dsh-mpkg-wallpaper`；
+2. **手动装进桌面 profile 的依赖树**：把包放进该 profile 的 `node_modules/`（或在其 `package.json` 里加依赖后装），
+   并在该 profile 的 `cordis.patch.yml` 里保留本包的挂载行（与「方式三」同形，只是 profile 换成一个由桌面壳管理的目录）。
+
+桌面档还有一条与网页档不同的前提：**宿主页面源可能不是回环 HTTP**（Electron 用 `file://` + IPC）。
+3.11.0 起客户端已按 DSH 第一方口径兜底（`location.origin` 缺失或为 `"null"` ⇒ `http://dsh.internal`），
+所以宿主路由在桌面档也能解析；若仍然连不上宿主，请跑 `window.__mpwCompat()` 与 `GET /api/mpkg-wallpaper/compat`
+把两段 JSON 发给我们（见 `docs/TRANSLUCENT-THEME.md` 同级的排查说明）。
+
 ### 方式一：`dsh plugin add`（推荐，市场可识别）
 
 ```bash

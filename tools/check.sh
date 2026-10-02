@@ -131,6 +131,8 @@ node tools/audio-bus-wiring-test.mjs || fail=1
 node tools/audio-mute-discipline-test.mjs || fail=1
 #  ①(2026-10-01) 半透明主题适配（应用外框 / 输入框磨砂 / ≥4K 提示）——issue #4 的 (A)(B)(C) 收口判据（纯 Node 桩 DOM，23 断言 + 5 组变异自证）
 node tools/theme-assist-test.mjs || fail=1
+#  ①(2026-10-02 桌面端兼容) 宿主基址兜底（file:// 档 → dsh.internal）/ ffprobe 跨平台探测链 / 只读排查通道（20 断言含 6 组变异）
+node tools/desktop-compat-test.mjs || fail=1
 # ①(第13条 用户点名"长期没修好"的 bug) 选择文件夹/选择文件的选择器：
 #   滚动位置（重渲染/容器被重建后不跳顶）、不抢焦点、键盘导航、500 项大目录、滚轮不串联宿主。
 #   A 组源码级（**同一套断言对 `git show HEAD:lib/client.js` 必须变红** ⇒ 证明用例有分辨力）
