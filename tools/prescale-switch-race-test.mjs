@@ -197,7 +197,11 @@ function sliceFn(src, name) {
   }
   throw new Error('{} 不配平: ' + name);
 }
-const CLIENT_FNS = ['mpwArmCacheUsable', 'mpwArmProbeUrl', 'mpwArmVerdictApplies', 'mpwArmMountedUrl', 'mpwArmSigNow', 'mpwArmAbortAll', 'mpwArmProbe', 'mpwVerifyArm', 'mpwBgArmErrorSet', 'mpwBgArmErrorClear'];
+/* ①(2026-10-02 修复测试桩与实现的错配) 桌面端兼容把宿主 URL 的解析收进了
+   `mpwHostPathOf(url)`（mpwArmProbe 的第一道判据）⇒ 切片必须带上这两个助手与兜底常量，
+   否则 `mpwHostPathOf is not defined` 被 mpwArmProbe 自己的 try/catch 吞掉 ⇒ **验活请求一个都不发**
+   （A1c/A2/A3b 全组假红：判据以为"验活没发出去"，其实是切片缺依赖）。 */
+const CLIENT_FNS = ['mpwPageOrigin', 'mpwHostPathOf', 'mpwArmCacheUsable', 'mpwArmProbeUrl', 'mpwArmVerdictApplies', 'mpwArmMountedUrl', 'mpwArmSigNow', 'mpwArmAbortAll', 'mpwArmProbe', 'mpwVerifyArm', 'mpwBgArmErrorSet', 'mpwBgArmErrorClear'];
 /** 造一个客户端沙箱：切片**真实现** + 桩 DOM/fetch（返回控制句柄，方便逐场景摆布）。 */
 function makeArmWorld(src, over) {
   const o = over || {};
@@ -238,12 +242,12 @@ function makeArmWorld(src, over) {
   };
   const body = CLIENT_FNS.map((n) => sliceFn(src, n)).join('\n');
   const factory = new Function(
-    'HOST_BASE', 'location', 'fetch', 'window', 'bgElements', 'mpwTrace', 'mpwWebDiag', 'mpwPersistEmit',
+    'HOST_BASE', 'HOST_URL', 'MPW_HOST_FALLBACK_ORIGIN', 'location', 'fetch', 'window', 'bgElements', 'mpwTrace', 'mpwWebDiag', 'mpwPersistEmit',
     'readSection', 'sectionSigNow', 'mpwArmProbeCache', 'mpwArmHinted', 'mpwArmAborters',
     'MPW_ARM_POS_TTL_MS', 'MPW_ARM_NEG_TTL_MS', 'console', 'AbortController', 'Promise', 'Date', 'setTimeout', 'clearTimeout',
     body + '\nreturn {' + CLIENT_FNS.join(',') + '};');
   const api = factory(
-    BASE, { origin: 'http://localhost' }, fetchStub,
+    BASE, BASE, 'http://dsh.internal', { origin: 'http://localhost' }, fetchStub,
     { __mpwBgArmError: null }, () => els,
     () => {}, () => {}, (m) => hints.push(String(m)),
     () => ({ customDirPath: '/x' }), () => state.sig,
@@ -355,7 +359,7 @@ const resp = (status, jsonBody, okFlag) => ({
 {
   // A6 关档回退原文件（H2 硬要求）：mpwTranscodeSpec 在 preScale=0/fpsCap=0/resMax=0 时必须直读
   const fn = sliceFn(clientSrc, 'mpwTranscodeSpec');
-  const spec = new Function('ALLOWED_FPS', 'HOST_BASE', 'encodeURIComponent', fn + '\nreturn mpwTranscodeSpec;')([24, 30, 48, 60], BASE, encodeURIComponent);
+  const spec = new Function('ALLOWED_FPS', 'HOST_BASE', 'HOST_URL', 'encodeURIComponent', fn + '\nreturn mpwTranscodeSpec;')([24, 30, 48, 60], BASE, BASE, encodeURIComponent);
   const off = spec(0, 0, 0, 'host:?token=t&index=0', false, '/custom-media?folder=&file=a.mp4');
   const on = spec(1280, 0, 0, 'host:?token=t&index=0', false, '/custom-media?folder=&file=a.mp4');
   ok('A6 关档 ⇒ useTranscode=false + playUrl=**原文件**；开档 ⇒ /transcode+maxW+lanczos（不许吃转码产物）',
@@ -615,7 +619,7 @@ console.log('\n══ C 变异自证（7 组，各自必红）══');
     const inj = mutate(path.join(lib, 'client.js'), 'const useTranscode = !isSceneVideo && (f > 0 || r > 0 || w > 0)', 'const useTranscode = !isSceneVideo && (f >= 0 || r >= 0 || w >= 0)');
     const src = fs.readFileSync(path.join(lib, 'client.js'), 'utf8');
     const fn = sliceFn(src, 'mpwTranscodeSpec');
-    const spec = new Function('ALLOWED_FPS', 'HOST_BASE', 'encodeURIComponent', fn + '\nreturn mpwTranscodeSpec;')([24, 30, 48, 60], BASE, encodeURIComponent);
+    const spec = new Function('ALLOWED_FPS', 'HOST_BASE', 'HOST_URL', 'encodeURIComponent', fn + '\nreturn mpwTranscodeSpec;')([24, 30, 48, 60], BASE, BASE, encodeURIComponent);
     const off = spec(0, 0, 0, 'host:?token=t', false, '/custom-media?folder=&file=a.mp4');
     ok('M7 关档仍判转码 ⇒ 关档后 playUrl 指回 /transcode（A6/B1j 必红）',
       inj && off.useTranscode === true && /\/transcode\?/.test(off.playUrl), off.playUrl.slice(0, 80));

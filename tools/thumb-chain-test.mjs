@@ -164,10 +164,15 @@ const reactStub = {
   },
 }
 
+/* ①(2026-10-02 修复测试桩与实现的错配) 生产代码的宿主基址已统一走 `HOST_URL`
+   （HTTP 档 = 同一个相对路径、桌面档兜底 dsh.internal）。本切片的注入表原来只有 `HOST_BASE`
+   ⇒ 切片里 `HOST_URL is not defined` 被 mpwThumbCandidates 的 try/catch 吞掉 ⇒ **候选恒为空**，
+   B7b/B7c 与 B5 全组假红（并且 B5 还会因为子元素少而崩在 kids1[1]）。
+   两个名都注入、值都是同一条相对路径：与生产 HTTP 档逐字节一致。 */
 const load = (blockSrc) => new Function(
-  'mpwVal', 'HOST_BASE', 'resolveHostUrl', 'mpwTrace', 'h',
+  'mpwVal', 'HOST_BASE', 'HOST_URL', 'resolveHostUrl', 'mpwTrace', 'h',
   blockSrc + '\n;return { mpwThumbCandidates, mpwThumbNext, mpwThumbOk, mpwThumbFail, mpwThumbBust, mpwThumbDirIdentity, mpwThumbChildren, mpwThumbPayloadGet, mpwThumbParts, mpwThumbInvalidate, mpwThumbEpochFor, mpwThumbSync, mpwThumbPainted, mpwThumbIsContainerUrl, mpwThumbContentSignature, mpwThumbNoteContent, mpwThumbCover };'
-)((o, k) => (o || {})[k], '/api/mpkg-wallpaper', (u) => String(u).replace(/^host:/, '/api/mpkg-wallpaper'), () => {}, reactStub.createElement)
+)((o, k) => (o || {})[k], '/api/mpkg-wallpaper', '/api/mpkg-wallpaper', (u) => String(u).replace(/^host:/, '/api/mpkg-wallpaper'), () => {}, reactStub.createElement)
 
 head('B 组：候选链状态机（切片 lib/client.js 的 MPW-THUMB 块，跑生产实现）')
 if (!BLOCK) {

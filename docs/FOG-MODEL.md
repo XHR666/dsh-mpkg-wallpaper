@@ -77,6 +77,14 @@
 * 相关既有门禁：`switch-wiring-test`（新开关真的改变 CSS）、`bs-compat-default-test`
   （bsCompat 门控与迁移）、`theme-assist-test`（半透明主题外框）、`token-namespace-test`（表面 token SSOT）。
 
+## 4.1 已知残留（记账，不在本批改）
+
+* `amountPx == 0` 时，H 块给左侧栏/标题栏的那条 `backdrop-filter: blur(var(--mpw-chrome-blur))`
+  仍会以 `blur(0px)` 形式存在（**视觉等价于 none**，但技术上仍会建立 containing block）。
+  历史上"侧栏变 containing block ⇒ 设置面板被压进侧栏"的坑由 `:not([data-mpw-holds-layer])`
+  与弹层抑制规则兜住，且本轮不打算在收口批次里再动这条规则（改动面 > 收益）。
+  真要收：把该规则的 filter 值也按 `chromeBlur > 0 ? blur(...) : none` 插值。
+
 ## 5. 主画布与弹层的边界（不在本模型内）
 
 `chatFollow`（聊天区是否跟随整屏虚化）与 `opacity` 一起决定**主画布**厚度；
