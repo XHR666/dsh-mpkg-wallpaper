@@ -46,7 +46,7 @@ const GROUPS = String(arg('groups', 'popovers,sidebar-tint,float,anim,popover-su
 const ONLY_TARGET = String(arg('only-target', '')).split(',').map((x) => x.trim()).filter(Boolean)
 const STORE = 'dsh.mpkg-wallpaper.v2'
 /** path 数组 → 可直接喂给 Playwright 的选择器（声明必须在任何用到它的代码之前：TDZ）。 */
-const selOf = (p) => Array.isArray(p) && p.length ? p.map((x, i) => { const last = i === p.length - 1; let s = x.tag || '*'; if (x.id) s += '#' + x.id; else if (last && x.cls && x.cls.length) s += '.' + x.cls[0]; if (last && x.attrs && x.attrs.length) s += '[' + x.attrs[0] + ']'; if (!x.id) s += ':nth-child(' + (x.idx || 1) + ')'; return s }).join(' > ') : null
+const selOf = (p) => Array.isArray(p) && p.length ? p.map((x, i) => { const last = i === p.length - 1; let s = x.tag || '*'; if (x.id) s += '[id="' + String(x.id).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"]'; else if (last && x.cls && x.cls.length) s += '.' + x.cls[0]; if (last && x.attrs && x.attrs.length) s += '[' + x.attrs[0] + ']'; if (!x.id) s += ':nth-child(' + (x.idx || 1) + ')'; return s }).join(' > ') : null
 /** path 数组 → 可直接喂给 Playwright 的选择器（与文件尾打印用的是同一套规则）。 */
 const SETTINGS_JSON = path.resolve(arg('settings', path.join(os.homedir(), '.dsh-mpkg-wallpaper', 'settings.json')))
 const SETTINGS_SHOWN = SETTINGS_JSON.replace(os.homedir(), '~')
@@ -380,6 +380,61 @@ const POPOVER_SUBTREE = (sel) => {
     itemCount: items.length, items, ancestors,
     menuitems: Array.from(root.querySelectorAll('[role="menuitem"],[role="option"]')).slice(0, 8).map((e) => { const c = getComputedStyle(e); const r = e.getBoundingClientRect(); return { sel: pathOf(e), cls: String(e.className).slice(0, 50), text: String(e.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 26), bg: c.backgroundColor, bf: c.backdropFilter, bgImage: String(c.backgroundImage).slice(0, 40), rect: [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)], tokens: tokOf(e) } }),
   }
+}
+/** 弹层里的**分组标题条**（`_7KE1Ra_groupTitle` 之类）：自身 bg/bf + 最近容器 + 同容器内行。 */
+const GROUP_TITLE_FACTS = () => {
+  const H = globalThis.__pp; if (!H) return { err: 'page-helpers-missing' }
+  const { pathOf, VIS } = H
+  const TOK = ['--mpw-surface-pop', '--mpw-surface-pop-dark', '--mpw-pop-alpha', '--mpw-pop-blur']
+  const tokOf = (e) => { const c = getComputedStyle(e); const o = {}; for (const t of TOK) { const v = c.getPropertyValue(t).trim(); if (v) o[t] = v.slice(0, 48) } return o }
+  const rectOf = (e) => { const r = e.getBoundingClientRect(); return [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)] }
+  const titles = Array.from(document.querySelectorAll('[class*="_groupTitle"],[class*="groupTitle"]')).filter(VIS)
+  return titles.map((t) => {
+    const c = getComputedStyle(t)
+    let cont = null
+    for (let e = t.parentElement, i = 0; e && i < 14; e = e.parentElement, i++) {
+      const role = String(e.getAttribute('role') || '').toLowerCase()
+      if (role === 'menu' || role === 'listbox' || /_menu|_list_|_panel|_popover|_dropdown|_viewport/.test(String(e.className || ''))) { cont = e; break }
+    }
+    const cc = cont ? getComputedStyle(cont) : null
+    return {
+      sel: pathOf(t), tag: t.tagName, cls: String(t.className).slice(0, 60), text: String(t.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 22),
+      bg: c.backgroundColor, bf: c.backdropFilter, bgImage: String(c.backgroundImage).slice(0, 40), color: c.color, rect: rectOf(t), tokens: tokOf(t),
+      container: cont ? { sel: pathOf(cont), cls: String(cont.className).slice(0, 60), role: cont.getAttribute('role'), bg: cc.backgroundColor, bf: cc.backdropFilter, rect: rectOf(cont), tokens: tokOf(cont) } : null,
+      siblings: cont ? Array.from(cont.querySelectorAll('[role="menuitem"],[role="option"],button,[class*="_cell"],[class*="_row"]')).filter(VIS).slice(0, 10).map((e) => { const ec = getComputedStyle(e); return { cls: String(e.className).slice(0, 44), text: String(e.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 22), bg: ec.backgroundColor, bf: ec.backdropFilter, rect: rectOf(e) } }) : [],
+    }
+  })
+}
+/** 全页扫"嵌套双玻璃"：同时命中弹层表面选择器、且**祖先也命中**的元素对（底/模糊各叠两层）。 */
+const DOUBLE_SURFACES = () => {
+  const H = globalThis.__pp; if (!H) return { err: 'page-helpers-missing' }
+  const { pathOf, VIS, ALPHA } = H
+  const sels = ['[role="menu"]', '[role="listbox"]', '[role="combobox"]', '[role="dialog"]', '[data-dsh-surface]', '[class*="_menu"]', '[class*="_popover"]', '[class*="_dropdown"]', '[class*="_denseList"]', '[class*="_viewport"]', '[class*="_panel"]']
+  const set = new Set()
+  for (const s of sels) { try { for (const e of document.querySelectorAll(s)) set.add(e) } catch (e) { /* ignore */ } }
+  const facts = (e) => { const c = getComputedStyle(e); const r = e.getBoundingClientRect(); return { sel: pathOf(e), cls: String(e.className).slice(0, 46), role: e.getAttribute('role'), tag: e.tagName, bg: c.backgroundColor, bf: c.backdropFilter, alpha: ALPHA(c.backgroundColor), rect: [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)], z: c.zIndex } }
+  const painted = Array.from(set).filter((e) => { const c = getComputedStyle(e); return VIS(e) && (ALPHA(c.backgroundColor) > 0.01 || c.backdropFilter !== 'none') })
+  const nested = []
+  for (const e of painted) {
+    const anc = painted.filter((a) => a !== e && a.contains(e))
+    if (anc.length) nested.push({ child: facts(e), ancestors: anc.map(facts) })
+  }
+  return { paintedCount: painted.length, nestedCount: nested.length, nested }
+}
+/** 输入区/状态区里所有可见按钮的清单（opener 猜不中时的诊断用）。 */
+const COMPOSER_BUTTONS = () => {
+  const H = globalThis.__pp; if (!H) return { err: 'page-helpers-missing' }
+  const { pathOf, VIS, NODE } = H
+  const roots = ['[class*="composerStack"]', '[class*="composerSeat"]', '[class*="composer"]', 'footer', 'form'].map((x) => { try { return document.querySelector(x) } catch (e) { return null } }).filter(Boolean)
+  const out = []
+  for (const r of roots.slice(0, 2)) {
+    for (const e of r.querySelectorAll('button,[role="button"],[class*="ring"],[class*="usage"],[class*="token"]')) {
+      if (!VIS(e)) continue
+      const b = e.getBoundingClientRect(); if (b.width < 8 || b.height < 8) continue
+      out.push({ sel: pathOf(e), cls: String(e.className).slice(0, 44), aria: e.getAttribute('aria-label'), text: String(e.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 20), rect: [Math.round(b.x), Math.round(b.y), Math.round(b.width), Math.round(b.height)] })
+    }
+  }
+  return { count: out.length, buttons: out.slice(0, 30) }
 }
 /** `_overlayLayer` / `_overlay` / `[data-shell-overlay]` 的**原样读数**（closed 态：rect/opacity/visibility/pointer-events…）。 */
 const OVERLAY_STATES = () => {
@@ -834,21 +889,32 @@ try {
         { id: 'plus-menu', sel: 'div._3e4SsG_viewport', opener: [{ sel: 'button[aria-label="指令"]' }, { sel: 'button[aria-label="添加附件"]' }] },
         { id: 'permission', sel: 'div._list_1nxmc_8', opener: [{ sel: 'button[aria-label^="访问模式"]' }] },
         { id: 'model-l1', sel: '[class*="_7KE1Ra_menu"], div[id$=":-menu"]', opener: [{ sel: 'button[aria-label^="选择模型"]' }] },
+        { id: 'dialog-ctx', sel: 'div.JObwrW_panel, [class*="JObwrW_panel"]', opener: [{ sel: 'button[aria-label*="上下文"]' }, { sel: '[aria-label*="上下文"]' }, { sel: 'button[aria-label*="已用"]' }, { sel: 'button[aria-label*="usage" i]' }, { sel: 'button[aria-label*="token" i]' }, { sel: '[class*="ontextUsage" i], [class*="usageRing" i], [class*="tokenRing" i]' }] },
       ]
       for (const t of targets) {
+        if (ONLY_TARGET.length && !ONLY_TARGET.includes(t.id)) continue
         const p = { id: t.id, sel: t.sel, openedBy: null, dump: null, pixels: null, blocked: null }
         try {
           try { await page.keyboard.press('Escape') } catch (e) { /* ignore */ }
           await page.evaluate(CLOSE_ALL); await page.waitForTimeout(400)
           const found = await page.evaluate(FIND_OPENER, t.opener)
           p.openedBy = found
-          if (!found || !found.path) { p.blocked = 'blocked:no-opener'; rec.popovers.push(p); continue }
+          if (!found || !found.path) {
+            p.blocked = 'blocked:no-opener'
+            p.composerButtons = await page.evaluate(COMPOSER_BUTTONS)
+            console.log('DIAG ' + t.id + ' opener 未命中，输入区可见按钮 ' + p.composerButtons.count + ' 个：')
+            for (const b of (p.composerButtons.buttons || []).slice(0, 14)) console.log('    ? ' + (b.aria || b.text || b.cls) + '  | ' + b.cls + '  | rect=' + JSON.stringify(b.rect))
+            rec.popovers.push(p); continue
+          }
           const s2 = selOf(found.path)
           try { await page.locator(s2).first().click({ timeout: 4000 }) } catch (e) { await page.evaluate((x) => { const e2 = document.querySelector(x); if (e2) e2.click() }, s2) }
           await page.waitForTimeout(1300)
           p.dump = await page.evaluate(POPOVER_SUBTREE, t.sel)
           if (!p.dump.found) p.blocked = 'blocked:container-not-found'
           else if (p.dump.containerRect) p.pixels = await samplePixels(page, { x: Math.max(0, p.dump.containerRect[0]), y: Math.max(0, p.dump.containerRect[1]), width: Math.max(1, Math.min(600, p.dump.containerRect[2])), height: Math.max(1, Math.min(600, p.dump.containerRect[3])) })
+          p.nested = await page.evaluate(DOUBLE_SURFACES)
+          console.log('NESTED ' + t.id + ' → 同时有底/模糊的表面 ' + p.nested.paintedCount + ' 个，其中嵌套对 ' + p.nested.nestedCount + ' 个')
+          for (const nd of (p.nested.nested || []).slice(0, 4)) console.log('    ⊗ 子 ' + nd.child.tag + '.' + String(nd.child.cls).split(' ')[0] + ' (bg ' + nd.child.alpha + ' bf=' + nd.child.bf + ')' + ' ← 祖 ' + nd.ancestors.map((a) => a.tag + '.' + String(a.cls).split(' ')[0] + '(bg ' + a.alpha + ' bf=' + a.bf + ')').join(' , '))
           const tok = (p.dump.containerTokens || {})
           console.log('SURFACE ' + t.id + ' → ' + (p.blocked || 'ok') + '  items=' + p.dump.itemCount + '  containerTokens=' + JSON.stringify(tok) + '  patch(avg/lumaStd)=' + JSON.stringify([p.pixels && p.pixels.avg, p.pixels && p.pixels.lumaStd]))
           for (const it of (p.dump.items || []).slice(0, 8)) console.log('    · ' + (it.why === 'container' ? '[容器] ' : '[子] ') + it.tag + '.' + String(it.cls).split(' ')[0] + '  role=' + it.role + '  bg=' + it.bg + '  bf=' + it.bf + '  bgImage=' + String(it.bgImage).slice(0, 26) + '  rect=' + JSON.stringify(it.rect) + '  z=' + it.z + '  tokens=' + JSON.stringify(it.tokens))
@@ -857,6 +923,44 @@ try {
         rec.popovers.push(p)
         try { await page.keyboard.press('Escape') } catch (e) { /* ignore */ }
         await page.waitForTimeout(300)
+      }
+      /* ── 模型第二层（提供商分组标题层）：L1 点第一个 cell 进去 ── */
+      const wantL2 = !ONLY_TARGET.length || ONLY_TARGET.includes('model-l2')
+      if (wantL2) {
+      const l2 = { id: 'model-l2', steps: [], groupTitles: null, containerDump: null, blocked: null }
+      try {
+        try { await page.keyboard.press('Escape') } catch (e) { /* ignore */ }
+        await page.evaluate(CLOSE_ALL); await page.waitForTimeout(400)
+        const op = await page.evaluate(FIND_OPENER, [{ sel: 'button[aria-label^="选择模型"]' }])
+        l2.steps.push({ openL1: op })
+        if (op && op.path) {
+          try { await page.locator(selOf(op.path)).first().click({ timeout: 4000 }) } catch (e) { await page.evaluate((x) => { const e2 = document.querySelector(x); if (e2) e2.click() }, selOf(op.path)) }
+          await page.waitForTimeout(1200)
+          const cells = await page.evaluate(() => { const H = globalThis.__pp; const out = []; for (const e of document.querySelectorAll('button[class*="_7KE1Ra_cell"],[role="menuitem"],[role="option"]')) { if (!H.VIS(e)) continue; const r = e.getBoundingClientRect(); out.push({ cls: String(e.className).slice(0, 44), text: String(e.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 24), rect: [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)] }) } return out })
+          l2.steps.push({ l1Rows: cells })
+          const target = (cells || []).find((x) => /模型|DeepSeek|Flash|Pro/i.test(x.text) && x.rect[2] > 100) || (cells || [])[0]
+          if (target) {
+            const sel = 'button[class*="_7KE1Ra_cell"]'
+            try { await page.locator(sel).first().click({ timeout: 4000 }) } catch (e) { await page.evaluate((x) => { const e2 = document.querySelector(x); if (e2) e2.click() }, sel) }
+            await page.waitForTimeout(1400)
+            l2.groupTitles = await page.evaluate(GROUP_TITLE_FACTS)
+            const first = (l2.groupTitles || [])[0]
+            if (first && first.container && first.container.sel) {
+              const csel = selOf(first.container.sel)
+              l2.containerDump = await page.evaluate(POPOVER_SUBTREE, csel)
+              if (l2.containerDump && l2.containerDump.containerRect) l2.pixels = await samplePixels(page, { x: Math.max(0, l2.containerDump.containerRect[0]), y: Math.max(0, l2.containerDump.containerRect[1]), width: Math.max(1, Math.min(600, l2.containerDump.containerRect[2])), height: Math.max(1, Math.min(600, l2.containerDump.containerRect[3])) })
+            }
+            if (!l2.groupTitles || !l2.groupTitles.length) l2.blocked = 'blocked:no-groupTitle-visible'
+          } else l2.blocked = 'blocked:no-l1-row-to-click'
+        } else l2.blocked = 'blocked:no-model-opener'
+      } catch (e) { l2.blocked = 'blocked:exception ' + String(e && e.message || e).slice(0, 140) }
+      rec.modelL2 = l2
+      console.log('L2 ' + (l2.blocked || 'ok') + '  标题条数=' + ((l2.groupTitles || []).length))
+      for (const g of (l2.groupTitles || []).slice(0, 6)) console.log('    § ' + String(g.cls).split(' ')[0] + ' | ' + g.text + ' | bg=' + g.bg + ' | bf=' + g.bf + ' | rect=' + JSON.stringify(g.rect) + ' | 容器=' + (g.container ? (String(g.container.cls).split(' ')[0] + ' bg=' + g.container.bg + ' bf=' + g.container.bf) : 'null'))
+      if (l2.containerDump) console.log('    L2 容器 ' + String(l2.containerDump.containerCls).slice(0, 40) + ' rect=' + JSON.stringify(l2.containerDump.containerRect) + ' tokens=' + JSON.stringify(l2.containerDump.containerTokens) + ' 画了东西的节点=' + l2.containerDump.itemCount + ' patch=' + JSON.stringify(l2.pixels && { avg: l2.pixels.avg, lumaStd: l2.pixels.lumaStd }))
+      for (const it of ((l2.containerDump || {}).items || []).slice(0, 8)) console.log('      · [' + it.why + '] ' + it.tag + '.' + String(it.cls).split(' ')[0] + ' bg=' + it.bg + ' bf=' + it.bf + ' rect=' + JSON.stringify(it.rect) + ' tokens=' + JSON.stringify(it.tokens))
+      try { await page.keyboard.press('Escape') } catch (e) { /* ignore */ }
+      await page.waitForTimeout(300)
       }
       rec.overlayAfterClose = await page.evaluate(OVERLAY_STATES)
       console.log('OVERLAY closed 态: ' + JSON.stringify((rec.overlayClosed.list || []).map((x) => ({ cls: x.cls, rect: x.rect, opacity: x.opacity, visibility: x.visibility, pointerEvents: x.pointerEvents, display: x.display, z: x.z, bg: x.bg, bf: x.bf, visible: x.visible }))))

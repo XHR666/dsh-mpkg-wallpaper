@@ -468,6 +468,8 @@ function runAqua(section, text) {
   }
   ok('F8 没有"引用了非三元组 token 的 rgba(var(--mpw-…))"——这类值会被浏览器静默丢弃（弹层"只有模糊没有底"的真根因）',
     bad.length === 0, JSON.stringify([...new Set(bad)]))
+  ok('F8c 弹层表面选择器排除了菜单的内层滚动视口（[class*="_viewport"]）——否则父 _menu 与子 _viewport 两层同时命中，真机实测底部两层 0.94 叠加、模糊也叠两层（用户第 3 条①指令菜单）',
+    /POP_NOT = `[^`]*_viewport/.test(SRC), '')
   ok('F8b 弹层表面与右栏整块表面都是合法颜色表达式（color-mix / 具体色），不是 rgba(var(…))',
     /--mpw-surface-pop:\s*color-mix\(/.test(flat) && /--mpw-surface-rs-full:\s*color-mix\(/.test(flat))
 }
