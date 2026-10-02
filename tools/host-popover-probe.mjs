@@ -1214,6 +1214,114 @@ try {
     result.groupsOut.popoverBlurExp = rec
   }
 
+  /* ── 组 session-ink（批次 2 P6）：会话列表 id 文字（`ZKlsPq_label`）"变白看不清"的状态矩阵 ──
+     此前探针只读过 5 行全 `rgb(15,17,21)`，复现不出白色态。本组对每个状态重扫全部行：
+     墨色 / 有效背景（祖先链第一层不透明底）/ WCAG 对比度 / 命中的 color 规则（含 !important）。
+     状态：baseline / hover-row0 / dark-theme-attr（body 属性翻转，可逆）/ plugin-off（写 enabled:false）。
+     点击选中行会**切会话**（宿主运行态）⇒ 只在 `--ink-click` 显式给出时做。 */
+  if (want('session-ink')) {
+    const rec = { at: new Date().toISOString(), states: {}, note: '低对比(<2) 的行即"看不清"候选；对照各状态找出白色态的触发条件' }
+    const SESSION_INK = () => {
+      const parseCol = (c) => {
+        if (!c) return null
+        let m = /rgba?\(([^)]+)\)/.exec(c)
+        if (m) { const p = m[1].split('/'); const n = p[0].split(',').map((x) => parseFloat(x)); if (n.length >= 3) return [n[0], n[1], n[2], p[1] !== undefined ? parseFloat(p[1]) : 1] }
+        m = /color\(\s*srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*(?:\/\s*([\d.]+))?\s*\)/.exec(c)
+        if (m) return [Math.round(parseFloat(m[1]) * 255), Math.round(parseFloat(m[2]) * 255), Math.round(parseFloat(m[3]) * 255), m[4] !== undefined ? parseFloat(m[4]) : 1]
+        if (c === 'transparent') return [0, 0, 0, 0]
+        return null
+      }
+      const lum = (rgb) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4) }; return 0.2126 * f(rgb[0]) + 0.7152 * f(rgb[1]) + 0.0722 * f(rgb[2]) }
+      const contrast = (fg, bg) => { const l1 = lum(fg), l2 = lum(bg); return Math.round(((Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05)) * 100) / 100 }
+      const effBg = (el) => {
+        for (let n = el, i = 0; n && n !== document.documentElement && i < 30; n = n.parentElement, i++) {
+          const c = parseCol(getComputedStyle(n).backgroundColor)
+          if (c && c[3] > 0.85) return { el: n.tagName + '.' + String(n.className || '').slice(0, 44), bg: c }
+        }
+        const b = parseCol(getComputedStyle(document.body).backgroundColor) || [255, 255, 255, 1]
+        return { el: 'body(fallback)', bg: b }
+      }
+      const rulesFor = (el) => {
+        const out = []
+        for (const ss of document.styleSheets) {
+          let list = null
+          try { list = ss.cssRules } catch (e) { continue }
+          const walk = (rs) => {
+            for (const r of rs) {
+              if (r.cssRules) { walk(r.cssRules); continue }
+              if (!r.selectorText || !r.style || !r.style.color) continue
+              let hit = false
+              try { hit = el.matches(r.selectorText) } catch (e) { continue }
+              if (hit) out.push({ sel: r.selectorText.slice(0, 110), color: r.style.color, prio: r.style.getPropertyPriority('color') || '' })
+            }
+          }
+          if (list) walk(list)
+          if (out.length >= 8) break
+        }
+        return out.slice(0, 8)
+      }
+      /* 旧报告口径 `ZKlsPq_label`（2026-10 宿主构建里 0 命中——哈希类已随版本换代）+ 现行 `sessionRow` */
+      const legacy = Array.from(document.querySelectorAll('[class*="ZKlsPq_label"]')).slice(0, 6)
+      const rows = Array.from(document.querySelectorAll('[class*="sessionRow"]')).slice(0, 12)
+      const one = (el, kind) => {
+        const cs = getComputedStyle(el)
+        const fg = parseCol(cs.color)
+        const bgInfo = effBg(el)
+        return {
+          kind,
+          text: String(el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 40),
+          cls: String(el.className).slice(0, 60),
+          color: cs.color, colorParsed: fg,
+          bg: bgInfo, contrast: fg && bgInfo ? contrast(fg, bgInfo.bg) : null,
+          opacity: cs.opacity, visibility: cs.visibility, display: cs.display,
+          rowCls: String((el.closest('[class*="sessionRow"]') || el.parentElement || el).className).slice(0, 60),
+          rowAttrs: Array.from((el.closest('[class*="sessionRow"]') || el.parentElement || el).attributes).map((a) => a.name + (a.value ? '=' + a.value.slice(0, 24) : '')).filter((x) => /^(data|aria)/.test(x)).slice(0, 10),
+          rules: rulesFor(el),
+        }
+      }
+      const out = legacy.map((el) => one(el, 'ZKlsPq_label(旧口径)'))
+      for (const row of rows) {
+        const spans = Array.from(row.querySelectorAll('span,div')).filter((e) => String(e.textContent || '').trim()).slice(0, 4)
+        for (const sp of spans) out.push(one(sp, 'sessionRow-span'))
+      }
+      return out
+    }
+    const readState = async (label) => {
+      await page.waitForTimeout(300)
+      const rows = await page.evaluate(SESSION_INK)
+      rec.states[label] = rows
+      const low = rows.filter((r) => r.contrast !== null && r.contrast < 2)
+      console.log('INK ' + label.padEnd(18) + ' rows=' + rows.length + ' 低对比(<2)=' + low.length
+        + (rows[0] ? ' | row0 ink=' + rows[0].color + ' contrast=' + rows[0].contrast : ''))
+      for (const r of low.slice(0, 4)) console.log('    ? [' + r.kind + '] ' + JSON.stringify(r.text) + ' ink=' + r.color + ' on ' + r.bg.el + ' contrast=' + r.contrast + ' row=' + r.rowCls)
+      return rows
+    }
+    try {
+      await readState('baseline')
+      try {
+        const first = await page.evaluate(() => { const el = document.querySelector('[class*="sessionRow"],[class*="ZKlsPq_label"]'); if (!el) return null; const r = el.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 } })
+        if (first) { await page.mouse.move(first.x, first.y); await readState('hover-row0'); await page.mouse.move(4, 4) } else rec.hoverErr = 'no-row'
+      } catch (e) { rec.hoverErr = String(e && e.message || e).slice(0, 140) }
+      try {
+        const had = await page.evaluate(() => { const h = document.body.hasAttribute('data-ds-dark-theme'); document.body.setAttribute('data-ds-dark-theme', ''); return h })
+        await readState('dark-theme-attr')
+        await page.evaluate((h) => { if (!h) document.body.removeAttribute('data-ds-dark-theme') }, had)
+      } catch (e) { rec.darkErr = String(e && e.message || e).slice(0, 140) }
+      try {
+        await setSection({ enabled: false }); await page.waitForTimeout(1400)
+        await readState('plugin-off')
+        await setSection({ enabled: true }); await page.waitForTimeout(1200)
+      } catch (e) { rec.pluginOffErr = String(e && e.message || e).slice(0, 140) }
+      if (has('ink-click')) {
+        try {
+          const rows = await page.evaluate(() => Array.from(document.querySelectorAll('[class*="sessionRow"],[class*="ZKlsPq_label"]')).slice(0, 3).map((el) => { const r = el.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2, text: String(el.textContent || '').trim().slice(0, 20) } }))
+          if (rows[1]) { await page.mouse.click(rows[1].x, rows[1].y); await page.waitForTimeout(900); await readState('after-click-row1') }
+        } catch (e) { rec.clickErr = String(e && e.message || e).slice(0, 140) }
+      }
+    } catch (e) { rec.err = String(e && e.message || e).slice(0, 200) }
+    result.groupsOut.sessionInk = rec
+  }
+
   /* ── 组 sidebar-causal：把"左栏粉色/主色"的因果钉死（7 步，每步 40×40 中心块 + 整栏像素 + computed） ── */
   if (want('sidebar-causal')) {
     const rec = { patch: { enabled: true, unifyTint: true, unifyAmount: 4, sidebarAlpha: 100, blurFollowUnify: true }, steps: [] }
