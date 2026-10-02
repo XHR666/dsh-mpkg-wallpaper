@@ -42,7 +42,7 @@ const KEEP = has('keep')
 const ALLOW_HOST_WRITES = has('allow-host-writes')
 const SETTLE = Number(arg('settle', '900'))
 const VIEWPORT = (() => { const m = String(arg('viewport', '1920x1200')).match(/^(\d+)x(\d+)$/); return m ? { width: Number(m[1]), height: Number(m[2]) } : { width: 1920, height: 1200 } })()
-const GROUPS = String(arg('groups', 'popovers,sidebar-tint,float,anim,popover-surfaces')).split(',').map((x) => x.trim()).filter(Boolean)
+const GROUPS = String(arg('groups', 'popovers,sidebar-tint,float,anim,popover-surfaces,popover-blur-exp')).split(',').map((x) => x.trim()).filter(Boolean)
 const ONLY_TARGET = String(arg('only-target', '')).split(',').map((x) => x.trim()).filter(Boolean)
 const STORE = 'dsh.mpkg-wallpaper.v2'
 /** path 数组 → 可直接喂给 Playwright 的选择器（声明必须在任何用到它的代码之前：TDZ）。 */
@@ -500,6 +500,170 @@ const WHITE_BARS = () => {
 }
 const CLOSE_ALL = () => { try { document.body.dispatchEvent(new MouseEvent('click', { bubbles: true })); } catch (e) { /* ignore */ } return true }
 
+/* ── 1b P3 弹层模糊调查原语（批次 2）：全部只读/临时/可逆 ────────────────────────────
+   背景：加号指令菜单/权限选择器/上下文用量面板三处弹层 = 半透明白底、没有模糊；模型选择器（同一枚
+   token，挂在 body 下）正常。主假设：backdrop-filter 只模糊同一 backdrop root 内、绘制在它下面的
+   像素；祖先链上凡有 bf/filter/opacity<1/transform/will-change/contain/isolation/mask/clip-path 之一，
+   root 被截断 ⇒ blur 的采样只剩那个祖先内部（常为纯色）⇒ 有 alpha 没模糊。
+   ⚠ page.evaluate 不序列化闭包 ⇒ 六个操作合并进一个自包含分发器 PP_BLUR({mode, sel})：
+     chain=截断链扫描 / e1=移 body 实验（同步 移→扫→逐字还原）/ e3=中性化截断祖先 / rect=表面矩形 /
+     styleOn=临时样式开关([sel,mode]) / styleOff=还原+摘棋盘。 */
+const PP_BLUR = (arg) => {
+  const H = globalThis.__pp
+  const pathOf = H && H.pathOf ? H.pathOf : (e) => String(e.className).slice(0, 50)
+  /* __pp.pathOf 返回的是路径对象数组（Node 侧用 selOf 转字符串）⇒ 页内自带同款转换 */
+  const selToStr = (p) => typeof p === 'string' ? p
+    : (Array.isArray(p) && p.length ? p.map((x, i) => {
+        const last = i === p.length - 1
+        let s = x.tag || '*'
+        if (x.id) s += '[id="' + String(x.id).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"]'
+        else if (last && x.cls && x.cls.length) s += '.' + x.cls[0]
+        if (last && x.attrs && x.attrs.length) s += '[' + x.attrs[0] + ']'
+        if (!x.id) s += ':nth-child(' + (x.idx || 1) + ')'
+        return s
+      }).join(' > ') : null)
+  const TRUNC_PROPS = (c) => {
+    const bad = []
+    if (c.backdropFilter && c.backdropFilter !== 'none') bad.push('backdrop-filter=' + c.backdropFilter)
+    if (c.filter && c.filter !== 'none') bad.push('filter=' + c.filter)
+    if (c.opacity && c.opacity !== '1' && Number(c.opacity) < 1) bad.push('opacity=' + c.opacity)
+    if (c.transform && c.transform !== 'none') bad.push('transform')
+    if (c.willChange && /filter|opacity|transform/i.test(c.willChange)) bad.push('will-change=' + c.willChange)
+    if (c.contain && c.contain !== 'none' && /paint|layout|strict|content/.test(c.contain)) bad.push('contain=' + c.contain)
+    if (c.isolation === 'isolate') bad.push('isolation')
+    if (c.maskImage && c.maskImage !== 'none') bad.push('mask')
+    if (c.clipPath && c.clipPath !== 'none') bad.push('clip-path')
+    return bad
+  }
+  const TRUNC_CHAIN = (selOrEl) => {
+    let el = typeof selOrEl === 'string' ? document.querySelector(selToStr(selOrEl)) : selOrEl
+    if (!el) return { found: false }
+    let surface = el
+    for (let i = 0; i < 6; i++) {
+      const c = getComputedStyle(surface)
+      const bg = c.backgroundColor || ''
+      const painted = (c.backdropFilter && c.backdropFilter !== 'none')
+        || (bg && bg !== 'transparent' && !/rgba?\(\s*\d+,\s*\d+,\s*\d+,\s*0\s*\)/.test(bg) && !/color\(srgb [^/]*\/ 0\)/.test(bg))
+      if (painted) break
+      if (!surface.parentElement) break
+      surface = surface.parentElement
+    }
+    const sc = getComputedStyle(surface)
+    const chain = []
+    let first = null
+    for (let n = surface.parentElement, i = 0; n && n !== document.documentElement && i < 40; n = n.parentElement, i++) {
+      const c = getComputedStyle(n)
+      const bad = TRUNC_PROPS(c)
+      chain.push({ sel: selToStr(pathOf(n)), tag: n.tagName, cls: String(n.className || '').slice(0, 60), bad, position: c.position, z: c.zIndex })
+      if (bad.length && !first) first = { sel: selToStr(pathOf(n)), tag: n.tagName, cls: String(n.className || '').slice(0, 60), bad }
+    }
+    return {
+      found: true,
+      surface: { sel: selToStr(pathOf(surface)), tag: surface.tagName, cls: String(surface.className || '').slice(0, 60), bg: sc.backgroundColor, bf: sc.backdropFilter },
+      truncatedBy: first, chain,
+    }
+  }
+  const mode = arg && arg.mode
+  const sel = arg && arg.sel
+  if (mode === 'chain') return TRUNC_CHAIN(sel)
+  /* 实验①：把表面临时 position:fixed 挂到 body（同步 移动→扫链→逐字还原，React 看不到中间态） */
+  if (mode === 'e1') {
+    const el = document.querySelector(sel)
+    if (!el) return { found: false }
+    const parent = el.parentElement, next = el.nextSibling
+    const prevRect = el.getBoundingClientRect()
+    const prevCss = el.style.cssText
+    let out = { found: true }
+    try {
+      el.style.cssText = prevCss + ';position:fixed;left:' + Math.round(prevRect.left) + 'px;top:' + Math.round(prevRect.top) + 'px;z-index:2147483000;'
+      document.body.appendChild(el)
+      const moved = TRUNC_CHAIN(el)
+      out.chainAfterMove = moved.chain.map((x) => ({ cls: x.cls, bad: x.bad }))
+      out.truncatorAfterMove = moved.truncatedBy
+      out.wouldApply = !moved.truncatedBy
+    } catch (e) {
+      out.err = String(e && e.message || e)
+    } finally {
+      try { if (next && next.parentElement === parent) parent.insertBefore(el, next); else if (parent) parent.appendChild(el) } catch (e) {}
+      try { el.style.cssText = prevCss } catch (e) {}
+      out.movedBack = el.parentElement === parent
+    }
+    return out
+  }
+  /* 实验③：把第一个截断祖先的嫌疑属性临时中性化（inline 覆盖→扫链→还原）；
+     inline 若压不过宿主 !important，再用 CSSOM 注入同特异性更晚的 !important 规则试一次（两者都同步还原）。 */
+  if (mode === 'e3') {
+    const tc = TRUNC_CHAIN(sel)
+    if (!tc.found) return { found: false }
+    if (!tc.truncatedBy) return { found: true, hadTruncator: false }
+    const el = document.querySelector(selToStr(tc.truncatedBy.sel))
+    if (!el) return { found: true, hadTruncator: true, err: 'truncator-not-found-by-sel' }
+    const prev = el.style.cssText
+    const out = { found: true, hadTruncator: true, truncator: tc.truncatedBy }
+    try {
+      const bfBefore = getComputedStyle(el).backdropFilter
+      el.style.backdropFilter = 'none'; el.style.filter = 'none'; el.style.opacity = '1'
+      el.style.transform = 'none'; el.style.isolation = 'auto'; el.style.willChange = 'auto'
+      const after = TRUNC_CHAIN(sel)
+      out.inline = {
+        bfBefore, bfAfter: getComputedStyle(el).backdropFilter,
+        neutralized: getComputedStyle(el).backdropFilter === 'none',
+        truncatorAfter: after.truncatedBy, cleared: !after.truncatedBy,
+      }
+      if (!out.inline.cleared) {
+        const st = document.createElement('style')
+        st.textContent = selToStr(tc.truncatedBy.sel) + '{backdrop-filter:none !important;filter:none !important;opacity:1 !important;transform:none !important;}'
+        document.head.appendChild(st)
+        const afterCss = TRUNC_CHAIN(sel)
+        out.cssomInject = { cleared: !afterCss.truncatedBy, truncatorAfter: afterCss.truncatedBy }
+        st.remove()
+      }
+      return out
+    } finally {
+      try { el.style.cssText = prev } catch (e) {}
+    }
+  }
+  if (mode === 'rect') {
+    const el = document.querySelector(sel)
+    if (!el) return null
+    const r = el.getBoundingClientRect()
+    return { x: Math.max(0, Math.round(r.left)), y: Math.max(0, Math.round(r.top)), width: Math.max(2, Math.min(600, Math.round(r.width))), height: Math.max(2, Math.min(600, Math.round(r.height))) }
+  }
+  /* 实验②/背后采样：surface 的 inline 样式临时改写（调用方负责截图与还原）。
+     checker 把高对比棋盘插到表面**前面当兄弟**（同一父级、DOM 序在前 ⇒ 画在表面之下）。 */
+  if (mode === 'styleOn') {
+    const m = arg.arg
+    const el = document.querySelector(sel)
+    if (!el) return { found: false }
+    if (!el.__ppPrevCss) el.__ppPrevCss = el.style.cssText
+    const rect = el.getBoundingClientRect()
+    if (m === 'behind') { el.style.opacity = '0' }
+    else if (m === 'bf-off') { el.style.backdropFilter = 'none' }
+    else if (m === 'checker') {
+      const chk = document.createElement('div')
+      chk.id = 'pp-blur-checker'
+      const zs = getComputedStyle(el).zIndex
+      const z = /^\d+$/.test(zs) ? Math.max(0, Number(zs) - 1) : '0'
+      chk.style.cssText = 'position:fixed;left:' + Math.round(rect.left) + 'px;top:' + Math.round(rect.top) + 'px;width:' + Math.max(2, Math.round(rect.width)) + 'px;height:' + Math.max(2, Math.round(rect.height)) + 'px;z-index:' + z + ';' +
+        'background:repeating-conic-gradient(#000 0% 25%, #fff 0% 50%);background-size:16px 16px;'
+      if (el.parentElement) el.parentElement.insertBefore(chk, el)
+      else { el.__ppPrevZ = el.style.zIndex; el.style.zIndex = '2147483001'; document.body.appendChild(chk) }
+    }
+    return { found: true, rect: [Math.round(rect.left), Math.round(rect.top), Math.round(rect.width), Math.round(rect.height)] }
+  }
+  if (mode === 'styleOff') {
+    const el = document.querySelector(sel)
+    const out = { removedChecker: 0 }
+    if (el) {
+      if (el.__ppPrevCss !== undefined) { el.style.cssText = el.__ppPrevCss; delete el.__ppPrevCss }
+      if (el.__ppPrevZ !== undefined) { el.style.zIndex = el.__ppPrevZ; delete el.__ppPrevZ }
+    }
+    for (const c of document.querySelectorAll('#pp-blur-checker')) { c.remove(); out.removedChecker++ }
+    return out
+  }
+  return { err: 'unknown-mode:' + mode }
+}
+
 /* ── 2 组 6/7/8 的页面侧采集 ─────────────────────────────────────────────── */
 const SIDEBAR_TINT = () => {
   const one = (sel) => { const e = document.querySelector(sel); if (!e) return { sel, found: false }; const c = getComputedStyle(e); return { sel, found: true, cls: String(e.className).slice(0, 70), bg: c.backgroundColor, bgImage: String(c.backgroundImage).slice(0, 90), bf: c.backdropFilter, color: c.color } }
@@ -911,7 +1075,23 @@ try {
           await page.waitForTimeout(1300)
           p.dump = await page.evaluate(POPOVER_SUBTREE, t.sel)
           if (!p.dump.found) p.blocked = 'blocked:container-not-found'
-          else if (p.dump.containerRect) p.pixels = await samplePixels(page, { x: Math.max(0, p.dump.containerRect[0]), y: Math.max(0, p.dump.containerRect[1]), width: Math.max(1, Math.min(600, p.dump.containerRect[2])), height: Math.max(1, Math.min(600, p.dump.containerRect[3])) })
+          /* P3 三个只读字段（批次 2，只加读数不改口径）：truncatedBy / effectiveBlur / backdropPainted */
+          try {
+            const tc = await page.evaluate(PP_BLUR, { mode: 'chain', sel: t.sel })
+            p.surface = tc.found ? tc.surface : null
+            p.truncatedBy = tc.found ? (tc.truncatedBy || null) : { err: 'chain-not-found' }
+            p.effectiveBlur = await page.evaluate(PP_BLUR, { mode: 'e1', sel: t.sel })
+            const r3 = await page.evaluate(PP_BLUR, { mode: 'rect', sel: t.sel })
+            if (r3) {
+              await page.evaluate(PP_BLUR, { mode: 'styleOn', sel: t.sel, arg: 'behind' })
+              await page.waitForTimeout(140)
+              p.backdropPainted = await samplePixels(page, r3)
+              await page.evaluate(PP_BLUR, { mode: 'styleOff', sel: t.sel })
+              await page.waitForTimeout(120)
+              if (p.backdropPainted) p.backdropPainted.judge = 'surface opacity:0 后该矩形内容的 lumaStd（≈0 ⇒ 背后实心）；判据与实验②同款'
+            }
+          } catch (e3) { p.p3err = String(e3 && e3.message || e3).slice(0, 140) }
+          if (p.dump.found && p.dump.containerRect) p.pixels = await samplePixels(page, { x: Math.max(0, p.dump.containerRect[0]), y: Math.max(0, p.dump.containerRect[1]), width: Math.max(1, Math.min(600, p.dump.containerRect[2])), height: Math.max(1, Math.min(600, p.dump.containerRect[3])) })
           p.nested = await page.evaluate(DOUBLE_SURFACES)
           console.log('NESTED ' + t.id + ' → 同时有底/模糊的表面 ' + p.nested.paintedCount + ' 个，其中嵌套对 ' + p.nested.nestedCount + ' 个')
           for (const nd of (p.nested.nested || []).slice(0, 4)) console.log('    ⊗ 子 ' + nd.child.tag + '.' + String(nd.child.cls).split(' ')[0] + ' (bg ' + nd.child.alpha + ' bf=' + nd.child.bf + ')' + ' ← 祖 ' + nd.ancestors.map((a) => a.tag + '.' + String(a.cls).split(' ')[0] + '(bg ' + a.alpha + ' bf=' + a.bf + ')').join(' , '))
@@ -966,6 +1146,72 @@ try {
       console.log('OVERLAY closed 态: ' + JSON.stringify((rec.overlayClosed.list || []).map((x) => ({ cls: x.cls, rect: x.rect, opacity: x.opacity, visibility: x.visibility, pointerEvents: x.pointerEvents, display: x.display, z: x.z, bg: x.bg, bf: x.bf, visible: x.visible }))))
     } catch (e) { rec.err = String(e && e.message || e).slice(0, 240) }
     result.groupsOut.popoverSurfaces = rec
+  }
+
+  /* ── 组 popover-blur-exp（批次 2 P3）：三个判定实验 + 模型选择器做健康对照 ──
+     ①祖先遍历（截断属性明细） ②移到 body 后截断链是否清空（同步 移→扫→还原） ③中性化截断祖先是否清空
+     ②'身后插高对比棋盘，bf-on vs bf-off 像素对比（⚠ 本机无头 Firefox 不合成 backdrop-filter ⇒ 两个 std
+       没差 = 只能记"合成不可用/无差"，不能当"模糊无效"的证据） ④背后采样（surface opacity:0 ⇒ 背后 std） */
+  if (want('popover-blur-exp')) {
+    const rec = { at: new Date().toISOString(), targets: [] }
+    const targets2 = [
+      { id: 'plus-menu', sel: 'div._3e4SsG_viewport', opener: [{ sel: 'button[aria-label="指令"]' }, { sel: 'button[aria-label="添加附件"]' }] },
+      { id: 'permission', sel: 'div._list_1nxmc_8', opener: [{ sel: 'button[aria-label^="访问模式"]' }] },
+      { id: 'dialog-ctx', sel: 'div.JObwrW_panel, [class*="JObwrW_panel"]', opener: [{ sel: 'button[aria-label*="上下文"]' }, { sel: '[aria-label*="上下文"]' }, { sel: 'button[aria-label*="已用"]' }] },
+      { id: 'model-l1(健康对照)', sel: '[class*="_7KE1Ra_menu"], div[id$=":-menu"]', opener: [{ sel: 'button[aria-label^="选择模型"]' }] },
+    ]
+    for (const t of targets2) {
+      const e = { id: t.id, sel: t.sel }
+      try {
+        try { await page.keyboard.press('Escape') } catch (err) {}
+        await page.evaluate(CLOSE_ALL); await page.waitForTimeout(400)
+        const found = await page.evaluate(FIND_OPENER, t.opener)
+        e.openedBy = found
+        if (!found || !found.path) { e.blocked = 'no-opener'; rec.targets.push(e); continue }
+        const s2 = selOf(found.path)
+        try { await page.locator(s2).first().click({ timeout: 4000 }) } catch (err) { await page.evaluate((x) => { const e2 = document.querySelector(x); if (e2) e2.click() }, s2) }
+        await page.waitForTimeout(1300)
+        e.chain = await page.evaluate(PP_BLUR, { mode: 'chain', sel: t.sel })
+        e.e1 = await page.evaluate(PP_BLUR, { mode: 'e1', sel: t.sel })
+        e.e3 = await page.evaluate(PP_BLUR, { mode: 'e3', sel: t.sel })
+        const rect = await page.evaluate(PP_BLUR, { mode: 'rect', sel: t.sel })
+        if (rect) {
+          e.e2 = {}
+          e.e2.checkerOn = await page.evaluate(PP_BLUR, { mode: 'styleOn', sel: t.sel, arg: 'checker' })
+          await page.waitForTimeout(160)
+          e.e2.checkerBfOnPixels = await samplePixels(page, rect)
+          await page.evaluate(PP_BLUR, { mode: 'styleOn', sel: t.sel, arg: 'bf-off' })
+          await page.waitForTimeout(160)
+          e.e2.checkerBfOffPixels = await samplePixels(page, rect)
+          const off2 = await page.evaluate(PP_BLUR, { mode: 'styleOff', sel: t.sel })
+          await page.waitForTimeout(140)
+          e.e2.checkerRemoved = off2.removedChecker
+          const onStd = e.e2.checkerBfOnPixels && e.e2.checkerBfOnPixels.lumaStd
+          const offStd = e.e2.checkerBfOffPixels && e.e2.checkerBfOffPixels.lumaStd
+          e.e2.synthesis = (Number.isFinite(onStd) && Number.isFinite(offStd) && Math.abs(onStd - offStd) > 3)
+            ? 'pixel-delta-seen（本机竟能合成？人工复核）'
+            : 'no-delta-or-unavailable（无头 Firefox 已知不合成 backdrop-filter ⇒ 不能据此下结论，判据以 e1/e3 结构为准）'
+          await page.evaluate(PP_BLUR, { mode: 'styleOn', sel: t.sel, arg: 'behind' })
+          await page.waitForTimeout(160)
+          e.behind = await samplePixels(page, rect)
+          await page.evaluate(PP_BLUR, { mode: 'styleOff', sel: t.sel })
+          await page.waitForTimeout(120)
+          if (e.behind) e.behind.solidJudge = (e.behind.lumaStd || 0) < 2.0 ? 'solid(≈实心)' : ((e.behind.lumaStd || 0) < 12 ? 'soft-gradient' : 'textured/wallpaper')
+        }
+        try { await page.keyboard.press('Escape') } catch (err) {}
+        await page.waitForTimeout(300)
+      } catch (err) { e.blocked = 'exception ' + String(err && err.message || err).slice(0, 140) }
+      rec.targets.push(e)
+      const tb = e.chain && e.chain.truncatedBy
+      console.log('EXP ' + t.id + ' → ' + (e.blocked ||
+        ('表面=' + (e.chain && e.chain.surface && e.chain.surface.cls) +
+        ' 截断=' + (tb ? tb.cls + ' [' + tb.bad.join(',') + ']' : '无') +
+        ' | 移body清空=' + (e.e1 && e.e1.wouldApply) + '(movedBack=' + (e.e1 && e.e1.movedBack) + ')' +
+        ' | 中性化inline=' + (e.e3 && e.e3.inline && (e.e3.inline.neutralized + '/' + e.e3.inline.cleared)) + ' cssom=' + (e.e3 && e.e3.cssomInject && e.e3.cssomInject.cleared) +
+        ' | 背后std=' + (e.behind && e.behind.lumaStd) + '(' + (e.behind && e.behind.solidJudge) + ')' +
+        ' | 合成=' + (e.e2 && e.e2.synthesis ? String(e.e2.synthesis).slice(0, 24) : 'n/a'))))
+    }
+    result.groupsOut.popoverBlurExp = rec
   }
 
   /* ── 组 sidebar-causal：把"左栏粉色/主色"的因果钉死（7 步，每步 40×40 中心块 + 整栏像素 + computed） ── */
