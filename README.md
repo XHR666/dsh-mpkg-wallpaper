@@ -273,8 +273,6 @@ node tools/build-bundle.mjs
 | 标题栏磨砂程度 | `headerBlurAmount` | 0% | 白雾厚度 0–100%（默认 0 = 透明） | 0 |
 | 单独调节标题栏磨砂 | `headerFrostOwn` | 关 | 开 = 用 `headerFrostAmount` 覆盖磨砂半径 | 关 |
 | 标题栏磨砂强度 | `headerFrostAmount` | 30px | 0–60 | 0 |
-| 右侧边栏/dock 虚化 | `rightSidebarBlur` | 开 | DSH 自带右侧边栏与底部 dock | 关 |
-| 虚化程度 / 表面透明度 | `rightSidebarBlurAmount` / `rightSidebarAlpha` | 14px / 45% | 0–40 / 0–100% | — |
 
 ### 4. 界面统一（unify）
 
@@ -288,15 +286,24 @@ node tools/build-bundle.mjs
 | 统一雾（全屏遮罩） | `aquaMask` | 关 | 所有表面共享一种雾色（原 Aqua 实验项） | 关 |
 | 统一雾强度 | `aquaMaskAlpha` | 82% | 0–100% | — |
 
+> **两个条的语义（2026-10-02 起口径固定，判据 `tools/fog-model-test.mjs`）**：
+> 「整屏虚化程度」= 模糊半径（**0 = 完全不虚化**：标题栏/侧边栏/右栏/dock 也回到**实心**，
+> 不会把未模糊的原始壁纸透出来）；
+> 「左侧边栏/标题栏透明度」= 各表面白雾厚度（**0 = 完全透明**：只看到**模糊**壁纸，不留雾、不留面板取色）——
+> 它只在「整屏虚化程度 > 0」时决定观感。
+> 两者对**整个界面外壳**生效（左栏/标题栏/右栏/dock 共用同一套表面 token）。
+
 ### 5. 界面虚化（blur）
 
 | 面板文案 | 内部键 | 默认 | 程度键 / 默认 | 关 |
 |---|---|---|---|---|
+| 界面虚化跟随统一虚化 | `blurFollowUnify` | **开** | 开 = 本页被接管的项交给「整屏虚化程度 + 左侧边栏/标题栏透明度」统一驱动；关 = 各自独立可调 | — |
 | 虚化对话框 | `dialogBlur` | 开 | `dialogAmount` 14px | 关 |
 | 虚化设置面板 | `settingsBlur` | 开 | `settingsAmount` 14px | 关 |
 | 虚化下载/确认弹窗 | `confirmBlur` | 开 | `confirmAmount` 12px | 关 |
 | 虚化弹层 | `popoverBlur` | 开 | `popoverAmount` 10px；另有 `popoverAlpha` 94% 表面不透明度 | 关 |
 | 虚化遮罩（全屏背景） | `maskBlur` | 开 | `maskAmount` 8px | 关 |
+| 右侧边栏/dock 虚化 | `rightSidebarBlur` | 开 | `rightSidebarBlurAmount` 14px + `rightSidebarAlpha` 45%；跟随统一虚化时两项都被接管 | 关 |
 
 ### 6. 其他（other）
 

@@ -74,6 +74,17 @@ const boot = (settings, clientPath) => {
   return String((globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss(patch) : '') || '')
 }
 const STRIP = (t) => String(t).replace(/\/\*[\s\S]*?\*\//g, '')
+
+/** 从任意源码文本编译出真的 mpwFogModel（A 组边界判据与 E 组行为变异共用）。 */
+const fogOf = (text) => new Function([
+  'const DEFAULT_BLUR_FOLLOW_UNIFY = ' + constOf('DEFAULT_BLUR_FOLLOW_UNIFY', text) + ';',
+  'const DEFAULT_UNIFY_TINT = ' + constOf('DEFAULT_UNIFY_TINT', text) + ';',
+  'const DEFAULT_UNIFY_AMOUNT = ' + constOf('DEFAULT_UNIFY_AMOUNT', text) + ';',
+  'const DEFAULT_SIDEBAR_ALPHA = ' + constOf('DEFAULT_SIDEBAR_ALPHA', text) + ';',
+  'const DEFAULT_OPACITY = ' + constOf('DEFAULT_OPACITY', text) + ';',
+  sliceFn('mpwFogModel', text),
+  'return mpwFogModel;',
+].join('\n'))()
 const RULES = (css) => [...STRIP(css).matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => [m[1].trim(), m[2]])
 const HAS_RULE = (css, selRe, bodyRe) => RULES(css).some(([sel, body]) => selRe.test(sel) && (!bodyRe || bodyRe.test(body)))
 const TOKEN = (css, name) => {
@@ -97,22 +108,18 @@ ok('A1 雾模型是唯一源：`mpwFogModel` 存在，且「跟随」默认值 =
   'DEFAULT_BLUR_FOLLOW_UNIFY = ' + constOf('DEFAULT_BLUR_FOLLOW_UNIFY'))
 {
   // 真执行 mpwFogModel：钳制边界（0/40/100/50）
-  const text = SRC
-  const code = [
-    'const DEFAULT_BLUR_FOLLOW_UNIFY = ' + constOf('DEFAULT_BLUR_FOLLOW_UNIFY', text) + ';',
-    'const DEFAULT_UNIFY_TINT = ' + constOf('DEFAULT_UNIFY_TINT', text) + ';',
-    'const DEFAULT_UNIFY_AMOUNT = ' + constOf('DEFAULT_UNIFY_AMOUNT', text) + ';',
-    'const DEFAULT_SIDEBAR_ALPHA = ' + constOf('DEFAULT_SIDEBAR_ALPHA', text) + ';',
-    'const DEFAULT_OPACITY = ' + constOf('DEFAULT_OPACITY', text) + ';',
-    sliceFn('mpwFogModel'),
-    'return mpwFogModel;',
-  ].join('\n')
-  const fog = new Function(code)()
+  const fog = fogOf(SRC)
   const f0 = fog({ unifyTint: true, unifyAmount: 0, sidebarAlpha: 0, opacity: 10 })
   ok('A2 雾模型钳制：amount 0–40、side 0–100、chat ≥50（面板不透明度的历史下限）',
     f0.amountPx === 0 && f0.sidePct === 0 && f0.chatPct === 50 && f0.unifyOn === true, JSON.stringify(f0))
   const f1 = fog({ unifyTint: true, unifyAmount: 99, sidebarAlpha: 999, opacity: 999 })
   ok('A2b 上界钳制：40 / 100 / 100', f1.amountPx === 40 && f1.sidePct === 100 && f1.chatPct === 100, JSON.stringify(f1))
+  const fShell = fog({ unifyTint: true, unifyAmount: 0, sidebarAlpha: 35 })
+  ok('A2e amount 0 ⇒ shellPct = 100（实心），但 sidePct 仍 = 35（取色 alpha 用原始值，不跟着钳）',
+    fShell.shellPct === 100 && fShell.sidePct === 35, JSON.stringify(fShell))
+  const fShell2 = fog({ unifyTint: true, unifyAmount: 12, sidebarAlpha: 35 })
+  ok('A2f amount > 0 ⇒ shellPct = sidePct（真的在虚化时厚度条说了算）',
+    fShell2.shellPct === 35, JSON.stringify(fShell2))
   const f2 = fog({ unifyTint: true, blurFollowUnify: false })
   ok('A2c 「不跟随」⇒ unifyOn=false（其余字段仍按各自默认给值）', f2.followUnify === false && f2.unifyOn === false, JSON.stringify(f2))
   const f3 = fog({ unifyTint: false })
@@ -176,14 +183,22 @@ const RS_SEL = /\[data-sidebar-right-panel\]|\[data-dockkit-(pane|strip|surface|
   const css = boot({ enabled: true, image: true, unifyTint: true, unifyAmount: 0, sidebarAlpha: 0, chatFollow: false })
   ok('B1 接管规则存在：右栏 / dock 指向共同表面 token（--mpw-unify-surface）',
     HAS_RULE(css, /\[data-mpw-unify\]/, /--mpw-unify-surface/) || /\[data-mpw-unify\] \[data-sidebar-right-panel\]/.test(STRIP(css)))
-  ok('B1b 厚度 0 ⇒ 共同表面 alpha = 0（不是"刷一层 alpha 0.85 的采样色"）',
-    TOKEN(css, 'mpw-unify-surface') === 'rgba(255, 255, 255, 0.000)', TOKEN(css, 'mpw-unify-surface'))
+  ok('B1b 不虚化（amount 0）⇒ 共同表面 **实心**（alpha 1.000）：没有模糊时不许把原始壁纸透出来',
+    TOKEN(css, 'mpw-unify-surface') === 'rgba(255, 255, 255, 1.000)', TOKEN(css, 'mpw-unify-surface'))
   ok('B1c 半径 0 ⇒ 接管规则的 backdrop-filter 是 **none**（不是 blur(0px)：后者仍建 containing block）',
     HAS_RULE(css, /\[data-mpw-unify\] \[data-sidebar-right-panel\]/, /backdrop-filter:\s*none/) && TOKEN(css, 'mpw-unify-blur') === '0px',
     JSON.stringify({ blur: TOKEN(css, 'mpw-unify-blur') }))
-  ok('B1d 暗色同款：--mpw-unify-surface-dark alpha = 0', TOKEN(css, 'mpw-unify-surface-dark') === 'rgba(18, 22, 30, 0.000)', TOKEN(css, 'mpw-unify-surface-dark'))
+  ok('B1d 暗色同款：--mpw-unify-surface-dark alpha = 1.000', TOKEN(css, 'mpw-unify-surface-dark') === 'rgba(18, 22, 30, 1.000)', TOKEN(css, 'mpw-unify-surface-dark'))
   ok('B1e 接管不碰弹层/设置面板：抑制规则（overlay/modal 打开时 backdrop-filter: none）在产物里',
     HAS_RULE(css, /\[data-mpw-unify\]:has\(\[class\*="_overlay"\]\) \[data-dockkit-pane\]/, /backdrop-filter:\s*none/))
+}
+{
+  const css = boot({ enabled: true, image: true, unifyTint: true, unifyAmount: 0, sidebarAlpha: 0, chatFollow: false })
+  ok('B1f 不虚化 ⇒ 左侧栏/标题栏也实心：--mpw-chrome-alpha = 1（与右栏/dock 同一条纪律）',
+    Number(TOKEN(css, 'mpw-chrome-alpha')) === 1 && /var\(--mpw-chrome-alpha\)/.test(TOKEN(css, 'mpw-surface-side-frost')),
+    JSON.stringify([TOKEN(css, 'mpw-chrome-alpha'), TOKEN(css, 'mpw-surface-side-frost')]))
+  ok('B1g 不虚化 ⇒ body[data-mpw-unify] 接管仍在（开关门控照旧）、但半径变量是 0px',
+    TOKEN(css, 'mpw-unify-blur') === '0px', TOKEN(css, 'mpw-unify-blur'))
 }
 {
   const css = boot({ enabled: true, image: true, unifyTint: true, unifyAmount: 24, sidebarAlpha: 60, chatFollow: false })
@@ -347,6 +362,15 @@ console.log('\n== E 组：变异自证 ==')
   const cssR = boot({ enabled: true, image: true, unifyTint: true, unifyAmount: 30, sidebarAlpha: 40, bsCompat: false, chatFollow: false })
   ok('E4 better-sidebar 段不再受 bsCompat 门控 ⇒ 手动关也照样产出规则（B5b 必红）',
     /\[data-dsh-better-sidebar\]/.test(STRIP(cssM)) && !/\[data-dsh-better-sidebar\]/.test(STRIP(cssR)))
+}
+{
+  /* E4b 不虚化时的"实心"钳制被去掉（回到"厚度 0 ⇒ 透明"）⇒ B1b/B1f 必红 */
+  const m5 = mutant('solid-floor', 'shellPct: amountPx > 0 ? sidePct : 100,', 'shellPct: sidePct,')
+  const fogM = fogOf(fs.readFileSync(m5, 'utf8'))
+  const m = fogM({ unifyTint: true, unifyAmount: 0, sidebarAlpha: 0 })
+  const r = fogOf(SRC)({ unifyTint: true, unifyAmount: 0, sidebarAlpha: 0 })
+  ok('E4b 去掉"不虚化 ⇒ 实心"钳制 ⇒ 厚度 0 又变全透明（B1b/B1f 必红）',
+    m.shellPct === 0 && r.shellPct === 100, JSON.stringify({ mutant: m.shellPct, real: r.shellPct }))
 }
 {
   /* E5 真源零改动 */

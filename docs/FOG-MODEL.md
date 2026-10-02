@@ -11,7 +11,8 @@
 | `followUnify` | `blurFollowUnify`（默认 **true**） | 「界面虚化」是否跟随统一虚化（新开关） |
 | `unifyOn` | `unifyTint && followUnify` | 一个厚度管全部（左栏/标题栏/右栏/dock/聊天区） |
 | `amountPx` | `unifyAmount` 钳到 0–40 | 整屏模糊半径（壁纸层 + 各栏 backdrop） |
-| `sidePct` | `sidebarAlpha` 钳到 0–100 | **所有 chrome 表面的雾厚度**（0 = 一个像素都不刷） |
+| `sidePct` | `sidebarAlpha` 钳到 0–100 | 用户那条滑条的原始值：**取色 alpha 用它**（0 = 采样色一个像素都不刷） |
+| `shellPct` | `amountPx > 0 ? sidePct : 100` | chrome 表面的**有效**厚度：不虚化 ⇒ 实心（见铁律 4） |
 | `chatPct` | `opacity` 钳到 50–100 | 聊天区/主画布厚度（历史下限 50） |
 
 三条铁律（都有判据钉住，见 §4）：
@@ -22,6 +23,12 @@
    显式 0 会走 `cleanup` 分支：注入层移除、半透明底撤掉。
    （旧写法 `Math.max(12, unAmt || 0)` 把"整屏虚化程度 = 0"也算成 12px ⇒ 标题栏还在模糊。）
 3. **厚度/半径归滑条，色相归取色**。两者不再互相覆盖。
+4. **不虚化 ⇒ 外壳实心**（`amountPx == 0`，2026-10-02 第 1 项真机补齐）：
+   没有模糊时再把**原始（未模糊）壁纸**透出来，观感就是"两个条都拉到 0，界面反而变成半透明、
+   还带壁纸自己的颜色"。所以 `amountPx == 0` 时 chrome 的有效厚度钉到 100（实心，无 backdrop-filter）；
+   只有 `amountPx > 0` 时「左侧边栏/标题栏透明度」才决定"透出多少**模糊**壁纸"。
+   ⚠ 取色 alpha 不看这条钳制（它按 `sidePct` 给），所以厚度 0 时不会有任何采样色层。
+   两处实现必须一致：`buildCss` 的 `uAlpha`（左栏/标题栏）与 `mpwFogModel().shellPct`（右栏/dock/better-sidebar）。
 
 ## 2. 谁被谁接管（`body[data-mpw-unify]`）
 
@@ -60,7 +67,7 @@
 
 ## 4. 判据
 
-* `tools/fog-model-test.mjs`（**43/0**，含 5 组变异自证）：
+* `tools/fog-model-test.mjs`（**48/0**，含 6 组变异自证）：
   A 口径与接线（含"说明行+开关必须夹在 tab 栏与标题之间"的位置判据、zh/en 键一一对应）、
   B CSS 落点（0 厚度 / 0 半径 / 跟随与不跟随 / 无壁纸 / better-sidebar 门控）、
   C 行为落点（`__mpwHdrFrostTest` 真跑 `syncHeaderFrost`：0 ⇒ 0px、跟随 ⇒ unifyAmount、

@@ -258,8 +258,6 @@ Contains the *Show wallpaper* sub-section.
 | Title bar frost amount | `headerBlurAmount` | 0% | Frost thickness 0–100% (default 0 = transparent) | 0 |
 | Set title bar frost separately | `headerFrostOwn` | off | on = `headerFrostAmount` overrides the frost radius | off |
 | Title bar frost strength | `headerFrostAmount` | 30px | 0–60 | 0 |
-| Right sidebar / dock blur | `rightSidebarBlur` | on | The DSH right sidebar and bottom dock | off |
-| Blur amount / surface opacity | `rightSidebarBlurAmount` / `rightSidebarAlpha` | 14px / 45% | 0–40 / 0–100% | — |
 
 ### 4. Surface unify (unify)
 
@@ -273,15 +271,24 @@ Contains the *Show wallpaper* sub-section.
 | Unified fog (full-screen mask) | `aquaMask` | off | All surfaces share one fog colour (moved here from the Aqua section) | off |
 | Unified fog strength | `aquaMaskAlpha` | 82% | 0–100% | — |
 
+> **What the two sliders mean (fixed since 2026-10-02; judged by `tools/fog-model-test.mjs`)**:
+> *Full-screen blur degree* = blur radius (**0 = no blur at all**: the title bar / sidebar / right sidebar / dock
+> return to a **solid** surface, so the un-blurred raw wallpaper is never shown through);
+> *Left sidebar / title-bar opacity* = fog thickness on every surface (**0 = fully transparent**: the *blurred*
+> wallpaper only, no fog and no wallpaper-sampled tint) — it only matters while the blur degree is > 0.
+> Both apply to the **whole UI shell** (left sidebar, title bar, right sidebar and dock share one set of tokens).
+
 ### 5. UI blur (blur)
 
 | Label | Key | Default | Amount key / default | Off |
 |---|---|---|---|---|
+| UI blur follows Unified blur | `blurFollowUnify` | **on** | on = the taken-over rows on this page follow the *Full-screen blur degree* + *Left sidebar / title-bar opacity*; off = they become independently adjustable | — |
 | Blur dialogs | `dialogBlur` | on | `dialogAmount` 14px | off |
 | Blur settings panel | `settingsBlur` | on | `settingsAmount` 14px | off |
 | Blur download/confirm popups | `confirmBlur` | on | `confirmAmount` 12px | off |
 | Blur popovers | `popoverBlur` | on | `popoverAmount` 10px; plus `popoverAlpha` 94% surface opacity | off |
 | Blur mask (full-screen backdrop) | `maskBlur` | on | `maskAmount` 8px | off |
+| Right sidebar / dock blur | `rightSidebarBlur` | on | `rightSidebarBlurAmount` 14px + `rightSidebarAlpha` 45%; both are taken over while following Unified blur | off |
 
 ### 6. Other (other)
 
