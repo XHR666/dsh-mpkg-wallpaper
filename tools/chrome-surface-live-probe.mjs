@@ -44,6 +44,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { spawnSync, execFileSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import { withAudioMute } from './_audio-mute.mjs'
 
@@ -62,6 +63,20 @@ const HEADED = has('headed')
 const KEEP = has('keep')                    // 不还原用户设置（默认还原）
 const ONLY = arg('only', '')                // 形如 amount=0 / side=45 / follow=false（子串过滤，调试用）
 const SETTLE = Number(arg('settle', '900')) // 每次 reload 后额外等待（插件 apply + React 渲染）
+const HOST_WAIT = Number(arg('host-wait', '8000')) // 等宿主外壳（标题栏/右栏/dock）挂上来的上限
+const ALLOW_HOST_WRITES = has('allow-host-writes') // 默认**拦掉**插件往宿主写回（见下"副作用"）
+/* 可见态开关（默认关；开了才会点宿主 UI）：
+   `--open-session` 进到"有会话"的布局（优先点**已有会话行**；没有就点 `[aria-label="新建会话"]` 真按钮
+     —— 后者会在你的 DSH 里**新建一条空会话**，如实记在 layout 里）；实测这一步同时会把右栏/dock 带出来。
+   `--open-right`   若右栏/dock 还没出来，再按候选控件补点（`展开右侧边栏` / `视图选项` / 菜单…），点不到就记 none。 */
+const OPEN_SESSION = has('open-session')
+const OPEN_RIGHT = has('open-right')
+const KEY4 = String(arg('key4', 'a0-s0-f1,a0-s45-f1,a30-s0-f1,a30-s45-f1')).split(',').map((x) => x.trim()).filter(Boolean)
+/* 用户真机的 settings.json（插件会把设置写回这里）。默认：拦掉写回 + 跑前跑后快照比对，
+   变了就按快照原样还原 —— 探针只该改浏览器里那份 localStorage，不该动用户的真档。 */
+const SETTINGS_JSON = path.resolve(arg('settings', path.join(os.homedir(), '.dsh-mpkg-wallpaper', 'settings.json')))
+const SETTINGS_SHOWN = SETTINGS_JSON.replace(os.homedir(), '~')
+const sha256 = (buf) => createHash('sha256').update(buf).digest('hex')
 const STORE = 'dsh.mpkg-wallpaper.v2'
 
 /* ── 0 串行锁：一次只开一个 Firefox（与其它探针共用同一把锁文件） ───────────────────── */
@@ -165,7 +180,45 @@ const COLLECT = () => {
         bgBlur: tok(body, '--mpw-bg-blur'),
       },
     },
+    /* 主对话给的哈希（`.wSkVaW_header` / `.mpw-hdrFrost`）可能随宿主构建/视图变化 ⇒ 额外做一次
+       **只读发现**：把带 `_header` / `_dockkit` / `data-dockkit*` / `data-sidebar-right-panel` 的元素
+       连同它们的真实类名一起记下来（"找不到"要给得出原因，不能只说 found:false）。 */
+    discovered: (() => {
+      const brief = (e) => {
+        const c = csOf(e)
+        const b = (() => { try { const r = e.getBoundingClientRect(); return { w: Math.round(r.width), h: Math.round(r.height) } } catch (err) { return null } })()
+        return { cls: String(e.className).slice(0, 80), bg: c.backgroundColor, bf: c.backdropFilter, display: c.display, rect: b,
+          visible: !!(b && b.w > 2 && b.h > 2) && c.display !== 'none' && c.visibility !== 'hidden' }
+      }
+      const pick = (sel, n) => { try { return Array.from(document.querySelectorAll(sel)).slice(0, n || 4).map(brief) } catch (e) { return [{ err: String(e && e.message || e) }] } }
+      return {
+        headerLike: pick('[class*="_header"]'),
+        dockLike: pick('[class*="dock"]', 3),
+        rightPanelLike: pick('[data-sidebar-right-panel],[class*="rightPanel"],[class*="rightPanel"]', 3),
+        counts: {
+          headerHash: (() => { try { return document.querySelectorAll('[class*="_header"]').length } catch (e) { return null } })(),
+          exactHeader: (() => { try { return document.querySelectorAll('.wSkVaW_header').length } catch (e) { return null } })(),
+          exactHdrFrost: (() => { try { return document.querySelectorAll('.mpw-hdrFrost').length } catch (e) { return null } })(),
+          dockkitAttr: (() => { try { return document.querySelectorAll('[data-dockkit-strip],[data-dockkit-pane]').length } catch (e) { return null } })(),
+          rightPanelAttr: (() => { try { return document.querySelectorAll('[data-sidebar-right-panel]').length } catch (e) { return null } })(),
+          composer: (() => { try { return document.querySelectorAll('[contenteditable="true"],[class*="composer"]').length } catch (e) { return null } })(),
+          sessionRows: (() => { try { return document.querySelectorAll('[class*="sessionRow"],[class*="session"]').length } catch (e) { return null } })(),
+          bodyChildren: body ? body.children.length : null,
+        },
+      }
+    })(),
     ledger,
+    /* 页面跑的是**已安装**的那份插件（不是本仓工作树）⇒ 记一个"产物指纹"，让这次读数可归属到某个构建：
+       我们的 `<style data-plugin=…>` 文本长度 + 简易哈希（宿主无关、不读宿主文件系统）。 */
+    build: (() => {
+      try {
+        const st = document.querySelector('style[data-plugin="dsh-mpkg-wallpaper"]')
+        const txt = st ? String(st.textContent || '') : ''
+        let h = 5381
+        for (let i = 0; i < txt.length; i++) h = ((h * 33) ^ txt.charCodeAt(i)) >>> 0
+        return { styleLen: txt.length, styleHash: txt ? h.toString(16) : null, hasStyle: !!st }
+      } catch (e) { return { err: String(e && e.message || e) } }
+    })(),
     effective: {
       unifyTint: s.unifyTint, unifyAmount: s.unifyAmount, sidebarAlpha: s.sidebarAlpha,
       blurFollowUnify: s.blurFollowUnify, enabled: s.enabled, opacity: s.opacity,
@@ -192,6 +245,55 @@ const intentFromCss = (patch) => {
       sidebarColRule: g(/(?:\[class\*=["']?sidebarCol["']?\])[^{]*\{([^}]*)\}/),
     }
   } catch (e) { return { err: String(e && e.message || e) } }
+}
+
+/** 当前布局读数（会话/标题栏/右栏/dock 到底在不在、可不可见）。 */
+const LAYOUT = () => {
+  const vis = (e) => { try { const r = e.getBoundingClientRect(); const c = getComputedStyle(e); return r.width > 2 && r.height > 2 && c.display !== 'none' && c.visibility !== 'hidden' } catch (err) { return false } }
+  const q = (sel) => { try { return Array.from(document.querySelectorAll(sel)) } catch (e) { return [] } }
+  const hdrEls = q('.wSkVaW_header')
+  const hdrAny = q('[class*="_header"]')
+  const rows = q('[class*="sessionRow"]')
+  return {
+    sessionRows: rows.length, sessionRowVisible: rows.filter(vis).length,
+    editors: q('[contenteditable="true"]').length,
+    headerExact: hdrEls.length, headerExactVisible: hdrEls.filter(vis).length,
+    headerExactCls: hdrEls[0] ? String(hdrEls[0].className) : null,
+    headerAny: hdrAny.length, headerAnyVisible: hdrAny.filter(vis).length,
+    hdrFrost: q('.mpw-hdrFrost').length, hdrFrostVisible: q('.mpw-hdrFrost').filter(vis).length,
+    rightPanel: q('[data-sidebar-right-panel]').length, rightPanelVisible: q('[data-sidebar-right-panel]').filter(vis).length,
+    dockStrip: q('[data-dockkit-strip]').length, dockStripVisible: q('[data-dockkit-strip]').filter(vis).length,
+    dockPane: q('[data-dockkit-pane]').length, dockPaneVisible: q('[data-dockkit-pane]').filter(vis).length,
+    rightbarCollapsed: (() => { const e = document.querySelector('[data-rightbar-collapsed]'); return e ? e.getAttribute('data-rightbar-collapsed') : null })(),
+  }
+}
+
+/** 打开/进入会话：优先已有会话行（无副作用），否则点"新建会话"真按钮（会新建一条空会话，如实记）。 */
+const OPEN_SESSION_FN = async () => {
+  const vis = (e) => { try { const r = e.getBoundingClientRect(); const c = getComputedStyle(e); return r.width > 2 && r.height > 2 && c.display !== 'none' } catch (err) { return false } }
+  const rows = Array.from(document.querySelectorAll('[class*="sessionRow"]')).filter(vis)
+  if (rows.length) { rows[0].click(); return { clicked: 'existing-session-row', rows: rows.length } }
+  const btns = Array.from(document.querySelectorAll('button[aria-label="新建会话"]')).filter(vis)
+  if (!btns.length) return { clicked: 'none', why: 'no-new-session-button' }
+  const prefer = btns.filter((e) => String(e.className).indexOf('newSession') >= 0)
+  const el = prefer[0] || btns[btns.length - 1]
+  el.click()
+  return { clicked: 'new-session-button', cls: String(el.className).slice(0, 40), candidates: btns.length, note: '会在你的 DSH 里新建一条空会话（这是宿主的"新建会话"按钮）' }
+}
+
+/** 补开右栏/dock：把可见的候选控件逐个试，返回哪一个把它带出来了。 */
+const OPEN_RIGHT_FN = () => {
+  const vis = (e) => { try { const r = e.getBoundingClientRect(); const c = getComputedStyle(e); return r.width > 2 && r.height > 2 && c.display !== 'none' } catch (err) { return false } }
+  if (document.querySelectorAll('[data-dockkit-strip],[data-sidebar-right-panel]').length) return { clicked: 'already-open' }
+  const PATS = [/展开右侧|右侧边栏|右侧面板/, /视图选项/, /菜单|menu/, /dock|工具面板/i]
+  const all = Array.from(document.querySelectorAll('button,[role="button"],[tabindex]')).filter(vis)
+  for (const p of PATS) {
+    const hit = all.find((e) => p.test(((e.getAttribute && (e.getAttribute('aria-label') || e.getAttribute('title'))) || '') + ' ' + (e.textContent || '').trim().slice(0, 24)))
+    if (!hit) continue
+    hit.click()
+    return { clicked: 'by-pattern', pattern: String(p), cls: String(hit.className).slice(0, 40), aria: hit.getAttribute('aria-label') }
+  }
+  return { clicked: 'none', why: 'no-candidate', visibleControls: all.map((e) => e.getAttribute('aria-label') || String(e.className).slice(0, 24)).filter(Boolean).slice(0, 25) }
 }
 
 /* 设置面板：点"设置/Settings"入口（自底向上取最内层可见命中），拿不到就记 skipped。 */
@@ -223,14 +325,61 @@ const DIALOG_STATE = () => {
 }
 
 /* ── 3 主流程 ─────────────────────────────────────────────────────────────────── */
+/** 等"会话布局"出现（编辑框 / dock / 会话行 任一）。超时不算失败：如实记 waitedMs。 */
+const layoutReady = async (page, ms) => {
+  const t0 = Date.now()
+  try {
+    await page.waitForFunction(() => {
+      const q = (sel) => { try { return document.querySelectorAll(sel).length } catch (e) { return 0 } }
+      return q('[contenteditable="true"]') > 0 || q('[data-dockkit-strip]') > 0 || q('[class*="sessionRow"]') > 0
+    }, null, { timeout: ms })
+  } catch (e) { /* 超时继续：由调用方看 after 读数决定 */ }
+  return Date.now() - t0
+}
+
+/** 按开关把"可见态"弄出来（会话布局 / 右栏 dock），每一步点谁都如实记。 */
+const ensureLayout = async (page) => {
+  const before = await page.evaluate(LAYOUT)
+  const clicks = []
+  if (OPEN_SESSION) {
+    const need = before.editors === 0 && before.dockStrip === 0 && before.sessionRows === 0
+    if (!need) clicks.push({ session: 'already-present' })
+    for (let i = 0; need && i < 2; i++) {
+      const r = await page.evaluate(OPEN_SESSION_FN)
+      r.waitedMs = await layoutReady(page, 20000)
+      clicks.push({ session: r })
+      const now = await page.evaluate(LAYOUT)
+      if (now.editors > 0 || now.dockStrip > 0 || now.sessionRows > 0) break
+    }
+  }
+  if (OPEN_RIGHT) {
+    const now = await page.evaluate(LAYOUT)
+    if (now.dockStrip > 0 || now.rightPanel > 0) clicks.push({ right: 'already-open' })
+    else {
+      const r = await page.evaluate(OPEN_RIGHT_FN)
+      r.waitedMs = await layoutReady(page, 12000)
+      clicks.push({ right: r })
+    }
+  }
+  await page.waitForTimeout(400)
+  return { before, clicks, after: await page.evaluate(LAYOUT) }
+}
+
 const OUTDIR = path.dirname(OUT)
 fs.mkdirSync(OUTDIR, { recursive: true })
 fs.mkdirSync(WORK, { recursive: true })
 
+const snapFile = (p) => { try { const b = fs.readFileSync(p); return { sha256: sha256(b), len: b.length, buf: b } } catch (e) { return null } }
+const settingsSnap = snapFile(SETTINGS_JSON)
 const result = {
   probe: 'chrome-surface-live-probe', at: new Date().toISOString(), authority: AUTHORITY, url: URL0,
   plugin: PLUGIN, out: OUT, matrix: { unifyAmount: AMOUNTS, sidebarAlpha: SIDES, blurFollowUnify: FOLLOWS, fixed: { enabled: true, unifyTint: true } },
-  blocked: null, note: null, scenarios: [], hostPuts: 0, restore: null, pageErrors: [],
+  blocked: null, note: null, scenarios: [], hostPuts: 0, hostWritesBlocked: 0, restore: null, pageErrors: [],
+  settingsFile: {
+    path: SETTINGS_SHOWN, existed: !!settingsSnap,
+    before: settingsSnap ? settingsSnap.sha256.slice(0, 12) : null,
+    hostWritesBlocked: !ALLOW_HOST_WRITES,
+  },
 }
 
 const blocked = (why, detail) => {
@@ -267,6 +416,16 @@ try {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1, locale: 'zh-CN' })
   await ctx.addCookies([{ name: cookie.name, value: cookie.value, domain: '127.0.0.1', path: '/', httpOnly: true, sameSite: 'Strict' }])
   const page = await ctx.newPage()
+  /* 默认拦掉"插件 → 宿主 settings.json"的写回：探针只量 CSS，没理由改用户真档。
+     GET 照常放行（插件的启动合并要读真档）；写请求回一个 200 {ok:true}（插件认为存了，不会重试）。 */
+  if (!ALLOW_HOST_WRITES) {
+    await page.route('**/api/mpkg-wallpaper/settings*', (route) => {
+      const req = route.request()
+      if (req.method() === 'GET' || req.method() === 'HEAD') return route.continue()
+      result.hostWritesBlocked++
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, blockedByProbe: 'chrome-surface-live-probe' }) })
+    })
+  }
   page.on('pageerror', (e) => result.pageErrors.push(String((e && e.message) || e).slice(0, 200)))
   page.on('response', (r) => { try { if (r.url().indexOf('/api/mpkg-wallpaper/settings') >= 0 && r.request().method() !== 'GET') result.hostPuts++ } catch (e) { /* ignore */ } })
 
@@ -282,6 +441,11 @@ try {
     blocked('plugin-not-active', '页面打开了但没有 __mpwSectionTest/__mpwPersist ⇒ 该页没装/没启用本插件')
   }
   result.page = { title: await page.title(), status }
+  result.layoutPlan = { openSession: OPEN_SESSION, openRight: OPEN_RIGHT, key4: KEY4 }
+  if (OPEN_SESSION || OPEN_RIGHT) {
+    result.layoutInitial = await ensureLayout(page)      // 先弄一次，后面每个场景 reload 后按需补
+    await page.waitForTimeout(SETTLE)
+  }
 
   // 备份用户真机设置（整串），供最后还原
   const original = await page.evaluate((k) => { try { return localStorage.getItem(k) } catch (e) { return null } }, STORE)
@@ -303,7 +467,17 @@ try {
 
       await page.reload({ waitUntil: 'domcontentloaded', timeout: 60000 })
       await page.waitForFunction(() => !!(globalThis.__mpwSectionTest && globalThis.__mpwPersist), null, { timeout: 30000 })
+      /* 宿主外壳是异步渲染的：`state:'attached'` 等它进 DOM（标题栏在用户布局里可能是 display:none，
+         用默认的 'visible' 会白等满超时）。等不到也如实记 found:false，不拿别的元素顶替。 */
+      const waitT0 = Date.now()
+      await page.waitForSelector('[class*="sidebarCol"]', { state: 'attached', timeout: HOST_WAIT }).catch(() => {})
+      await page.waitForSelector('.wSkVaW_header', { state: 'attached', timeout: HOST_WAIT }).catch(() => {})
+      await page.waitForSelector('[data-dockkit-strip]', { state: 'attached', timeout: Math.min(3000, HOST_WAIT) }).catch(() => {})
       await page.waitForTimeout(SETTLE)
+      rec.hostChromeWaitMs = Date.now() - waitT0
+      /* 可见态：reload 会把宿主的会话/dock 布局丢掉 ⇒ 按开关补回来（补的每一步都记在 rec.layout.clicks） */
+      rec.layout = (OPEN_SESSION || OPEN_RIGHT) ? await ensureLayout(page) : { after: await page.evaluate(LAYOUT), clicks: [] }
+      rec.headerVisible = rec.layout.after.headerExactVisible > 0 || rec.layout.after.headerAnyVisible > 0
 
       rec.intent = await page.evaluate(intentFromCss, sc.patch)
       rec.closed = await page.evaluate(COLLECT)
@@ -333,6 +507,13 @@ try {
       if (state.open) {
         await page.waitForTimeout(400)
         rec.dialogCollect = await page.evaluate(COLLECT)
+        /* 设置面板开/关对左栏的影响（用户报"设置打开时左栏变黑"）——只记有界字段，便于人读 */
+        const pick = (surf) => (surf && surf.found ? { bg: surf.backgroundColor, bf: surf.backdropFilter, display: surf.display } : null)
+        rec.dialogDelta = {
+          sidebarCol: { closed: pick(rec.closed.surfaces.sidebarCol), open: pick(rec.dialogCollect.surfaces.sidebarCol) },
+          sidebarSlot: { closed: pick(rec.closed.surfaces.sidebarSlot), open: pick(rec.dialogCollect.surfaces.sidebarSlot) },
+          overlay: pick(rec.dialogCollect.surfaces.overlay),
+        }
         try { await page.keyboard.press('Escape') } catch (e) { /* ignore */ }
         await page.waitForTimeout(300)
         rec.dialogClosedAfterEsc = !(await page.evaluate(DIALOG_STATE)).open
@@ -350,6 +531,7 @@ try {
       effectiveMismatch: rec.effectiveMismatch === true,
       effective: rec.closed ? rec.closed.effective : null,
       dialogOpenedBy: rec.dialogOpenedBy || null,
+      layout: rec.layout ? { sessionRows: rec.layout.after.sessionRows, editors: rec.layout.after.editors, headerVisible: rec.layout.after.headerExactVisible + '/' + rec.layout.after.headerAnyVisible, rightPanel: rec.layout.after.rightPanelVisible, dock: rec.layout.after.dockStripVisible } : null,
       left: rec.closed ? rec.closed.surfaces.sidebarCol : null,
       header: rec.closed ? rec.closed.surfaces.headerFrost : null,
       tokens: rec.closed ? rec.closed.tokens.onBody : null,
@@ -364,17 +546,41 @@ try {
       await page.waitForFunction(() => !!(globalThis.__mpwSectionTest && globalThis.__mpwPersist), null, { timeout: 30000 }).catch(() => {})
       await page.waitForTimeout(500)
       const back = await page.evaluate((k) => { try { return localStorage.getItem(k) } catch (e) { return null } }, STORE)
+      const backSec = (() => { try { return JSON.parse(back || '{}') || {} } catch (e) { return {} } })()
+      const keys = Array.from(new Set(Object.keys(originalSec).concat(Object.keys(backSec))))
+      const diffKeys = keys.filter((k) => JSON.stringify(originalSec[k]) !== JSON.stringify(backSec[k]))
+      const MATRIX = ['unifyTint', 'unifyAmount', 'sidebarAlpha', 'blurFollowUnify']
       result.restore = {
-        ok: back === original,
-        len: back ? back.length : 0,
-        originalKeys: Object.keys(originalSec).length,
+        rawMatches: back === original,                 // 插件 load 时可能重写同值（补元键）⇒ 全等只是参考
+        len: back ? back.length : 0, originalLen: original ? original.length : 0,
+        differingCount: diffKeys.length, differingKeys: diffKeys.slice(0, 12),
+        matrixKeysBack: MATRIX.map((k) => ({ k, want: originalSec[k], got: backSec[k], ok: JSON.stringify(originalSec[k]) === JSON.stringify(backSec[k]) })),
         keep: false,
       }
     } catch (e) {
       result.restore = { ok: false, err: String((e && e.message) || e).slice(0, 200), keep: false }
     }
   } else {
-    result.restore = { ok: null, keep: true, note: '--keep：没有还原用户设置（探针结束时页面停在最后一个场景的档位）' }
+    result.restore = { keep: true, note: '--keep：没有还原浏览器 localStorage（探针结束时页面停在最后一个场景的档位）' }
+  }
+  /* settings.json 快照比对：默认拦了写回 ⇒ 应当逐字节没变；万一变了（例如写了别的路由）就按快照原样还原 */
+  if (settingsSnap) {
+    const after = snapFile(SETTINGS_JSON)
+    const afterSha = after ? after.sha256 : null
+    if (afterSha === settingsSnap.sha256) {
+      result.settingsFile.after = afterSha.slice(0, 12); result.settingsFile.unchanged = true
+    } else if (!KEEP) {
+      let restored = false
+      try { fs.writeFileSync(SETTINGS_JSON, settingsSnap.buf); restored = sha256(fs.readFileSync(SETTINGS_JSON)) === settingsSnap.sha256 } catch (e) { /* 记在下面 */ }
+      result.settingsFile.after = afterSha ? afterSha.slice(0, 12) : null
+      result.settingsFile.unchanged = false
+      result.settingsFile.restoredFromSnapshot = restored
+    } else {
+      result.settingsFile.after = afterSha ? afterSha.slice(0, 12) : null
+      result.settingsFile.unchanged = false
+      result.settingsFile.restoredFromSnapshot = false
+      result.settingsFile.note = '--keep：宿主 settings.json 变了也没还原'
+    }
   }
 } catch (e) {
   result.fatal = String((e && e.stack) || e).slice(0, 800)
@@ -413,7 +619,7 @@ const row = (label, surf) => {
 }
 
 console.log('\n===== 人读表（computed 值；无头 Firefox 本机**不合成** backdrop-filter ⇒ 这里只说明"声明了什么"，不是像素）=====')
-console.log('场景'.padEnd(14) + '| ' + '左栏 sidebarCol'.padEnd(34) + '| ' + '标题栏 hdrFrost'.padEnd(34) + '| ' + '右栏 rightPanel'.padEnd(30) + '| dockStrip'.padEnd(26) + '| 聊天区 bg')
+console.log('场景'.padEnd(14) + '| ' + '左栏 sidebarCol'.padEnd(34) + '| ' + '标题栏（可见优先，否则记隐藏态）'.padEnd(62) + '| ' + '右栏 rightPanel'.padEnd(30) + '| dockStrip'.padEnd(26) + '| 聊天区 bg')
 for (const rec of result.scenarios) {
   const g = (k) => (rec.closed ? rec.closed.surfaces[k] : null)
   const fmt = (surf) => {
@@ -424,7 +630,49 @@ for (const rec of result.scenarios) {
     return (r.color || '').replace(/\s+/g, '') + ' α=' + a + ' blur=' + bl
   }
   const chat = (() => { const s = g('scrollBody'); if (!s || !s.found) return '（不存在）'; const c = parseColor(s.backgroundColor); return (c.raw || '').replace(/\s+/g, '') + ' α=' + (c.alpha === null ? '?' : c.alpha.toFixed(2)) })()
-  console.log(rec.id.padEnd(14) + '| ' + fmt(g('sidebarCol')).padEnd(34) + '| ' + fmt(g('headerFrost')).padEnd(34) + '| ' + fmt(g('rightPanel')).padEnd(30) + '| ' + fmt(g('dockStrip')).padEnd(26) + '| ' + chat)
+  const hdrCell = (() => {
+    const c = rec.closed || {}
+    const sf = c.surfaces || {}
+    const one = (surf, tag) => {
+      if (!surf || !surf.found) return null
+      const col = parseColor(surf.backgroundColor)
+      const bl = blurOf(surf.backdropFilter)
+      return tag + col.raw.replace(/\s+/g, '') + ' α=' + (col.alpha === null ? '?' : col.alpha.toFixed(2)) + ' blur=' + (bl === null ? '无' : (typeof bl === 'number' ? bl + 'px' : String(bl).slice(0, 8)))
+    }
+    const exactVis = sf.header && sf.header.found && sf.header.display !== 'none' ? one(sf.header, '.wSkVaW_header ') : null
+    const frostVis = sf.headerFrost && sf.headerFrost.found && sf.headerFrost.display !== 'none' ? one(sf.headerFrost, '.mpw-hdrFrost ') : null
+    if (exactVis) return (exactVis + (frostVis ? ' + ' + frostVis : '')).slice(0, 60)
+    if (frostVis) return frostVis.slice(0, 60)
+    const anyVis = ((c.discovered || {}).headerLike || []).find((x) => x && x.visible)
+    if (anyVis) return ('〔发现〕' + String(anyVis.cls).split(' ')[0] + ' ' + String(anyVis.bg).replace(/\s+/g, '') + ' blur=' + (blurOf(anyVis.bf) === null ? '无' : blurOf(anyVis.bf) + 'px')).slice(0, 60)
+    const hidden = sf.header && sf.header.found ? ('.wSkVaW_header 隐藏(' + String(sf.header.display) + ')') : '（不在 DOM）'
+    const anyHidden = ((c.discovered || {}).headerLike || [])[0]
+    return (hidden + (anyHidden ? ' / ' + String(anyHidden.cls).split(' ')[0] + ' ' + String(anyHidden.bg).replace(/\s+/g, '') : '')).slice(0, 60)
+  })()
+  console.log(rec.id.padEnd(14) + '| ' + fmt(g('sidebarCol')).padEnd(34) + '| ' + hdrCell.padEnd(62) + '| ' + fmt(g('rightPanel')).padEnd(30) + '| ' + fmt(g('dockStrip')).padEnd(26) + '| ' + chat)
+}
+
+/* ── 关键档小表（主对话要的"左栏/标题栏/右栏 × 关键 4 档"） ───────────────────── */
+{
+  const cell = (surf) => {
+    if (!surf || !surf.found) return '（不在 DOM）'
+    const c = parseColor(surf.backgroundColor)
+    const bl = blurOf(surf.backdropFilter)
+    return c.raw.replace(/\s+/g, '') + ' α=' + (c.alpha === null ? '?' : c.alpha.toFixed(2)) + ' blur=' + (bl === null ? '无' : (typeof bl === 'number' ? bl + 'px' : String(bl).slice(0, 8))) + (surf.display === 'none' ? ' [display:none]' : '')
+  }
+  console.log('\n===== 关键档（' + KEY4.join(' / ') + '）：左栏 / 标题栏 / 右栏 / dock / 聊天区 =====')
+  for (const id of KEY4) {
+    const rec = result.scenarios.find((x) => x.id === id)
+    if (!rec) { console.log('  ' + id + '  （不在本次矩阵里）'); continue }
+    const q = rec.closed ? rec.closed.surfaces : {}
+    const lay = rec.layout ? rec.layout.after : {}
+    const anyVis = ((rec.closed || {}).discovered || {}).headerLike ? (((rec.closed || {}).discovered.headerLike || []).find((x) => x && x.visible) || {}) : {}
+    console.log('  ' + id + ' [' + (rec.patch ? ('amt=' + rec.patch.unifyAmount + ' side=' + rec.patch.sidebarAlpha + ' follow=' + rec.patch.blurFollowUnify) : '') + ']'
+      + ' layout(session=' + (lay.sessionRows || 0) + ',header可见=' + ((lay.headerExactVisible || 0) + '/' + (lay.headerAnyVisible || 0)) + ',右栏=' + (lay.rightPanelVisible || 0) + ',dock=' + (lay.dockStripVisible || 0) + ')')
+    console.log('     左栏: ' + cell(q.sidebarCol) + '   标题栏: ' + (cell(q.header) + (q.headerFrost && q.headerFrost.found ? ' + ' + cell(q.headerFrost) : '') + (anyVis.cls ? '  〔可见 _header: ' + String(anyVis.cls).split(' ')[0] + ' ' + String(anyVis.bg).replace(/\s+/g, '') + '〕' : '')))
+    console.log('     右栏: ' + cell(q.rightPanel) + '   dock: ' + cell(q.dockStrip) + '   聊天区: ' + cell(q.scrollBody))
+    console.log('     设置打开时左栏: ' + (rec.dialogDelta ? cell({ found: true, backgroundColor: rec.dialogDelta.sidebarCol.open.bg, backdropFilter: rec.dialogDelta.sidebarCol.open.bf }) : '（未开）'))
+  }
 }
 
 const okN = result.scenarios.filter((s) => s.ok).length
@@ -433,7 +681,10 @@ const mismatch = result.scenarios.filter((s) => s.effectiveMismatch).length
 const dialogs = result.scenarios.filter((s) => s.dialog && s.dialog.state && s.dialog.state.open).length
 console.log('\n探针完成：场景 ' + okN + '/' + result.scenarios.length + ' 采集成功' + (failN ? '（失败 ' + failN + '）' : '')
   + '；设置面板打开 ' + dialogs + ' 个场景；effectiveMismatch ' + mismatch + ' 个'
-  + '；宿主 settings PUT ' + result.hostPuts + ' 次'
+  + '；可见态：会话行>0 的场景 ' + result.scenarios.filter((s) => s.layout && s.layout.after.sessionRows > 0).length + '/' + result.scenarios.length
+  + '（标题栏可见 ' + result.scenarios.filter((s) => s.layout && (s.layout.after.headerExactVisible > 0 || s.layout.after.headerAnyVisible > 0)).length + '）'
+  + '；宿主 settings 写回：拦掉 ' + result.hostWritesBlocked + ' 次 / 实际发出 ' + result.hostPuts + ' 次'
+  + '；settings.json ' + (result.settingsFile ? (result.settingsFile.unchanged ? '逐字节未变 ✓' : ('变了（before ' + result.settingsFile.before + ' → after ' + result.settingsFile.after + '，按快照还原=' + result.settingsFile.restoredFromSnapshot + '）')) : '不存在')
   + (result.restore ? '；还原用户设置 ' + (result.restore.ok === true ? '✓' : (result.restore.keep ? '（--keep 跳过）' : '✗ ' + JSON.stringify(result.restore))) : ''))
 console.log('JSON: ' + path.relative(PLUGIN, OUT) + '（' + fs.statSync(OUT).size + ' B）')
 if (result.blocked) { console.log('✗ blocked:' + result.blocked.why); process.exit(2) }

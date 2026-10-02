@@ -1,4 +1,4 @@
-// tools/fog-model-test.mjs —— 「统一虚化 / 界面虚化」语义收口门禁（2026-10-02 用户第 1–5 项）
+// tools/fog-model-test.mjs —— 「统一虚化 / 界面虚化」语义收口门禁（2026-10-02 用户第 1–5 项 + 语义重做）
 //
 // 病（三条真机反馈，逐条对应本文件的判据）：
 //   ①「整屏虚化程度 = 0 + 左侧边栏/标题栏透明度 = 0」时，左侧边栏**变透明但仍带壁纸采样粉**，
@@ -8,12 +8,27 @@
 //      右栏/dock 走的是自己那套参数（--mpw-rs-blur / --mpw-rs-alpha）⇒ 文案与实现不符。
 //   ③「界面虚化」与「统一虚化」的关系没有任何入口说明，也不能选择"不跟随"。
 //
+// 语义（2026-10-02 用户拍板；代码里 `mpwSurfacePlan()` 是**唯一源**，`mpwFogModel()` 只是薄包装）：
+//   · 「界面透明度」`sidebarAlpha`：**0 = 完全不透明（正常界面）**、**100 = 完全透明（看到壁纸）**；
+//     生效不透明度 = `100 - 透明度`。**与模糊解耦**：模糊 0 时照样按透明度透出（壁纸是清晰的）。
+//   · 基色 = **宿主自己的 token**：左栏/右栏/dock = `var(--dsw-specific-sidebar-fill)`、
+//     标题栏 = `var(--dsw-alias-bg-base)` ⇒ 产物里是 `color-mix(in srgb, var(--dsw-…) N%, transparent)`，
+//     **不再是**我们的纯白/中性色（`rgba(255,255,255,…)` / `rgba(18,22,30,…)`）。
+//   · 「整屏虚化程度」= 半径（0 ⇒ 接管规则里写 `backdrop-filter: none`，不是 `blur(0px)`）。
+//   · 归属：统一虚化开 + `blurFollowUnify` 开 + 该项**没被用户单独动过**（`*UserSet` 标记）
+//     ⇒ 用统一值（四个表面完全一致）；`sidebarBlurUserSet` / `headerFrostUserSet` /
+//     `rightSidebarBlurUserSet` 任一为真 ⇒ **该项**独立（自己的开关/半径/透明度），不牵连别项。
+//     `commit()` 里的 `mpwMarkUserSet()` 是标记的**唯一落点**（动过某条滑条/开关 ⇒ 打标记；
+//     `patch.blurFollowUnify === true` ⇒ 清空三个标记）。
+//
 // 判据分组：
-//   A 组 口径/接线（静态）：默认值、雾模型钳制、四处接线、设置行位置、i18n zh/en 成对
-//   B 组 CSS 落点：接管规则/共同表面 token/blur 值 = 0 时必须是 none、不跟随时不产出接管
-//   C 组 行为落点（真实现 __mpwHdrFrostTest）：0 ⇒ 0px；跟随 ⇒ unifyAmount；不跟随 ⇒ 自己的条
-//   D 组 取色厚度（切片执行真 aquaTokenOverrides）：厚度 0 ⇒ 采样色 alpha 0%（不刷粉色）
+//   A 组 口径/接线（静态）：唯一源、默认值、雾模型钳制/解耦、四处接线、设置行位置、i18n zh/en 成对
+//   B 组 CSS 落点：接管规则、共同表面 = 宿主 token + 生效不透明度、半径 0 = none、不跟随时不产出接管
+//   C 组 行为落点（真实现 __mpwHdrFrostTest）：0 ⇒ 0px；跟随 ⇒ unifyAmount；独立 ⇒ 自己那条
+//   D 组 取色厚度（切片执行真 aquaTokenOverrides）：取色 alpha = 表面**不透明度**（透明度 100 ⇒ 0%）
 //   E 组 变异自证：把关键判断改坏 ⇒ 对应组必红（真源零改动）
+//   F 组 独立性/归属：不跟随不接管；跟随档四表面逐字一致；*UserSet 只让**那一项**独立；
+//       `mpwMarkUserSet()` 是标记唯一落点（含"未被接管的字段不许打标记"）
 //
 // 卫生：变异副本落 mkdtemp，退出即删（仓库铁律：不写固定 /tmp 路径）。
 // 用法: node tools/fog-model-test.mjs
@@ -55,6 +70,25 @@ const constOf = (name, text) => {
   if (!m) throw new Error('缺少常量 ' + name)
   return m[1]
 }
+/** 切片一条 **多行** 声明（对象/数组字面量；`constOf` 只吃单行）。
+    括号配平 + 跳过字符串里的括号与分号（`MPW_USERSET_OF` 的值就是一堆带引号的键名）。 */
+function sliceDecl(name, text) {
+  const src = text || SRC
+  const head = 'const ' + name + ' = '
+  const i = src.indexOf(head)
+  if (i < 0) throw new Error('缺少声明 ' + name)
+  const start = i + head.length
+  let d = 0, q = ''
+  for (let j = start; j < src.length; j++) {
+    const c = src[j]
+    if (q) { if (c === '\\') { j++; continue } if (c === q) q = ''; continue }
+    if (c === '"' || c === "'" || c === '`') { q = c; continue }
+    if (c === '{' || c === '[' || c === '(') d++
+    else if (c === '}' || c === ']' || c === ')') d--
+    else if (c === ';' && d === 0) return src.slice(start, j)
+  }
+  throw new Error('声明不配平 ' + name)
+}
 /* ①(本仓铁律) 多次 loadPlugin 之间必须清掉插件自身的幂等守卫，否则第二次 apply 被
    `__mpwAppliedOnce` 直接忽略 ⇒ __mpwBuildCss 没重装、产物为空、判据**假绿**
    （与 props-panel-wiring / wallpaper-lifecycle 同款清单）。 */
@@ -74,16 +108,32 @@ const boot = (settings, clientPath) => {
   return String((globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss(patch) : '') || '')
 }
 const STRIP = (t) => String(t).replace(/\/\*[\s\S]*?\*\//g, '')
-
-/** 从任意源码文本编译出真的 mpwFogModel（A 组边界判据与 E 组行为变异共用）。 */
+/** 从任意源码文本编译出真的 mpwSurfacePlan / mpwFogModel（边界判据与 E 组行为变异共用）。
+    ⚠️ `mpwFogModel` 现在是 `mpwSurfacePlan()` 的薄包装 ⇒ **必须把 surfacePlan（连同它依赖的
+    全部默认值常量）一起带上**，否则 new Function 里直接 ReferenceError（第一版的坑）。 */
+const PLAN_CONSTS = ['DEFAULT_BLUR_FOLLOW_UNIFY', 'DEFAULT_UNIFY_TINT', 'DEFAULT_UNIFY_AMOUNT', 'DEFAULT_SIDEBAR_ALPHA',
+  'DEFAULT_OPACITY', 'DEFAULT_CHAT_FOLLOW',
+  'DEFAULT_SIDEBAR_BLUR', 'DEFAULT_SIDEBAR_BLUR_AMOUNT',
+  'DEFAULT_HEADER', 'DEFAULT_HEADER_BLUR_AMOUNT', 'DEFAULT_HEADER_FROST_OWN', 'DEFAULT_HEADER_FROST_AMOUNT',
+  'DEFAULT_RIGHT_SIDEBAR_BLUR', 'DEFAULT_RIGHT_SIDEBAR_AMOUNT', 'DEFAULT_RIGHT_SIDEBAR_ALPHA']
+const constDecls = (text, names) => names.map((n) => 'const ' + n + ' = ' + constOf(n, text) + ';').join('\n')
+const planOf = (text) => new Function([
+  constDecls(text, PLAN_CONSTS),
+  sliceFn('mpwSurfacePlan', text),
+  'return mpwSurfacePlan;',
+].join('\n'))()
 const fogOf = (text) => new Function([
-  'const DEFAULT_BLUR_FOLLOW_UNIFY = ' + constOf('DEFAULT_BLUR_FOLLOW_UNIFY', text) + ';',
-  'const DEFAULT_UNIFY_TINT = ' + constOf('DEFAULT_UNIFY_TINT', text) + ';',
-  'const DEFAULT_UNIFY_AMOUNT = ' + constOf('DEFAULT_UNIFY_AMOUNT', text) + ';',
-  'const DEFAULT_SIDEBAR_ALPHA = ' + constOf('DEFAULT_SIDEBAR_ALPHA', text) + ';',
-  'const DEFAULT_OPACITY = ' + constOf('DEFAULT_OPACITY', text) + ';',
+  constDecls(text, PLAN_CONSTS),
+  sliceFn('mpwSurfacePlan', text),
   sliceFn('mpwFogModel', text),
   'return mpwFogModel;',
+].join('\n'))()
+/** 切片执行真的 `mpwMarkUserSet`（F 组：标记的唯一落点）。 */
+const markOf = (text) => new Function([
+  'const MPW_USERSET_OF = ' + sliceDecl('MPW_USERSET_OF', text) + ';',
+  'const MPW_USERSET_KEYS = ' + sliceDecl('MPW_USERSET_KEYS', text) + ';',
+  sliceFn('mpwMarkUserSet', text),
+  'return mpwMarkUserSet;',
 ].join('\n'))()
 const RULES = (css) => [...STRIP(css).matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => [m[1].trim(), m[2]])
 const HAS_RULE = (css, selRe, bodyRe) => RULES(css).some(([sel, body]) => selRe.test(sel) && (!bodyRe || bodyRe.test(body)))
@@ -91,6 +141,10 @@ const TOKEN = (css, name) => {
   const m = new RegExp('--' + name + '\\s*:\\s*([^;}]+)').exec(STRIP(css))
   return m ? m[1].trim() : ''
 }
+/* 表面基色（宿主 token）与 `mpwSurfaceColor()` 同款输出形态：`透明度 0` ⇒ `100.0%`（实心）。 */
+const SIDE_BASE = 'var(--dsw-specific-sidebar-fill)'
+const TOP_BASE = 'var(--dsw-alias-bg-base)'
+const SURF = (base, opacityPct) => 'color-mix(in srgb, ' + base + ' ' + Number(opacityPct).toFixed(1) + '%, transparent)'
 /** 把工作树副本按 patch 改一处 → 落 mkdtemp，返回可 loadPlugin 的路径（真源零改动）。 */
 const mutant = (tag, from, to) => {
   if (SRC.indexOf(from) < 0) throw new Error('变异锚点不存在：' + tag)
@@ -103,8 +157,9 @@ const mutant = (tag, from, to) => {
    A 组：口径与接线（静态）
    ══════════════════════════════════════════════════════════════════ */
 console.log('\n== A 组：口径与接线（静态）==')
-ok('A1 雾模型是唯一源：`mpwFogModel` 存在，且「跟随」默认值 = true（DEFAULT_BLUR_FOLLOW_UNIFY）',
-  /function mpwFogModel\(section\)/.test(SRC) && constOf('DEFAULT_BLUR_FOLLOW_UNIFY') === 'true',
+ok('A1 `mpwSurfacePlan` 是唯一源、`mpwFogModel` 只是薄包装；「跟随」默认值 = true（DEFAULT_BLUR_FOLLOW_UNIFY）',
+  /function mpwSurfacePlan\(section\)/.test(SRC) && /function mpwFogModel\(section\)/.test(SRC)
+  && /const P = mpwSurfacePlan\(s\)/.test(SRC) && constOf('DEFAULT_BLUR_FOLLOW_UNIFY') === 'true',
   'DEFAULT_BLUR_FOLLOW_UNIFY = ' + constOf('DEFAULT_BLUR_FOLLOW_UNIFY'))
 {
   // 真执行 mpwFogModel：钳制边界（0/40/100/50）
@@ -113,13 +168,17 @@ ok('A1 雾模型是唯一源：`mpwFogModel` 存在，且「跟随」默认值 =
   ok('A2 雾模型钳制：amount 0–40、side 0–100、chat ≥50（面板不透明度的历史下限）',
     f0.amountPx === 0 && f0.sidePct === 0 && f0.chatPct === 50 && f0.unifyOn === true, JSON.stringify(f0))
   const f1 = fog({ unifyTint: true, unifyAmount: 99, sidebarAlpha: 999, opacity: 999 })
-  ok('A2b 上界钳制：40 / 100 / 100', f1.amountPx === 40 && f1.sidePct === 100 && f1.chatPct === 100, JSON.stringify(f1))
+  ok('A2b 上界钳制：40 / 100 / 100（透明度 100 ⇒ 生效不透明度 0 = 完全透明）',
+    f1.amountPx === 40 && f1.sidePct === 100 && f1.chatPct === 100 && f1.shellPct === 0, JSON.stringify(f1))
   const fShell = fog({ unifyTint: true, unifyAmount: 0, sidebarAlpha: 35 })
-  ok('A2e amount 0 ⇒ shellPct = 100（实心），但 sidePct 仍 = 35（取色 alpha 用原始值，不跟着钳）',
-    fShell.shellPct === 100 && fShell.sidePct === 35, JSON.stringify(fShell))
+  ok('A2e 模糊与透明度**解耦**：amount 0 + 透明度 35 ⇒ shellPct = 65（不虚化也照样按透明度透出，不再钉到 100）',
+    fShell.amountPx === 0 && fShell.sidePct === 35 && fShell.shellPct === 65, JSON.stringify(fShell))
   const fShell2 = fog({ unifyTint: true, unifyAmount: 12, sidebarAlpha: 35 })
-  ok('A2f amount > 0 ⇒ shellPct = sidePct（真的在虚化时厚度条说了算）',
-    fShell2.shellPct === 35, JSON.stringify(fShell2))
+  ok('A2f shellPct 恒 = 100 - 透明度（与半径无关）：amount 12 时同样 65；透明度 0 ⇒ 100（完全不透明）、100 ⇒ 0（完全透明）',
+    fShell2.shellPct === 65
+    && fog({ unifyTint: true, unifyAmount: 0, sidebarAlpha: 0 }).shellPct === 100
+    && fog({ unifyTint: true, unifyAmount: 0, sidebarAlpha: 100 }).shellPct === 0,
+    JSON.stringify({ at12: fShell2.shellPct, t0: 100, t100: 0 }))
   const f2 = fog({ unifyTint: true, blurFollowUnify: false })
   ok('A2c 「不跟随」⇒ unifyOn=false（其余字段仍按各自默认给值）', f2.followUnify === false && f2.unifyOn === false, JSON.stringify(f2))
   const f3 = fog({ unifyTint: false })
@@ -149,9 +208,10 @@ ok('A3 四处接线齐全：默认值对象 / BACKUP_FIELDS / 导入布尔净化
   ok('A5 「右侧边栏/dock 虚化」整组在 blur tab 内（blur tab 起点 < 该行 < other tab 起点）',
     iBlurTab > 0 && iRsRow > iBlurTab && iOtherTab > iRsRow, JSON.stringify({ iBlurTab, iRsRow, iOtherTab }))
   const box = SRC.slice(iBlurTab, iOtherTab)
-  ok('A5b 该组含小组标题 + 两枚滑条（虚化程度 / 表面透明度）+ 接管提示',
-    /t\("sec\.blurRight"\)/.test(box) && /"rightSidebarBlurAmount"/.test(box) && /"rightSidebarAlpha"/.test(box)
-    && /t\("rightSidebarBlur\.overridden"\)/.test(box))
+  ok('A5b 该组含小组标题 + 两枚滑条（虚化程度 / 表面透明度）+ 归属提示（跟随中=接管提示 / 动过=已独立）',
+    /t\("sec\.blurRight"\)/.test(box) && /t\("sec\.blurRight\.desc"\)/.test(box)
+    && /"rightSidebarBlurAmount"/.test(box) && /"rightSidebarAlpha"/.test(box)
+    && /t\(section\.rightSidebarBlurUserSet \? "overridden\.indep" : "rightSidebarBlur\.overridden"\)/.test(box))
   ok('A5c 外观页里不再重复渲染这两条滑条（只留迁移说明注释）',
     !/sliderRow\(t\("rightSidebarBlurAmount"\), "rightSidebarBlurAmount"/.test(SRC.slice(0, iBlurTab)),
     '')
@@ -183,27 +243,31 @@ const RS_SEL = /\[data-sidebar-right-panel\]|\[data-dockkit-(pane|strip|surface|
   const css = boot({ enabled: true, image: true, unifyTint: true, unifyAmount: 0, sidebarAlpha: 0, chatFollow: false })
   ok('B1 接管规则存在：右栏 / dock 指向共同表面 token（--mpw-unify-surface）',
     HAS_RULE(css, /\[data-mpw-unify\]/, /--mpw-unify-surface/) || /\[data-mpw-unify\] \[data-sidebar-right-panel\]/.test(STRIP(css)))
-  ok('B1b 不虚化（amount 0）⇒ 共同表面 **实心**（alpha 1.000）：没有模糊时不许把原始壁纸透出来',
-    TOKEN(css, 'mpw-unify-surface') === 'rgba(255, 255, 255, 1.000)', TOKEN(css, 'mpw-unify-surface'))
+  ok('B1b 透明度 0 ⇒ 共同表面 = **宿主侧栏 token 全不透明**（100.0%；不再是我们的 rgba(255,255,255,1.000)）',
+    TOKEN(css, 'mpw-unify-surface') === SURF(SIDE_BASE, 100), TOKEN(css, 'mpw-unify-surface'))
   ok('B1c 半径 0 ⇒ 接管规则的 backdrop-filter 是 **none**（不是 blur(0px)：后者仍建 containing block）',
     HAS_RULE(css, /\[data-mpw-unify\] \[data-sidebar-right-panel\]/, /backdrop-filter:\s*none/) && TOKEN(css, 'mpw-unify-blur') === '0px',
     JSON.stringify({ blur: TOKEN(css, 'mpw-unify-blur') }))
-  ok('B1d 暗色同款：--mpw-unify-surface-dark alpha = 1.000', TOKEN(css, 'mpw-unify-surface-dark') === 'rgba(18, 22, 30, 1.000)', TOKEN(css, 'mpw-unify-surface-dark'))
+  ok('B1d 暗色同款：同一条宿主 token + 同一不透明度（--mpw-unify-surface-dark 逐字等于亮色那条）',
+    TOKEN(css, 'mpw-unify-surface-dark') === SURF(SIDE_BASE, 100)
+    && TOKEN(css, 'mpw-unify-surface-dark') === TOKEN(css, 'mpw-unify-surface'), TOKEN(css, 'mpw-unify-surface-dark'))
   ok('B1e 接管不碰弹层/设置面板：抑制规则（overlay/modal 打开时 backdrop-filter: none）在产物里',
     HAS_RULE(css, /\[data-mpw-unify\]:has\(\[class\*="_overlay"\]\) \[data-dockkit-pane\]/, /backdrop-filter:\s*none/))
 }
 {
   const css = boot({ enabled: true, image: true, unifyTint: true, unifyAmount: 0, sidebarAlpha: 0, chatFollow: false })
-  ok('B1f 不虚化 ⇒ 左侧栏/标题栏也实心：--mpw-chrome-alpha = 1（与右栏/dock 同一条纪律）',
-    Number(TOKEN(css, 'mpw-chrome-alpha')) === 1 && /var\(--mpw-chrome-alpha\)/.test(TOKEN(css, 'mpw-surface-side-frost')),
+  ok('B1f 透明度 0 ⇒ 左侧栏表面也是宿主 token 实心（alpha 1 / color-mix 100.0%），与右栏/dock 同一条纪律',
+    Number(TOKEN(css, 'mpw-chrome-alpha')) === 1
+    && TOKEN(css, 'mpw-surface-side-frost') === SURF(SIDE_BASE, 100)
+    && !/var\(--mpw-chrome-alpha\)/.test(TOKEN(css, 'mpw-surface-side-frost')),
     JSON.stringify([TOKEN(css, 'mpw-chrome-alpha'), TOKEN(css, 'mpw-surface-side-frost')]))
   ok('B1g 不虚化 ⇒ body[data-mpw-unify] 接管仍在（开关门控照旧）、但半径变量是 0px',
     TOKEN(css, 'mpw-unify-blur') === '0px', TOKEN(css, 'mpw-unify-blur'))
 }
 {
   const css = boot({ enabled: true, image: true, unifyTint: true, unifyAmount: 24, sidebarAlpha: 60, chatFollow: false })
-  ok('B2 厚度/半径都跟着两个条走：alpha=0.600、blur=24px、规则里就是 blur(24px)',
-    TOKEN(css, 'mpw-unify-surface') === 'rgba(255, 255, 255, 0.600)' && TOKEN(css, 'mpw-unify-blur') === '24px'
+  ok('B2 半径/透明度都跟着两个条走：透明度 60 ⇒ 生效不透明度 40.0%、blur=24px、规则里就是 blur(24px)',
+    TOKEN(css, 'mpw-unify-surface') === SURF(SIDE_BASE, 40) && TOKEN(css, 'mpw-unify-blur') === '24px'
     && HAS_RULE(css, /\[data-mpw-unify\] \[data-sidebar-right-panel\]/, /backdrop-filter:\s*blur\(24px\)/),
     JSON.stringify([TOKEN(css, 'mpw-unify-surface'), TOKEN(css, 'mpw-unify-blur')]))
 }
@@ -239,8 +303,8 @@ const RS_SEL = /\[data-sidebar-right-panel\]|\[data-dockkit-(pane|strip|surface|
 }
 {
   const css = boot({ enabled: true, image: true, unifyTint: false, unifyAmount: 30, sidebarAlpha: 40, rightSidebarBlur: true, rightSidebarBlurAmount: 14, rightSidebarAlpha: 45 })
-  ok('B7 统一虚化关 ⇒ 右栏/dock 回到自己那套参数（--mpw-rs-blur/--mpw-rs-alpha 被写值）',
-    TOKEN(css, 'mpw-rs-blur') === '14px' && TOKEN(css, 'mpw-rs-alpha') === '0.45',
+  ok('B7 统一虚化关 ⇒ 右栏/dock 回到自己那套参数（--mpw-rs-blur 14px / --mpw-rs-alpha = 生效不透明度 0.55）',
+    TOKEN(css, 'mpw-rs-blur') === '14px' && TOKEN(css, 'mpw-rs-alpha') === '0.55',
     JSON.stringify([TOKEN(css, 'mpw-rs-blur'), TOKEN(css, 'mpw-rs-alpha')]))
 }
 
@@ -263,37 +327,40 @@ const hdrPx = (settings) => {
     r.px === 0 && /跟随整屏虚化 0px/.test(r.reason), JSON.stringify(r))
   const r2 = hdrPx({ enabled: true, image: true, unifyTint: true, unifyAmount: 30 })
   ok('C2 跟随档：半径 = unifyAmount（30px）', r2.px === 30, JSON.stringify(r2))
-  const r3 = hdrPx({ enabled: true, image: true, unifyTint: true, unifyAmount: 30, headerFrostOwn: true, headerFrostAmount: 8 })
-  ok('C3 独立强度开了 ⇒ 用 headerFrostAmount（8px），与统一虚化解耦', r3.px === 8, JSON.stringify(r3))
-  const r4 = hdrPx({ enabled: true, image: true, unifyTint: true, unifyAmount: 30, headerFrostOwn: true, headerFrostAmount: 0 })
+  const r3 = hdrPx({ enabled: true, image: true, unifyTint: true, unifyAmount: 30, headerFrostUserSet: true, headerFrostOwn: true, headerFrostAmount: 8 })
+  ok('C3 标题栏被单独动过（headerFrostUserSet）⇒ 用 headerFrostAmount（8px），与统一虚化解耦', r3.px === 8, JSON.stringify(r3))
+  const r4 = hdrPx({ enabled: true, image: true, unifyTint: true, unifyAmount: 30, headerFrostUserSet: true, headerFrostOwn: true, headerFrostAmount: 0 })
   ok('C3b 独立强度 = 0 ⇒ 也是 0px（"0 = 不磨砂"，不再被 8px 下限抬起来）', r4.px === 0, JSON.stringify(r4))
+  /* ⚠️ 关于这条支路（不跟随 + headerFrostOwn 关 + headerBlur 开）：lib 里 `num()` 少传一个参数的
+     缺陷已修（`num(<pct/4>, 0, 0, 40)`，见 mpwSurfacePlan 的 header 分支）⇒ 现在 100% ÷ 4 = **25px**。
+     读数的坑：桩里没有宿主 `header` 元素（`findHostHeader()` → null）⇒ `syncHeaderFrost` 末尾的
+     `hdrFrostState.px = el ? px : 0` 把 px 记成 0 —— **真正的半径在 `state().reason` 里**
+     （`…｜跟随整屏虚化 25px`，hdrPx() 就是从这里取的）。别拿 `state().px` 判这条支路。
+     C4 保持宽松（等 lib 这条链的真机行为确认后再收紧）；C4c 用 reason 把换算钉死（25px / 10px）。 */
   const r5 = hdrPx({ enabled: true, image: true, unifyTint: true, unifyAmount: 30, blurFollowUnify: false, headerBlur: true, headerBlurAmount: 100 })
-  ok('C4 不跟随 ⇒ 标题栏自己的磨砂条说了算（100% → 25px），统一虚化不再接管',
-    r5.px === 25, JSON.stringify(r5))
+  ok('C4 不跟随 ⇒ 标题栏走自己的链（表面模型 header.indep=true），半径不再是统一虚化的 30px',
+    r5.px !== 30
+    && planOf(SRC)({ unifyTint: true, unifyAmount: 30, blurFollowUnify: false, headerBlur: true, headerBlurAmount: 100 }).header.indep === true,
+    JSON.stringify(r5))
+  const r5b = hdrPx({ enabled: true, image: true, unifyTint: true, unifyAmount: 30, blurFollowUnify: false, headerBlur: true, headerBlurAmount: 40 })
+  ok('C4c 不跟随 ⇒ 标题栏磨砂条的换算成立：100% → 25px、40% → 10px（统一值的 30px 完全不参与）',
+    r5.px === 25 && r5b.px === 10, JSON.stringify({ pct100: r5, pct40: r5b }))
   const r6 = hdrPx({ enabled: true, image: true, unifyTint: true, unifyAmount: 18, blurFollowUnify: false, headerBlur: true, headerBlurAmount: 0 })
-  ok('C4b 不跟随 + 自己的条为 0（默认自动档）⇒ 回落统一虚化 18px（不出现"两边都不管"的空档）',
-    r6.px === 18, JSON.stringify(r6))
+  ok('C4b 不跟随 ⇒ 标题栏**真的独立**：自己的条为 0 就是 0px（不再回落到统一虚化的 18px —— 独立不藕断丝连）',
+    r6.px === 0, JSON.stringify(r6))
 }
 
 /* ══════════════════════════════════════════════════════════════════
    D 组：取色厚度（切片执行真 aquaTokenOverrides）
    ══════════════════════════════════════════════════════════════════ */
-console.log('\n== D 组：面板取色的可见程度 = 雾厚度（厚度 0 不刷采样色）==')
+console.log('\n== D 组：面板取色的可见程度 = 表面生效不透明度（透明度 100 ⇒ 一个像素不刷）==')
 function runAqua(section, text) {
   const code = [
     'const document = { body: { hasAttribute: () => false } };',
     'const getComputedStyle = () => ({ getPropertyValue: (n) => (n === "--mpw-aqua-rgb" ? "255 128 160" : "") });',
-    'const DEFAULT_BLUR_FOLLOW_UNIFY = ' + constOf('DEFAULT_BLUR_FOLLOW_UNIFY', text) + ';',
-    'const DEFAULT_UNIFY_TINT = ' + constOf('DEFAULT_UNIFY_TINT', text) + ';',
-    'const DEFAULT_UNIFY_AMOUNT = ' + constOf('DEFAULT_UNIFY_AMOUNT', text) + ';',
-    'const DEFAULT_SIDEBAR_ALPHA = ' + constOf('DEFAULT_SIDEBAR_ALPHA', text) + ';',
-    'const DEFAULT_OPACITY = ' + constOf('DEFAULT_OPACITY', text) + ';',
-    'const DEFAULT_AQUA_TINT = ' + constOf('DEFAULT_AQUA_TINT', text) + ';',
-    'const DEFAULT_AQUA_MASK = ' + constOf('DEFAULT_AQUA_MASK', text) + ';',
-    'const DEFAULT_AQUA_INK = ' + constOf('DEFAULT_AQUA_INK', text) + ';',
-    'const DEFAULT_AQUA_TEXT_ENHANCE = ' + constOf('DEFAULT_AQUA_TEXT_ENHANCE', text) + ';',
+    constDecls(text, PLAN_CONSTS.concat(['DEFAULT_AQUA_TINT', 'DEFAULT_AQUA_MASK', 'DEFAULT_AQUA_INK', 'DEFAULT_AQUA_TEXT_ENHANCE'])),
     sliceFn('aquaParseHex', text), sliceFn('aquaInkForRgb', text), sliceFn('aquaBrandColor', text),
-    sliceFn('mpwFogModel', text), sliceFn('aquaTokenOverrides', text),
+    sliceFn('mpwSurfacePlan', text), sliceFn('mpwFogModel', text), sliceFn('aquaTokenOverrides', text),
     'return aquaTokenOverrides;',
   ].join('\n')
   return new Function(code)()(section)
@@ -302,24 +369,34 @@ function runAqua(section, text) {
   const o = runAqua({ aquaTint: true, unifyTint: true, unifyAmount: 0, sidebarAlpha: 0 })
   const fill = o && o['--dsw-specific-sidebar-fill'] && o['--dsw-specific-sidebar-fill'].light
   const base = o && o['--dsw-alias-bg-base'] && o['--dsw-alias-bg-base'].light
-  ok('D1 厚度 0 ⇒ 侧边栏填充的采样色 alpha = 0%（真机"透明侧边栏 + 壁纸采样粉"的直接来源）',
-    /rgb\(var\(--mpw-aqua-rgb\)\)\s+0%/.test(String(fill)), String(fill))
-  ok('D1b 主画布同款：按聊天区厚度给 alpha（统一虚化开 ⇒ 面板不透明度，默认 82%）',
-    /rgb\(var\(--mpw-aqua-rgb\)\)\s+82%/.test(String(base)), String(base))
+  ok('D1 界面透明度 0 ⇒ 侧边栏填充的采样色 alpha = **100%**（表面完全不透明 = 取色就是本色）',
+    /rgb\(var\(--mpw-aqua-rgb\)\)\s+100%/.test(String(fill)), String(fill))
+  ok('D1b 主画布同款：基色 token 的取色 alpha = 表面生效不透明度（透明度 0 ⇒ 100%）',
+    /rgb\(var\(--mpw-aqua-rgb\)\)\s+100%/.test(String(base)), String(base))
+  const o100 = runAqua({ aquaTint: true, unifyTint: true, unifyAmount: 24, sidebarAlpha: 100 })
+  const fill100 = o100 && o100['--dsw-specific-sidebar-fill'] && o100['--dsw-specific-sidebar-fill'].light
+  ok('D1c 界面透明度 100（完全透明）⇒ 采样色 alpha = **0%**：一个像素都不刷（真机"透明侧边栏 + 壁纸采样粉"的直接来源）',
+    /rgb\(var\(--mpw-aqua-rgb\)\)\s+0%/.test(String(fill100)), String(fill100))
   const o2 = runAqua({ aquaTint: true, unifyTint: true, unifyAmount: 24, sidebarAlpha: 60 })
   const fill2 = o2 && o2['--dsw-specific-sidebar-fill'] && o2['--dsw-specific-sidebar-fill'].light
-  ok('D2 厚度 60 ⇒ 采样色 alpha = 60%（色相仍来自壁纸，只是可见程度归滑条）',
-    /rgb\(var\(--mpw-aqua-rgb\)\)\s+60%/.test(String(fill2)), String(fill2))
+  ok('D2 透明度 60 ⇒ 采样色 alpha = 40%（色相仍来自壁纸，可见程度归"生效不透明度"）',
+    /rgb\(var\(--mpw-aqua-rgb\)\)\s+40%/.test(String(fill2)), String(fill2))
   const o3 = runAqua({ aquaTint: true, unifyTint: false })
   const fill3 = o3 && o3['--dsw-specific-sidebar-fill'] && o3['--dsw-specific-sidebar-fill'].light
   ok('D3 统一虚化关 ⇒ 保留历史档 85%（观感与刷新前一致，不借机改行为）',
     /rgb\(var\(--mpw-aqua-rgb\)\)\s+85%/.test(String(fill3)), String(fill3))
 }
 {
-  ok('D4 标题栏采样色的可见程度也归厚度：CSS 读 var(--mpw-aqua-header-alpha, 62%)，JS 按雾模型写值',
+  /* ⚠️ 观察（不改 lib、也不据此下判据）：`const pct = fog.unifyOn ? fog.sidePct : 62;` 写进的是
+     `--mpw-aqua-header-alpha`（CSS 里当 color-mix 的 **alpha** 用）。语义重做后 `sidePct` = **透明度**
+     （0 = 不透明），而 D1–D3 的取色 alpha 用的是**生效不透明度**（100 - 透明度）⇒ 同一套口径下
+     标题栏这一支是**反的**：透明度 0 写 0%（不刷采样色）、透明度 100 写 100%（整条刷满）。
+     若要收口，修法是 `fog.shellPct`（或 `100 - fog.sidePct`）。
+     本判据只钉"接线存在"（方向不进断言 —— 口径未拍板前不把它固化成门禁）。 */
+  ok('D4 标题栏采样色的可见程度 = 表面**不透明度**（CSS 读 var(--mpw-aqua-header-alpha, 62%)，JS 写 shellPct = 100 - 透明度）',
     /rgb\(var\(--mpw-aqua-rgb\)\)\s+var\(--mpw-aqua-header-alpha, 62%\)/.test(SRC)
     && /setProperty\("--mpw-aqua-header-alpha", pct \+ "%"\)/.test(SRC)
-    && /const pct = fog\.unifyOn \? fog\.sidePct : 62;/.test(SRC)
+    && /const pct = fog\.unifyOn \? fog\.shellPct : 62;/.test(SRC)
     && /removeProperty\("--mpw-aqua-header-alpha"\)/.test(SRC))
 }
 
@@ -328,30 +405,30 @@ function runAqua(section, text) {
    ══════════════════════════════════════════════════════════════════ */
 console.log('\n== E 组：变异自证 ==')
 {
-  /* E1 半径下限改回旧写法（0 被抬到 12px）⇒ C1 必红 */
-  const m1 = mutant('hdr-floor', 'const pxFloor = (v, lo) => (Number(v) > 0 ? Math.max(lo, Number(v)) : 0);',
-    'const pxFloor = (v, lo) => Math.max(lo, Number(v) || 0);')
+  /* E1 标题栏半径下限改回旧写法（0 被抬到 12px）⇒ C1 必红 */
+  const m1 = mutant('hdr-floor', 'un ? Math.max(0, Math.round(planHdr.header.blur || 0))',
+    'un ? Math.max(12, Math.round(planHdr.header.blur || 0))')
   const r = hdrPx({ enabled: true, image: true, unifyTint: true, unifyAmount: 0 })
   const rM = (() => { boot({ enabled: true, image: true, unifyTint: true, unifyAmount: 0 }, m1); const T = globalThis.__mpwHdrFrostTest; T.sync(); const st = T.state() || {}; const mm = /(\d+)px/.exec(String(st.reason || '')); return { reason: st.reason, px: mm ? Number(mm[1]) : null } })()
-  ok('E1 半径下限改回 `Math.max(lo, v||0)` ⇒ 0 被抬成 12px（C1 必红）',
+  ok('E1 半径下限改回 `Math.max(12, plan…)` ⇒ 整屏虚化 0 也被抬成 12px（C1 必红）',
     rM.px === 12 && r.px === 0, JSON.stringify({ mutant: rM.px, real: r.px }))
 }
 {
-  /* E2 取色 alpha 写死回 85% ⇒ D1 必红（**行为**变异：变异体走同一条 runAqua 判据） */
-  const m2 = mutant('aqua-fixed', 'const sideAlpha = fog.unifyOn ? fog.sidePct / 100 : 0.85;', 'const sideAlpha = 0.85;')
+  /* E2 取色 alpha 写死回 85% ⇒ D1c 必红（**行为**变异：变异体走同一条 runAqua 判据） */
+  const m2 = mutant('aqua-fixed', 'const sideAlpha = planAqua.unifyOn ? planAqua.right.opacityPct / 100 : 0.85;', 'const sideAlpha = 0.85;')
   const txtM = fs.readFileSync(m2, 'utf8')
-  const mutFill = ((runAqua({ aquaTint: true, unifyTint: true, unifyAmount: 0, sidebarAlpha: 0 }, txtM) || {})['--dsw-specific-sidebar-fill'] || {}).light
-  const realFill = ((runAqua({ aquaTint: true, unifyTint: true, unifyAmount: 0, sidebarAlpha: 0 }) || {})['--dsw-specific-sidebar-fill'] || {}).light
-  ok('E2 取色 alpha 写死回 85% ⇒ 厚度 0 时仍刷 85% 采样色（D1 必红）',
+  const mutFill = ((runAqua({ aquaTint: true, unifyTint: true, unifyAmount: 24, sidebarAlpha: 100 }, txtM) || {})['--dsw-specific-sidebar-fill'] || {}).light
+  const realFill = ((runAqua({ aquaTint: true, unifyTint: true, unifyAmount: 24, sidebarAlpha: 100 }) || {})['--dsw-specific-sidebar-fill'] || {}).light
+  ok('E2 取色 alpha 写死回 85% ⇒ 透明度 100 时仍刷 85% 采样色（D1c 必红）',
     /85%/.test(String(mutFill)) && /0%/.test(String(realFill)),
     JSON.stringify({ mutant: mutFill, real: realFill }))
 }
 {
-  /* E3 跟随开关判断被去掉（恒跟随）⇒ B3 必红 */
+  /* E3 跟随开关判断被去掉（恒跟随）⇒ B3/F1 必红 */
   const m3 = mutant('follow-ignored', 'const unifyFollowNow = unifyTint && blurFollowUnify;', 'const unifyFollowNow = unifyTint;')
   const cssM = boot({ enabled: true, image: true, unifyTint: true, unifyAmount: 24, sidebarAlpha: 60, blurFollowUnify: false, chatFollow: false }, m3)
   const cssR = boot({ enabled: true, image: true, unifyTint: true, unifyAmount: 24, sidebarAlpha: 60, blurFollowUnify: false, chatFollow: false })
-  ok('E3 「跟随」开关被忽略 ⇒ 不跟随时也会产出接管规则（B3 必红）',
+  ok('E3 「跟随」开关被忽略 ⇒ 不跟随时也会产出接管规则（B3/F1 必红）',
     TOKEN(cssM, 'mpw-unify-surface') !== '' && TOKEN(cssR, 'mpw-unify-surface') === '',
     JSON.stringify({ mutant: TOKEN(cssM, 'mpw-unify-surface'), real: TOKEN(cssR, 'mpw-unify-surface') }))
 }
@@ -364,21 +441,120 @@ console.log('\n== E 组：变异自证 ==')
     /\[data-dsh-better-sidebar\]/.test(STRIP(cssM)) && !/\[data-dsh-better-sidebar\]/.test(STRIP(cssR)))
 }
 {
-  /* E4b 不虚化时的"实心"钳制被去掉（回到"厚度 0 ⇒ 透明"）⇒ B1b/B1f 必红 */
-  const m5 = mutant('solid-floor', 'shellPct: amountPx > 0 ? sidePct : 100,', 'shellPct: sidePct,')
+  /* E4b 把 shellPct 钉回 100（旧的"不虚化 ⇒ 实心"钳制）⇒ A2f 必红 */
+  const m5 = mutant('solid-floor', 'shellPct: Math.max(0, Math.min(100, 100 - sidePct)),', 'shellPct: 100,')
   const fogM = fogOf(fs.readFileSync(m5, 'utf8'))
-  const m = fogM({ unifyTint: true, unifyAmount: 0, sidebarAlpha: 0 })
-  const r = fogOf(SRC)({ unifyTint: true, unifyAmount: 0, sidebarAlpha: 0 })
-  ok('E4b 去掉"不虚化 ⇒ 实心"钳制 ⇒ 厚度 0 又变全透明（B1b/B1f 必红）',
-    m.shellPct === 0 && r.shellPct === 100, JSON.stringify({ mutant: m.shellPct, real: r.shellPct }))
+  const m = fogM({ unifyTint: true, unifyAmount: 12, sidebarAlpha: 100 })
+  const r = fogOf(SRC)({ unifyTint: true, unifyAmount: 12, sidebarAlpha: 100 })
+  ok('E4b 把 shellPct 钉回 100（"不虚化 ⇒ 实心"旧钳制）⇒ 透明度 100 不再透出（A2f 必红）',
+    m.shellPct === 100 && r.shellPct === 0, JSON.stringify({ mutant: m.shellPct, real: r.shellPct }))
 }
 {
-  /* E5 真源零改动 */
+  /* E5 真源零改动（E 组与 F6 的变异自证都只动 mkdtemp 副本） */
   const now = fs.readFileSync(CLIENT, 'utf8')
   ok('E5 变性自证只动 mkdtemp 副本：真源 sha256 跑前跑后逐字节相同',
     now === SRC)
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   F 组：独立性 / 归属（谁被接管、谁独立、标记在哪落）
+   ══════════════════════════════════════════════════════════════════ */
+console.log('\n== F 组：独立性/归属（跟随开关 + *UserSet 标记）==')
+{
+  /* F1 不跟随 ⇒ 一条接管规则都不产出（沿用/强化原 B3：连变量名都不许出现）。 */
+  const off = boot({ enabled: true, image: true, unifyTint: true, unifyAmount: 24, sidebarAlpha: 60, blurFollowUnify: false, chatFollow: false })
+  const on = boot({ enabled: true, image: true, unifyTint: true, unifyAmount: 24, sidebarAlpha: 60, chatFollow: false })
+  const tokOff = (STRIP(off).match(/--mpw-unify-/g) || []).length
+  const selOff = (STRIP(off).match(/\[data-mpw-unify\]/g) || []).length
+  const tokOn = (STRIP(on).match(/--mpw-unify-/g) || []).length
+  ok('F1 blurFollowUnify=false ⇒ 接管规则 0 处（--mpw-unify-* 与 [data-mpw-unify] 都不许出现）；打开跟随立刻 ≥3 处',
+    tokOff === 0 && selOff === 0 && tokOn >= 3, JSON.stringify({ off: { tokens: tokOff, sels: selOff }, onTokens: tokOn }))
+}
+{
+  /* F2 跟随档：四个表面**逐字一致**（左栏/右栏/dock 同一条宿主 token；标题栏 bg-base 那条；三半径相等）。 */
+  const st = { enabled: true, image: true, unifyTint: true, unifyAmount: 30, sidebarAlpha: 40, chatFollow: false }
+  const css = boot(st)
+  const plan = planOf(SRC)({ unifyTint: true, unifyAmount: 30, sidebarAlpha: 40 })
+  ok('F2 跟随档：左栏（--mpw-surface-side-frost）与右栏/dock（--mpw-unify-surface 及 -dark）逐字相等 = 宿主侧栏 token 60.0%',
+    TOKEN(css, 'mpw-surface-side-frost') === SURF(SIDE_BASE, 60)
+    && TOKEN(css, 'mpw-unify-surface') === SURF(SIDE_BASE, 60)
+    && TOKEN(css, 'mpw-unify-surface-dark') === TOKEN(css, 'mpw-unify-surface'),
+    JSON.stringify([TOKEN(css, 'mpw-surface-side-frost'), TOKEN(css, 'mpw-unify-surface')]))
+  ok('F2b 跟随档：三个半径逐字相等（--mpw-chrome-blur == --mpw-rs-blur == --mpw-unify-blur = 30px）',
+    TOKEN(css, 'mpw-chrome-blur') === '30px' && TOKEN(css, 'mpw-rs-blur') === '30px' && TOKEN(css, 'mpw-unify-blur') === '30px',
+    JSON.stringify([TOKEN(css, 'mpw-chrome-blur'), TOKEN(css, 'mpw-rs-blur'), TOKEN(css, 'mpw-unify-blur')]))
+  ok('F2c 标题栏用宿主 bg-base 那条（左栏/右栏是 sidebar-fill）：表面模型里基色/半径/透明度三项都与左栏同源',
+    plan.header.base === TOP_BASE && plan.left.base === SIDE_BASE && plan.right.base === SIDE_BASE
+    && plan.header.opacityPct === plan.left.opacityPct
+    && plan.header.blur === plan.left.blur && plan.left.blur === plan.right.blur
+    && /setProperty\("--mpw-hdr-frost-bg", mpwSurfaceColor\(pl\.header\.base, pl\.header\.opacityPct \/ 100\)\)/.test(SRC),
+    JSON.stringify({ header: plan.header, left: plan.left, right: plan.right }))
+}
+{
+  /* F3 只有右栏被单独动过 ⇒ **只**右栏独立；左栏/标题栏仍是统一值。 */
+  const st = { enabled: true, image: true, unifyTint: true, unifyAmount: 30, sidebarAlpha: 40, rightSidebarBlurUserSet: true, rightSidebarBlur: true, rightSidebarBlurAmount: 10, rightSidebarAlpha: 20, chatFollow: false }
+  const css = boot(st)
+  ok('F3 右栏被单独动过 ⇒ 右栏半径/透明度用自己那套（--mpw-rs-blur 10px / --mpw-rs-alpha 0.80 / 表面 80.0%）',
+    TOKEN(css, 'mpw-rs-blur') === '10px' && TOKEN(css, 'mpw-rs-alpha') === '0.8'
+    && TOKEN(css, 'mpw-surface-rs-dock') === SURF(SIDE_BASE, 80),
+    JSON.stringify([TOKEN(css, 'mpw-rs-blur'), TOKEN(css, 'mpw-rs-alpha'), TOKEN(css, 'mpw-surface-rs-dock')]))
+  const r = hdrPx(st)
+  ok('F3b 右栏独立**不许**牵连左栏/标题栏：chrome 半径仍 30px、左栏表面仍统一色 60.0%、标题栏半径仍 30px',
+    TOKEN(css, 'mpw-chrome-blur') === '30px'
+    && TOKEN(css, 'mpw-chrome-alpha') === '0.6'
+    && TOKEN(css, 'mpw-surface-side-frost') === SURF(SIDE_BASE, 60)
+    && r.px === 30,
+    JSON.stringify({ chrome: TOKEN(css, 'mpw-chrome-blur'), side: TOKEN(css, 'mpw-surface-side-frost'), hdr: r }))
+}
+{
+  /* F4 只有标题栏被单独动过 ⇒ 标题栏用自己的半径；左栏仍是统一值。 */
+  const st = { enabled: true, image: true, unifyTint: true, unifyAmount: 30, sidebarAlpha: 40, headerFrostUserSet: true, headerFrostOwn: true, headerFrostAmount: 12, chatFollow: false }
+  const r = hdrPx(st)
+  ok('F4 标题栏被单独动过（headerFrostUserSet + headerFrostOwn）⇒ 半径用它自己的 12px', r.px === 12, JSON.stringify(r))
+  const css = boot(st)
+  ok('F4b 标题栏独立**不许**牵连左栏：chrome 半径仍 30px、左栏表面仍统一色 60.0%',
+    TOKEN(css, 'mpw-chrome-blur') === '30px' && TOKEN(css, 'mpw-surface-side-frost') === SURF(SIDE_BASE, 60),
+    JSON.stringify([TOKEN(css, 'mpw-chrome-blur'), TOKEN(css, 'mpw-surface-side-frost')]))
+}
+{
+  /* F5 mpwMarkUserSet()：标记的**唯一落点**（切片执行真实现）。 */
+  const mark = markOf(SRC)
+  const m1 = mark({ rightSidebarAlpha: 70 })
+  ok('F5 {rightSidebarAlpha:70} ⇒ rightSidebarBlurUserSet=true（其余两个标记一个都不打）',
+    m1.rightSidebarBlurUserSet === true && !('sidebarBlurUserSet' in m1) && !('headerFrostUserSet' in m1), JSON.stringify(m1))
+  const m2 = mark({ headerBlur: true })
+  const m3 = mark({ headerFrostAmount: 20 })
+  ok('F5b {headerBlur:true} / {headerFrostAmount:20} ⇒ headerFrostUserSet=true（两个字段都算"动过标题栏"）',
+    m2.headerFrostUserSet === true && m3.headerFrostUserSet === true
+    && m2.sidebarBlurUserSet === undefined && m3.rightSidebarBlurUserSet === undefined, JSON.stringify([m2, m3]))
+  const m4 = mark({ sidebarBlurAmount: 9 })
+  ok('F5c {sidebarBlurAmount:9} ⇒ sidebarBlurUserSet=true', m4.sidebarBlurUserSet === true && m4.headerFrostUserSet === undefined, JSON.stringify(m4))
+  const m5 = mark({ blurFollowUnify: true })
+  ok('F5d {blurFollowUnify:true} ⇒ 三个标记全部 = false（重新跟随 = 清空归属）',
+    m5.sidebarBlurUserSet === false && m5.headerFrostUserSet === false && m5.rightSidebarBlurUserSet === false, JSON.stringify(m5))
+  const m6 = mark({ blurFollowUnify: true, sidebarBlurAmount: 9 })
+  ok('F5e 同一 patch 里既有「重新跟随」又动了滑条 ⇒ 跟随优先，仍然三个标记全清',
+    m6.sidebarBlurUserSet === false && m6.headerFrostUserSet === false && m6.rightSidebarBlurUserSet === false, JSON.stringify(m6))
+  const m7 = mark({ unifyAmount: 9 })
+  ok('F5f {unifyAmount:9}（**未被接管**的字段）⇒ 一个标记都不打（否则调统一虚化就把四项全变独立）',
+    !('sidebarBlurUserSet' in m7) && !('headerFrostUserSet' in m7) && !('rightSidebarBlurUserSet' in m7), JSON.stringify(m7))
+  const m8 = mark({ rightSidebarBlur: false })
+  ok('F5g {rightSidebarBlur:false}（把开关关掉也是"动过"）⇒ rightSidebarBlurUserSet=true',
+    m8.rightSidebarBlurUserSet === true, JSON.stringify(m8))
+}
+{
+  /* F6 变异自证：把 MPW_USERSET_OF 里的映射删掉一条 ⇒ F5 必红。
+     与 E 组同款：变异体落 mkdtemp 副本、**重新 loadPlugin**（真源零改动）。 */
+  const m6 = mutant('userset-map', " headerFrostAmount: 'headerFrostUserSet',", '')
+  boot({ enabled: true, image: true, unifyTint: true, unifyAmount: 30, sidebarAlpha: 40 }, m6)
+  const markM = markOf(fs.readFileSync(m6, 'utf8'))
+  const markR = markOf(SRC)
+  const gotM = markM({ headerFrostAmount: 20 })
+  const gotR = markR({ headerFrostAmount: 20 })
+  ok('F6 删掉 MPW_USERSET_OF 的 headerFrostAmount 映射 ⇒ 动过那条滑条不再打标记（F5b 必红）',
+    gotM.headerFrostUserSet !== true && gotR.headerFrostUserSet === true, JSON.stringify({ mutant: gotM, real: gotR }))
+}
+
 console.log(`\n===== fog-model: ${pass} 通过 / ${fail} 失败 =====`)
-if (!fail) console.log('✓ 雾模型口径成立：厚度 0 = 一个像素不刷、半径 0 = 真 0、跟随开关真能解耦、右栏/dock 与左栏同一套表面')
+if (!fail) console.log('✓ 雾模型口径成立：透明度 0 = 全不透明（color-mix 100%）、透明度 100 = 一个像素不刷、半径 0 = 真 0、跟随开关真能解耦、未被单独动过的表面与统一值逐字一致')
 process.exitCode = fail ? 1 : 0
