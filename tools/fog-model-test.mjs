@@ -296,8 +296,13 @@ const RS_SEL = /\[data-sidebar-right-panel\]|\[data-dockkit-(pane|strip|surface|
   ok('B1g 半径 0 ⇒ 接管规则的 backdrop-filter 是 **none**（不是 blur(0px)：后者仍建 containing block）',
     HAS_RULE(css, /\[data-mpw-unify\] \[data-sidebar-right-panel\]/, /backdrop-filter:\s*none/) && TOKEN(css, 'mpw-unify-blur') === '0px',
     JSON.stringify({ blur: TOKEN(css, 'mpw-unify-blur') }))
-  ok('B1h 接管不碰弹层/设置面板：抑制规则（overlay/modal 打开时 backdrop-filter: none）在产物里',
-    HAS_RULE(css, /\[data-mpw-unify\]:has\(\[class\*="_overlay"\]\) \[data-dockkit-pane\]/, /backdrop-filter:\s*none/))
+  /* ①(2026-10-02 真机定案) 抑制规则的判据从 `:has([class*="_overlay"])` 改成 **JS 门控**
+     `body[data-mpw-sblur-off]`：宿主的 `uV2eYG_overlayAnchor`（聊天输入区锚点）常驻 DOM ⇒
+     `:has()` 版本**永久命中**，会把右栏/dock/标题栏的模糊一直撤掉（探针读数 bf=none）。
+     判据同步：产物里必须有 sblur-off 版的抑制规则，且**不许**再出现 :has(overlay) 版。 */
+  ok('B1h 接管不碰弹层/设置面板：抑制规则走 JS 门控 body[data-mpw-sblur-off]（不再用会永久命中的 :has(overlay)）',
+    HAS_RULE(css, /body\[data-mpw-sblur-off\] \[data-dockkit-pane\]/, /backdrop-filter:\s*none/)
+    && !/\[data-mpw-unify\]:has\(\[class\*="_overlay"\]\)/.test(STRIP(css)))
   ok('B1i 非 0 档 + 不虚化 ⇒ body[data-mpw-unify] 接管仍在（开关门控照旧）、半径变量是 0px；左栏表层 = 同一条宿主 token 55.0%',
     TOKEN(css, 'mpw-unify-blur') === '0px' && TOKEN(css, 'mpw-surface-side-frost') === SURF(SIDE_BASE, 55)
     && TOKEN(css, 'mpw-chrome-alpha') === '0.55',

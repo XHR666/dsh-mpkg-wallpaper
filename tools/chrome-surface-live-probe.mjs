@@ -90,6 +90,9 @@ const APPLY_MODE = (() => {
    本仓 tools/css-matrix.mjs 也把 `.wSkVaW_header` 当标题栏锚点）。拿不到就退回
    `.wSkVaW_scrollBody` 的最近定位祖先（见 CHAT_TOP_SCAN 内的 fallback）。 */
 const CHAT_ROOT_SEL = String(arg('chat-root', '.wSkVaW_root'))
+/* 机制诊断：`--diag-hdr-sync` 会**手动调一次** `__mpwHdrFrostTest.sync()`（会改页面状态）⇒ 默认关；
+   只跑单档做定位时才开，免得它影响后续场景的读数。 */
+const DIAG_HDR_SYNC = has('diag-hdr-sync')
 const VIEWPORT = (() => {
   const m = String(arg('viewport', '1920x1200')).match(/^(\d+)x(\d+)$/)
   return m ? { width: Number(m[1]), height: Number(m[2]) } : { width: 1920, height: 1200 }
@@ -291,6 +294,51 @@ const COLLECT = () => {
           bodyChildren: body ? body.children.length : null,
         },
       }
+    })(),
+    /* 机制诊断（只读）：门控属性 / 宿主弹层是否常驻 DOM / 磨砂钩子状态 / 与门控**同刻**的表面读数 */
+    mech: (() => {
+      try {
+        const vis = (e) => { try { const r = e.getBoundingClientRect(); const c = getComputedStyle(e); return r.width > 2 && r.height > 2 && c.display !== 'none' && c.visibility !== 'hidden' } catch (err) { return false } }
+        const q = (sel) => { try { return Array.from(document.querySelectorAll(sel)) } catch (e) { return [] } }
+        const brief = (e) => { if (!e) return null; const c = getComputedStyle(e); const r = e.getBoundingClientRect(); return { cls: String(e.className).slice(0, 60), bg: c.backgroundColor, bf: c.backdropFilter, rect: [Math.round(r.width), Math.round(r.height)], visible: vis(e) } }
+        const hook = globalThis.__mpwHdrFrostTest
+        const call = (fn) => { try { return fn ? fn() : null } catch (e) { return 'ERR:' + String(e && e.message || e) } }
+        const hdrEl = call(hook && hook.headerEl)
+        return {
+          bodyGateAttrs: {
+            unify: document.body.getAttribute('data-mpw-unify'),
+            rsblur: document.body.getAttribute('data-mpw-rsblur'),
+            sblurOff: document.body.getAttribute('data-mpw-sblur-off'),
+            all: Array.from(document.body.attributes).map((a) => a.name).filter((n) => /^data-mpw/.test(n)),
+          },
+          overlayCounts: {
+            overlayAny: q('[class*="_overlay"]').length,
+            overlayAnyVisible: q('[class*="_overlay"]').filter(vis).length,
+            overlayLayer: q('[class*="_overlayLayer"]').length,
+            overlayLayerVisible: q('[class*="_overlayLayer"]').filter(vis).length,
+            dialog: q('[role="dialog"]').length,
+            dialogVisible: q('[role="dialog"]').filter(vis).length,
+            overlayCls: q('[class*="_overlay"]').slice(0, 4).map((e) => String(e.className).slice(0, 40)),
+          },
+          hdrFrostHook: {
+            hasHook: !!hook,
+            hasState: !!(hook && hook.state),
+            hasSync: !!(hook && hook.sync),
+            hasHeaderEl: !!(hook && hook.headerEl),
+            state: call(hook && hook.state),
+            headerEl: hdrEl && hdrEl.nodeType === 1
+              ? { tag: hdrEl.tagName, cls: String(hdrEl.className), isSameAsMeasured: hdrEl === document.querySelector('.wSkVaW_header'), display: getComputedStyle(hdrEl).display }
+              : hdrEl,
+            countNow: q('.mpw-hdrFrost').length,
+          },
+          sameMoment: {
+            bodyUnify: document.body.hasAttribute('data-mpw-unify'),
+            sidebarCol: brief(document.querySelector('[class*="sidebarCol"]')),
+            rightPanel: brief(document.querySelector('[data-sidebar-right-panel]')),
+            header: brief(document.querySelector('.wSkVaW_header')),
+          },
+        }
+      } catch (e) { return { err: String(e && e.message || e) } }
     })(),
     ledger,
     /* 页面跑的是**已安装**的那份插件（不是本仓工作树）⇒ 记一个"产物指纹"，让这次读数可归属到某个构建：
@@ -742,12 +790,39 @@ try {
         rec.dialogCollect = null
         rec.dialogNote = 'dialog:skipped（入口点不开 ⇒ 这一格如实为空，没有拿"没开面板"当"开了"）'
       }
+      /* 机制诊断（可选、会改页面状态）：手动 sync 一次，看磨砂层到底注没注入、挂在谁下面 */
+      if (DIAG_HDR_SYNC) {
+        rec.hdrFrostSync = await page.evaluate(() => {
+          const h = globalThis.__mpwHdrFrostTest
+          const before = document.querySelectorAll('.mpw-hdrFrost').length
+          let sync = null
+          try { sync = h && h.sync ? h.sync() : 'no-hook' } catch (e) { sync = 'ERR:' + String(e && e.message || e) }
+          const els = Array.from(document.querySelectorAll('.mpw-hdrFrost'))
+          const state = (() => { try { return h && h.state ? h.state() : null } catch (e) { return 'ERR:' + String(e && e.message || e) } })()
+          return {
+            hookPresent: !!h, beforeCount: before, syncResult: sync, afterCount: els.length, stateAfter: state,
+            parents: els.slice(0, 4).map((e) => {
+              const c = getComputedStyle(e); const r = e.getBoundingClientRect()
+              return { cls: String(e.className).slice(0, 40), parentTag: e.parentElement ? e.parentElement.tagName : null, parentCls: e.parentElement ? String(e.parentElement.className).slice(0, 70) : null, rect: [Math.round(r.width), Math.round(r.height)], bf: c.backdropFilter, bg: c.backgroundColor, display: c.display }
+            }),
+          }
+        }).catch((e) => ({ err: String(e && e.message || e) }))
+      }
       rec.ok = true
     } catch (e) {
       rec.error = String((e && e.message) || e).slice(0, 300)
     }
     result.scenarios.push(rec)
-    console.log('SCENARIO ' + JSON.stringify({
+    if (DIAG_HDR_SYNC && rec.ok) {
+    const m = (rec.closed || {}).mech || {}
+    console.log('DIAG [' + rec.id + ']')
+    console.log('  1) body 门控: ' + JSON.stringify(m.bodyGateAttrs))
+    console.log('  2) 弹层计数: ' + JSON.stringify(m.overlayCounts))
+    console.log('  3) __mpwHdrFrostTest: ' + JSON.stringify(m.hdrFrostHook))
+    console.log('     sync() 之后: ' + JSON.stringify(rec.hdrFrostSync))
+    console.log('  4) 同刻读数(bodyUnify + 三表面): ' + JSON.stringify(m.sameMoment))
+  }
+  console.log('SCENARIO ' + JSON.stringify({
       id: rec.id, patch: rec.patch, ok: rec.ok, error: rec.error || null,
       effectiveMismatch: rec.effectiveMismatch === true,
       effective: rec.closed ? rec.closed.effective : null,
@@ -980,6 +1055,10 @@ for (const rec of result.scenarios) {
     console.log('     设置打开时左栏: ' + (rec.dialogDelta ? cell({ found: true, backgroundColor: rec.dialogDelta.sidebarCol.open.bg, backdropFilter: rec.dialogDelta.sidebarCol.open.bf }) : '（未开）'))
   }
 }
+
+/* ⚠ 落盘要放在**所有派生块之后**：`topBand` / `headerCandidates` 是在上面几个块里才填进 result 的，
+   第一次实现把它们算在 writeFileSync 之后 ⇒ stdout 有、JSON 里没有（这一版修掉）。 */
+fs.writeFileSync(OUT, JSON.stringify(result, null, 1) + '\n')
 
 const okN = result.scenarios.filter((s) => s.ok).length
 const failN = result.scenarios.length - okN
