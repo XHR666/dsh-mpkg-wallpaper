@@ -388,8 +388,10 @@ function checkScenario(sc, r) {
     t('内联样式：absolute/inset/z-index:0/pointer-events:none', /position:absolute/.test(r.cssText) && /z-index:0/.test(r.cssText) && /pointer-events:none/.test(r.cssText))
     // ②(2026-09-16 真根因防复发) z-index 必须是 0：-1 会被父背景整片盖住（= "磨砂一直没有"）
     t('★ 注入层 z-index=0（不是 -1：负层会画在顶栏背景之下被盖住）', cssProp(r.cssText, 'z-index') === '0')
-    t('内联 backdropFilter = blur(30px) saturate(140%)', r.backdropFilter === 'blur(30px) saturate(140%)')
-    t('webkitBackdropFilter 同步设置', r.webkitBackdropFilter === 'blur(30px) saturate(140%)')
+    /* ②(2026-10-04) chrome 表面只做模糊，不再叠 saturate(140%)（壁纸层自带 saturate(1.12)，
+       再乘 1.4 会让标题栏/侧栏比屏幕别处明显更粉 —— 用户真机读到的"粉色滤镜"）。 */
+    t('内联 backdropFilter = blur(30px)（不含 saturate）', r.backdropFilter === 'blur(30px)')
+    t('webkitBackdropFilter 同步设置', r.webkitBackdropFilter === 'blur(30px)')
     /* ①(2026-10-02 表面模型重做) 底色不再是写死的 `rgba(255,255,255,0.38)`（那正是用户报的
        "标题栏固定白底、不受滑条影响"），而是「宿主底色 × 生效不透明度」的 color-mix：
        `color-mix(in srgb, var(--dsw-alias-bg-base) NN%, transparent)`。

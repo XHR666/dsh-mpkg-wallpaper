@@ -792,6 +792,71 @@ console.log('\n== G 组：透明度语义搬值（旧档 100 = 全不透明 → 
     })(), '')
 }
 
+
+/* ══════════════════════════════════════════════════════════════════
+   H 组：**无雾层 ⇒ 一个滤镜都不给宿主**（2026-10-04 真机："整屏虚化程度调大时左/右侧边栏
+   被叠上一层粉色滤镜；调到 0 就是完全透明的状态"）
+   病：真实档（界面透明度 100% + chatFollow 关 + 整屏虚化 40）下，侧栏只剩
+   `backdrop-filter: blur(40px) saturate(140%)` —— 我们一个像素都不画，却对**宿主内容**施加了
+   模糊 + 饱和 ⇒ 那块壁纸被糊成一片平均色（用户壁纸在那里正是粉的）＝ 他读到的"粉色滤镜"。
+   铁律：表面不透明度 ≤ 0 **且** 该项不是用户单独配的（`indep`）⇒ 半径归 0、写 `none`；
+   用户显式开过该项自己的磨砂（indep）时照旧给。另：chrome 表面一律不再叠 `saturate(140%)`
+   （壁纸层自己已带 contrast(1.06) saturate(1.12)，再乘 1.4 就是"侧栏比屏幕别处更粉"）。
+   ══════════════════════════════════════════════════════════════════ */
+console.log('\n== H 组：无雾层 ⇒ 不给宿主叠 backdrop-filter（+ chrome 去 saturate）==')
+{
+  /* 用户真机档：界面透明度 100%（无雾）+ chatFollow 关 + 整屏虚化 40 */
+  const NOFOG_ST = { enabled: true, image: true, unifyTint: true, unifyAmount: 40, sidebarAlpha: 100, chatFollow: false, blurFollowUnify: true }
+  const cssNoFog = boot(NOFOG_ST)
+  const bn = STRIP(cssNoFog)
+  /* ⚠️ 只在**真正作用于侧栏**的规则里取读数：`[data-mpw-lg-css]:not([class*="sidebarCol"])`
+     这类"选择器里出现 sidebarCol"的规则不算（它打的是液态玻璃元素）。 */
+  const sideBlur = (css) => RULES(css).filter(([sel]) => /sidebarCol/.test(sel) && !/data-mpw-lg-css/.test(sel))
+    .flatMap(([, body]) => (body.match(/backdrop-filter:\s*([^;]+)/g) || []))
+  const sideBlurs = sideBlur(cssNoFog)
+  ok('H1 无雾层（界面透明度 100%）⇒ 左栏所有 backdrop-filter 都是 none（我们一个像素都不画时不留滤镜）',
+    sideBlurs.length > 0 && sideBlurs.every((d) => /:\s*none(\s*!important)?\s*$/.test(d.trim())),
+    // ↑ 允许 `none !important`（本仓统一写法）
+    JSON.stringify(sideBlurs.slice(0, 3)))
+  ok('H1b 同一档下右栏/dock 的统一虚化半径也是 none（`--mpw-unify-blur` / `--mpw-rs-blur` 不得把 40 传下去）',
+    /* 两枚半径 token 都必须是 0px（不得把 40 传下去）；`--mpw-bg-blur`（壁纸层自己的磨砂条）不在本判据内。
+       ⚠️ 用**正向**匹配 0px：`/token:\s*(?!0px)/` 会因为 `\s*` 可以先匹配 0 个字符而在"空格+0px"上误判为命中。 */
+    /--mpw-unify-blur:\s*0px\b/.test(bn) && /--mpw-rs-blur:\s*0px\b/.test(bn)
+    && !/backdrop-filter:\s*blur\(40px\)/.test(bn),
+    (bn.match(/--mpw-unify-blur:[^;}]+/) || [''])[0] + ' | ' + (bn.match(/--mpw-rs-blur:[^;}]+/) || [''])[0])
+  ok('H2 chrome 表面不再叠 saturate：左栏/右栏/dock 的规则里 0 处 `saturate(140%)`（壁纸层自带 1.12，再乘 1.4 = 比屏幕别处更粉）',
+    !/saturate\(140%\)/.test(bn) || !RULES(cssNoFog).some(([sel, body]) => /sidebarCol|sidebar-right-panel|dockkit/.test(sel) && /saturate\(140%\)/.test(body)),
+    '')
+  /* 有雾档（界面透明度 45 ⇒ 不透明度 55%）⇒ 模糊照给，但同样不带 saturate */
+  const cssFog = boot({ enabled: true, image: true, unifyTint: true, unifyAmount: 30, sidebarAlpha: 45, chatFollow: false, blurFollowUnify: true })
+  const bf = STRIP(cssFog)
+  const blurs = sideBlur(cssFog)
+  ok('H3 有雾层（不透明度 55%）⇒ 模糊照给（blur(30px)）且**不含 saturate**（只有模糊，没有色偏）',
+    blurs.some((d) => /blur\(30px\)/.test(d)) && !blurs.some((d) => /saturate/.test(d)),
+    JSON.stringify(blurs.slice(0, 3)))
+  /* 独立档：用户显式开过自己的侧栏磨砂 ⇒ 即使无雾也要照给（他点名要的） */
+  const cssOwn = boot(Object.assign({}, NOFOG_ST, { sidebarBlur: true, sidebarBlurAmount: 14, sidebarBlurUserSet: true }))
+  const ownBlurs = sideBlur(cssOwn)
+  ok('H4 用户显式开过侧栏磨砂（`sidebarBlurUserSet` + 开关开）⇒ 无雾也照给（indep 优先，不被"无雾"规则吞掉）',
+    ownBlurs.some((d) => /blur\((14|40)px\)/.test(d)),
+    JSON.stringify(ownBlurs.slice(0, 3)))
+  /* 标题栏：同一条铁律 */
+  const hdrState = (() => {
+    reset(); world = loadPlugin({ quiet: true, clientPath: CLIENT, settings: Object.assign({}, NOFOG_ST, { headerBg: true, headerFrostUserSet: false }) })
+    try { globalThis.__mpwBuildCss({ enabled: true, image: 'stub-wallpaper.png' }) } catch {}
+    try { const T = globalThis.__mpwHdrFrostTest; T.sync(); return T.state() || {} } catch { return {} }
+  })()
+  ok('H5 标题栏同一条铁律：无雾层 ⇒ 交还宿主（reason 含「无雾层」、injected=false、px=0）',
+    String(hdrState.reason || '').includes('无雾层') && hdrState.injected === false && Number(hdrState.px) === 0,
+    JSON.stringify({ reason: hdrState.reason, injected: hdrState.injected, px: hdrState.px }))
+  /* 变异自证：把"无雾 ⇒ 半径归 0"的判断改坏（`<= 0` → `< 0`）⇒ H1 必红 */
+  const m = mutant('nofog-blur', 'surfacePlan.left.opacityPct <= 0 && !surfacePlan.left.indep', 'surfacePlan.left.opacityPct < 0')
+  const cssM = boot(NOFOG_ST, m)
+  ok('H6 变异自证：`leftNoFog` 判据改坏（`<= 0` → `< 0`）⇒ 左栏又出现 blur(40px)（H1 必红）',
+    sideBlur(cssM).some((d) => /blur\(40px\)/.test(d)),
+    JSON.stringify(sideBlur(cssM).slice(0, 2)))
+}
+
 console.log(`\n===== fog-model: ${pass} 通过 / ${fail} 失败 =====`)
 if (!fail) console.log('✓ 雾模型口径成立：透明度 0 = 完全不覆盖宿主（chrome 覆盖规则 0 处、标题栏交还宿主）、透明度 100 = 一个像素不刷、半径 0 = 真 0、跟随开关真能解耦、未被单独动过的表面与统一值逐字一致')
 process.exitCode = fail ? 1 : 0
