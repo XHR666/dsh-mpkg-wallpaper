@@ -857,6 +857,38 @@ console.log('\n== H 组：无雾层 ⇒ 不给宿主叠 backdrop-filter（+ chro
     JSON.stringify(sideBlur(cssM).slice(0, 2)))
 }
 
+
+{
+  /* H7~H9：三块表面的**构造一致性**（2026-10-04 真机："左栏灰、标题栏白、右栏更白，
+     统一虚化开着时它们应该一样，跟着我那条滑条走"）。 */
+  const ST = { enabled: true, image: true, unifyTint: true, unifyAmount: 30, sidebarAlpha: 45, rightSidebarAlpha: 55, chatFollow: false, blurFollowUnify: true, headerBg: true, headerFrostUserSet: false }
+  const css = STRIP(boot(ST))
+  ok('H7 标题栏半透明底**不许**再回退到写死的白（旧值 rgba(255,255,255,0.38) / 暗档 0.45）：回退必须是同一枚表面 token',
+    !/rgba\(255,\s*255,\s*255,\s*0?\.38\)/.test(css) && !/rgba\(18,\s*22,\s*30,\s*0?\.45\)/.test(css)
+    && /background-color:\s*var\(--mpw-hdr-frost-bg,\s*var\(--mpw-surface-frost-top\)\)/.test(css),
+    (css.match(/background-color:\s*var\(--mpw-hdr-frost-bg[^;]*/) || [''])[0])
+  ok('H8 三块表面同一套模型：透明度 = 100 - 界面透明度（side=45 ⇒ 55%）在三枚表面 token 里逐字一致',
+    /--mpw-surface-frost-top(-light)?:\s*color-mix\(in srgb, var\(--dsw-alias-bg-base\) 55\.0%, transparent\)/.test(css)
+    && /--mpw-surface-side-frost:\s*color-mix\(in srgb, var\(--dsw-specific-sidebar-fill\) 55\.0%, transparent\)/.test(css)
+    && /--mpw-surface-rs-dock:\s*color-mix\(in srgb, var\(--dsw-specific-sidebar-fill\) 55\.0%, transparent\)/.test(css),
+    '')
+  ok('H9 右栏/dock 家族只给**最外层**刷表面（嵌套两层 55% 会合成 ~80% ≈ 一块近白板 = 用户说的"右栏更白"）',
+    /\[data-mpw-rs-surface\]/.test(css)
+    /* 底线（用规则解析器逐条判，别拿正则糊）：凡是从 --mpw-surface-rs-dock / -dark 上色、
+       且主体命中了右栏/dock 家族选择器的规则，选择器里必须带最外层标记。 */
+    && RULES(css).filter(([sel, body]) => /var\(--mpw-surface-rs-dock/.test(body)
+      && /\[data-sidebar-right-panel\]|\[data-dockkit-(pane|strip|surface)\]/.test(sel)
+      && !/\[data-mpw-rs-surface\]/.test(sel)).length === 0
+    && /function mpwTagSurfaceOuter\(\)/.test(SRC) && /data-mpw-rs-surface/.test(SRC),
+    '')
+  ok('H9b 变异自证：把"最外层"判据改坏（去掉祖先判定）⇒ 每个命中元素都会被标记（H9 的"只认标记"就退化成两层都刷）',
+    (() => {
+      const m = mutant('rs-outer', 'for (let p = el.parentElement, i = 0; p && i < 40; p = p.parentElement, i++) { if (set.has(p)) { inner = true; break } }', 'inner = false;')
+      const src2 = fs.readFileSync(m, 'utf8')
+      return !/if \(set\.has\(p\)\) \{ inner = true; break \}/.test(src2)
+    })(), '')
+}
+
 console.log(`\n===== fog-model: ${pass} 通过 / ${fail} 失败 =====`)
 if (!fail) console.log('✓ 雾模型口径成立：透明度 0 = 完全不覆盖宿主（chrome 覆盖规则 0 处、标题栏交还宿主）、透明度 100 = 一个像素不刷、半径 0 = 真 0、跟随开关真能解耦、未被单独动过的表面与统一值逐字一致')
 process.exitCode = fail ? 1 : 0

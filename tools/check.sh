@@ -622,6 +622,11 @@ node tools/web-interaction-test.mjs || fail=1
 #   F6 h264+opus 判据看容器（MKV/WebM 放行、MP4 拦下）、VP9/AV1 高位深 profile 判"吃不下"。
 #   详见 docs/TRANSCODE-RESOURCE.md
 node tools/transcode-limit-test.mjs || fail=1
+# ①(2026-10-04) 「只剩 image token、身份/类型全空」那条半残档（真机：刷新偶尔壁纸加载不出来 ⇒
+#   类型变 image、名字/图标空、预览破图；重新在目录里点一次「使用」又好了）。判据 9 条：
+#   该形状必须判成半残档（旧判据要求有 mpkgKey/source 线索 ⇒ 漏判）+ 从 token 反推身份 key
+#   （mpkg 名 / ltoken / folder 三种形状）+ 不许误伤完整档与空档 + 自愈链真的用这个 key 尝试过。
+node tools/source-heal-token-test.mjs || fail=1
 # ①(2026-09-23 用户第 1 项 B) 视频「按屏幕物理尺寸预缩（ffmpeg lanczos）」档 —— **默认关**：
 #   依据 ../docs/USER-ITEMS-20260921.md 第 19 条实测（`3588989102` 2558×1438@60）：非全屏尺寸上
 #   「一次直降」的**闪烁**是「逐级减半」的 1.6~2.7×，代价是细节低 1.4~1.9× ⇒ 取舍，默认不翻。

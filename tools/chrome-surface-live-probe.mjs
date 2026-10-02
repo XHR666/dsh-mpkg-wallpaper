@@ -194,6 +194,10 @@ const COLLECT = () => {
         chromeAlpha: tok(html, '--mpw-chrome-alpha'),
         chromeBg: tok(html, '--mpw-chrome-bg'),
         unifySurface: tok(html, '--mpw-unify-surface'),
+        /* ②(2026-10-04) 标题栏半透明底的 token 由 JS 写在 documentElement 上；
+           写没写、写成了什么，直接决定"标题栏是跟滑条还是掉回写死的白" ⇒ 必须读。 */
+        hdrFrostBg: tok(html, '--mpw-hdr-frost-bg'),
+        hdrTranslucentAttr: (() => { try { const h = one('.wSkVaW_header'); return h && h.hasAttribute ? String(h.hasAttribute('data-mpw-hdr-translucent')) : 'no-header' } catch (e) { return 'err' } })(),
       },
       /* SSOT 在 body（宿主 --dsw-* 也定义在 body；写 :root 会 guaranteed-invalid 继承，
          见 docs/TOKEN-NAMESPACE.md）⇒ 两边都记，免得把"html 上是空串"误读成"没有这个 token"。 */
