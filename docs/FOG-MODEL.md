@@ -39,6 +39,15 @@
 `patch.blurFollowUnify === true` ⇒ 清空三个标记。面板上被接管的滑条**不再禁用**（动一下即独立），
 就地显示"已改为独立"并给「恢复跟随」按钮。
 
+## 1.1 两条真机定案（3.15.1）
+
+* **抑制规则必须用 JS 门控**（`body[data-mpw-sblur-off]`），**不能用 `body:has([class*="_overlay"])`**：
+  宿主聊天输入区的 `uV2eYG_overlayAnchor` **常驻 DOM** ⇒ `:has()` 版本永久为真，会把右栏 / dock /
+  标题栏的 `backdrop-filter` 一直撤掉（真机读数：`follow` 档右栏 `bf=none` 而左栏 `blur(30px)`）。
+* **「独立」= 有 `*UserSet` 标记 **且** 该项自己的开关是开的**：只按标记会把"历史上动过、但现在开关关着"
+  的项判成独立 ⇒ 标题栏永远 0px（真机 `reason` 原文 `用户显式配置｜半透明底已设｜独立档 0px`，而有效档是
+  `follow=true / amt=30 / side=45`）。用户口径原话："如果是关闭的，那就还是跟随去调整"。
+
 ## 2. 谁被谁接管（`body[data-mpw-unify]`）
 
 `unifyOn` 为真时 JS 给 `body` 打 `data-mpw-unify`，产物里出现"共同表面"规则：
