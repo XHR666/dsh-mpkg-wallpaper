@@ -64,7 +64,8 @@ DSH 把设计 token 定义在 **`body`** 上，不是 `:root`：
 | `--mpw-surface-panel-frost` / `-dark` | 面板 | `color-mix(… bluish-00 / -950 80% …)` | overlay 内对话框、设置面板磨砂 |
 | `--mpw-surface-dialog-dark` / `-light` | 面板（本插件弹窗） | `var(--dsw-static-neutral-bluish-950 / -00)` | `.mpw_dialog` |
 | `--mpw-surface-dialog-frost-dark` / `-light` | 面板（本插件弹窗） | `color-mix(… 80% …)` | `.mpw_dialog`（虚化档） |
-| `--mpw-surface-pop` / `-dark` | 面板（弹层） | `rgba(var(--mpw-chrome-bg,…), var(--mpw-pop-alpha, <滑条>))` / `rgba(18,22,30, …)` | 菜单/下拉/提示/`[data-dsh-surface]` |
+| `--mpw-surface-pop` / `-dark` | 面板（弹层·**仅"用户显式调过弹层不透明度 / 开了遮罩染色"时的整片覆盖**） | `color-mix(… var(--dsw-specific-sidebar-fill) <弹层不透明度>% …)` / `rgba(18,22,30, …)` | `:is(<弹层选择器集>)`（**只在上面那两个显式条件下才产出规则**） |
+| `--mpw-pop-surface` / `-dark` / `-alpha` | 面板（弹层·**兜底底**，与上一行**互相独立**） | `color-mix(… var(--dsw-specific-sidebar-fill) calc(var(--mpw-pop-surface-alpha, .58) * 100%) …)` | **只有** `html body [data-mpw-pop-bg]` |
 | `--mpw-surface-composer` / `-light` | 面板（输入框） | 字面量 `#1b2233 42%` / `#dde3ee 55%` | `[data-composer-card]` |
 | `--mpw-surface-glass` / `-dark` | 面板（设置右区） | `color-mix(… bluish-00 / -950 62% …)` | `.mpw_glassHost` |
 | `--mpw-surface-content` / `-unify-light` | 面板（内容区） | `color-mix(… bluish-950 / --dsw-alias-bg-base …)` | `.ydkMvW_root` |
@@ -181,3 +182,29 @@ node tools/token-namespace-test.mjs
    与 `tools/token-namespace-test.mjs` 的同名清单，并在 §2 表格补一行；
 4. 需要新的**宿主 token 覆盖**时：先在 `HOST_OVERRIDE_REGISTRY` 登记（token + 选择器 +
    值形态 + `feature()` + reason + 本文档行号），再写代码；并把本文档 §3 表格补一行。
+
+### 2.1 弹层表面为什么是**两套** token（2026-10-03 用户："背景 token 好像跟那个重掉了，让他独立出来"）
+
+弹层这块踩过一次"**好用的玻璃被我们自己的近不透明底盖掉**"：
+
+* 用户夸的玻璃（标题栏里的子代理展开框、VS Code 菜单、模型/推理选择器）**是宿主自己画的**；
+* 我们上一版把「弹层不透明度」（默认 94%）刷到**所有**命中弹层选择器的元素上 ⇒ 那层 0.94 的底把
+  `backdrop-filter` 的效果盖住 ⇒ 真机观感 = "玻璃效果被修没了"。
+
+现在分成两件事、两套 token，判据是**"谁画了底"**：
+
+1. **宿主自己画好了底**（`computed backgroundColor` 的 α ≥ 0.05 且 < 1，即真的玻璃）⇒
+   我们只补 `backdrop-filter`（`--mpw-pop-blur`），**底色一个像素都不动**；
+2. **宿主没画底**（α < 0.05，且近祖先也没有可见底）或**画的是不透明纯底的小浮层**
+   （α ≥ 0.999 且面积 < 40% 视口，例如"上下文用量"圆环弹出来那块纯白）⇒
+   JS（`mpwTagPopoverBg()`，rAF 合并、随弹层插入 DOM 触发）打 `data-mpw-pop-bg`，
+   CSS 用**独立 token** `--mpw-pop-surface(-dark)`（默认 α = 0.58）刷一层玻璃底；
+3. **硬前提**：只有 `computed backdrop-filter` 里真有 `blur()`（我们的或宿主的）才刷底 ——
+   半透明底 + 没模糊 = 字叠字，比原来更糟；
+4. 用户**显式**动过「弹层不透明度」滑条、或开了主题色遮罩/染色时，才回到"整片覆盖"
+   （`--mpw-surface-pop`）—— 那是他的明确要求，不是我们的默认。
+
+机器判据：`fog-model-test` F8 组（禁止 `rgba(var(颜色 token))` 这类会被静默丢弃的值 + 弹层选择器
+排除内层滚动视口）、`style-scope-guard`（`host:JObwrW-panel` / `host:groupTitle` 登记）、
+真机由 `tools/host-popover-probe.mjs --groups popover-surfaces` 读每个弹层的
+`bg / bf / tagPopBg / token` 逐项核对。

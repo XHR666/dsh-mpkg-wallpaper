@@ -344,7 +344,7 @@ console.log('\n══ D 变异自证（4 组，各自必红）══');
   // M2 deep 判定失效（>8bit 不再触发降级）
   {
     const lib = mutLib('deep');
-    const inj = mutate(path.join(lib, 'index.js'), '  if (!deep && !hdr) return { mode: \'passthrough\'', '  if (true) return { mode: \'passthrough\'');
+    const inj = mutate(path.join(lib, 'index.js'), '  if (!deep && !hdr && !chromaUnsafe) return { mode: \'passthrough\'', '  if (true) return { mode: \'passthrough\'');
     const m = await boot(lib);
     const plan = m.mod.__mpwTest.transcodeColorPlan({ pixFmt: 'yuv420p10le', colorTransfer: 'smpte2084' });
     ok('M2 去掉 deep/hdr 判定 ⇒ 10bit/HDR 也被当 passthrough（A3 必红）',
@@ -353,7 +353,7 @@ console.log('\n══ D 变异自证（4 组，各自必红）══');
   // M3 8bit 也被强制降级（会破坏"与改动前逐字节相同"）
   {
     const lib = mutLib('force');
-    const inj = mutate(path.join(lib, 'index.js'), '  if (!deep && !hdr) return { mode: \'passthrough\'', '  if (false) return { mode: \'passthrough\'');
+    const inj = mutate(path.join(lib, 'index.js'), '  if (!deep && !hdr && !chromaUnsafe) return { mode: \'passthrough\'', '  if (false) return { mode: \'passthrough\'');
     const m = await boot(lib);
     const plan = m.mod.__mpwTest.transcodeColorPlan({ pixFmt: 'yuv420p', colorTransfer: 'bt709' });
     ok('M3 8bit 也被强制降级 ⇒ A2 变红（既有产物键/字节全变，且 pc 直通被破坏）',

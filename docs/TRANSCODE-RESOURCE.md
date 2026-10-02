@@ -40,6 +40,7 @@ ffprobe -v error -select_streams a -show_entries stream=codec_name,profile,chann
 |---|---|---|
 | 视频编码 | `h264` / `vp8` / `vp9` / `av1` | 不在表里 ⇒ `playable:false` |
 | 音频编码 | `aac` / `mp3` / `opus` / `vorbis` / `flac` | 无音轨不算问题 |
+| 产物音轨 | **保留**（`-c:a aac -b:a 128k`） | ①(2026-10-03 审计 F3) 旧命令无条件 `-an`（「壁纸默认静音更省」）会把**壁纸声音**一起删掉：用户开了声音又设了 fpsCap/resMax/预缩（或 ≥4K 源触发静默自动降档）⇒ 转码产物没有音轨 ⇒ 壁纸突然没声且无任何提示（NOW PLAYING / 音量控制仍工作但不出声）|
 | 容器 | `mov`/`mp4`/`m4a`/`3gp`/`3g2`/`mj2`/`matroska`/`webm` | 其它 ⇒ `false` |
 | 确定性缺口 | MP4 里的 `h264+opus`、`HEVC Main10(10bit)` | 命中 ⇒ `false` |
 
@@ -73,7 +74,7 @@ ffprobe -v error -select_streams a -show_entries stream=codec_name,profile,chann
 | 产物数量 | 12 个 | `DSH_WE_TRANSCODE_CACHE_KEEP` | 按 mtime 最旧先删 |
 | **产物合计字节** | **512 MB** | `DSH_WE_TRANSCODE_MAX_BYTES` | 旧实现只有数量上限 ⇒ 12×130MB 能堆 1.5GB |
 | 并发 ffmpeg | **1** | `DSH_WE_TRANSCODE_MAX_ACTIVE` | 超出排队；排队超 30s 直接失败让客户端回退原片 |
-| 单任务硬超时 | 15 min | `DSH_WE_TRANSCODE_TIMEOUT_MS` | 超时 kill |
+| 单任务硬超时 | 15 min | `DSH_WE_TRANSCODE_TIMEOUT_MS` | 超时 kill（①2026-10-03 审计 F4：**任务级**——整个任务含换编码器/换线程模式的全部尝试共用这一个预算；旧实现是「每次尝试各 15min」⇒ 最多 4 次 = 1 小时） |
 | **转码默认降采样宽** | **1920** | `DSH_WE_TRANSCODE_DEFAULT_MAXW` | 0=不限；用户显式给更小的 maxW 时以用户为准 |
 | **内存准入阈值** | **1024 MB** | `DSH_WE_TRANSCODE_MIN_AVAIL_MB` | 可用内存低于此值 ⇒ **拒绝本次转码**（抛错让客户端直读原片），而不是起一个必 OOM 的进程把整机拖进 swap |
 | ffmpeg 错误日志 | 50 个 | `DSH_WE_FFMPEG_ERR_KEEP` | 0 字节的空日志直接删 |

@@ -213,7 +213,16 @@ export function loadPlugin(opts = {}) {
   const clientPath = opts.clientPath || path.join(here, '..', 'lib', 'client.js')
   const src = fs.readFileSync(clientPath, 'utf8')
   if (opts.search !== undefined) globalThis.location = { href: 'http://127.0.0.1:3080/' + String(opts.search), search: String(opts.search), hash: '', origin: 'http://127.0.0.1:3080' }
-  if (opts.settings) globalThis.localStorage.setItem('dsh.mpkg-wallpaper.v2', JSON.stringify(opts.settings))
+  /* ②(2026-10-03 透明度语义搬值) 用例里的 `sidebarAlpha` / `rightSidebarAlpha` 一律按**当前语义**
+     （0 = 全不透明 / 100 = 全透明）书写 —— 与真机用户档同形：新鲜档都带记账键 `alphaSemantics = 2`。
+     不带这个键的档会被插件判成"3.15.0 之前的旧档"并按 `新 = 100 - 旧` 搬值（真机就是靠这一条把
+     用户当年的"求实心 100"搬回不透明）。要**故意**喂旧档考搬值：`loadPlugin({ settings, legacyAlphaSemantics: true })`。 */
+  if (opts.settings) {
+    const seed = Object.assign({}, opts.settings)
+    if (!opts.legacyAlphaSemantics && seed.alphaSemantics === undefined
+      && (seed.sidebarAlpha !== undefined || seed.rightSidebarAlpha !== undefined)) seed.alphaSemantics = 2
+    globalThis.localStorage.setItem('dsh.mpkg-wallpaper.v2', JSON.stringify(seed))
+  }
   // ①(2026-09-17 持久化轮) IndexedDB 桩：只在用例显式传入 `indexedDB` 时装上（默认**不装** ⇒
   //   走"IDB 不可用"的降级分支）。用例自己提供持久化对象（跨"重载"复用同一份 db 实例）。
   if (opts.indexedDB !== undefined) globalThis.indexedDB = opts.indexedDB

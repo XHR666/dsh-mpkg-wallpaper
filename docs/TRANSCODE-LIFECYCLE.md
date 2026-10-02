@@ -170,6 +170,26 @@
 | 客户端：`pollTranscodeProgress` / `mpwProbeTranscodeCache` / 10s 超时轮询 | 轮询有上限（既有） | 本轮回退后**不再空转**（`cancelled` 终态） | 不适用 | 关档即 `useTranscode=false` | 不适用 | race-test A6/B1i |
 | 客户端：`refreshBg`（刷新壁纸） | — | — | — | — | — | **本轮修**：转码档 URL 也加 `&_t=`（旧实现转码档刷新无动作）；race-test A5 |
 
+
+## 附录 A：2026-10-03 ffmpeg 审计轮的 6 条修复（判据 `tools/transcode-limit-test.mjs` D2 组）
+
+| 编号 | 症状（用户可见） | 真根因 | 修法 |
+|---|---|---|---|
+| F1 | 设了「解码帧率上限」但没设「分辨率上限」时，忙条读到 **0%** 直到 2 分钟超时；不可直读的源（HEVC Main10 / H.264 High 10）**卡在回退原片上黑屏**，而磁盘上其实早已转好 | `/transcode` 写入台账时套了默认降采样 `TRANSCODE_DEFAULT_MAXW=1920`（键 `srcId\|fps\|1920`），而 `/transcode-progress` 用 raw `maxW=0` 去查（键 `srcId\|fps\|0`）⇒ 永远 `idle`；客户端"转码完成后重新 apply"的 10s 轮询等的 `phase==='done'` 永远不来 | `maxW` 解析收敛成唯一 `parseMaxWParam()`；进度查询按同一条默认规则先查 `effMaxW` 键（保留旧键兜底） |
+| F2 | 8bit 但 4:2:2 / 4:4:4 色度的源：转码"救"出来的产物浏览器**照样放不出**，而且被当**有效缓存**永久命中（之后一直黑屏、不会重转） | `transcodeColorPlan` 只判位深/HDR，不判色度 ⇒ `passthrough`（不给 `-pix_fmt`）⇒ libx264 顺着源产出 High 4:2:2 / High 4:4:4，而 `browserCodecGap()` 恰把这两种 profile 判成"吃不下" | 新增 `TRANSCODE_SAFE_420` 白名单：非 4:2:0（含 rgb/bgr）一律显式 `-pix_fmt yuv420p` + 色彩标签；VP9 Profile 1/3、AV1 High/Professional 也进缺口表 |
+| F3 | 开了声音的壁纸在转码后**没声**（NOW PLAYING/音量仍工作） | 转码命令无条件 `-an` | 改为保留音轨（`-c:a aac -b:a 128k`；源无音轨时 ffmpeg 默认流选择不会凭空造一条） |
+| F4 | 文档承诺的"单任务硬超时 15 min"实际可为 **1 小时**，全程占着唯一并发名额 | 超时定时器在 `spawnFfmpeg`（**每次尝试**）里，且 `runTranscode` 把超时当"换下一个编码器/线程模式再试" | `runTranscode` 给任务级 `deadline`，`spawnFfmpeg` 用剩余预算，超时置 `err.taskTimedOut` 并**直接终止**后续尝试 |
+| F6 | MKV/WebM 里的 h264+opus（本就该放行）被判"mp4 容器里的 h264+opus" ⇒ 白转一次码 + `verdict.reason` 写错 | `browserCodecGap(video, audio, fmt)` 的 `fmt` 同时被当**容器**与**profile** 用，唯一调用点传的是 `videoProfile` ⇒ 容器永远缺席 | 签名拆成 `(video, audio, container, profile)`；第三个参数若是 profile 串则按 profile 解释（老调用点兼容） |
+| F7 | 磁盘满时一次失败会留下半个 `src_*.bin`（最大数百 MB）最长 1 小时，重试继续失败 | `materializeSource` 只有 `finally` 关句柄，`cleanup` 闭包在循环之后才返回 ⇒ 抛错时半成品无主 | catch 里关句柄 + `unlink(tmp)` 后重抛 |
+
+另修一条审计提到的硬化项：`buildScaleFilter` 的宽也钉成偶数（`scale='trunc(min(<maxW>,iw)/2)*2':-2…`）——
+旧写法 `-2` 只管高，而 H.264 允许奇数显示宽、预缩档的 `maxW` 也可能是奇数（`round(w*dpr)`）
+⇒ 一旦显式给了 `-pix_fmt yuv420p`（F2），奇数宽会直接编码失败。
+
+**未修（记账）**：审计 F5 = 插件自己的 `POST /ffmpeg-download` 只装 `ffmpeg`、不装 `ffprobe` ⇒
+在"没装系统 ffprobe"的机器上 `/probe` 的 `playable` 恒为 `null`，"能直读就别转码"这道闸门等于不生效
+（唯一的可播性判据失效）。修它要新增一个 ffprobe 资产（含 sha256 校验），留待单独一轮。
+
 ## 7. 未验证边界（不许当成"已验证"）
 
 1. **真机（Android/proot）未跑**：本文件全部读数来自本机 Node + ffmpeg 4.4.2 + 桩；真机 futex 单线程降级、

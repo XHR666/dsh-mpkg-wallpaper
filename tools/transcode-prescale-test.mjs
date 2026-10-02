@@ -11,7 +11,7 @@
 //   · 档位 = `section.preScale`：`0`=关（默认）/`1`=按屏幕物理尺寸；
 //   · 开了 ⇒ 客户端仍走**既有** `/transcode`，只多两件事：`maxW=<屏幕物理宽>` + `scale=lanczos`；
 //   · 宿主 `/transcode` 新增 `scale` 参数（**白名单**，非法 400），`-vf` 链由 `buildScaleFilter`
-//     唯一构造：`scale='min(<maxW>,iw)':-2:flags=lanczos,fps=<fps>`；
+//     唯一构造：`scale='trunc(min(<maxW>,iw)/2)*2':-2:flags=lanczos,fps=<fps>`；
 //   · 缓存键只在**真的给了 flags** 时追加 `|s:<flag>` ⇒ 不传 flags 的键与改动前**逐字节相同**
 //     （既有产物继续命中、升级不重转）。
 //
@@ -140,12 +140,12 @@ let keyLc = '';   // 预缩档缓存键：B 段要拿它跟磁盘产物名对拍
     Array.isArray(X.SCALE_FLAGS) && X.SCALE_FLAGS.includes('lanczos') && X.SCALE_FLAGS.includes('bicubic') && X.SCALE_FLAGS.length === 11,
     X.SCALE_FLAGS.join('/'));
 
-  ok('A2 预缩档 vf 链：scale=min(maxW,iw):-2:flags=lanczos 先缩放再抽帧',
-    X.buildScaleFilter(1280, 30, 'lanczos') === "scale='min(1280,iw)':-2:flags=lanczos,fps=30",
+  ok('A2 预缩档 vf 链：scale=trunc(min(maxW,iw)/2)*2:-2:flags=lanczos 先缩放再抽帧（宽高都钉偶数）',
+    X.buildScaleFilter(1280, 30, 'lanczos') === "scale='trunc(min(1280,iw)/2)*2':-2:flags=lanczos,fps=30",
     X.buildScaleFilter(1280, 30, 'lanczos'));
   ok('A2b **默认档逐字节不变**：不给 flags 时与改动前的 vf 链完全一致',
-    X.buildScaleFilter(1280, 30, '') === "scale='min(1280,iw)':-2,fps=30"
-    && X.buildScaleFilter(1920, 24, '') === "scale='min(1920,iw)':-2,fps=24",
+    X.buildScaleFilter(1280, 30, '') === "scale='trunc(min(1280,iw)/2)*2':-2,fps=30"
+    && X.buildScaleFilter(1920, 24, '') === "scale='trunc(min(1920,iw)/2)*2':-2,fps=24",
     X.buildScaleFilter(1280, 30, ''));
   ok('A2c 没有 maxW 就没有"缩"这回事（flags 被忽略，不产生多余滤镜）',
     X.buildScaleFilter(0, 24, 'lanczos') === 'fps=24' && X.buildScaleFilter(0, 24, '') === 'fps=24');
@@ -171,7 +171,7 @@ console.log('\n══ B 真 /transcode 路由（桩 ffmpeg：argv / 产物名 / 
   const vf1 = (trStarts()[0] || '');
   ok('B1 预缩档请求 ⇒ 200（真跑通既有转码通道）', r1.status === 200 && r1.bytes.length === 4096, 'status=' + r1.status + ' bytes=' + r1.bytes.length);
   ok('B1b 真传给 ffmpeg 的 `-vf` 带 flags=lanczos（argv 级证据）',
-    /-vf scale='min\(1280,iw\)':-2:flags=lanczos,fps=30/.test(vf1), vf1.replace(/^transcode-start /, '').slice(0, 160));
+    /-vf scale='trunc\(min\(1280,iw\)\/2\)\*2':-2:flags=lanczos,fps=30/.test(vf1), vf1.replace(/^transcode-start /, '').slice(0, 160));
   const expectFile = 'tc_' + keyLc + '.mp4';
   ok('B1c 落盘产物名 == 纯函数 transcodeKey(...)|s:lanczos（键与磁盘一致）',
     tcFiles().includes(expectFile), 'files=' + tcFiles().join(','));
@@ -181,7 +181,7 @@ console.log('\n══ B 真 /transcode 路由（桩 ffmpeg：argv / 产物名 / 
   const r2 = await call(transcodeRoute, BASE + '/transcode?file=' + encodeURIComponent('dummyB.mp4') + '&fps=30&maxW=1280');
   const vf2 = trStarts()[n0] || '';
   ok('B2 默认档（不传 scale）⇒ `-vf` 里**没有** flags（与改动前一致）',
-    r2.status === 200 && /-vf scale='min\(1280,iw\)':-2,fps=30/.test(vf2) && !/flags=/.test(vf2),
+    r2.status === 200 && /-vf scale='trunc\(min\(1280,iw\)\/2\)\*2':-2,fps=30/.test(vf2) && !/flags=/.test(vf2),
     vf2.replace(/^transcode-start /, '').slice(0, 120));
   const keyB = oldKey(srcIdB, fs.statSync(path.join(LIB, 'dummyB.mp4')).mtimeMs, 30, 1280);
   ok('B2b 默认档产物名 == 旧公式（不因新档换键 ⇒ 老用户产物继续命中）',
@@ -322,10 +322,10 @@ console.log('\n══ D 变异自证（5 组，各自必红）══');
   // D1 vf 链丢掉 flags
   {
     const lib = mutLib('vf');
-    const inj = mutate(path.join(lib, 'index.js'), "? \"scale='min(\" + w + \",iw)':-2\" + (scaleFlag ? ':flags=' + scaleFlag : '') + ',fps=' + fps", "? \"scale='min(\" + w + \",iw)':-2\" + ',fps=' + fps");
+    const inj = mutate(path.join(lib, 'index.js'), "? \"scale='trunc(min(\" + w + \",iw)/2)*2':-2\" + (scaleFlag ? ':flags=' + scaleFlag : '') + ',fps=' + fps", "? \"scale='trunc(min(\" + w + \",iw)/2)*2':-2\" + ',fps=' + fps");
     const m = await bootMut(lib);
     const got = m.mod.__mpwTest.buildScaleFilter(1280, 30, 'lanczos');
-    ok('D1 buildScaleFilter 改回不带 flags ⇒ A2 变红', inj && got === "scale='min(1280,iw)':-2,fps=30", got);
+    ok('D1 buildScaleFilter 改回不带 flags ⇒ A2 变红', inj && got === "scale='trunc(min(1280,iw)/2)*2':-2,fps=30", got);
   }
   // D2 缓存键丢掉 flags
   {

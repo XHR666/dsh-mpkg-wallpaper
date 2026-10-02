@@ -729,6 +729,69 @@ const F7A_HOLDS = (css) => {
     }))
 }
 
+
+/* ══════════════════════════════════════════════════════════════════
+   G 组：**透明度语义搬值**（2026-10-03 真机定案："左栏还是粉色，现在右栏也被注入了粉色"）
+   3.15.0 把两条滑条的数值语义翻转了（旧 = 白雾厚度/不透明，新 = 透明度），默认值照映射搬了
+   （新 65 ≡ 旧 35），但**存量档里的用户值没搬** ⇒ 用户当年为"求实心"拖到的 100 翻转后成了
+   "全透明" ⇒ 左栏整块透出壁纸、跟随档下右栏一起透（观感 = 被注入壁纸的粉色；探针三次读数
+   都证明那层就是壁纸本身，一个采样色都没刷）。
+   判据：旧档一次性按 `新 = 100 - 旧` 搬值并落盘标记 `alphaSemantics = 2`；带标记的档一字不动；
+   从没设过的档保持新默认；标记**不进用户档视图**（面板/导出/字段比较看不到）。
+   ══════════════════════════════════════════════════════════════════ */
+console.log('\n== G 组：透明度语义搬值（旧档 100 = 全不透明 → 新档 0）==')
+{
+  /* 旧档：真机用户档同形（sidebarAlpha 100 / rightSidebarAlpha 45，无记账键） */
+  const LEGACY = { enabled: true, image: 'stub-wallpaper.png', unifyTint: true, unifyAmount: 4, blurFollowUnify: true, sidebarAlpha: 100, rightSidebarAlpha: 45 }
+  /* ⚠️ 这两个字段只能**经档**进去（loadPlugin 的 settings），不能进 buildCss 的 patch：
+     patch 是"用户的本次改动"，会在 readSection() **之后**盖上 —— 那就把刚搬好的值又盖回旧值，
+     判据假红（第一版就是这么红的）。 */
+  const bootLegacy = (settings, clientPath) => {
+    reset()
+    world = loadPlugin({ quiet: true, clientPath: clientPath || CLIENT, settings: settings || {}, legacyAlphaSemantics: true })
+    const patch = Object.assign({ enabled: true, image: 'stub-wallpaper.png' }, settings || {})
+    delete patch.sidebarAlpha; delete patch.rightSidebarAlpha
+    return String((globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss(patch) : '') || '')
+  }
+  const P = () => globalThis.__mpwPersist
+  const cssLegacy = bootLegacy(LEGACY)
+  const rawLegacy = (() => { try { return JSON.parse(globalThis.localStorage.getItem(P().key) || '{}') } catch { return {} } })()
+  ok('G1 旧档（无记账键）⇒ 生效不透明度回到 100%：--mpw-chrome-alpha = 1 且不再是 0（旧档 100 不再被当成"全透明"）',
+    /--mpw-chrome-alpha:\s*1(\.0+)?\s*[;}]/.test(STRIP(cssLegacy)) && !/--mpw-chrome-alpha:\s*0\s*[;}]/.test(STRIP(cssLegacy)),
+    (STRIP(cssLegacy).match(/--mpw-chrome-alpha:[^;}]+/) || [''])[0])
+  /* 用户档视图：**必须在换世界之前读**（下面 G3 会 boot 一个新世界，全局钩子随之换人） */
+  const viewAfter = (() => { try { const v = P().read(); return { sidebarAlpha: v.sidebarAlpha, right: v.rightSidebarAlpha, alphaSemantics: v.alphaSemantics } } catch { return null } })()
+  /* 落盘是**延迟**的（boot 收尾前不写：宿主那份档还没合并回来）⇒ 显式收尾一次再读盘 */
+  let moved = null
+  try { P().writePartial({ unifyAmount: 4 }) } catch (e) { moved = 'writePartial 抛错:' + e.message }
+  try { P().bootSettle('gate') } catch (e) { moved = (moved ? moved + ' | ' : '') + 'bootSettle 抛错:' + e.message }
+  await new Promise((r) => setTimeout(r, 150))   /* 落盘是"0ms 定时器 + 异步写"：等它真的落地再读盘 */
+  const persisted = (() => { try { return JSON.parse(globalThis.localStorage.getItem(P().key) || '{}') } catch { return {} } })()
+  ok('G2 落盘的档被**搬过值**且带上幂等标记：sidebarAlpha 100→0、rightSidebarAlpha 45→55、alphaSemantics=2',
+    persisted.sidebarAlpha === 0 && persisted.rightSidebarAlpha === 55 && persisted.alphaSemantics === 2,
+    JSON.stringify({ sidebarAlpha: persisted.sidebarAlpha, rightSidebarAlpha: persisted.rightSidebarAlpha, alphaSemantics: persisted.alphaSemantics }) + (moved ? ' | ' + moved : ''))
+  const cssAgain = (() => { reset(); world = loadPlugin({ quiet: true, clientPath: CLIENT, settings: persisted }); return String((globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({ enabled: true, image: 'stub-wallpaper.png' }) : '') || '') })()
+  ok('G3 搬值只做一次：带标记的档再开机**不再翻**（仍是全不透明，不是 100 ⇒ 不是透明）',
+    /--mpw-chrome-alpha:\s*1(\.0+)?\s*[;}]/.test(STRIP(cssAgain)), (STRIP(cssAgain).match(/--mpw-chrome-alpha:[^;}]+/) || [''])[0])
+  ok('G4 记账键不进用户档视图（面板/导出/字段比较看不到 alphaSemantics），且搬值后的值在视图里就是 0/55',
+    !!viewAfter && viewAfter.alphaSemantics === undefined && viewAfter.sidebarAlpha === 0 && viewAfter.right === 55,
+    JSON.stringify(viewAfter))
+  ok('G5 新档语义（用户自己把滑条拖到 100 = 明确要全透明，带标记）⇒ 一字不动：--mpw-chrome-alpha = 0',
+    (() => { reset(); world = loadPlugin({ quiet: true, clientPath: CLIENT, settings: { enabled: true, image: 'stub-wallpaper.png', unifyTint: true, unifyAmount: 4, blurFollowUnify: true, sidebarAlpha: 100, rightSidebarAlpha: 45, alphaSemantics: 2 } }); const c = String((globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({ enabled: true, image: 'stub-wallpaper.png' }) : '') || ''); return /--mpw-chrome-alpha:\s*0\s*[;}]/.test(STRIP(c)) })(),
+    '')
+  ok('G6 档里从没设过这两个字段 ⇒ 保持**新默认**（不透明 35% = chrome alpha 0.35，不当成旧档搬值）',
+    (() => { reset(); world = loadPlugin({ quiet: true, clientPath: CLIENT, settings: { enabled: true, image: 'stub-wallpaper.png', unifyTint: true, unifyAmount: 4 } }); const c = String((globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({ enabled: true, image: 'stub-wallpaper.png' }) : '') || ''); return /--mpw-chrome-alpha:\s*0\.35\s*[;}]/.test(STRIP(c)) })(),
+    '')
+  ok('G7 搬值是"唯一入口 + 纯函数"：`mpwAlphaFlipValue()` 就是 `100 - 旧值`（右栏那条的兜底默认值不参与搬值）',
+    /mpwAlphaFlipValue/.test(SRC) && /100 - n/.test(SRC) && /const alphaFlip = s0\[MPW_ALPHA_SEM_KEY\] !== MPW_ALPHA_SEM;/.test(SRC))
+  ok('G8 变异自证：把搬值公式 `100 - n` 改回 `n`（不搬值）⇒ G1/G2 必红（真源零改动）',
+    (() => {
+      const m = mutant('alpha-noflip', 'return Number.isFinite(n) ? Math.max(0, Math.min(100, 100 - n)) : void 0;', 'return Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : void 0;')
+      const cssM = bootLegacy(LEGACY, m)
+      return !/--mpw-chrome-alpha:\s*1(\.0+)?\s*[;}]/.test(STRIP(cssM))
+    })(), '')
+}
+
 console.log(`\n===== fog-model: ${pass} 通过 / ${fail} 失败 =====`)
 if (!fail) console.log('✓ 雾模型口径成立：透明度 0 = 完全不覆盖宿主（chrome 覆盖规则 0 处、标题栏交还宿主）、透明度 100 = 一个像素不刷、半径 0 = 真 0、跟随开关真能解耦、未被单独动过的表面与统一值逐字一致')
 process.exitCode = fail ? 1 : 0

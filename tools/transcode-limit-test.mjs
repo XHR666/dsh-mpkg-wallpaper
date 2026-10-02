@@ -155,6 +155,9 @@ const routes = [];
 __mpwTest.apply({ webServer: { register: (r) => routes.push(r) }, loader: null, logger: { info() {}, warn() {}, error() {} } });
 const routeExact = (p) => routes.find((r) => r.kind === 'exact' && r.path === p);
 const routePrefix = (p) => routes.find((r) => r.kind === 'prefix' && r.path === p);
+/** 进度路由按**精确**路径注册（不是前缀）⇒ 用 path 自己拼查询串。 */
+const progressPath = '/api/mpkg-wallpaper/transcode-progress';
+const progressExact = routeExact(progressPath);
 
 class Res extends Writable {
   constructor() { super(); this.chunks = []; this.status = 0; this.headers = {}; }
@@ -397,8 +400,8 @@ if (process.argv.includes('--mem-guard-child')) {
   await call(routePrefix('/api/mpkg-wallpaper/transcode'), tcUrl('unplayable3.mkv', '&fps=30'));
   await sleep(500);
   const run = stubLines().find((l) => l.startsWith('transcode-start')) || '';
-  check('C7 转码真的带降采样（ffmpeg 实参含 scale=min(1920,iw)）',
-    L.TRANSCODE_DEFAULT_MAXW === 1920 && /scale='?min\(1920,iw\)/.test(run), run.slice(0, 170));
+  check("C7 转码真的带降采样（ffmpeg 实参含 scale='trunc(min(1920,iw)/2)*2'，宽高都钉偶数）",
+    L.TRANSCODE_DEFAULT_MAXW === 1920 && /scale='trunc\(min\(1920,iw\)\/2\)\*2'/.test(run), run.slice(0, 170));
   const srcT = fs.readFileSync(path.join(ROOT, 'lib', 'index.js'), 'utf8');
   check('C7b 线程策略：首轮多线程（本机实测 qemu 下 futex 会失败）⇒ 单线程 -threads 1/-filter_threads 1 作为回退存在',
     !/-filter_threads 1/.test(run) && /label: 'st', extra: \['-threads', '1', '-filter_threads', '1'\]/.test(srcT), run.slice(0, 110));
@@ -413,6 +416,73 @@ console.log('\n== [D] 客户端接线（源码守卫）==');
   check('D3 三态可见：direct / transcode / cached 都有落点',
     /mpwWallpaperStateSet\("direct"/.test(c) && /mpwWallpaperStateSet\("transcode"/.test(c) && /"cached"/.test(c) && /__mpwWallpaperState/.test(c));
   check('D4 可直读时不启动转码：有明确日志与用户可见提示', /transcode\.directRetry/.test(c));
+}
+
+
+console.log('\n== [D2] ffmpeg 审计修复（F1 进度键 / F3 音轨 / F4 任务级超时 / F7 半成品清理）==');
+{
+  /* F1：客户端"没设 resMax"时**不带 maxW** 请求转码（`/transcode?src=…&fps=30`），
+     而宿主会套 TRANSCODE_DEFAULT_MAXW=1920 写入台账。旧实现的进度查询用 raw maxW=0 查 ⇒ 永远 idle：
+     ①忙条读到 0% 直到 2 分钟超时；②客户端 10s 轮询等的 phase==='done' 永远不来 ⇒ 不可直读的源
+     卡在回退原片上黑屏。判据：转码进行中（桩还在睡）用**同样的无 maxW URL** 能查到 working。 */
+  fs.writeFileSync(STUB_LOG, '');
+  process.env.STUB_SLEEP = '1.4';
+  const pending = call(routePrefix('/api/mpkg-wallpaper/transcode'), tcUrl('unplayable.mkv', '&fps=30'));
+  await sleep(500);
+  const pr = await call(progressExact, progressPath + '?src=' + encodeURIComponent('host:?custom=1&folder=&file=unplayable.mkv') + '&fps=30');
+  const pj = jsonOf(pr);
+  check('D2a 无 maxW 的进度查询查得到（F1：查询键 = 写入键，含默认降采样 1920）',
+    pr.status === 200 && pj.phase !== 'idle', 'phase=' + pj.phase + ' percent=' + pj.percent + ' body=' + String(pr.body).slice(0, 80));
+  const fin = await pending;
+  delete process.env.STUB_SLEEP;
+  check('D2a2 该转码本身正常完成', fin.status === 200, 'status=' + fin.status);
+  /* F3：转码产物必须保留音轨（旧命令无条件 -an ⇒ 壁纸声音没了） */
+  const run = stubLines().filter((l) => l.startsWith('transcode-start')).pop() || '';
+  check("D2b 转码命令保留音轨（-c:a aac；不再无条件 -an）——壁纸声音（NOW PLAYING/音量）不被转码吃掉",
+    /-c:a\s+aac/.test(run) && !/\s-an(\s|$)/.test(run), run.replace(/^transcode-start /, '').slice(0, 200));
+}
+{
+  /* F4：超时必须是**任务级**（旧：每次尝试各 15min ⇒ 最多 4 次 = 1 小时，全程占着唯一名额）。
+     源码守卫 + 变异自证在这里做；真行为（只起 1 个进程）由 STUB 计数在超时档下断言成本过高，
+     改断言"deadline 一路传进 spawnFfmpeg，且 taskTimedOut 直接终止重试"。 */
+  const idx = fs.readFileSync(path.join(ROOT, 'lib', 'index.js'), 'utf8');
+  check('D2c 任务级超时：runTranscode 给 deadline、spawnFfmpeg 用剩余预算、taskTimedOut 直接抛出（不再换编码器重试）',
+    /const deadline = Date\.now\(\) \+ TRANSCODE_TIMEOUT_MS;/.test(idx)
+    && /await spawnFfmpeg\(ff\.path, full, jobKey, deadline\);/.test(idx)
+    && /const budget = Number\.isFinite\(deadline\) \? Math\.max\(0, deadline - Date\.now\(\)\) : TRANSCODE_TIMEOUT_MS;/.test(idx)
+    && /err\.taskTimedOut = true;/.test(idx)
+    && /if \(err && err\.taskTimedOut\) throw err;/.test(idx));
+  /* F7：拷贝中途失败必须删半成品（否则磁盘满时残留 src_*.bin 把盘占满 ⇒ 重试继续失败） */
+  check('D2d materializeSource 拷贝失败会删掉半成品 src_*.bin（不再等 1 小时回收）',
+    /const tmp = join\(cacheDir, 'src_'/.test(idx) && /try \{ unlinkSync\(tmp\); \} catch \{ \/\* 忽略 \*\/ \}\n    throw e;/.test(idx));
+  /* F2/F6：判据本身（纯函数，走 __mpwTest 导出） */
+  const X = __mpwTest || {};   // ← 本测试 import 出来的模块导出（`globalThis.__mpwTest` 只有 apply 那份）
+  const plans = [
+    ['yuv422p', 'bt709'],
+    ['yuv444p', 'bt709'],
+  ];
+  let chromaOk = true, seen = [];
+  for (const [fmt, trc] of plans) {
+    const plan = X.transcodeColorPlan ? X.transcodeColorPlan({ pixFmt: fmt, colorTransfer: trc }) : null;
+    if (!plan) { chromaOk = false; break }
+    seen.push(fmt + '→' + plan.mode);
+    if (!(plan.downgrade === true && plan.args.includes('-pix_fmt') && plan.args.includes('yuv420p'))) chromaOk = false;
+  }
+  check('D2e 8bit 非 4:2:0 源（yuv422p/yuv444p）也显式降 yuv420p（F2：否则转出浏览器同样放不出的 4:2:2/4:4:4 并被当有效缓存）',
+    chromaOk, seen.join(' '));
+  const p420 = X.transcodeColorPlan ? X.transcodeColorPlan({ pixFmt: 'yuv420p', colorTransfer: 'bt709' }) : null;
+  check('D2e2 8bit 4:2:0 仍是 passthrough（既有产物键/字节不变）',
+    !!p420 && p420.mode === 'passthrough' && p420.args.length === 0, p420 ? p420.mode : 'n/a');
+  const gapMkv = X.browserPlayable ? X.browserPlayable({ video: 'h264', audio: 'opus', container: 'matroska,webm', videoProfile: 'High' }) : null;
+  const gapMp4 = X.browserPlayable ? X.browserPlayable({ video: 'h264', audio: 'opus', container: 'mov,mp4,m4a,3gp,3g2,mj2', videoProfile: 'High' }) : null;
+  check('D2f h264+opus 判据看**容器**（F6：MKV/WebM 放行、MP4 拦下）',
+    !!gapMkv && gapMkv.playable === true && !!gapMp4 && gapMp4.playable === false,
+    'mkv=' + (gapMkv && gapMkv.playable) + ' mp4=' + (gapMp4 && gapMp4.playable));
+  const gapVp9 = X.browserPlayable ? X.browserPlayable({ video: 'vp9', audio: '', container: 'webm', videoProfile: 'Profile 1' }) : null;
+  const gapAv1 = X.browserPlayable ? X.browserPlayable({ video: 'av1', audio: '', container: 'mp4', videoProfile: 'Professional' }) : null;
+  check('D2g VP9 Profile 1 / AV1 High·Professional 也判"吃不下"（F2 后半：否则直接喂浏览器 = 黑屏且不走转码）',
+    !!gapVp9 && gapVp9.playable === false && !!gapAv1 && gapAv1.playable === false,
+    'vp9=' + (gapVp9 && gapVp9.playable) + ' av1=' + (gapAv1 && gapAv1.playable));
 }
 
 console.log('\n== [E] 磁盘卫生（硬要求）==');

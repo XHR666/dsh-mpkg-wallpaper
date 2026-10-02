@@ -354,7 +354,7 @@ const POPOVER_SUBTREE = (sel) => {
   if (!root) {
     return { sel, found: false, visibleMenus: Array.from(document.querySelectorAll('[role="menu"],[role="listbox"]')).filter(VIS).map((e) => ({ cls: String(e.className).slice(0, 50), id: e.id })) }
   }
-  const TOK = ['--mpw-surface-pop', '--mpw-surface-pop-dark', '--mpw-pop-alpha', '--mpw-pop-blur', '--mpw-pop-radius']
+  const TOK = ['--mpw-surface-pop', '--mpw-surface-pop-dark', '--mpw-pop-surface', '--mpw-pop-surface-dark', '--mpw-pop-surface-alpha', '--mpw-pop-alpha', '--mpw-pop-blur', '--mpw-pop-radius']
   const tokOf = (e) => { const c = getComputedStyle(e); const o = {}; for (const t of TOK) { const v = c.getPropertyValue(t).trim(); if (v) o[t] = v.slice(0, 48) } return o }
   const paints = (c) => ALPHA(c.backgroundColor) > 0.01 || c.backdropFilter !== 'none' || c.backgroundImage !== 'none'
   const items = []
@@ -362,7 +362,7 @@ const POPOVER_SUBTREE = (sel) => {
     const c = getComputedStyle(e)
     if (!paints(c)) return
     const r = e.getBoundingClientRect()
-    items.push({ why, sel: pathOf(e), tag: e.tagName, cls: String(e.className).slice(0, 70), role: e.getAttribute('role'), text: String(e.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 24), bg: c.backgroundColor, bf: c.backdropFilter, bgImage: String(c.backgroundImage).slice(0, 60), rect: [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)], z: c.zIndex, opacity: c.opacity, mixBlend: c.mixBlendMode, visible: VIS(e), tokens: tokOf(e) })
+    items.push({ why, tagPopBg: e.hasAttribute('data-mpw-pop-bg'), sel: pathOf(e), tag: e.tagName, cls: String(e.className).slice(0, 70), role: e.getAttribute('role'), text: String(e.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 24), bg: c.backgroundColor, bf: c.backdropFilter, bgImage: String(c.backgroundImage).slice(0, 60), rect: [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)], z: c.zIndex, opacity: c.opacity, mixBlend: c.mixBlendMode, visible: VIS(e), tokens: tokOf(e) })
   }
   add(root, 'container')
   for (const e of root.querySelectorAll('*')) add(e, 'descendant')
@@ -385,7 +385,7 @@ const POPOVER_SUBTREE = (sel) => {
 const GROUP_TITLE_FACTS = () => {
   const H = globalThis.__pp; if (!H) return { err: 'page-helpers-missing' }
   const { pathOf, VIS } = H
-  const TOK = ['--mpw-surface-pop', '--mpw-surface-pop-dark', '--mpw-pop-alpha', '--mpw-pop-blur']
+  const TOK = ['--mpw-surface-pop', '--mpw-surface-pop-dark', '--mpw-pop-surface', '--mpw-pop-surface-alpha', '--mpw-pop-alpha', '--mpw-pop-blur']
   const tokOf = (e) => { const c = getComputedStyle(e); const o = {}; for (const t of TOK) { const v = c.getPropertyValue(t).trim(); if (v) o[t] = v.slice(0, 48) } return o }
   const rectOf = (e) => { const r = e.getBoundingClientRect(); return [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)] }
   const titles = Array.from(document.querySelectorAll('[class*="_groupTitle"],[class*="groupTitle"]')).filter(VIS)

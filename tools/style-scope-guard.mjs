@@ -205,7 +205,7 @@ const HOST_OVERRIDE_REGISTRY = [
        不是漏接线。其余所有档位照旧必须有（判据的强度不变，只把"条件"写准）。 */
     feature: (p) => p.sidebar !== false && hasWall(p) && Number(p.sidebarAlpha !== undefined ? p.sidebarAlpha : 65) > 0,
     reason: '侧栏透出壁纸**开**且界面透明度 > 0：宿主 --dsw-specific-sidebar-fill 置 transparent，只打侧栏白名单容器（?sbfill=wide 才回退全局）；关档走 opaque 那条；透明度 = 0 ⇒ 交还宿主（chromeInert）',
-    doc: 'docs/TOKEN-NAMESPACE.md:90',
+    doc: 'docs/TOKEN-NAMESPACE.md:91',
   },
   {
     id: 'ovr:sidebar-fill-opaque',
@@ -214,7 +214,7 @@ const HOST_OVERRIDE_REGISTRY = [
     selectorRe: /^html body( \.pI_x6G_sidebarCol| \[class\*="sidebarCol"\]| \.hHd-Xa_root| \[data-slot="sidebar"\])|^html body\[data-ds-dark-theme\]/,
     feature: (p) => p.sidebar === false && hasWall(p),
     reason: '侧栏透出壁纸**关**：同一个宿主 token 回到主题静态不透明色（亮=白/暗=深色），选择器同一份白名单',
-    doc: 'docs/TOKEN-NAMESPACE.md:91',
+    doc: 'docs/TOKEN-NAMESPACE.md:92',
   },
   {
     id: 'ovr:font-color-gray',
@@ -227,7 +227,7 @@ const HOST_OVERRIDE_REGISTRY = [
     selectorRe: /^body$/,
     feature: (p) => !!p.fontColorGray && /^#[0-9a-fA-F]{6}$/.test(String(p.fontColorGrayColor || '')),
     reason: '「自定义灰字颜色」功能（17 枚 label/line/border token 打在 body 上）：用户显式选色才生效，未开/未选色时保持主题灰（= 关闭态）',
-    doc: 'docs/TOKEN-NAMESPACE.md:92',
+    doc: 'docs/TOKEN-NAMESPACE.md:93',
   },
   {
     id: 'ovr:aqua-ink-brand',
@@ -237,7 +237,7 @@ const HOST_OVERRIDE_REGISTRY = [
     selectorRe: /^body\[data-mpw-aqua\]\[data-mpw-aqua-ink\]$/,
     feature: (p) => hasWall(p) && !!(p.aquaMask || p.aquaTint || p.aquaInk),
     reason: 'Aqua 实验模式：文字/品牌色改读我们命名空间的 --mpw-aqua-ink*；门控 = body[data-mpw-aqua][data-mpw-aqua-ink]（JS 真写入 ink 才打）',
-    doc: 'docs/TOKEN-NAMESPACE.md:93',
+    doc: 'docs/TOKEN-NAMESPACE.md:94',
   },
   {
     id: 'ovr:accent-brand',
@@ -247,7 +247,7 @@ const HOST_OVERRIDE_REGISTRY = [
     selectorRe: /^body\[data-mpw-accent\]$/,
     feature: (p) => hasWall(p) && accentConfigured(p),
     reason: '「配色」(accent)：品牌交互色/发送键读 --mpw-accent-color；门控 = body[data-mpw-accent]（运行时属性，选了色才打）。①(2026-09-18) 已与 aquaOn 解耦（原来被 aquaOn 包着 ⇒ 只开 accent 时规则不生成 = 功能静默无效）',
-    doc: 'docs/TOKEN-NAMESPACE.md:94',
+    doc: 'docs/TOKEN-NAMESPACE.md:95',
   },
   {
     id: 'ovr:text-ink-adaptive',
@@ -257,7 +257,7 @@ const HOST_OVERRIDE_REGISTRY = [
     selectorRe: /^body\[data-mpw-aqua-text\]\[data-mpw-text-ink\]$/,
     feature: (p) => hasWall(p) && textEnhanceOn(p),
     reason: '亮度自适应文字色：文字 token 改读 --mpw-text-ink*；门控 = body[data-mpw-aqua-text][data-mpw-text-ink]（描边部分只需前者；token 覆盖需 JS 真写入 ink）。①(2026-09-18) 已与 aquaOn 解耦',
-    doc: 'docs/TOKEN-NAMESPACE.md:95',
+    doc: 'docs/TOKEN-NAMESPACE.md:96',
   },
 ]
 

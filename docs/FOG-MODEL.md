@@ -13,6 +13,24 @@
 | 「整屏虚化程度」`unifyAmount` | 模糊半径（壁纸层 + 各表面 backdrop）；0 = 不虚化、且接管规则写 `backdrop-filter: none` | A2/B1c |
 | 「跟随统一虚化」`blurFollowUnify` | 开：未单独动过的表面与统一值**逐字一致**；任何一项**被用户单独动过后即独立**（`*UserSet` 标记）；关：全部独立。重新打开 = 清空标记 | F1–F6 |
 
+### 0.1 存量档的**语义搬值**（一次性，2026-10-03 真机定案）
+
+语义翻转只搬了**默认值**（新 65 ≡ 旧 35），**存量档里的用户值**在 3.15.0/3.15.1/3.15.2 里没搬：
+用户当年为"求实心"把旧滑条拖到 `100`（旧语义 = 全不透明），翻转后同一个 `100` 变成"全透明"
+⇒ 左栏整块透出壁纸、跟随档下右栏一起透，真机观感就是**"侧边栏被注入了壁纸的粉色"**
+（探针三次读数都证明那层就是壁纸本身：隐藏壁纸层 ⇒ 该处变白、隐藏侧栏 ⇒ 该处就是壁纸像素，
+链路里没有任何采样色 token）。
+
+处置（`mpwNormalizeSection` 内，一次性）：档里**真的有** `sidebarAlpha` / `rightSidebarAlpha`
+且**没有**记账键 `alphaSemantics = 2` 时，按 `新 = 100 − 旧` 搬值并写下标记：
+
+* `sidebarAlpha 100 → 0`（全不透明）、`rightSidebarAlpha 45 → 55`（45% 不透明，观感同旧版）；
+* 记账键登记在 `MPW_BOOK_KEYS`：**只随档持久化**，`readSection()` 的用户档视图（面板/导出/
+  字段集合比较）看不到它；
+* 幂等：已带标记的档一字不动（用户在新语义下**刻意**拖到 100 = 要全透明，也一字不动）；
+* 从没设过这两个字段的档保持新默认（不透明 35% / 右栏 55% 透明度）；
+* 判据 `fog-model-test` G 组（含 G8 变异：搬值公式改回 `n` ⇒ G1/G2 必红）。
+
 **基色 = 宿主自己的表面 token**（左栏/右栏/dock = `--dsw-specific-sidebar-fill`，标题栏 =
 `--dsw-alias-bg-base`）—— 0% 透明时逐像素等于"没装插件"。旧实现刷我们自己的纯白，
 正是用户报的"变成白色不透明"与"标题栏固定白底"。
@@ -85,13 +103,17 @@
 
 ## 4. 判据
 
-* `tools/fog-model-test.mjs`（**48/0**，含 6 组变异自证）：
+* `tools/fog-model-test.mjs`（**85/0**，含 8 组变异自证）：
   A 口径与接线（含"说明行+开关必须夹在 tab 栏与标题之间"的位置判据、zh/en 键一一对应）、
   B CSS 落点（0 厚度 / 0 半径 / 跟随与不跟随 / 无壁纸 / better-sidebar 门控）、
   C 行为落点（`__mpwHdrFrostTest` 真跑 `syncHeaderFrost`：0 ⇒ 0px、跟随 ⇒ unifyAmount、
   不跟随 ⇒ 自己的条）、
   D 取色厚度（切片执行真 `aquaTokenOverrides`：厚度 0 ⇒ alpha 0%）、
-  E 变异自证（把半径下限 / 取色 alpha / 跟随判断 / bsCompat 门控改坏 ⇒ 对应判据必红）。
+  F 独立性/归属（`*UserSet` 只让那一项独立）、F7 透明度 0 ⇒ 完全不覆盖宿主、
+  F8 静默被丢弃的 CSS 值（`rgba(var(颜色 token))`）、
+  G **透明度语义搬值**（旧档 `100` = 全不透明 ⇒ 新档 `0`；一次性、幂等标记、不进用户档视图）、
+  E 变异自证（把半径下限 / 取色 alpha / 跟随判断 / bsCompat 门控 / `chromeInert` 判据 / 搬值公式
+  改坏 ⇒ 对应判据必红）。
 * 相关既有门禁：`switch-wiring-test`（新开关真的改变 CSS）、`bs-compat-default-test`
   （bsCompat 门控与迁移）、`theme-assist-test`（半透明主题外框）、`token-namespace-test`（表面 token SSOT）。
 
