@@ -199,7 +199,7 @@ const HOST_OVERRIDE_REGISTRY = [
     id: 'ovr:sidebar-fill-translucent',
     props: ['--dsw-specific-sidebar-fill'],
     valueRe: /^transparent$/i,
-    selectorRe: /^html body( \.pI_x6G_sidebarCol| \[class\*="sidebarCol"\]| \.hHd-Xa_root| \[data-slot="sidebar"\])/,
+    selectorRe: /^html body( \.pI_x6G_sidebarCol| \[class\*="sidebarCol"\]| \.hHd-Xa_root| \[data-slot="sidebar"\]| \[data-sidebar-right-panel\]| \[data-dockkit-pane\]| \[data-dockkit-strip\]| \[data-dockkit-surface\]| \[data-dockkit-float\])/,
     /* ①(2026-10-02 表面模型重做) 新增例外：**「界面透明度」= 0（完全不透明）⇒ 插件完全不覆盖宿主**
        （连 sidebar-fill 都不透明化，见 lib/client.js 的 chromeInert）⇒ 这一档没有这条声明是**正确行为**，
        不是漏接线。其余所有档位照旧必须有（判据的强度不变，只把"条件"写准）。 */
