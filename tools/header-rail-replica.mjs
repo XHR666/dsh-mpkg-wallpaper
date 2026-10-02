@@ -82,9 +82,12 @@ function buildCssFor(variant) {
     const src0 = fs.readFileSync(clientPath, 'utf8')
     let src = src0
     const reps = [
-      ['\tbackground-color: var(--mpw-hdr-frost-bg, rgba(255, 255, 255, 0.38)) !important;\n}',
+      /* ①(2026-10-04 3.15.5 在途) 两条规则的回退都改成了 var(--mpw-surface-frost-top) 且逐字相同
+         ⇒ before 变体按**出现顺序**依次还原：第一个命中亮色规则、第二个命中暗色规则
+         （String.replace 只替换第一个出现，第一条还原后第二条才轮到暗色的锚点）。 */
+      ['\tbackground-color: var(--mpw-hdr-frost-bg, var(--mpw-surface-frost-top)) !important;\n}',
         '\tbackground-color: var(--mpw-hdr-frost-bg, rgba(255, 255, 255, 0.38)) !important;\n\tborder-bottom: 1px solid transparent !important;\n}'],
-      ['\tbackground-color: var(--mpw-hdr-frost-bg, rgba(18, 22, 30, 0.45)) !important;\n}',
+      ['\tbackground-color: var(--mpw-hdr-frost-bg, var(--mpw-surface-frost-top)) !important;\n}',
         '\tbackground-color: var(--mpw-hdr-frost-bg, rgba(18, 22, 30, 0.45)) !important;\n\tborder-bottom: 1px solid transparent !important;\n}'],
       ['el.style.cssText = "position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;";',
         'el.style.cssText = "position:absolute;inset:0;z-index:-1;pointer-events:none;border-radius:inherit;";'],

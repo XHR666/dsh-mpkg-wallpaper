@@ -217,7 +217,9 @@ ok('B0 前置：假 PATH 下 resolveFfprobe()=null（sibling 目录还没有 ffp
   }
 }
 {
-  // 双已在位 ⇒ 早退且零请求（ffprobe 记 skipped）。B4 后 ffprobe 缺席（故意）⇒ 手工补位（早退只看 existsSync）
+  // 双已在位 ⇒ 早退且零请求（早退只看 existsSync）。B4 可能被 SKIP（无样本）或 ffprobe 故意失败
+  //   ⇒ 两个目标都手工补位，保证本臂测的是"早退"而不是下载路径
+  if (!fs.existsSync(ffTarget())) fs.writeFileSync(ffTarget(), Buffer.alloc(1024, 7))
   if (!fs.existsSync(fpTarget())) fs.writeFileSync(fpTarget(), Buffer.alloc(1024, 7))
   const srv = await makeStubServer([{ status: 500, body: Buffer.alloc(4) }])
   process.env.DSH_WE_FFMPEG_URL = 'http://127.0.0.1:' + srv.address().port + '/blob'

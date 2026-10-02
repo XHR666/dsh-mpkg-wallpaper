@@ -51,9 +51,13 @@ const STUB = path.join(TMP, 'fake-ffmpeg');
 fs.writeFileSync(STUB_JS, `#!/usr/bin/env node
 const fs = require('fs');
 const args = process.argv.slice(2);
+// ①(F5 2026-10-03) 生产端的次选探测会发一次 ffmpeg -hide_banner -i <file>（无输出文件，真 ffmpeg 立即退出 1）
+//   这不是转码：不记 transcode-start、不写产物（旧桩会把 file 当输出把源夹具覆盖掉）。
+const isProbeI = args[0] === '-hide_banner' && args.length <= 3 && args.includes('-i');
 const isVersion = args.includes('-version');
-fs.appendFileSync(process.env.STUB_LOG, (isVersion ? 'probe' : 'transcode-start ' + args.join(' ')) + '\\n');
+fs.appendFileSync(process.env.STUB_LOG, (isVersion ? 'probe' : isProbeI ? 'probe-i' : 'transcode-start ' + args.join(' ')) + '\\n');
 if (isVersion) process.exit(0);
+if (isProbeI) process.exit(1);
 const failIf = process.env.STUB_FAIL_IF || '';
 if (failIf && args.some((a) => String(a).includes(failIf))) process.exit(1);   // 模拟"这个源转不动"
 const out = args[args.length - 1];

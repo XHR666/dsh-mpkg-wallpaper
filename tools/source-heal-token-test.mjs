@@ -16,7 +16,7 @@ console.log('== 真机那条半残档：只剩 image token ==')
   loadPlugin({ quiet: true, settings: {
     enabled: true, image: 'host:?token=%E5%B0%8F%E9%B8%9F%E6%B8%B8%E6%98%9F%E9%87%8E01_04&index=0',
     srcRoot: 'container', mpkgKey: '', mpkgName: '', converted: '', source: '',
-    sceneKey: 'scene|probe|/tmp/does-not-exist/scene.pkg', alphaSemantics: 2,
+    sceneKey: 'scene|probe|/x/does-not-exist/scene.pkg', alphaSemantics: 2,
   } })
   const P = globalThis.__mpwPersist
   const half = { image: 'host:?token=%E5%B0%8F%E9%B8%9F%E6%B8%B8%E6%98%9F%E9%87%8E01_04&index=0', srcRoot: 'container', mpkgKey: '', mpkgName: '', converted: '', source: '' }

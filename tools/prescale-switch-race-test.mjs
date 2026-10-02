@@ -75,6 +75,9 @@ const fs = require('fs');
 const args = process.argv.slice(2);
 const log = (s) => { try { fs.appendFileSync(process.env.STUB_LOG, s + '\\n') } catch {} };
 if (args.includes('-version')) { log('probe'); process.exit(0); }
+// ①(F5 2026-10-03) 生产端的次选探测会发一次 ffmpeg -hide_banner -i <file>（无输出文件、真 ffmpeg 立即退出 1）。
+//   这**不是转码**：不记 transcode-start、不写产物（旧桩会把 <file> 当输出把源夹具覆盖掉）。
+if (args[0] === '-hide_banner' && args.length <= 3 && args.includes('-i')) { log('probe-i'); process.exit(1); }
 log('transcode-start ' + args.join(' '));
 const out = args[args.length - 1];
 let done = false;
