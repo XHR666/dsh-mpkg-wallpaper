@@ -47,6 +47,29 @@ ffprobe -v error -select_streams a -show_entries stream=codec_name,profile,chann
 **探测不出来（无 ffprobe / 未知编码 / 字段缺失）⇒ 返回 `playable:null` = 不知道**，
 一律**保留旧行为**，绝不因为闸门本身误伤能播的源。
 
+## 4b. ffprobe 从哪来（F5 收口，2026-10-03）——"哪种机器上闸门才真的生效"
+
+`resolveFfprobe()` 的探测链 + 下载链的落点合起来决定"这台机器上 `/probe` 闸门是不是真的在工作"：
+
+| 机器形态 | ffprobe 来源 | 闸门状态 |
+|---|---|---|
+| Linux 服务器/桌面（发行版装了 ffmpeg 套件） | 系统 PATH（`/usr/bin/ffprobe`） | ✅ 生效 |
+| env `DSH_WE_FFPROBE` 指向的可执行 | env | ✅ 生效 |
+| 用户点过「下载 ffmpeg」（3.15.5 起） | `DATA_DIR/ffmpeg/ffprobe[.exe]`（下载链**成对**装） | ✅ 生效（此前 ❌——下载只装 ffmpeg 本体） |
+| Windows/macOS 上只有 ffmpeg.exe / brew ffmpeg 但没装 ffprobe | **次选探测**：`ffmpeg -hide_banner -i` 的 stderr 解析 | 🟡 半生效（codec/容器/宽高/帧率拿得到 ⇒ `playable` 有值；**色彩元数据拿不到** ⇒ 降位深策略字段留空 = 不猜；`probeSource:'ffmpeg-i'` 进台账） |
+| 完全没有任何 ffmpeg/ffprobe | — | ❌ 转码本就不可用（与闸门无关） |
+
+下载链（`POST /ffmpeg-download`）的 ffprobe 校验：同源 ffmpeg-static 同 tag 的 `ffprobe-*` 资产 →
+`FFPROBE_STATIC_SHA256` 钉值命中则强校验（linux-arm64 已下载实测钉入：49,946,640 B /
+`9c741c0d…`；其余平台核实后逐个补钉）→ 魔数（MZ/ELF/Mach-O）+ 长度下限 20MB → 原子 rename。
+**校验失败不落盘不覆盖、不影响 ffmpeg 本体**；下载成功重置 `resolveFfprobe` 的进程内记忆化。
+`/ffmpeg-check` 新增 `ffprobe:{found,path,version}`（既有字段不动）；`/ffmpeg-uninstall` 成对卸载。
+
+判据：`tools/ffprobe-provision-test.mjs`（20 条，check.sh 第 5 步）——桩下载端点（好内容落盘 +
+`sibling` 立即命中 / 钉值不匹配拒 / 坏魔数拒且无 .part 残留 / ffmpeg 成功+ffprobe 失败不影响本体 /
+双已在位零请求早退）+ 真 mp4 上 ffprobe 路与 ffmpeg-i 路 verdict 逐字一致 + 变异自证（砍掉
+`parseFfmpegStderrMeta` 的 Video 分支 ⇒ 次选必 null）。
+
 宿主新增只读路由 `GET /api/mpkg-wallpaper/probe?src=<client 的 image 串>`：
 
 ```json

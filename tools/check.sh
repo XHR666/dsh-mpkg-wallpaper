@@ -622,6 +622,12 @@ node tools/web-interaction-test.mjs || fail=1
 #   F6 h264+opus 判据看容器（MKV/WebM 放行、MP4 拦下）、VP9/AV1 高位深 profile 判"吃不下"。
 #   详见 docs/TRANSCODE-RESOURCE.md
 node tools/transcode-limit-test.mjs || fail=1
+# ①(2026-10-03 审计 F5 收口) 自带下载**成对装 ffprobe**（同源 ffmpeg-static ffprobe-* 资产；
+#   sha256 钉值/魔数/长度校验，失败不落盘不覆盖、不影响 ffmpeg 本体）+ ffprobe 缺席机器的
+#   **次选探测**（ffmpeg -i 的 stderr 解析，probeSource 台账字段）。判据 20 条：
+#   桩下载端点断言落盘/拒绝/零请求早退 + 真 mp4 双路 verdict 一致 + 变异自证。
+#   详见 docs/TRANSCODE-RESOURCE.md §ffprobe
+node tools/ffprobe-provision-test.mjs || fail=1
 # ①(2026-10-04) 「只剩 image token、身份/类型全空」那条半残档（真机：刷新偶尔壁纸加载不出来 ⇒
 #   类型变 image、名字/图标空、预览破图；重新在目录里点一次「使用」又好了）。判据 9 条：
 #   该形状必须判成半残档（旧判据要求有 mpkgKey/source 线索 ⇒ 漏判）+ 从 token 反推身份 key

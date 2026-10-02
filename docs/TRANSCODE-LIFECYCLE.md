@@ -186,9 +186,17 @@
 旧写法 `-2` 只管高，而 H.264 允许奇数显示宽、预缩档的 `maxW` 也可能是奇数（`round(w*dpr)`）
 ⇒ 一旦显式给了 `-pix_fmt yuv420p`（F2），奇数宽会直接编码失败。
 
-**未修（记账）**：审计 F5 = 插件自己的 `POST /ffmpeg-download` 只装 `ffmpeg`、不装 `ffprobe` ⇒
+**未修（记账）→ ✅ 已修（2026-10-03，批次 2 P2）**：审计 F5 = 插件自己的 `POST /ffmpeg-download` 只装 `ffmpeg`、不装 `ffprobe` ⇒
 在"没装系统 ffprobe"的机器上 `/probe` 的 `playable` 恒为 `null`，"能直读就别转码"这道闸门等于不生效
-（唯一的可播性判据失效）。修它要新增一个 ffprobe 资产（含 sha256 校验），留待单独一轮。
+（唯一的可播性判据失效）。**修法（两条都落）**：① 下载链**成对**装 ffprobe（同源 ffmpeg-static 同 tag 的 `ffprobe-*`
+资产；`FFPROBE_STATIC_SHA256` 钉值命中则强校验（linux-arm64 已下载实测钉入），魔数 + 长度下限 + sha256
+逐条校验，失败不落盘不覆盖、**不影响 ffmpeg 本体**）；`/ffmpeg-check` 新增 `ffprobe:{found,path,version}`
+（既有字段不动）；`/ffmpeg-uninstall` 成对卸载；下载成功重置 `resolveFfprobe` 进程内记忆化。
+② 次选探测：ffprobe 缺席时用 `ffmpeg -hide_banner -i` 的 stderr 解析喂 `buildProbeInfo`（色彩元数据拿不到 ⇒
+留空不猜），成功 info 带 `probeSource:'ffmpeg-i'`（ffprobe 路 = `'ffprobe'`；台账字段，判据不读）。
+判据 `tools/ffprobe-provision-test.mjs`（20 条，挂 check.sh 第 5 步）：桩下载端点（好内容落盘+记忆化失效 /
+钉值不匹配拒 / 坏魔数拒且无残留 / ffmpeg 成功+ffprobe 失败不影响本体 / 双已在位零请求早退）+ 真 mp4 双路
+verdict 一致 + 变异自证。哪种机器上闸门才真的生效：见 `docs/TRANSCODE-RESOURCE.md` §ffprobe。
 
 ## 7. 未验证边界（不许当成"已验证"）
 
