@@ -208,3 +208,7 @@ bash tools/check.sh                           # 门禁第 11 步就是全量模�
   与 `tools/header-rail-replica.mjs`（第 9 步）。
 * 生成产物里有 `//` 行注释被带进 CSS（`lib/client.js` 的 aqua 文字块），浏览器会丢弃这些行——
   本护栏只做注释剥离，不把它算作作用域问题。
+
+| `host:JObwrW-panel` | `[class*="JObwrW_panel"]` | anchor | 宿主"上下文已用"小面板（用户第 3 条⑥）：与其它弹层同一套玻璃（底+模糊+圆角），真机 HTML 由用户提供 |
+| `host:groupTitle` | `[class*="_groupTitle"]`（弹层内） | anchor | 宿主弹层分组标题条（用户第 3 条⑤）：只清宿主白底使其透出容器玻璃，不加自己的底/模糊 |
+| `host:aria-modal` | `[aria-modal="true"]` | anchor | 只有**模态**才禁止玻璃（containing block 风险）；非模态 role=dialog 小面板保留玻璃 |

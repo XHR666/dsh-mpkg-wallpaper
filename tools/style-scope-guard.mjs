@@ -87,6 +87,10 @@ const ALLOWLIST = [
   { id: 'host:think-variant', kind: 'attr', tier: 'anchor', match: /^\[data-variant="think"/, reason: '宿主 Deep-diving 方框变体标记：thinkBg 开关只改它的底色/文字', doc: 'docs/STYLE-SCOPE-GUARD.md:66', docKind: 'ledger' },
   { id: 'host:radix-popper', kind: 'attr', tier: 'anchor', match: /^\[data-radix-popper-content-wrapper/, reason: '宿主浮层定位壳（radix popper）：宿主所有下拉/菜单都挂在它下面，是弹层半透明的稳定锚点', doc: 'docs/STYLE-SCOPE-GUARD.md:67', docKind: 'ledger' },
   { id: 'host:state-attrs', kind: 'attr', tier: 'refine', match: /^\[data-(dragging|sidebar-collapsed|phase=|dsh-sidebar)/, reason: '宿主瞬时状态标记（拖拽/折叠/激活阶段）：只用于**抑制我们自己的规则**（"拖拽时别磨砂"），不单独改宿主样式', doc: 'docs/STYLE-SCOPE-GUARD.md:68', docKind: 'ledger' },
+  /* ①(2026-10-02 用户第 3 条第⑤⑥项 · 真机 HTML 由用户给出) */
+  { id: 'host:aria-modal', kind: 'attr', tier: 'refine', match: /^\[aria-modal="true"\]/, reason: '真正的模态对话框标记：只有模态才禁止玻璃（避免 backdrop-filter 成为下拉的 containing block）；非模态的 role=dialog 小面板（如上下文已用）保留玻璃效果', doc: 'docs/STYLE-SCOPE-GUARD.md:214', docKind: 'ledger' },
+  { id: 'host:JObwrW-panel', kind: 'attr', tier: 'anchor', match: /^\[class\*="JObwrW_panel"/, reason: '宿主"上下文已用"小面板（div.JObwrW_panel[role=dialog][aria-label=上下文已用]，内含 JObwrW_track/fill 圆环）：用户要求它与其他弹层同一套玻璃效果（探针实测 bg 纯白、bf=none）', doc: 'docs/STYLE-SCOPE-GUARD.md:212', docKind: 'ledger' },
+  { id: 'host:groupTitle', kind: 'attr', tier: 'anchor', match: /^\[class\*="(_?groupTitle|GroupTitle)"/, reason: '宿主弹层里的分组标题条（模型选择的提供商名，div._7KE1Ra_groupTitle）：只清它的宿主白底、让它透出容器玻璃；不单独给它加底/模糊（用户第 3 条⑤）', doc: 'docs/STYLE-SCOPE-GUARD.md:213', docKind: 'ledger' },
   { id: 'host:aria-roles', kind: 'attr', tier: 'anchor', match: /^\[role="(dialog|alertdialog|menu|listbox|combobox|tooltip|alert|status)"/, reason: '宿主弹层/菜单/提示的 ARIA 语义角色：弹窗虚化/菜单半透明的唯一稳定锚点（只改背景与模糊，不改布局）', doc: 'docs/STYLE-SCOPE-GUARD.md:69', docKind: 'ledger' },
   { id: 'host:aria-refine', kind: 'attr', tier: 'refine', match: /^\[role="(menuitem|option)"/, reason: '只在 :not(...) 里排除"菜单项/选项"，避免给交互项误加背景', doc: 'docs/STYLE-SCOPE-GUARD.md:70', docKind: 'ledger' },
 
