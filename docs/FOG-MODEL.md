@@ -1,34 +1,43 @@
-# 雾模型：统一虚化 / 界面虚化 的厚度、半径与归属（2026-10-02）
+# 雾模型：统一虚化 / 界面虚化 的厚度、半径与归属（2026-10-02 重做）
 
 > 这份文档回答一个问题：**「哪一层该多厚、该多模糊、谁说了算」**。
-> 之前厚度与颜色各写各的（表面底色读滑条、面板取色的 token 把 alpha 写死），
-> 于是出现"透明度拉到 0 却还盖着一层壁纸采样粉"这种自相矛盾的观感。现在只有一个源。
+> 2026-10-02 用户拍板后，语义与旧版**方向相反**，并新增了"单独动过就独立"的归属规则 ——
+> 旧版本（≤3.14.0）把这条滑条当"白雾厚度"用，并且给标题栏写死了白底，所以出现
+> "透明度拉到 0 却透出壁纸 / 标题栏颜色固定 / 四块各走一套"的观感。
 
-## 1. 唯一源：`mpwFogModel(section)`（`lib/client.js`）
+## 0. 三条用户拍板的语义（判据钉死）
 
-| 字段 | 取值 | 含义 |
+| 滑条 / 开关 | 语义 | 判据 |
 |---|---|---|
-| `followUnify` | `blurFollowUnify`（默认 **true**） | 「界面虚化」是否跟随统一虚化（新开关） |
-| `unifyOn` | `unifyTint && followUnify` | 一个厚度管全部（左栏/标题栏/右栏/dock/聊天区） |
-| `amountPx` | `unifyAmount` 钳到 0–40 | 整屏模糊半径（壁纸层 + 各栏 backdrop） |
-| `sidePct` | `sidebarAlpha` 钳到 0–100 | 用户那条滑条的原始值：**取色 alpha 用它**（0 = 采样色一个像素都不刷） |
-| `shellPct` | `amountPx > 0 ? sidePct : 100` | chrome 表面的**有效**厚度：不虚化 ⇒ 实心（见铁律 4） |
-| `chatPct` | `opacity` 钳到 50–100 | 聊天区/主画布厚度（历史下限 50） |
+| 「**界面透明度**」`sidebarAlpha` | **0 = 完全不透明（正常界面）**、100 = 完全透明（看到壁纸）；生效不透明度 = 100 − 透明度。**与模糊解耦**（模糊 0 也照样按它透出） | `fog-model-test` A2e/A2f |
+| 「整屏虚化程度」`unifyAmount` | 模糊半径（壁纸层 + 各表面 backdrop）；0 = 不虚化、且接管规则写 `backdrop-filter: none` | A2/B1c |
+| 「跟随统一虚化」`blurFollowUnify` | 开：未单独动过的表面与统一值**逐字一致**；任何一项**被用户单独动过后即独立**（`*UserSet` 标记）；关：全部独立。重新打开 = 清空标记 | F1–F6 |
 
-三条铁律（都有判据钉住，见 §4）：
+**基色 = 宿主自己的表面 token**（左栏/右栏/dock = `--dsw-specific-sidebar-fill`，标题栏 =
+`--dsw-alias-bg-base`）—— 0% 透明时逐像素等于"没装插件"。旧实现刷我们自己的纯白，
+正是用户报的"变成白色不透明"与"标题栏固定白底"。
 
-1. **厚度 0 ⇒ 一个像素都不刷**。取色（面板取色）/ 统一雾只决定**色相**，
-   可见程度一律 = `sidePct`；写成 `color-mix(..., 0%, transparent)` 而不是"alpha 0.85 写死"。
-2. **半径 0 ⇒ 真 0**。可见下限只在值 > 0 时兜（1–11px 抬到 12px 保证看得见）；
-   显式 0 会走 `cleanup` 分支：注入层移除、半透明底撤掉。
-   （旧写法 `Math.max(12, unAmt || 0)` 把"整屏虚化程度 = 0"也算成 12px ⇒ 标题栏还在模糊。）
-3. **厚度/半径归滑条，色相归取色**。两者不再互相覆盖。
-4. **不虚化 ⇒ 外壳实心**（`amountPx == 0`，2026-10-02 第 1 项真机补齐）：
-   没有模糊时再把**原始（未模糊）壁纸**透出来，观感就是"两个条都拉到 0，界面反而变成半透明、
-   还带壁纸自己的颜色"。所以 `amountPx == 0` 时 chrome 的有效厚度钉到 100（实心，无 backdrop-filter）；
-   只有 `amountPx > 0` 时「左侧边栏/标题栏透明度」才决定"透出多少**模糊**壁纸"。
-   ⚠ 取色 alpha 不看这条钳制（它按 `sidePct` 给），所以厚度 0 时不会有任何采样色层。
-   两处实现必须一致：`buildCss` 的 `uAlpha`（左栏/标题栏）与 `mpwFogModel().shellPct`（右栏/dock/better-sidebar）。
+**透明度 = 0 ⇒ 完全不覆盖宿主**（`chromeInert`）：不写背景 / 不写 backdrop-filter /
+不透明化宿主的 sidebar-fill token；标题栏（聊天区顶栏 `.wSkVaW_header`）不注入 `.mpw-hdrFrost`；
+`body[data-mpw-unify]` 也不打。依据是真机读数：宿主在**打开设置面板**时会把左栏换成自己的
+深色导航（`color(srgb 0.082 0.082 0.090)`），我们的 `!important` 会把它钉回旧 token ⇒
+用户看到"设置一开左栏就变黑"；交还宿主后那层黑是宿主自己的行为。
+
+## 1. 唯一源：`mpwSurfacePlan(section)`（`lib/client.js`）
+
+返回四表面（左栏 / 标题栏 / 右栏·dock / 聊天区）的 `{ blur, t, opacityPct, base, indep }`，
+所有颜色、不透明度、半径、归属**只从这里取**；`mpwFogModel()` 是它的薄包装（保留旧字段名给诊断与门禁用）。
+
+| 表面 | 基色 | 归属判据（独立标记） |
+|---|---|---|
+| 左栏 | `var(--dsw-specific-sidebar-fill)` | `sidebarBlurUserSet` |
+| 标题栏（聊天区顶栏） | `var(--dsw-alias-bg-base)` | `headerFrostUserSet` |
+| 右栏 / dock | `var(--dsw-specific-sidebar-fill)` | `rightSidebarBlurUserSet` |
+| 聊天区 | `var(--dsw-alias-bg-base)`（仍走面板不透明度 + 磨砂条/`chatFollow`，不在本模型） | `chatFollow` |
+
+标记的唯一落点是 `commit()` 里的 `mpwMarkUserSet()`：动过某条滑条/开关 ⇒ 打标记；
+`patch.blurFollowUnify === true` ⇒ 清空三个标记。面板上被接管的滑条**不再禁用**（动一下即独立），
+就地显示"已改为独立"并给「恢复跟随」按钮。
 
 ## 2. 谁被谁接管（`body[data-mpw-unify]`）
 

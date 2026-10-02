@@ -1,12 +1,15 @@
 // tools/fog-model-test.mjs —— 「统一虚化 / 界面虚化」语义收口门禁（2026-10-02 用户第 1–5 项 + 语义重做）
 //
-// 病（三条真机反馈，逐条对应本文件的判据）：
+// 病（四条真机反馈，逐条对应本文件的判据）：
 //   ①「整屏虚化程度 = 0 + 左侧边栏/标题栏透明度 = 0」时，左侧边栏**变透明但仍带壁纸采样粉**，
 //      标题栏**还在模糊**：厚度与颜色各写各的 —— 表面底色读滑条，而"面板取色"的 token 覆盖
 //      把 alpha 写死（sidebar-fill 85%）；标题栏半径又被 `Math.max(12, unAmt || 0)` 抬到 12px。
 //   ② 设置页早写着"统一虚化开启中：右侧边栏/dock 由整屏虚化程度 + 透明度接管"，但实现里
 //      右栏/dock 走的是自己那套参数（--mpw-rs-blur / --mpw-rs-alpha）⇒ 文案与实现不符。
 //   ③「界面虚化」与「统一虚化」的关系没有任何入口说明，也不能选择"不跟随"。
+//   ④(2026-10-02 真机，提交 f470590) 透明度 = 0 时**界面仍然盖着宿主**：左栏被我们的 `!important`
+//      钉回旧 token（宿主打开设置面板时换上的深色导航被盖掉 → "设置一开左栏就变黑"）、聊天区
+//      顶栏被写死 `rgba(255,255,255,0.38)` 白底 + 无条件注入磨砂层 ⇒ 宿主的原生外观全被覆盖。
 //
 // 语义（2026-10-02 用户拍板；代码里 `mpwSurfacePlan()` 是**唯一源**，`mpwFogModel()` 只是薄包装）：
 //   · 「界面透明度」`sidebarAlpha`：**0 = 完全不透明（正常界面）**、**100 = 完全透明（看到壁纸）**；
@@ -20,15 +23,25 @@
 //     `rightSidebarBlurUserSet` 任一为真 ⇒ **该项**独立（自己的开关/半径/透明度），不牵连别项。
 //     `commit()` 里的 `mpwMarkUserSet()` 是标记的**唯一落点**（动过某条滑条/开关 ⇒ 打标记；
 //     `patch.blurFollowUnify === true` ⇒ 清空三个标记）。
+//   · **「界面透明度」= 0（生效不透明度 ≥ 100）⇒ 该表面完全不覆盖宿主**（`chromeInert`，f470590）：
+//     不产出玻璃统一块 / G 块（`unifyAmount > 0 && bdSupported && !chromeInert`）/ 右栏·dock 的 F 块
+//     （`rsBlur && !rightInert`）/ 「透出壁纸」半透明分支与不透明兜底分支 / `--mpw-surface-side-unify-light`
+//     覆盖（`unifyChrome`）/ 接管块（`unifyTakeover && !rightInert`）；标题栏（`.wSkVaW_header`）
+//     不注入 `.mpw-hdrFrost` 且撤 `data-mpw-hdr-translucent`；JS 侧 `body[data-mpw-unify]` 也不打。
+//     **不是**"写一个 100% 的宿主色"：写成 100% 同样会把宿主自己换上的颜色（如设置面板打开时的
+//     深色导航）钉回去 —— 所以判据是"**0 处** chrome 覆盖规则"，不是 `color-mix(…, 100.0%)`。
 //
 // 判据分组：
 //   A 组 口径/接线（静态）：唯一源、默认值、雾模型钳制/解耦、四处接线、设置行位置、i18n zh/en 成对
-//   B 组 CSS 落点：接管规则、共同表面 = 宿主 token + 生效不透明度、半径 0 = none、不跟随时不产出接管
+//   B 组 CSS 落点：透明度 0 ⇒ 0 处 chrome 覆盖规则；非 0 档 ⇒ 接管规则/共同表面 = 宿主 token +
+//      生效不透明度、半径 0 = none、不跟随时不产出接管
 //   C 组 行为落点（真实现 __mpwHdrFrostTest）：0 ⇒ 0px；跟随 ⇒ unifyAmount；独立 ⇒ 自己那条
 //   D 组 取色厚度（切片执行真 aquaTokenOverrides）：取色 alpha = 表面**不透明度**（透明度 100 ⇒ 0%）
 //   E 组 变异自证：把关键判断改坏 ⇒ 对应组必红（真源零改动）
 //   F 组 独立性/归属：不跟随不接管；跟随档四表面逐字一致；*UserSet 只让**那一项**独立；
 //       `mpwMarkUserSet()` 是标记唯一落点（含"未被接管的字段不许打标记"）
+//   F7 组 透明度 = 0 ⇒ 完全不覆盖宿主（f470590）：chrome token/选择器/左栏表层 0 处、左栏规则 ≤ 2 条、
+//       45 ⇒ 规则恢复、标题栏行为（交还宿主 vs 正常注入）、以及 `chromeInert` 判据的变异自证
 //
 // 卫生：变异副本落 mkdtemp，退出即删（仓库铁律：不写固定 /tmp 路径）。
 // 用法: node tools/fog-model-test.mjs
@@ -145,9 +158,15 @@ const TOKEN = (css, name) => {
 const SIDE_BASE = 'var(--dsw-specific-sidebar-fill)'
 const TOP_BASE = 'var(--dsw-alias-bg-base)'
 const SURF = (base, opacityPct) => 'color-mix(in srgb, ' + base + ' ' + Number(opacityPct).toFixed(1) + '%, transparent)'
-/** 把工作树副本按 patch 改一处 → 落 mkdtemp，返回可 loadPlugin 的路径（真源零改动）。 */
+/** 把工作树副本按 patch 改一处 → 落 mkdtemp，返回可 loadPlugin 的路径（真源零改动）。
+    ⚠️ 锚点必须**唯一**：`split/join` 会把所有出现处一起改掉，若锚点不唯一就成了"多处变异"，
+    判据虽然还会红，但**红的原因不再是它想自证的那一条**（自证失效）。所以这里直接抛错。
+    ①(2026-10-02 f470590 后复查) E1/E2/E3/E4/E4b/F6 与 F7e 的锚点在真源里**各出现 1 次**
+    （`chromeInert` 的出现没有让任何既有锚点变重复）⇒ 无需换锚点。 */
 const mutant = (tag, from, to) => {
-  if (SRC.indexOf(from) < 0) throw new Error('变异锚点不存在：' + tag)
+  const n = SRC.split(from).length - 1
+  if (n < 1) throw new Error('变异锚点不存在：' + tag)
+  if (n > 1) throw new Error('变异锚点不唯一（' + n + ' 处，需换到唯一锚点）：' + tag)
   const f = path.join(tmpRoot, 'client-' + tag + '.js')
   fs.writeFileSync(f, SRC.split(from).join(to))
   return f
@@ -237,32 +256,52 @@ ok('A3 四处接线齐全：默认值对象 / BACKUP_FIELDS / 导入布尔净化
 /* ══════════════════════════════════════════════════════════════════
    B 组：CSS 落点（真 buildCss）
    ══════════════════════════════════════════════════════════════════ */
-console.log('\n== B 组：CSS 落点（接管 / 共同表面 / 0 就是 0）==')
+console.log('\n== B 组：CSS 落点（透明度 0 ⇒ 0 处覆盖 / 接管 / 共同表面 / 0 就是 0）==')
 const RS_SEL = /\[data-sidebar-right-panel\]|\[data-dockkit-(pane|strip|surface|float)\]/
 {
+  /* ①(2026-10-02 f470590) **透明度 = 0 ⇒ 该表面完全不覆盖宿主**（`chromeInert`）。
+     旧口径（≤f470590）在这里断言"共同表面 = `color-mix(…, 100.0%)` 实心" —— 那条口径
+     **已废**：写 100% 的宿主色同样是把宿主钉回去（真机：打开设置面板时宿主换上的深色导航
+     被 `!important` 覆盖 ⇒ "设置一开左栏就变黑"）。新口径 = **0 处 chrome 覆盖规则**。
+     下面 B1–B1e 逐项把"0 处"钉死；非 0 档的结构判据搬到 B1f–B1i（否则接管块没人测）。 */
   const css = boot({ enabled: true, image: true, unifyTint: true, unifyAmount: 0, sidebarAlpha: 0, chatFollow: false })
-  ok('B1 接管规则存在：右栏 / dock 指向共同表面 token（--mpw-unify-surface）',
-    HAS_RULE(css, /\[data-mpw-unify\]/, /--mpw-unify-surface/) || /\[data-mpw-unify\] \[data-sidebar-right-panel\]/.test(STRIP(css)))
-  ok('B1b 透明度 0 ⇒ 共同表面 = **宿主侧栏 token 全不透明**（100.0%；不再是我们的 rgba(255,255,255,1.000)）',
-    TOKEN(css, 'mpw-unify-surface') === SURF(SIDE_BASE, 100), TOKEN(css, 'mpw-unify-surface'))
-  ok('B1c 半径 0 ⇒ 接管规则的 backdrop-filter 是 **none**（不是 blur(0px)：后者仍建 containing block）',
-    HAS_RULE(css, /\[data-mpw-unify\] \[data-sidebar-right-panel\]/, /backdrop-filter:\s*none/) && TOKEN(css, 'mpw-unify-blur') === '0px',
+  const s = STRIP(css)
+  ok('B1 透明度 0 ⇒ 接管规则 **0 处**：`--mpw-unify-surface` 不产出、`[data-mpw-unify]` 0 处、右栏/dock 接管选择器 0 处',
+    TOKEN(css, 'mpw-unify-surface') === ''
+    && !/\[data-mpw-unify\]/.test(s)
+    && !RULES(css).some(([sel]) => /\[data-mpw-unify\]/.test(sel) && RS_SEL.test(sel)),
+    JSON.stringify({ surface: TOKEN(css, 'mpw-unify-surface'), sel: (s.match(/\[data-mpw-unify\]/g) || []).length }))
+  ok('B1b 透明度 0 ⇒ 共同表面 token 与左栏表层 token 都**不产出**（不是 `color-mix(…, 100.0%)`：写 100% 仍会覆盖宿主自己的颜色）',
+    !/--mpw-unify-surface/.test(s) && !/--mpw-surface-side-frost/.test(s) && TOKEN(css, 'mpw-surface-side-frost') === '',
+    JSON.stringify({ unifySurface: (s.match(/--mpw-unify-surface/g) || []).length, frost: (s.match(/--mpw-surface-side-frost/g) || []).length }))
+  ok('B1c 透明度 0 ⇒ 连"半径 0 ⇒ backdrop-filter: none"那条接管规则也不产出（**0 处**，而不是产出个 `none`）',
+    !HAS_RULE(css, /\[data-mpw-unify\] \[data-sidebar-right-panel\]/, /backdrop-filter/)
+    && TOKEN(css, 'mpw-unify-blur') === '',
     JSON.stringify({ blur: TOKEN(css, 'mpw-unify-blur') }))
-  ok('B1d 暗色同款：同一条宿主 token + 同一不透明度（--mpw-unify-surface-dark 逐字等于亮色那条）',
-    TOKEN(css, 'mpw-unify-surface-dark') === SURF(SIDE_BASE, 100)
-    && TOKEN(css, 'mpw-unify-surface-dark') === TOKEN(css, 'mpw-unify-surface'), TOKEN(css, 'mpw-unify-surface-dark'))
-  ok('B1e 接管不碰弹层/设置面板：抑制规则（overlay/modal 打开时 backdrop-filter: none）在产物里',
-    HAS_RULE(css, /\[data-mpw-unify\]:has\(\[class\*="_overlay"\]\) \[data-dockkit-pane\]/, /backdrop-filter:\s*none/))
+  ok('B1d 透明度 0 ⇒ 暗色档同款：`--mpw-unify-surface-dark` 也不产出（不是"逐字等于亮色那条"）',
+    TOKEN(css, 'mpw-unify-surface-dark') === '' && !/--mpw-unify-surface-dark/.test(s),
+    TOKEN(css, 'mpw-unify-surface-dark'))
+  ok('B1e 透明度 0 ⇒ 弹层/设置面板抑制规则也不产出（没有接管就没有要抑制的东西）：`[data-mpw-unify]:has(…_overlay…)` 0 处',
+    !/\[data-mpw-unify\]:has\(/.test(s))
 }
 {
-  const css = boot({ enabled: true, image: true, unifyTint: true, unifyAmount: 0, sidebarAlpha: 0, chatFollow: false })
-  ok('B1f 透明度 0 ⇒ 左侧栏表面也是宿主 token 实心（alpha 1 / color-mix 100.0%），与右栏/dock 同一条纪律',
-    Number(TOKEN(css, 'mpw-chrome-alpha')) === 1
-    && TOKEN(css, 'mpw-surface-side-frost') === SURF(SIDE_BASE, 100)
-    && !/var\(--mpw-chrome-alpha\)/.test(TOKEN(css, 'mpw-surface-side-frost')),
-    JSON.stringify([TOKEN(css, 'mpw-chrome-alpha'), TOKEN(css, 'mpw-surface-side-frost')]))
-  ok('B1g 不虚化 ⇒ body[data-mpw-unify] 接管仍在（开关门控照旧）、但半径变量是 0px',
-    TOKEN(css, 'mpw-unify-blur') === '0px', TOKEN(css, 'mpw-unify-blur'))
+  /* 非 0 透明度（`chromeInert = false`）时的接管块 —— 原 B1/B1b/B1d/B1e 的结构判据（把档位从
+     `sidebarAlpha: 0` 挪到 45；语义重做后 45 ⇒ 生效不透明度 55%）。 */
+  const css = boot({ enabled: true, image: true, unifyTint: true, unifyAmount: 0, sidebarAlpha: 45, chatFollow: false })
+  ok('B1f 透明度 45（非 0 档）⇒ 接管规则存在：右栏 / dock 指向共同表面 token（--mpw-unify-surface = 宿主侧栏 token 55.0%），暗色档逐字相等',
+    HAS_RULE(css, /\[data-mpw-unify\]/, /--mpw-unify-surface/)
+    && TOKEN(css, 'mpw-unify-surface') === SURF(SIDE_BASE, 55)
+    && TOKEN(css, 'mpw-unify-surface-dark') === TOKEN(css, 'mpw-unify-surface'),
+    JSON.stringify([TOKEN(css, 'mpw-unify-surface'), TOKEN(css, 'mpw-unify-surface-dark')]))
+  ok('B1g 半径 0 ⇒ 接管规则的 backdrop-filter 是 **none**（不是 blur(0px)：后者仍建 containing block）',
+    HAS_RULE(css, /\[data-mpw-unify\] \[data-sidebar-right-panel\]/, /backdrop-filter:\s*none/) && TOKEN(css, 'mpw-unify-blur') === '0px',
+    JSON.stringify({ blur: TOKEN(css, 'mpw-unify-blur') }))
+  ok('B1h 接管不碰弹层/设置面板：抑制规则（overlay/modal 打开时 backdrop-filter: none）在产物里',
+    HAS_RULE(css, /\[data-mpw-unify\]:has\(\[class\*="_overlay"\]\) \[data-dockkit-pane\]/, /backdrop-filter:\s*none/))
+  ok('B1i 非 0 档 + 不虚化 ⇒ body[data-mpw-unify] 接管仍在（开关门控照旧）、半径变量是 0px；左栏表层 = 同一条宿主 token 55.0%',
+    TOKEN(css, 'mpw-unify-blur') === '0px' && TOKEN(css, 'mpw-surface-side-frost') === SURF(SIDE_BASE, 55)
+    && TOKEN(css, 'mpw-chrome-alpha') === '0.55',
+    JSON.stringify({ blur: TOKEN(css, 'mpw-unify-blur'), frost: TOKEN(css, 'mpw-surface-side-frost') }))
 }
 {
   const css = boot({ enabled: true, image: true, unifyTint: true, unifyAmount: 24, sidebarAlpha: 60, chatFollow: false })
@@ -402,6 +441,12 @@ function runAqua(section, text) {
 
 /* ══════════════════════════════════════════════════════════════════
    E 组：变异自证（真源零改动；改坏关键判断 ⇒ 对应判据必红）
+   ⚠️ 锚点纪律：`mutant()` 现在**强制锚点唯一**（split/join 会一次改多处 ⇒ 自证失效）。
+      ①(2026-10-02 f470590 后复查) E1 `Math.max(0, planHdr…)` / E2 `sideAlpha = planAqua…` /
+      E3 `unifyFollowNow = unifyTint && blurFollowUnify` / E4 `bsTakeoverSurface = !unifyTakeover…` /
+      E4b `shellPct: Math.max(0, Math.min(100, 100 - sidePct))` / F6 `headerFrostAmount: 'headerFrostUserSet'`
+      在真源里**各出现 1 次** —— `chromeInert` / `unifyChrome` / `rightInert` 的加入没有让任何既有锚点
+      变重复 ⇒ 无需换锚点（若将来重复，`mutant()` 会直接抛"变异锚点不唯一"，不会静默变成多处变异）。
    ══════════════════════════════════════════════════════════════════ */
 console.log('\n== E 组：变异自证 ==')
 {
@@ -555,6 +600,100 @@ console.log('\n== F 组：独立性/归属（跟随开关 + *UserSet 标记）==
     gotM.headerFrostUserSet !== true && gotR.headerFrostUserSet === true, JSON.stringify({ mutant: gotM, real: gotR }))
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   F7 组：透明度 = 0 ⇒ 完全不覆盖宿主（`chromeInert`，提交 f470590）
+   ══════════════════════════════════════════════════════════════════ */
+console.log('\n== F7 组：透明度 0 ⇒ 完全不覆盖宿主（chromeInert）==')
+/* 「左栏规则」计数口径 = **真机读数同款**（chrome-surface-live-probe 里"透明度 0 时 8→2"就是按
+   宿主侧栏类 `pI_x6G_sidebarCol` 数的）：选择器里出现该类的规则条数。
+   ⚠️ 别用 `/sidebarCol/` 宽口径：`[data-mpw-lg-css]:not([class*="sidebarCol"])` 这种**否定式**
+   里的字样会被误计（透明 0 档会多数出 2 条，阈值就永远"差一点"）。 */
+const SIDE_RULES = (css) => RULES(css).filter(([sel]) => /pI_x6G_sidebarCol/.test(sel))
+const INERT_ST = { enabled: true, image: true, unifyTint: true, unifyAmount: 24, sidebarAlpha: 0, chatFollow: false }
+const LIVE_ST = { enabled: true, image: true, unifyTint: true, unifyAmount: 24, sidebarAlpha: 45, chatFollow: false }
+/** F7a 的判据本体（F7e 的变异自证要拿它对变异体重算一遍）。 */
+const F7A_HOLDS = (css) => {
+  const s = STRIP(css)
+  return (s.match(/--mpw-unify-/g) || []).length === 0
+    && (s.match(/\[data-mpw-unify\]/g) || []).length === 0
+    && !/--mpw-surface-side-frost/.test(s)
+}
+{
+  /* F7a 透明度 0 ⇒ 三处全空：统一虚化 token / 接管选择器 / 左栏表层 token（连声明都不产出）。 */
+  const css = boot(INERT_ST)
+  const s = STRIP(css)
+  const unifyTok = (s.match(/--mpw-unify-/g) || []).length
+  const unifySel = (s.match(/\[data-mpw-unify\]/g) || []).length
+  const frost = (s.match(/--mpw-surface-side-frost/g) || []).length
+  ok('F7a 透明度 0 ⇒ `--mpw-unify-*` 0 处、`[data-mpw-unify]` 规则 0 处、`--mpw-surface-side-frost` 0 处（该 token 不被任何规则引用）',
+    unifyTok === 0 && unifySel === 0 && frost === 0, JSON.stringify({ unifyTok, unifySel, frost }))
+}
+{
+  /* F7b 透明度 0 ⇒ 左栏规则数**显著下降**（真机 8→2）。剩下的 2 条不是本模型产出的，而是
+     用户显式特性：收起/悬浮 float（`[data-sidebar-collapsed]` 下让内层 root 透出）与
+     主题色（`body[data-mpw-theme]` 的 `--mpw-theme-color` wash）—— 阈值就卡在"≤ 2 条"，
+     且这 2 条必须真的是那两个特性的门控选择器（多出第 3 条 = 覆盖规则漏出来了）。 */
+  const side = SIDE_RULES(boot(INERT_ST))
+  const rest = side.map(([sel]) => sel.replace(/\s+/g, ' '))
+  ok('F7b 透明度 0 ⇒ 左栏（pI_x6G_sidebarCol）规则 **≤ 2 条**；剩下的只许是用户显式特性：悬浮 float（[data-sidebar-collapsed]）与主题色（body[data-mpw-theme]），不属于本模型',
+    side.length <= 2 && rest.every((x) => /data-sidebar-collapsed|data-mpw-theme/.test(x)),
+    JSON.stringify({ count: side.length, rest }))
+}
+{
+  /* F7c 透明度 45（非 0 档）⇒ 规则恢复：接管块在、左栏规则数回到 ≥ 5（unifyAmount 24 档实测 8）。 */
+  const css = boot(LIVE_ST)
+  const side = SIDE_RULES(css)
+  ok('F7c 透明度 45 ⇒ 规则恢复：接管块存在（--mpw-unify-surface 有值 + [data-mpw-unify] 规则在）且左栏规则数 ≥ 5',
+    TOKEN(css, 'mpw-unify-surface') !== '' && /\[data-mpw-unify\]/.test(STRIP(css)) && side.length >= 5,
+    JSON.stringify({ surface: TOKEN(css, 'mpw-unify-surface'), sideRules: side.length }))
+}
+{
+  /* F7d 行为（真实现 `syncHeaderFrost`）：桩里 `document.querySelector` 恒 null ⇒ 注入链永远走不到
+     "真的挂上层"那一步（C4 注释里的坑：`injected` 恒 false，读数没有分辨力）。这里给桩**补一枚假宿主
+     标题栏**（用桩自己的 `createElement`，只把 `querySelector` 改成命中 header 选择器；`.mpw-hdrFrost`
+     查询不含 "header" 字样 ⇒ 仍返回 null，cleanup 语义不变）⇒ `injected` / `translucent` / 层数
+     三个读数才有分辨力。 */
+  const probe = (settings) => {
+    boot(settings)
+    const doc = globalThis.document
+    const hdr = doc.createElement('header')
+    hdr.className = 'wSkVaW_header'
+    doc.querySelector = (sel) => (/header/i.test(String(sel)) ? hdr : null)
+    const T = globalThis.__mpwHdrFrostTest
+    if (!T) return { err: 'no-hook' }
+    T.sync()
+    const st = T.state() || {}
+    return {
+      reason: String(st.reason || ''), injected: !!st.injected, translucent: !!st.translucent, px: st.px,
+      layers: (hdr.children || []).filter((c) => c && c.className === 'mpw-hdrFrost').length,
+      attr: hdr.hasAttribute('data-mpw-hdr-translucent'),
+    }
+  }
+  const r0 = probe(INERT_ST)
+  ok('F7d 透明度 0 ⇒ 标题栏**交还宿主**：reason 含「交还宿主」、translucent=false、injected=false、宿主头上 0 层 .mpw-hdrFrost、data-mpw-hdr-translucent 未打',
+    /交还宿主/.test(r0.reason) && r0.translucent === false && r0.injected === false && r0.layers === 0 && r0.attr === false,
+    JSON.stringify(r0))
+  const r45 = probe(LIVE_ST)
+  ok('F7d2 透明度 45 ⇒ 正常注入路径：reason 走「跟随整屏虚化 24px」（不含「交还宿主」）、injected=true、translucent=true、宿主头上 1 层 .mpw-hdrFrost',
+    !/交还宿主/.test(r45.reason) && /跟随整屏虚化 24px/.test(r45.reason)
+    && r45.injected === true && r45.translucent === true && r45.layers === 1 && r45.attr === true,
+    JSON.stringify(r45))
+}
+{
+  /* F7e 变异自证：把 `chromeInert` 的判据改坏（`>= 100` → `>= 101`：透明度 0 不再 inert）⇒
+     F7a 必红（F7b 跟着红：左栏规则 2→8 条）。mkdtemp 副本 + 重新 loadPlugin，与 E 组同款。 */
+  const m7 = mutant('chrome-inert', 'const chromeInert = surfacePlan.left.opacityPct >= 100;',
+    'const chromeInert = surfacePlan.left.opacityPct >= 101;')
+  const cssM = boot(INERT_ST, m7)
+  const cssR = boot(INERT_ST)
+  ok('F7e 变异自证：`chromeInert` 的 `>= 100` 改成 `>= 101` ⇒ 透明度 0 也照旧产出左栏表层（--mpw-surface-side-frost 0→2 处、左栏规则 2→8 条）⇒ F7a/F7b 必红',
+    F7A_HOLDS(cssM) === false && F7A_HOLDS(cssR) === true,
+    JSON.stringify({
+      mutant: { f7a: F7A_HOLDS(cssM), frost: (STRIP(cssM).match(/--mpw-surface-side-frost/g) || []).length, sideRules: SIDE_RULES(cssM).length },
+      real: { f7a: F7A_HOLDS(cssR), frost: (STRIP(cssR).match(/--mpw-surface-side-frost/g) || []).length, sideRules: SIDE_RULES(cssR).length },
+    }))
+}
+
 console.log(`\n===== fog-model: ${pass} 通过 / ${fail} 失败 =====`)
-if (!fail) console.log('✓ 雾模型口径成立：透明度 0 = 全不透明（color-mix 100%）、透明度 100 = 一个像素不刷、半径 0 = 真 0、跟随开关真能解耦、未被单独动过的表面与统一值逐字一致')
+if (!fail) console.log('✓ 雾模型口径成立：透明度 0 = 完全不覆盖宿主（chrome 覆盖规则 0 处、标题栏交还宿主）、透明度 100 = 一个像素不刷、半径 0 = 真 0、跟随开关真能解耦、未被单独动过的表面与统一值逐字一致')
 process.exitCode = fail ? 1 : 0

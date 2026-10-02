@@ -265,24 +265,24 @@ Contains the *Show wallpaper* sub-section.
 |---|---|---|---|---|
 | Unify blur | `unifyTint` | on | One slider drives the whole-screen blur; takes over sidebar/title-bar/right-sidebar frost | off |
 | Full-screen blur degree | `unifyAmount` | 30px | 0–40 (drives the wallpaper-layer blur) | — |
-| Left sidebar / title-bar opacity | `sidebarAlpha` | 35% | Frost thickness 0–100% | — |
+| UI transparency | `sidebarAlpha` | 65% | **0% = fully opaque (normal UI), 100% = fully transparent (wallpaper visible)**; drives left sidebar / title bar / right sidebar · dock alike; independent of the blur | — |
 | Chat follows full-screen blur | `chatFollow` | on | off = the chat area is driven by the *Frosted blur* slider | off |
 | New-chat button follows panel opacity | `sessionFollow` | on | off = back to the host's original colour | off |
 | Unified fog (full-screen mask) | `aquaMask` | off | All surfaces share one fog colour (moved here from the Aqua section) | off |
 | Unified fog strength | `aquaMaskAlpha` | 82% | 0–100% | — |
 
 > **What the two sliders mean (fixed since 2026-10-02; judged by `tools/fog-model-test.mjs`)**:
-> *Full-screen blur degree* = blur radius (**0 = no blur at all**: the title bar / sidebar / right sidebar / dock
-> return to a **solid** surface, so the un-blurred raw wallpaper is never shown through);
-> *Left sidebar / title-bar opacity* = fog thickness on every surface (**0 = fully transparent**: the *blurred*
-> wallpaper only, no fog and no wallpaper-sampled tint) — it only matters while the blur degree is > 0.
+> *Full-screen blur degree* = blur radius (**0 = no blur at all**);
+> *UI transparency* = how transparent the whole UI shell is (**0% = fully opaque — the normal UI, painted with the
+> host's own surface colour; 100% = fully transparent, wallpaper visible**) — it is independent of the blur, and
+> with transparency at 0 the plugin does not override the host at all (no background, no blur, no token changes).
 > Both apply to the **whole UI shell** (left sidebar, title bar, right sidebar and dock share one set of tokens).
 
 ### 5. UI blur (blur)
 
 | Label | Key | Default | Amount key / default | Off |
 |---|---|---|---|---|
-| UI blur follows Unified blur | `blurFollowUnify` | **on** | on = the taken-over rows on this page follow the *Full-screen blur degree* + *Left sidebar / title-bar opacity*; off = they become independently adjustable | — |
+| Follow Unified blur | `blurFollowUnify` | **on** | on = the taken-over rows on this page follow the *Full-screen blur degree* + *Left sidebar / title-bar opacity*; off = they become independently adjustable | — |
 | Blur dialogs | `dialogBlur` | on | `dialogAmount` 14px | off |
 | Blur settings panel | `settingsBlur` | on | `settingsAmount` 14px | off |
 | Blur download/confirm popups | `confirmBlur` | on | `confirmAmount` 12px | off |

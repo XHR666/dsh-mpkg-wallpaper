@@ -390,9 +390,9 @@ node tools/audio-mute-discipline-test.mjs || fail=1
 node tools/theme-assist-test.mjs || fail=1
 #  ①(2026-10-02 桌面端兼容) 宿主基址兜底（file:// 档 → dsh.internal）/ ffprobe 跨平台探测链 / 只读排查通道（22 断言含 7 组变异）
 node tools/desktop-compat-test.mjs || fail=1
-#  ①(2026-10-02 统一虚化/界面虚化语义收口) 雾模型=唯一厚度源：厚度 0 ⇒ 一个像素不刷（含面板取色
-#  的采样色）、半径 0 ⇒ 真 0（不再有 12px 下限）、「界面虚化跟随统一虚化」开关真能解耦、
-#  右栏/dock/better-sidebar 底部面板与左栏同一套表面（43 断言含 5 组变异自证，纯 Node 桩 DOM）
+#  ①(2026-10-02 表面模型重做) mpwSurfacePlan 唯一源：透明度 0=不透明/100=全透明（与模糊解耦）、
+#  基色=宿主自己的表面色、四表面同色同透同半径、**透明度 0 ⇒ 完全不覆盖宿主**（含聊天区顶栏
+#  不注入磨砂层）、单独动过即独立（*UserSet）+「恢复跟随」（74 断言含 7 组变异自证，纯 Node 桩 DOM）
 node tools/fog-model-test.mjs || fail=1
 # ①(第13条 用户点名"长期没修好"的 bug) 选择文件夹/选择文件的选择器：
 #   滚动位置（重渲染/容器被重建后不跳顶）、不抢焦点、键盘导航、500 项大目录、滚轮不串联宿主。
