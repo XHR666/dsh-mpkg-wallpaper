@@ -4,20 +4,277 @@
 # （buildCss 抛错 → <style> 为空 / 花括号不配平 → 大批规则被吞）。
 # 这里的每一步都对应一次真实事故，改完代码先跑它，再同步给用户刷新。
 #
-# 用法: bash tools/check.sh [--quick]
-#   --quick  跳过组合矩阵（只跑语法 + 面板冒烟）
-
+#
+# 用法: bash tools/check.sh [--full] [--list] [--quick] [--selftest-lock]
+#
+#   默认档           12 步都跑；每步先算"输入键"：键未变且上次**真跑为绿** ⇒ 跳过（打印 SKIP-CACHED，附上次耗时与键前缀）
+#   --full           忽略缓存，12 步逐条真跑（CI / 发版 / 怀疑缓存时用；"覆盖不丢"的权威档）
+#   --list           只列出 12 步与每步缓存状态（绿/红/未缓存/脏）+ 当前输入指纹，然后退出（不跑判据、不抢锁）
+#   --quick          跳过组合矩阵（第 3 步；沿用旧口径）
+#   --selftest-lock  门禁自身的锁自检：只抢锁、打印、退出，不跑任何判据（tools/gate-cache-test.mjs 用它验"并发第二个实例快速失败"）
+#
+# 2026-10-02 门禁提速轮（动机 / 实测数字 / 还能不能再降：docs/GATE-PERFORMANCE.md）：
+#   · 单实例互斥：flock（本机有；没有 flock 的机器退回 mkdir 原子锁）。锁文件带 PID + 起始时间戳；
+#     已有实例在跑 ⇒ 打印"另一个门禁在跑（PID …，已跑 … 秒），本次退出"并 exit 2 —— 调用方能区分"没跑"与"跑了但失败"。
+#     这一条直接解决"两条线同时各跑一遍把设备跑崩"（同一时刻内存翻倍）。
+#   · 增量缓存：键 = 门禁**输入**的哈希 —— 工作树内容（lib/** + tools/** + docs/** + package.json + …，
+#     排除门禁自己的产物 tools/probe-out/ 与 dist/，否则跑一遍门禁就把自己判脏）⊕ git HEAD ⊕ node/ffmpeg 指纹
+#     ⊕ 语料元数据（../allwallpaper/{dd,0917}）⊕ 已装 better-sidebar ⊕ 步号。实现 tools/gate-cache.mjs，
+#     判据 tools/gate-cache-test.mjs（挂在第 6 步里，**不新增步骤**）。
+#   · 判据覆盖的红线：只有"键一致 ∧ 上次真跑 ∧ 那次退出码 0"三者同时成立才跳过；键变 / 上次红 / 没记录 /
+#     --full ⇒ 一律真跑；缓存自己坏了（读不出/算不出/写不进）⇒ 当没缓存真跑，并在汇总里显式记账（绝不静默）。
+#   · 缓存与锁只落 os.tmpdir()（可用 MPW_GATE_CACHE / MPW_GATE_LOCK 覆盖）；仓库里不写本机绝对路径。
+#
 set -uo pipefail
-cd "$(dirname "$0")/.."
-fail=0
-step() { printf '\n\033[1m== %s ==\033[0m\n' "$1"; }
+SELF="$0"
+case "$SELF" in /*) ;; *) SELF="$PWD/$SELF" ;; esac          # --list 要读自己的 step 标签 ⇒ $0 必须在 cd 之前抓下来
+cd "$(dirname "$0")/.." || { echo "✗ 进不了仓库根：$(dirname "$0")/.." >&2; exit 3; }
 
+MODE_FULL=0; MODE_LIST=0; MODE_QUICK=0; MODE_LOCK_SELFTEST=0
+for a in "$@"; do
+  case "$a" in
+    --full) MODE_FULL=1 ;;
+    --list) MODE_LIST=1 ;;
+    --quick) MODE_QUICK=1 ;;
+    --selftest-lock) MODE_LOCK_SELFTEST=1 ;;
+    -h|--help) awk 'NR == 1 { next } /^#/ { sub(/^# ?/, ""); print; next } { exit }' "$SELF"; exit 0 ;;
+    *) echo "✗ 未知参数：$a（用法：bash tools/check.sh --help）" >&2; exit 64 ;;
+  esac
+done
+
+fail=0
+step() { printf '\n\033[1m== %s ==\033[0m\n' "$1"; }   # 保持原样：integrity-check ⑨b 按 step "N/12 …" 校验步号自洽
+
+# ── 计时（bash 5 有 EPOCHREALTIME；macOS 自带 bash 3.2 没有 ⇒ 退化成整秒，不报假精度）──
+now_ms() {
+  if [ -n "${EPOCHREALTIME:-}" ]; then
+    local s="${EPOCHREALTIME%%.*}" u="${EPOCHREALTIME#*.}"
+    printf '%s' "$(( s * 1000 + 10#${u:0:3} ))"
+  else
+    printf '%s' "$(( SECONDS * 1000 ))"
+  fi
+}
+ms_human() {
+  local m="${1:-0}"
+  case "$m" in ''|*[!0-9]*) m=0 ;; esac
+  if [ "$m" -lt 1000 ]; then printf '%sms' "$m"; else printf '%s.%ss' "$(( m / 1000 ))" "$(( (m % 1000) / 100 ))"; fi
+}
+num_or_zero() { case "${1:-0}" in ''|*[!0-9]*) printf '0' ;; *) printf '%s' "$1" ;; esac; }
+
+# ── 缓存/锁的落点（都在 os.tmpdir()；仓库里不留本机路径）──────────────────────────────
+gate_cache() { node tools/gate-cache.mjs "$@"; }
+GATE_CACHE_DIR="$(gate_cache dir 2>/dev/null)"
+if [ -z "$GATE_CACHE_DIR" ] || ! mkdir -p "$GATE_CACHE_DIR" 2>/dev/null; then
+  echo "✗ 门禁缓存目录不可用（node tools/gate-cache.mjs dir 失败或目录不可写）：${GATE_CACHE_DIR:-<空>}" >&2
+  echo "  可用 MPW_GATE_CACHE=<可写目录> 覆盖。本次退出：单实例锁与增量缓存都无法保证 ⇒ 宁可明着不跑。" >&2
+  exit 3
+fi
+LOCK_FILE="${MPW_GATE_LOCK:-$GATE_CACHE_DIR/gate.lock}"
+
+GATE_LOCK_KIND=""; GATE_LOCK_DIR=""; GATE_SAMPLER_PID=""; GATE_MEM_LOG=""
+cleanup() {
+  if [ -n "$GATE_SAMPLER_PID" ]; then kill -9 "$GATE_SAMPLER_PID" 2>/dev/null; wait "$GATE_SAMPLER_PID" 2>/dev/null; fi
+  [ "$GATE_LOCK_KIND" = dir ] && [ -n "$GATE_LOCK_DIR" ] && rm -rf "$GATE_LOCK_DIR" 2>/dev/null
+  return 0
+}
+trap cleanup EXIT
+
+# 抢锁：flock 优先（内核在进程退出时自动释放 ⇒ 不会留"残留锁"）；没有 flock 就退回 mkdir 原子锁。
+acquire_lock() {
+  if command -v flock >/dev/null 2>&1; then
+    exec 9>>"$LOCK_FILE" || return 3
+    if ! flock -n 9; then
+      # 记录里的持有者已退出、锁却还被它的某个后代进程握着（罕见：没被回收的子进程/浏览器）⇒ 给 2s 宽限重试；
+      # 重试仍抢不到就如实拒绝（flock 是权威判据，绝不"猜着跑"）。
+      GATE_LOCK_TRY=0
+      while [ "$GATE_LOCK_TRY" -lt 4 ]; do
+        if [ "$(gate_cache lock-stale --lock "$LOCK_FILE" 2>/dev/null)" != yes ]; then break; fi
+        sleep 0.5
+        GATE_LOCK_TRY=$((GATE_LOCK_TRY + 1))
+        if flock -n 9; then
+          : > "$LOCK_FILE" 2>/dev/null
+          printf '%s\n%s\n' "$$" "$(date +%s)" >&9 2>/dev/null
+          GATE_LOCK_KIND=flock
+          return 0
+        fi
+      done
+      gate_cache busy --lock "$LOCK_FILE" >&2
+      return 2
+    fi
+    : > "$LOCK_FILE" 2>/dev/null            # 抢到之后才清空并写自己的身份（抢之前不许动别人写的字）
+    printf '%s\n%s\n' "$$" "$(date +%s)" >&9 2>/dev/null
+    GATE_LOCK_KIND=flock
+    return 0
+  fi
+  GATE_LOCK_DIR="$LOCK_FILE.d"
+  if ! mkdir "$GATE_LOCK_DIR" 2>/dev/null; then
+    if [ "$(gate_cache lock-stale --lock "$GATE_LOCK_DIR/info" 2>/dev/null)" = yes ]; then
+      rm -rf "$GATE_LOCK_DIR" 2>/dev/null   # 只清"PID 确定已死"的那一种残留；拿不准就快速失败
+      mkdir "$GATE_LOCK_DIR" 2>/dev/null || { gate_cache busy --lock "$GATE_LOCK_DIR/info" >&2; return 2; }
+    else
+      gate_cache busy --lock "$GATE_LOCK_DIR/info" >&2
+      return 2
+    fi
+  fi
+  GATE_LOCK_KIND=dir
+  printf '%s\n%s\n' "$$" "$(date +%s)" > "$GATE_LOCK_DIR/info" 2>/dev/null
+  return 0
+}
+
+# ── --list：只打印状态（不抢锁、不跑判据）────────────────────────────────────────────
+step_names() {
+  grep -o 'step "[0-9][0-9]*/12 [^"]*"' "$SELF" 2>/dev/null | sed 's/^step "//; s/"$//' \
+    | awk '{ n = $1; sub(/^[0-9]+\/12 /, "", $0); if (!(n in best) || length($0) > length(best[n])) best[n] = $0 } END { for (n in best) print n " " best[n] }' \
+    | sort -t/ -k1 -n
+}
+list_steps() {
+  local line core_sha tree_files corpus_files head_short ffmpeg_ver bs_present core_ms
+  local names i name st s_status s_ms s_key s_at
+  line="$(gate_cache core --line 2>/dev/null)"
+  if [ -z "$line" ]; then
+    echo "✗ 输入指纹算不出来（node tools/gate-cache.mjs core 失败）—— 先修门禁工具再看状态" >&2
+    exit 3
+  fi
+  core_sha=""; tree_files=""; corpus_files=""; head_short=""; ffmpeg_ver=""; bs_present=""; core_ms=""
+  IFS=$'\t' read -r core_sha tree_files corpus_files head_short ffmpeg_ver bs_present core_ms <<<"$line"
+  echo "门禁缓存状态（共 12 步；对外口径不变）"
+  echo "缓存目录: $GATE_CACHE_DIR"
+  echo "输入指纹: ${core_sha:0:12}（工作树 $tree_files 个文件 / 语料 $corpus_files 个文件 / HEAD $head_short / ffmpeg $ffmpeg_ver / better-sidebar $bs_present；一次 ${core_ms}ms）"
+  echo
+  printf '%-7s %-8s %-10s %-17s %s\n' '步' '状态' '上次耗时' '上次真跑' '步骤名'
+  names="$(step_names)"
+  i=1
+  while [ "$i" -le 12 ]; do
+    name="$(printf '%s\n' "$names" | grep "^$i/12 " | sed "s|^$i/12 ||")"
+    st="$(gate_cache status --step "$i" --core "$core_sha" 2>/dev/null)"
+    s_status=""; s_ms=""; s_key=""; s_at=""          # set -u 纪律：`local x` 不赋值 = **未绑定** ⇒ 先显式置空
+    IFS=$'\t' read -r s_status s_ms s_key s_at <<<"$st"
+    case "$s_status" in
+      green) s_status="绿" ;;
+      red) s_status="红" ;;
+      dirty) s_status="脏" ;;
+      *) s_status="未缓存" ;;
+    esac
+    printf '%-7s %-8s %-10s %-17s %s\n' "$i/12" "$s_status" "$(ms_human "$s_ms")" "${s_at:--}" "$name"
+    i=$((i + 1))
+  done
+  echo
+  echo "口径：绿=键一致且上次真跑为绿（默认档会跳过）；红=上次真跑失败（下次真跑）；未缓存=没有记录；脏=记录在但键已变（下次真跑）。"
+  echo "逐条真跑：bash tools/check.sh --full    缓存/锁都在 os.tmpdir()（MPW_GATE_CACHE / MPW_GATE_LOCK 可覆盖）"
+}
+if [ "$MODE_LIST" = 1 ]; then list_steps; exit 0; fi
+
+# ── 单实例锁：抢不到就快速失败（exit 2），一个判据都不跑 ───────────────────────────────
+acquire_lock
+GATE_LOCK_RC=$?
+if [ "$GATE_LOCK_RC" != 0 ]; then exit "$GATE_LOCK_RC"; fi
+
+if [ "$MODE_LOCK_SELFTEST" = 1 ]; then
+  printf 'LOCK-ACQUIRED PID %s LOCK %s\n' "$$" "$LOCK_FILE"
+  GATE_HOLD="$(num_or_zero "${MPW_GATE_SELFTEST_HOLD:-0}")"
+  [ "$GATE_HOLD" -gt 0 ] && sleep "$GATE_HOLD"
+  exit 0
+fi
+
+# ── 峰值内存采样（进程组 RSS 每 2s 一次；ps 不可用 ⇒ 汇总里写"不可测"，不瞎报）─────────
+start_mem_sampler() {
+  local pgid tot
+  pgid="$(ps -o pgid= -p $$ 2>/dev/null | tr -d ' ')"
+  case "$pgid" in ''|*[!0-9]*) GATE_MEM_LOG=""; return 0 ;; esac
+  GATE_MEM_LOG="$GATE_CACHE_DIR/last-run.mem"
+  : > "$GATE_MEM_LOG" 2>/dev/null || { GATE_MEM_LOG=""; return 0; }
+  (
+    exec 9>&- 2>/dev/null          # ← 关键：采样器不许继承锁 fd（否则它和它的 sleep 会把锁多握 ≤2s，下一次调用被误判"另一个门禁在跑"）
+    exec >/dev/null 2>&1           #   也别抓住调用方的 stdout（否则 `check.sh | tail` 会被它拖住）
+    while :; do
+      tot="$(ps -eo pgid=,rss= 2>/dev/null | awk -v p="$pgid" '$1 == p { s += $2 } END { printf "%d", s + 0 }')"
+      printf '%s %s\n' "$(date +%s)" "${tot:-0}" >> "$GATE_MEM_LOG" 2>/dev/null
+      sleep 2
+    done
+  ) &
+  GATE_SAMPLER_PID=$!
+}
+peak_mem_note() {
+  if [ -z "$GATE_MEM_LOG" ] || [ ! -s "$GATE_MEM_LOG" ]; then printf '不可测（ps 采样不可用）'; return 0; fi
+  awk '{ if ($2 + 0 > m) m = $2 + 0 } END { if (m > 0) printf "≈ %d MiB（进程组 RSS 每 2s 采样；含共享页 ⇒ 是上界）", m / 1024; else printf "不可测" }' "$GATE_MEM_LOG"
+}
+start_mem_sampler
+
+# ── 输入指纹（12 步共用，一次算好；算不出来 ⇒ 关掉缓存、逐步真跑并记账）────────────────
+GATE_T0_TOTAL="$(now_ms)"
+GATE_CORE="$(gate_cache core 2>/dev/null)"
+if [ -n "$GATE_CORE" ]; then
+  printf '\033[1m门禁 12 步\033[0m：输入指纹 %s（缓存目录 %s）\n' "${GATE_CORE:0:12}" "$GATE_CACHE_DIR"
+  printf '  每步先算键：键未变且上次真跑为绿 ⇒ SKIP-CACHED；键变 / 上次红 / 没记录 ⇒ 真跑。逐条真跑：--full\n'
+else
+  printf '\033[1m门禁 12 步\033[0m：⚠ 输入指纹算不出来 ⇒ 本次**关闭缓存**，12 步逐条真跑\n'
+fi
+
+# ── 每步的编排：gate_begin N ⇒ if [ "$GATE_RUN" = 1 ]; then <原命令一字不动> fi ⇒ gate_end N ──
+GATE_STEP=0; GATE_KEY=""; GATE_RUN=1; GATE_FAIL_BEFORE=0; GATE_STEP_T0=0
+GATE_STAT_PASS=0; GATE_STAT_FAIL=0; GATE_STAT_SKIP=0; GATE_SKIP_SAVED=0; GATE_REAL_MS=0; GATE_CACHE_WARN=0
+
+gate_begin() {
+  GATE_STEP="$1"; GATE_RUN=1; GATE_KEY=""; GATE_FAIL_BEFORE="$fail"; GATE_STEP_T0="$(now_ms)"
+  if [ -z "$GATE_CORE" ]; then GATE_CACHE_WARN=$((GATE_CACHE_WARN + 1)); return 0; fi
+  local out action f2 f3 extra
+  extra=""
+  [ "$MODE_FULL" = 1 ] && extra="--full"
+  out="$(gate_cache decide --step "$1" --core "$GATE_CORE" $extra 2>&1)"
+  if [ $? -ne 0 ] || [ -z "$out" ]; then
+    printf '  ⚠ 缓存决策失败 ⇒ 本步真跑（不许把"算不出来"当"绿"）：%s\n' "$(printf '%s' "$out" | tail -1)"
+    GATE_CACHE_WARN=$((GATE_CACHE_WARN + 1)); return 0
+  fi
+  action=""; f2=""; f3=""
+  IFS=$'\t' read -r action f2 f3 <<<"$out"
+  case "$action" in
+    SKIP)
+      GATE_RUN=0; GATE_KEY="$f3"
+      printf '  ⏭ SKIP-CACHED（输入键未变 + 上次真跑为绿：上次 %s，键 %s）\n' "$(ms_human "$f2")" "${f3:0:12}"
+      GATE_STAT_SKIP=$((GATE_STAT_SKIP + 1)); GATE_SKIP_SAVED=$((GATE_SKIP_SAVED + $(num_or_zero "$f2")))
+      ;;
+    RUN)
+      GATE_KEY="$f3"
+      case "$f2" in
+        full) printf '  ↻ 真跑（--full：忽略缓存）\n' ;;
+        key-changed) printf '  ↻ 真跑（输入键变了 ⇒ 不继承上次结论）\n' ;;
+        last-red) printf '  ↻ 真跑（上次为红：失败绝不继承、也不许被跳过）\n' ;;
+        uncached) : ;;
+        *) printf '  ↻ 真跑（%s）\n' "$f2" ;;
+      esac
+      ;;
+    *)
+      printf '  ⚠ 缓存决策输出无法解析 ⇒ 本步真跑：%s\n' "$out"
+      GATE_CACHE_WARN=$((GATE_CACHE_WARN + 1)); GATE_RUN=1; GATE_KEY=""
+      ;;
+  esac
+  return 0
+}
+
+gate_end() {
+  local n="$1" t1 ms status mark
+  t1="$(now_ms)"; ms=$(( t1 - GATE_STEP_T0 ))
+  GATE_REAL_MS=$((GATE_REAL_MS + ms))
+  if [ "$fail" = "$GATE_FAIL_BEFORE" ]; then status=green; mark=PASS; GATE_STAT_PASS=$((GATE_STAT_PASS + 1)); else status=red; mark=FAIL; GATE_STAT_FAIL=$((GATE_STAT_FAIL + 1)); fi
+  printf '  ⏱ 第 %s 步 %s，用时 %s\n' "$n" "$mark" "$(ms_human "$ms")"
+  if [ -n "$GATE_KEY" ]; then
+    gate_cache record --step "$n" --key "$GATE_KEY" --status "$status" --ms "$ms" >/dev/null 2>&1 \
+      || printf '  ⚠ 缓存写不进去（不影响本次判据，但下次会真跑）\n'
+  fi
+  return 0
+}
 step "1/12 语法检查 lib/*.js"
+gate_begin 1
+if [ "$GATE_RUN" = 1 ]; then           # ← 缓存命中时整块跳过（SKIP-CACHED）
 for f in lib/*.js; do
   if node --check "$f"; then echo "  ✓ $f"; else echo "  ✗ $f 语法错误"; fail=1; fi
 done
 
+fi                                     # ← 第 1 步结束
+gate_end 1
 step "2/12 面板冒烟（含 CSS 模板闭合 / h 声明 / 花括号配平 / 渲染）+ P-66 面板健壮性/语言回归 + 选择器（第13条）回归 + 壁纸层可见性（.mpw-bgWrap）回归 + 壁纸持久化（刷新不丢）回归"
+gate_begin 2
+if [ "$GATE_RUN" = 1 ]; then           # ← 缓存命中时整块跳过（SKIP-CACHED）
 # ⓪(2026-09-25 门禁自身 exit=1 的根因) **世界隔离**：`tools/_stub.mjs` 造的一次 loadPlugin 就是一个"世界"
 #   （新 document/新 localStorage/独立求值的 client.js）。桩原来只换全局对象、没让上一个世界停下来 ⇒
 #   旧世界排的定时器（补挂校验 1.2s/12s、boot 3.5s、np 台账 249ms、系统媒体 2s、rAF 链）触发时打到**新世界**
@@ -131,8 +388,12 @@ node tools/audio-bus-wiring-test.mjs || fail=1
 node tools/audio-mute-discipline-test.mjs || fail=1
 #  ①(2026-10-01) 半透明主题适配（应用外框 / 输入框磨砂 / ≥4K 提示）——issue #4 的 (A)(B)(C) 收口判据（纯 Node 桩 DOM，23 断言 + 5 组变异自证）
 node tools/theme-assist-test.mjs || fail=1
-#  ①(2026-10-02 桌面端兼容) 宿主基址兜底（file:// 档 → dsh.internal）/ ffprobe 跨平台探测链 / 只读排查通道（20 断言含 6 组变异）
+#  ①(2026-10-02 桌面端兼容) 宿主基址兜底（file:// 档 → dsh.internal）/ ffprobe 跨平台探测链 / 只读排查通道（22 断言含 7 组变异）
 node tools/desktop-compat-test.mjs || fail=1
+#  ①(2026-10-02 统一虚化/界面虚化语义收口) 雾模型=唯一厚度源：厚度 0 ⇒ 一个像素不刷（含面板取色
+#  的采样色）、半径 0 ⇒ 真 0（不再有 12px 下限）、「界面虚化跟随统一虚化」开关真能解耦、
+#  右栏/dock/better-sidebar 底部面板与左栏同一套表面（43 断言含 5 组变异自证，纯 Node 桩 DOM）
+node tools/fog-model-test.mjs || fail=1
 # ①(第13条 用户点名"长期没修好"的 bug) 选择文件夹/选择文件的选择器：
 #   滚动位置（重渲染/容器被重建后不跳顶）、不抢焦点、键盘导航、500 项大目录、滚轮不串联宿主。
 #   A 组源码级（**同一套断言对 `git show HEAD:lib/client.js` 必须变红** ⇒ 证明用例有分辨力）
@@ -276,21 +537,33 @@ node tools/blob-media-retry-test.mjs || fail=1
 #   且不导航到任何在跑的服务（页面由 page.route 本地 fulfil，fetch 被换成桩）。
 node tools/hidden-gate-test.mjs || fail=1
 
-if [ "${1:-}" != "--quick" ]; then
+fi                                     # ← 第 2 步结束
+gate_end 2
+if [ "$MODE_QUICK" = 0 ]; then
   step "3/12 CSS 组合矩阵（512 全组合 + 600 随机 + 边界；8 类历史回归断言）"
+  gate_begin 3
+  if [ "$GATE_RUN" = 1 ]; then           # ← 缓存命中时整块跳过（SKIP-CACHED）
   node tools/css-matrix.mjs || fail=1
+  fi                                     # ← 第 3 步结束
+  gate_end 3
 else
   step "3/12 组合矩阵（已按 --quick 跳过）"
 fi
 
 step "4/12 场景看门狗/调试参数回归（批次15：B1/B3/B5 + 作用域修复 P0）"
+gate_begin 4
+if [ "$GATE_RUN" = 1 ]; then           # ← 缓存命中时整块跳过（SKIP-CACHED）
 node tools/scene-watchdog-test.mjs || fail=1
 
 # 批次18 / B6：渲染器沙箱（去 allow-same-origin）+ 场景级短期 token
 # 契约 we-scene-demo/RENDERER-SANDBOX-CONTRACT.md；两侧各自回归，宿主侧只走拒绝路径（不落盘）。
 # ①(2026-09-16 I 项) 网页（web）壁纸：类型判定（内容优先）/ sandbox 最小必要集 /
 #   shim 注入顺序 / shim API 与参考实现的差异 / 作者脚本抛错兜底 / 无 GPL 代码 —— 见 docs/WEB-WALLPAPER.md
+fi                                     # ← 第 4 步结束
+gate_end 4
 step "5/12 B6 沙箱与场景 token + 网页壁纸 shim 沙箱（客户端模式/回退 + 宿主签发与 Origin:null 闸门）+ P-204/P-205 安全闸门（路由来源 F1–F4 / 网页帧同源逃逸 F5 / 可控上游+st 下发 F6）"
+gate_begin 5
+if [ "$GATE_RUN" = 1 ]; then           # ← 缓存命中时整块跳过（SKIP-CACHED）
 node tools/scene-sandbox-test.mjs || fail=1
 node tools/host-sandbox-token-test.mjs || fail=1
 node tools/web-wallpaper-test.mjs || fail=1
@@ -379,7 +652,11 @@ node tools/prescale-switch-race-test.mjs || fail=1
 node tools/transcode-color-fidelity-test.mjs || fail=1
 
 # ①(第16项) 发布前完整性自检：必需文件/package.json 字段/files 白名单/个人路径/凭据形态/图标/门禁脚本在位
+fi                                     # ← 第 5 步结束
+gate_end 5
 step "6/12 发布完整性自检（第16项：文件齐全、元数据、白名单、无个人路径与凭据）"
+gate_begin 6
+if [ "$GATE_RUN" = 1 ]; then           # ← 缓存命中时整块跳过（SKIP-CACHED）
 node tools/integrity-check.mjs || fail=1
 # ①(2026-09-19 敏感信息加固) 密钥/本机绝对路径**常驻扫描**（tracked 全量；秒级，无网络/无浏览器）：
 #   与上面一条**故意并列**而不是并进去，因为覆盖面不同 —— integrity-check ④⑤ 只扫**发布面**（lib/**），
@@ -394,6 +671,10 @@ node tools/secret-scan-test.mjs || fail=1
 #   （写死的临时目录/宿主绝对路径台账、shell 可移植、文件名、BOM/CRLF）+ 每类合成反例自证 + 两条"改回去必红"变异。
 #   实测：63 通过 / 0 失败（tracked 127 文件；账本 25 条全部反查命中）。不新增步骤编号（integrity-check ⑨b 断言编号自洽）。
 node tools/cross-platform-test.mjs || fail=1
+# ①(2026-10-02 门禁提速轮) 门禁自身的判据：输入键的分辨力（lib/**、tools/**、package.json 改一个字节必变）、
+#   绿缓存跳过 / 红缓存不跳过 / --full 必真跑、--list 12 步、并发第二个实例快速失败且无残留锁。
+#   纯 Node + os.tmpdir() 夹具 + 4 次"只抢锁/只列表"的轻量调用（约 4s，不跑任何门禁步骤）。
+node tools/gate-cache-test.mjs || fail=1
 
 # ①(2026-09-15 用户第 1 条反馈「扫描音频的速度能否快些」)
 #   惰性音频索引（只读目录表 + 仅候选条目 16 字节头，带 mtime+size 缓存）+
@@ -403,7 +684,11 @@ node tools/cross-platform-test.mjs || fail=1
 #                    + 真包与**规格字面量参考实现**逐项比对。
 #                    （2026-09-16 洁净室重写 P-89：不再读取/切片渲染器文件，详见 THIRD-PARTY.md）
 #   scene-audio-route-test：真 index.js 路由桩（206 只回 64KB / 预检 / 探测 JSON / 安全）。
+fi                                     # ← 第 6 步结束
+gate_end 6
 step "7/12 音频扫描提速（惰性索引 + Range/探测路由；真包与规格参考实现逐项一致）"
+gate_begin 7
+if [ "$GATE_RUN" = 1 ]; then           # ← 缓存命中时整块跳过（SKIP-CACHED）
 node tools/audio-scan-test.mjs || fail=1
 node tools/scene-audio-route-test.mjs || fail=1
 
@@ -412,7 +697,11 @@ node tools/scene-audio-route-test.mjs || fail=1
 #   语义门禁：四类（独立视频 / TEX 内嵌 / 无视频 / 多视频）+ mip0 LZ4 / 条目级 LZ4 / 前缀不可判定
 #   全部与**旧实现**逐项比 ref 与 sha256；语料每个 .tex 的"前缀判定"不许说谎；缓存 O(1)；
 #   落盘缓存文件名（hash 公式）与内容 sha256 与改前一致（升级后不重抽）。
+fi                                     # ← 第 7 步结束
+gate_end 7
 step "8/12 scene 视频索引（应用壁纸关键路径；旧实现逐项一致 + 缓存 + 缓存文件同名同内容）"
+gate_begin 8
+if [ "$GATE_RUN" = 1 ]; then           # ← 缓存命中时整块跳过（SKIP-CACHED）
 node tools/scene-video-test.mjs || fail=1
 # ①(2026-09-23 资源审计 #1，docs/RESOURCE-AUDIT-20260923.md §2.1) 上一条用的是"真机语料"
 #   （本机 ../allwallpaper/dd 2.3GB，B/C 段会整包读）—— 本机可用内存只有 ~4GB，常驻门禁不能只靠它。
@@ -445,7 +734,11 @@ node tools/scene-video-probe-fail-test.mjs || fail=1
 #   本步改用结构性判据（z-index 正负 / 层可见性 / 描边 alpha / rail 晕），并强制
 #   "before 变体必须测到旧 bug、after 变体必须测到已修复" ⇒ 探针自身有分辨力（防"假绿"）。
 #   证据落盘：tools/probe-out/replica-ab.txt 与 replica-{before,after}/{measure.json,shot.png}
+fi                                     # ← 第 8 步结束
+gate_end 8
 step "9/12 真机复刻 A/B（磨砂层叠 / 描边恢复 / rail 反色晕；before↔after 双向断言）"
+gate_begin 9
+if [ "$GATE_RUN" = 1 ]; then           # ← 缓存命中时整块跳过（SKIP-CACHED）
 node tools/header-rail-replica.mjs --both || fail=1
 
 # ①(2026-09-17 第 1 项「壁纸插件对 better-sidebar 的适配」) 两段链路都曾**静默失效**：
@@ -456,7 +749,11 @@ node tools/header-rail-replica.mjs --both || fail=1
 #   同名后同断言必须变红（变异用例，防假绿）/ apply() 页面加载路径即写 body 属性（桩 DOM 属性表）/
 #   浮窗规则必须带 0.16 版本门控 / 已装版本的产物里我们依赖的 DOM 锚点仍在（金丝雀）。
 #   真机 DOM 证据（0.19.1 真页面）：node tools/bs-compat-probe.mjs（见 docs/BETTER-SIDEBAR-COMPAT.md）
+fi                                     # ← 第 9 步结束
+gate_end 9
 step "10/12 better-sidebar 适配（/ping 版本链路 + 页面加载期版本门控 + 锚点金丝雀）"
+gate_begin 10
+if [ "$GATE_RUN" = 1 ]; then           # ← 缓存命中时整块跳过（SKIP-CACHED）
 node tools/better-sidebar-compat-test.mjs || fail=1
 # ①(2026-09-18 用户裁定) bsCompat 总开关**默认改为开**（底部面板悬浮适配已真机定案，默认关 = 没人看得见），
 #   并且**只迁移"从没显式设过"的存量用户**、用户手动关过的绝不覆盖（写入口打 bsCompatUserSet 标记；
@@ -476,7 +773,11 @@ node tools/bs-compat-default-test.mjs || fail=1
 #   ⑤ 变异对照（/raw 路由改名 / ping 载荷改 / 少一个导出）必须让门禁变红 —— 防假绿。
 #   产物与摘要：dist/dsh-mpkg-wallpaper.bundle.mjs、tools/probe-out/bundle-manifest.json（都不入库）；
 #   设计与装载边界见 README「方式四」、发布流程见 docs/RELEASE.md
+fi                                     # ← 第 10 步结束
+gate_end 10
 step "11/12 单文件 bundle 等价性（构建可复现 + 源码↔bundle 路由逐字段对拍 + 装载布局 + 变异对照）"
+gate_begin 11
+if [ "$GATE_RUN" = 1 ]; then           # ← 缓存命中时整块跳过（SKIP-CACHED）
 node tools/bundle-equivalence-test.mjs || fail=1
 
 # ⓪(2026-09-17 MASTER-TODO §5 第 2 项「样式作用域护栏（自动的）」) 两次真实事故（右侧轮次导航条被弄透明、
@@ -497,13 +798,34 @@ node tools/bundle-equivalence-test.mjs || fail=1
 #     SSOT 定义点必须唯一且是 body（宿主 --dsw-* 定义在 body，写 :root 会 guaranteed-invalid 继承）；
 #     变异自证：改 SSOT 取值 / 把 SSOT 挪回 :root / 表面换字面量 都必须变红。
 #   账本与清单：docs/TOKEN-NAMESPACE.md
+fi                                     # ← 第 11 步结束
+gate_end 11
 step "12/12 样式作用域护栏（真实产物 615 组设置全枚举；裸元素/裸 */:root 覆盖/宿主 token/禁止锚点判红）+ 表面 token 命名空间（宿主覆盖登记表 + 四表面共享 --mpw-* + 取值等价）"
+gate_begin 12
+if [ "$GATE_RUN" = 1 ]; then           # ← 缓存命中时整块跳过（SKIP-CACHED）
 node tools/style-scope-guard.mjs || fail=1
 node tools/token-namespace-test.mjs || fail=1
 
+fi                                     # ← 第 12 步结束
+gate_end 12
+
+echo
+GATE_TOTAL_MS=$(( $(now_ms) - GATE_T0_TOTAL ))
+step "汇总（12 步）"
+printf 'PASS %s / FAIL %s / SKIP-CACHED %s（真跑 %s 步，跳过 %s 步）\n' \
+  "$GATE_STAT_PASS" "$GATE_STAT_FAIL" "$GATE_STAT_SKIP" "$((GATE_STAT_PASS + GATE_STAT_FAIL))" "$GATE_STAT_SKIP"
+printf '总耗时 %s（真跑合计 %s；SKIP-CACHED 沿用上次结论、省下 %s）\n' \
+  "$(ms_human "$GATE_TOTAL_MS")" "$(ms_human "$GATE_REAL_MS")" "$(ms_human "$GATE_SKIP_SAVED")"
+printf '峰值内存 %s\n' "$(peak_mem_note)"
+if [ -n "$GATE_CORE" ]; then printf '输入指纹 %s（--list 看每步状态；--full 忽略缓存逐条真跑）\n' "${GATE_CORE:0:12}"; fi
+if [ "$GATE_CACHE_WARN" -gt 0 ]; then printf '⚠ 缓存降级 %s 次（那些步都是真跑的，判据一条没少）\n' "$GATE_CACHE_WARN"; fi
+
 echo
 if [ "$fail" = 0 ]; then
-  echo "全部通过 ✓  下一步：bash $(cd .. && pwd)/update-plugin.sh 然后刷新浏览器"   # ①(2026-09-19 敏感信息加固) 工作区根按脚本位置推导，不写本机绝对路径
+  echo "全部通过 ✓  下一步：bash $(cd .. && pwd)/update-plugin.sh 然后刷新浏览器"
+  if [ "$GATE_STAT_SKIP" -gt 0 ]; then
+    echo "（其中 $GATE_STAT_SKIP 步 SKIP-CACHED = 输入键一致且上次真跑为绿；要逐条真跑：bash tools/check.sh --full）"
+  fi
 else
   echo "存在失败项 ✗  修好再同步（不要带着失败项让用户刷新）"
 fi

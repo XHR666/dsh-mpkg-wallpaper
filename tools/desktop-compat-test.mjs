@@ -52,7 +52,7 @@ function loadClientHelpers(locationObj) {
     'const location = __loc;',
     'const MPW_HOST_FALLBACK_ORIGIN = ' + JSON.stringify(FALLBACK_LINE) + ';',
     'const HOST_BASE = ' + JSON.stringify(HOST_BASE_LINE) + ';',
-    sliceFn(CLIENT, 'mpwHostOrigin'), sliceFn(CLIENT, 'mpwHostUrl'), sliceFn(CLIENT, 'mpwHostPathOf'),
+    sliceFn(CLIENT, 'mpwPageOrigin'), sliceFn(CLIENT, 'mpwHostOrigin'), sliceFn(CLIENT, 'mpwHostUrl'), sliceFn(CLIENT, 'mpwHostPathOf'),
     'const HOST_URL = mpwHostUrl(HOST_BASE);',
     'return { origin: mpwHostOrigin, url: mpwHostUrl, pathOf: mpwHostPathOf, HOST_URL, HOST_BASE };',
   ].join('\n')
@@ -66,7 +66,7 @@ const LOC_NONE = {}
 console.log('== A 组：口径与接线（静态）==')
 ok('A1 常量与助手都在：`MPW_HOST_FALLBACK_ORIGIN` = 与 DSH 第一方同口径的 `http://dsh.internal`；三个助手 + `HOST_URL`',
   FALLBACK_LINE === 'http://dsh.internal' && HOST_BASE_LINE === '/api/mpkg-wallpaper'
-  && ['mpwHostOrigin', 'mpwHostUrl', 'mpwHostPathOf'].every((n) => CLIENT.includes('function ' + n + '('))
+  && ['mpwPageOrigin', 'mpwHostOrigin', 'mpwHostUrl', 'mpwHostPathOf'].every((n) => CLIENT.includes('function ' + n + '('))
   && /const HOST_URL = mpwHostUrl\(HOST_BASE\);/.test(CLIENT), JSON.stringify({ FALLBACK_LINE, HOST_BASE_LINE }))
 ok('A2 **没有残留的裸相对宿主 URL**：`HOST_BASE + "` 形态 0 处、`location.origin + HOST_BASE` 0 处（全部经 HOST_URL）',
   (CLIENT.match(/HOST_BASE \+ ["']/g) || []).length === 0 && !/location\.origin \+ HOST_BASE/.test(CLIENT),
@@ -87,9 +87,12 @@ console.log('\n== B 组：宿主基址解析（HTTP 档逐字节等价 / 非 HTT
 {
   const h = loadClientHelpers(LOC_HTTP)
   const rel = HOST_BASE_LINE + '/ping'
-  ok('B1 HTTP 档：解析结果 == `new URL(相对路径, location.origin).href`（**与原行为逐字节等价**，不是"近似"）',
-    h.url(rel) === new URL(rel, LOC_HTTP.origin).href && h.HOST_URL === LOC_HTTP.origin + HOST_BASE_LINE,
-    JSON.stringify([h.url(rel), new URL(rel, LOC_HTTP.origin).href]))
+  ok('B1 HTTP 档：**原样返回相对路径**（与改动前的裸相对路径逐字节相同；绝对化会打红 5 个门禁的 URL 形状判据）',
+    h.url(rel) === rel && h.HOST_URL === HOST_BASE_LINE,
+    JSON.stringify([h.url(rel), rel]))
+  ok('B1b HTTP 档：绝对形态仍可被 `new URL(相对路径, location.origin)` 解析成同一个地址（同源语义不变）',
+    new URL(h.url(rel), LOC_HTTP.origin).href === new URL(rel, LOC_HTTP.origin).href,
+    JSON.stringify([new URL(h.url(rel), LOC_HTTP.origin).href]))
   ok('B2 HTTP 档：`mode` 报 `page-origin`（台账/探针据此区分档位）', h.origin() === LOC_HTTP.origin)
 }
 {
@@ -130,13 +133,24 @@ console.log('\n== C 组：ffprobe 探测链（真实现，`__mpwTest` 出口）=
 
 console.log('\n== D 组：变异自证（真源零改动；改坏关键点必红）==')
 {
-  /* D1 行为变异体：把兜底判断去掉（恒用 location.origin）⇒ 非 HTTP 档必不再返回 dsh.internal。 */
-  const mutOrigin = sliceFn(CLIENT, 'mpwHostOrigin').replace('typeof o === "string" && o && o !== "null"', 'typeof o === "string" && !!o')
+  /* D1 行为变异体：把兜底判断去掉（恒用 location.origin）⇒ 非 HTTP 档必不再返回 dsh.internal。
+     ①(2026-10-02) "origin === null 也算缺失"这条判断现在在 mpwPageOrigin() 里 ⇒ 变异体打它。 */
+  const ORIGIN_FN = sliceFn(CLIENT, 'mpwPageOrigin') + '\n' + sliceFn(CLIENT, 'mpwHostOrigin')
+  const mutOrigin = ORIGIN_FN.replace('return (o && o !== "null") ? o : "";', 'return o;')
   const compile = (code, loc) => new Function('__loc', 'const location = __loc;\nconst MPW_HOST_FALLBACK_ORIGIN = ' + JSON.stringify(FALLBACK_LINE) + ';\n' + code + '\nreturn mpwHostOrigin();')(loc)
   const mutVal = compile(mutOrigin, LOC_NULL)
   ok('D1 去掉「origin === "null" 也算缺失」这条兜底 ⇒ 非 HTTP 档返回 "null"（B3 必红）',
-    mutVal === 'null' && mutVal !== 'http://dsh.internal' && compile(sliceFn(CLIENT, 'mpwHostOrigin'), LOC_NULL) === 'http://dsh.internal',
-    JSON.stringify({ mutant: mutVal, real: compile(sliceFn(CLIENT, 'mpwHostOrigin'), LOC_NULL) }))
+    mutVal === 'null' && mutVal !== 'http://dsh.internal' && compile(ORIGIN_FN, LOC_NULL) === 'http://dsh.internal',
+    JSON.stringify({ mutant: mutVal, real: compile(ORIGIN_FN, LOC_NULL) }))
+  /* D1b 行为变异体：HTTP 档又去绝对化（= 本轮修掉的那个回归）⇒ B1/B1b 必红。
+     这条自证的意义：URL 形状判据（np-media/np-control/web-wallpaper/pkg-import 等）真能挡住复发。 */
+  const mutAbs = sliceFn(CLIENT, 'mpwPageOrigin') + '\n' + sliceFn(CLIENT, 'mpwHostOrigin')
+    + '\n' + sliceFn(CLIENT, 'mpwHostUrl').replace('return o ? rel : MPW_HOST_FALLBACK_ORIGIN + rel;', 'return (o || MPW_HOST_FALLBACK_ORIGIN) + rel;')
+  const runUrl = (code) => new Function('__loc', 'const location = __loc;\nconst MPW_HOST_FALLBACK_ORIGIN = ' + JSON.stringify(FALLBACK_LINE) + ';\nconst HOST_BASE = ' + JSON.stringify(HOST_BASE_LINE) + ';\n' + code + '\nreturn mpwHostUrl(HOST_BASE + "/ping");')(LOC_HTTP)
+  const mutUrl = runUrl(mutAbs), realUrl = runUrl(sliceFn(CLIENT, 'mpwPageOrigin') + '\n' + sliceFn(CLIENT, 'mpwHostOrigin') + '\n' + sliceFn(CLIENT, 'mpwHostUrl'))
+  ok('D1b HTTP 档再绝对化（本轮回归的形态）⇒ B1 必红：变异体是 origin+相对、真源是相对',
+    mutUrl === LOC_HTTP.origin + HOST_BASE_LINE + '/ping' && realUrl === HOST_BASE_LINE + '/ping',
+    JSON.stringify({ mutant: mutUrl, real: realUrl }))
   ok('D2 路径还原去掉 `dsh.internal` 分支 ⇒ B6 的绝对形态必红',
     (() => {
       const mut = sliceFn(CLIENT, 'mpwHostPathOf').replace('if (u.indexOf(MPW_HOST_FALLBACK_ORIGIN) === 0) u = u.slice(MPW_HOST_FALLBACK_ORIGIN.length);', '')

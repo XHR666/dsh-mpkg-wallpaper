@@ -512,6 +512,14 @@ function checkScenario(sc, r) {
 if (process.argv[2] === '--child') {
   const sc = process.argv[3]
   await runChild(sc)
+  /* ①(2026-10-02 门禁提速轮) 子进程收尾：插件挂载时会排一个 12s 后的"补挂校验"定时器（lib/client.js 的慢判定），
+     本 scenario 的判据在上面**已经全部跑完并打印**，但这个待触发的定时器会把 node 的事件循环钉住整整 12s
+     ⇒ PART 2 的 12 个 scenario 一共白等 ~146s（基线实测：第 2 步 508s 里 146s 就是这一段）。
+     这里按 `_stub.mjs` 既有语义"页面随文档一起消失"把该世界的待触发定时器取消。
+     **不碰任何断言**：取消发生在 runChild 返回之后 ⇒ 之前打印的 ✓/✗ 与 __RESULT__ 一个字节都不变
+     （前后逐行对照见 docs/GATE-PERFORMANCE.md §4 与 §5）。 */
+  const { cancelWorldTimers } = await import('./_stub.mjs')
+  cancelWorldTimers()
 }
 
 async function runChild(sc) {

@@ -295,7 +295,9 @@ console.log('══ A 客户端导入链（真源码切片）══');
   // G6 预检在 /upload **之前**
   const viaHost = sliceFn(clientSrc, 'importViaHost');
   const iPre = viaHost.src.indexOf('mpkgAssetPrecheck(');
-  const iUp = viaHost.src.indexOf('fetch(HOST_BASE + "/upload"');
+  /* ①(2026-10-02) 宿主基址统一走 HOST_URL（桌面档兜底 dsh.internal / HTTP 档仍是同一相对路径）
+     ⇒ 判据锚点同时接受两种写法；这里判的是**顺序**（预检必须在 upload 之前），不是拼法。 */
+  const iUp = Math.max(viaHost.src.indexOf('fetch(HOST_URL + "/upload"'), viaHost.src.indexOf('fetch(HOST_BASE + "/upload"'));
   ok('A4 G6 上传前预检：importPickedFile→importViaHost 里 mpkgAssetPrecheck 出现在 fetch /upload 之前',
     iPre >= 0 && iUp > 0 && iPre < iUp, 'precheck@' + iPre + ' upload@' + iUp);
   ok('A4b G6 无素材 ⇒ 直接 showError 返回（不是先上传再报错）',
@@ -518,7 +520,7 @@ console.log('\n══ D 关键语义：导入链不依赖 preview / project.json
     && pre.api.isVideoTexCandidate('入场动画_batch.tex', 9 * 1024 * 1024) === false
     && pre.api.isVideoTexCandidate('main.tex', 9 * 1024 * 1024) === true);
   ok('D5 无素材容器**不发** /upload：预检分支在 fetch 之前且直接 return（源码顺序判据）',
-    (() => { const v = sliceFn(clientSrc, 'importViaHost').src; const a = v.indexOf('mpkgAssetPrecheck('); const b = v.indexOf('fetch(HOST_BASE + "/upload"'); return a >= 0 && b > a; })());
+    (() => { const v = sliceFn(clientSrc, 'importViaHost').src; const a = v.indexOf('mpkgAssetPrecheck('); const b = Math.max(v.indexOf('fetch(HOST_URL + "/upload"'), v.indexOf('fetch(HOST_BASE + "/upload"')); return a >= 0 && b > a; })());
 }
 
 /* ═══════════ G 段：容器族 PKG[VM]（G10；**合成夹具**，不读真机语料） ═══════════ */

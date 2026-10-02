@@ -68,6 +68,13 @@ export function worldIsolationStats() {
   return Object.assign({}, s, { retiredFromPrev: __mpwWorld ? __mpwWorld.retiredFromPrev : 0 })
 }
 
+/** 子进程收尾：取消"当前世界"里还没触发的插件定时器。
+    为什么需要它：注入的定时器走的是**真** `globalThis.setTimeout` ⇒ 插件挂载时排的 12s"补挂校验"
+    会把 node 的事件循环钉住 12s（用例自己的 await 早就结束了，进程却退不出去）。
+    语义与"世界换代"完全一样（= 页面随文档消失），**只影响进程退出时机，不改变任何判据**：
+    调用点必须放在该用例全部断言跑完之后（见 tools/frost-rail-test.mjs 的 --child 分支）。 */
+export function cancelWorldTimers() { return __mpwWorld ? __mpwWorld.cancelAll() : 0 }
+
 export function installStubs(opts = {}) {
   /* 世界换代：上一个世界没触发的定时器随"页面"一起消失（真浏览器语义）。 */
   const retiredFromPrev = (opts.isolateWorlds !== false && __mpwWorld) ? __mpwWorld.cancelAll() : 0

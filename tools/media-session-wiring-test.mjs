@@ -130,7 +130,8 @@ console.log('\n══ B. 客户端补充路径（形状钉住，防"接了一半
     'B4 开关关掉 ⇒ 停轮询；连续失败 ≥3 次 ⇒ 降到 30s 慢探（不当场打死：后端起来了还能自己接上）')
   ok(/if \(d && d\.available === true\) \{ npApplySystemMedia\(d\); return d \}/.test(src) && /if \(!ctl \|\| !d \|\| d\.available !== true\) return false;/.test(src),
     'B5 `available:false`（本机常态）⇒ **不接管**：只认 `available===true` 才 `setMedia`（诚实降级）')
-  ok(/HOST_BASE \+ '\/media-art\?player=' \+ encodeURIComponent/.test(src) && /Math\.round\(Number\(d\.duration\) \/ 1000\)/.test(src)
+  /* ①(2026-10-02) 宿主基址统一走 HOST_URL（HTTP 档=同一相对路径、桌面档兜底 dsh.internal）⇒ 锚点跟随。 */
+  ok(/HOST_URL \+ '\/media-art\?player=' \+ encodeURIComponent/.test(src) && /Math\.round\(Number\(d\.duration\) \/ 1000\)/.test(src)
     && /ctl\.setProgress\(Math\.round\(Number\(d\.position\) \/ 1000\)\)/.test(src),
     'B6 封面 `file://` 走宿主代理；单位**毫秒→秒**（卡片的是秒：`total`/`at`）')
   /* ①(2026-09-20 实测踩到) 定时器**必须 unref**：门禁把 client.js 跑在桩 DOM 里，断言跑完后进程要能自己退出；
