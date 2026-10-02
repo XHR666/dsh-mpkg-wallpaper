@@ -42,7 +42,7 @@ const KEEP = has('keep')
 const ALLOW_HOST_WRITES = has('allow-host-writes')
 const SETTLE = Number(arg('settle', '900'))
 const VIEWPORT = (() => { const m = String(arg('viewport', '1920x1200')).match(/^(\d+)x(\d+)$/); return m ? { width: Number(m[1]), height: Number(m[2]) } : { width: 1920, height: 1200 } })()
-const GROUPS = String(arg('groups', 'popovers,sidebar-tint,float,anim')).split(',').map((x) => x.trim()).filter(Boolean)
+const GROUPS = String(arg('groups', 'popovers,sidebar-tint,float,anim,popover-surfaces')).split(',').map((x) => x.trim()).filter(Boolean)
 const ONLY_TARGET = String(arg('only-target', '')).split(',').map((x) => x.trim()).filter(Boolean)
 const STORE = 'dsh.mpkg-wallpaper.v2'
 /** path 数组 → 可直接喂给 Playwright 的选择器（声明必须在任何用到它的代码之前：TDZ）。 */
@@ -346,6 +346,44 @@ const SIDEBAR_FACTS = (mode) => {
     effective: (() => { try { const x = globalThis.__mpwPersist.read() || {}; return { unifyAmount: x.unifyAmount, sidebarAlpha: x.sidebarAlpha, blurFollowUnify: x.blurFollowUnify, enabled: x.enabled } } catch (e) { return { err: String(e && e.message || e) } } })(),
   }
 }
+/** 弹层容器整棵子树里"画了东西"的元素（底/bf/bgImage 任一非空）+ 该容器上的弹层 token 解析值。 */
+const POPOVER_SUBTREE = (sel) => {
+  const H = globalThis.__pp; if (!H) return { err: 'page-helpers-missing' }
+  const pathOf = H.pathOf, VIS = H.VIS, ALPHA = H.ALPHA
+  const root = document.querySelector(sel)
+  if (!root) {
+    return { sel, found: false, visibleMenus: Array.from(document.querySelectorAll('[role="menu"],[role="listbox"]')).filter(VIS).map((e) => ({ cls: String(e.className).slice(0, 50), id: e.id })) }
+  }
+  const TOK = ['--mpw-surface-pop', '--mpw-surface-pop-dark', '--mpw-pop-alpha', '--mpw-pop-blur', '--mpw-pop-radius']
+  const tokOf = (e) => { const c = getComputedStyle(e); const o = {}; for (const t of TOK) { const v = c.getPropertyValue(t).trim(); if (v) o[t] = v.slice(0, 48) } return o }
+  const paints = (c) => ALPHA(c.backgroundColor) > 0.01 || c.backdropFilter !== 'none' || c.backgroundImage !== 'none'
+  const items = []
+  const add = (e, why) => {
+    const c = getComputedStyle(e)
+    if (!paints(c)) return
+    const r = e.getBoundingClientRect()
+    items.push({ why, sel: pathOf(e), tag: e.tagName, cls: String(e.className).slice(0, 70), role: e.getAttribute('role'), text: String(e.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 24), bg: c.backgroundColor, bf: c.backdropFilter, bgImage: String(c.backgroundImage).slice(0, 60), rect: [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)], z: c.zIndex, opacity: c.opacity, mixBlend: c.mixBlendMode, visible: VIS(e), tokens: tokOf(e) })
+  }
+  add(root, 'container')
+  for (const e of root.querySelectorAll('*')) add(e, 'descendant')
+  return {
+    sel, found: true, containerCls: String(root.className), containerId: root.id || null, containerTokens: tokOf(root),
+    containerRect: (() => { const r = root.getBoundingClientRect(); return [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)] })(),
+    itemCount: items.length, items,
+    menuitems: Array.from(root.querySelectorAll('[role="menuitem"],[role="option"]')).slice(0, 8).map((e) => { const c = getComputedStyle(e); const r = e.getBoundingClientRect(); return { sel: pathOf(e), cls: String(e.className).slice(0, 50), text: String(e.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 26), bg: c.backgroundColor, bf: c.backdropFilter, bgImage: String(c.backgroundImage).slice(0, 40), rect: [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)], tokens: tokOf(e) } }),
+  }
+}
+/** `_overlayLayer` / `_overlay` / `[data-shell-overlay]` 的**原样读数**（closed 态：rect/opacity/visibility/pointer-events…）。 */
+const OVERLAY_STATES = () => {
+  const H = globalThis.__pp; if (!H) return { err: 'page-helpers-missing' }
+  const pathOf = H.pathOf, VIS = H.VIS
+  const out = []
+  for (const e of document.querySelectorAll('[class*="_overlayLayer"],[class*="_overlay"],[data-shell-overlay]')) {
+    const c = getComputedStyle(e); const r = e.getBoundingClientRect()
+    out.push({ sel: pathOf(e), cls: String(e.className).slice(0, 60), attrs: Array.from(e.attributes).map((a) => a.name).filter((n) => /^data-/.test(n)).slice(0, 4), rect: [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)], opacity: c.opacity, visibility: c.visibility, pointerEvents: c.pointerEvents, display: c.display, z: c.zIndex, position: c.position, bg: c.backgroundColor, bf: c.backdropFilter, visible: VIS(e), children: e.children.length })
+  }
+  return { count: out.length, list: out }
+}
 const FIND_IDLE_ROW = () => {
   const H = globalThis.__pp; if (!H) return { err: 'page-helpers-missing' }
   const vis = H.VIS
@@ -555,15 +593,17 @@ const samplePixels = async (page, clip) => {
       const c = document.createElement('canvas'); c.width = img.width; c.height = img.height
       const g = c.getContext('2d'); g.drawImage(img, 0, 0)
       const d = g.getImageData(0, 0, c.width, c.height).data
-      let r = 0, gg = 0, b = 0, n = 0
-      for (let i = 0; i < d.length; i += 4) { r += d[i]; gg += d[i + 1]; b += d[i + 2]; n++ }
+      let r = 0, gg = 0, b = 0, n = 0, sum = 0, sum2 = 0
+      for (let i = 0; i < d.length; i += 4) { r += d[i]; gg += d[i + 1]; b += d[i + 2]; n++; const L = 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]; sum += L; sum2 += L * L }
       const pts = []
       for (const [fx, fy] of [[0.5, 0.1], [0.5, 0.5], [0.5, 0.9], [0.2, 0.5], [0.8, 0.5]]) {
         const x = Math.min(c.width - 1, Math.round(fx * (c.width - 1))), y = Math.min(c.height - 1, Math.round(fy * (c.height - 1)))
         const i = (y * c.width + x) * 4
         pts.push([d[i], d[i + 1], d[i + 2]])
       }
-      return { w: c.width, h: c.height, avg: [Math.round(r / n), Math.round(gg / n), Math.round(b / n)], samples: pts }
+      const mean = sum / n
+      const lumaStd = Math.sqrt(Math.max(0, sum2 / n - mean * mean))
+      return { w: c.width, h: c.height, avg: [Math.round(r / n), Math.round(gg / n), Math.round(b / n)], lumaMean: Math.round(mean * 10) / 10, lumaStd: Math.round(lumaStd * 10) / 10, samples: pts }
     }, b64)
   } catch (e) { return { err: String(e && e.message || e).slice(0, 160) } }
 }
@@ -775,6 +815,44 @@ try {
       return { count: out.length, rows: out.slice(0, 14), whiteCount: out.filter((x) => x.whiteText).length }
     })
     result.groupsOut.popovers = pop
+  }
+
+  /* ── 组 popover-surfaces：三个弹层容器整棵子树的"谁在画" + --mpw-surface-pop + overlayLayer 原样读数 ── */
+  if (want('popover-surfaces')) {
+    const rec = { at: new Date().toISOString(), overlayClosed: null, popovers: [], overlayAfterClose: null }
+    try {
+      rec.overlayClosed = await page.evaluate(OVERLAY_STATES)
+      const targets = [
+        { id: 'plus-menu', sel: 'div._3e4SsG_viewport', opener: [{ sel: 'button[aria-label="指令"]' }, { sel: 'button[aria-label="添加附件"]' }] },
+        { id: 'permission', sel: 'div._list_1nxmc_8', opener: [{ sel: 'button[aria-label^="访问模式"]' }] },
+        { id: 'model-l1', sel: '[class*="_7KE1Ra_menu"], div[id$=":-menu"]', opener: [{ sel: 'button[aria-label^="选择模型"]' }] },
+      ]
+      for (const t of targets) {
+        const p = { id: t.id, sel: t.sel, openedBy: null, dump: null, pixels: null, blocked: null }
+        try {
+          try { await page.keyboard.press('Escape') } catch (e) { /* ignore */ }
+          await page.evaluate(CLOSE_ALL); await page.waitForTimeout(400)
+          const found = await page.evaluate(FIND_OPENER, t.opener)
+          p.openedBy = found
+          if (!found || !found.path) { p.blocked = 'blocked:no-opener'; rec.popovers.push(p); continue }
+          const s2 = selOf(found.path)
+          try { await page.locator(s2).first().click({ timeout: 4000 }) } catch (e) { await page.evaluate((x) => { const e2 = document.querySelector(x); if (e2) e2.click() }, s2) }
+          await page.waitForTimeout(1300)
+          p.dump = await page.evaluate(POPOVER_SUBTREE, t.sel)
+          if (!p.dump.found) p.blocked = 'blocked:container-not-found'
+          else if (p.dump.containerRect) p.pixels = await samplePixels(page, { x: Math.max(0, p.dump.containerRect[0]), y: Math.max(0, p.dump.containerRect[1]), width: Math.max(1, Math.min(600, p.dump.containerRect[2])), height: Math.max(1, Math.min(600, p.dump.containerRect[3])) })
+          const tok = (p.dump.containerTokens || {})
+          console.log('SURFACE ' + t.id + ' → ' + (p.blocked || 'ok') + '  items=' + p.dump.itemCount + '  containerTokens=' + JSON.stringify(tok) + '  patch(avg/lumaStd)=' + JSON.stringify([p.pixels && p.pixels.avg, p.pixels && p.pixels.lumaStd]))
+          for (const it of (p.dump.items || []).slice(0, 8)) console.log('    · ' + (it.why === 'container' ? '[容器] ' : '[子] ') + it.tag + '.' + String(it.cls).split(' ')[0] + '  role=' + it.role + '  bg=' + it.bg + '  bf=' + it.bf + '  bgImage=' + String(it.bgImage).slice(0, 26) + '  rect=' + JSON.stringify(it.rect) + '  z=' + it.z + '  tokens=' + JSON.stringify(it.tokens))
+        } catch (e) { p.blocked = 'blocked:exception ' + String(e && e.message || e).slice(0, 140) }
+        rec.popovers.push(p)
+        try { await page.keyboard.press('Escape') } catch (e) { /* ignore */ }
+        await page.waitForTimeout(300)
+      }
+      rec.overlayAfterClose = await page.evaluate(OVERLAY_STATES)
+      console.log('OVERLAY closed 态: ' + JSON.stringify((rec.overlayClosed.list || []).map((x) => ({ cls: x.cls, rect: x.rect, opacity: x.opacity, visibility: x.visibility, pointerEvents: x.pointerEvents, display: x.display, z: x.z, bg: x.bg, bf: x.bf, visible: x.visible }))))
+    } catch (e) { rec.err = String(e && e.message || e).slice(0, 240) }
+    result.groupsOut.popoverSurfaces = rec
   }
 
   /* ── 组 sidebar-causal：把"左栏粉色/主色"的因果钉死（7 步，每步 40×40 中心块 + 整栏像素 + computed） ── */
