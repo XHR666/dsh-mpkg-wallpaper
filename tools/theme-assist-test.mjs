@@ -6,7 +6,9 @@
 //     (B) 输入框 `[class*="composerSeat"]` 的遮罩渐变终点 = `--dsw-alias-bg-base` ⇒ 底色半透明后
 //         它遮不住滚到输入框下面的正文（正文糊进输入框）；
 //     (C) 4K 源 + 壁纸层虚化 ⇒ 桌面端明显卡（旧实现只提示，不改默认值；2026-10-02 用户第 1 项起
-//         **默认自动降到 1080p**，带 `?autocap=off` 回退口）。
+//         **默认自动降到 1080p**，带 `?autocap=off` 回退口。**同日的第 2 次拍板**：降档只对当前壁纸
+//         **临时生效、不写设置、不弹「转码中」条** —— 上一版把 resMax 写进设置，之后每次改外观设置都
+//         重走转码判断并弹条 = 用户第 1 条 bug，判据见 D 组）。
 //   版本事实（决定了"必须运行期探测"）：**不同宿主构建的取色变量不同**（一个用 `--dsw-alias-bg-base`、
 //   另一个用 `--dsw-specific-sidebar-fill` 且算出来同色）⇒ 类名带哈希、取色变量随构建变。
 //
@@ -20,15 +22,19 @@
 //                     ②半透明 + 用户显式关过（composerBlurUserSet）⇒ 永不自动开；
 //                     ③不透明（默认）主题 ⇒ 不动作；④关掉 themeAssist ⇒ 不动作；
 //                     ⑤用户显式开 ⇒ 照开；⑥自动开过之后用户显式关 ⇒ 属性与样式节点**摘除无残留**
-//   D 组 ≥4K 自动降 1080p：①转码可用 + resMax 未设 ⇒ 一次 commit({resMax:1920}, true) + 新文案；
-//                     ②<4K ⇒ 不动；③用户已设过 resMax ⇒ 不动；④同一壁纸第二次 ⇒ 不动（去重）；
-//                     ⑤`?autocap=off` ⇒ 不动（行为同今天）；⑥转码不可用/拿不到 ⇒ 不动；
-//                     ⑦面板桥拿不到 ⇒ 走同一落盘路径 writeSection（真机常态）+ 都不通 ⇒ 不动；
-//                     ⑧scene 内嵌视频（不可转码）⇒ 不写档；⑨resMax=0 ⇒ 视同未设；
-//                     ⑩boot 窗口内写下的被存储合并盖回 ⇒ 收尾后补写一次；
-//                     ⑪读数"在飞" ⇒ 等探测落地再判一次（不写 seen）；⑫取词失败 ⇒ 文案回退中文
+//   D 组 ≥4K 自动降 1080p（2026-10-02 用户拍板：**只对当前壁纸临时生效、不写设置、不弹条**）：
+//                     ①全条件满足 ⇒ 盘上**一个字都不写**（无 commit / 无 writeSection / 档里 resMax 不变）
+//                       + 临时覆盖 maxW=1920 + 软重挂 1080p 档（URL 带 maxW=1920）+ 新文案 + 台账 mode=transient；
+//                     ①b 临时覆盖是上限的**唯一读取口**：没设过 ⇒ 1920；用户自己设了 3000 ⇒ 3000（让位）；换壁纸 ⇒ 0；
+//                     ②<4K ⇒ 不动；③用户已设过 resMax ⇒ 不动（连软重挂都不做）；
+//                     ④同一壁纸第二次 ⇒ 不动（去重）；④b 换壁纸 ⇒ 旧覆盖失效、新壁纸按"每壁纸一次"重判（仍不写盘）；
+//                     ⑤`?autocap=off` ⇒ 不动（行为同今天）；⑥转码不可用/读数未知/读数在飞 ⇒ 不动；
+//                     ⑦落盘口拿不到（面板桥没挂载 / writeSection 会抛）⇒ **照样降档**（不落盘 ⇒ 不依赖落盘口）；
+//                     ⑧scene 内嵌视频（不可转码）⇒ 不动；⑨resMax=0 ⇒ 视同未设；⑩boot 窗口 ⇒ 不写盘、也不排补写待办；
+//                     ⑪读数"在飞" ⇒ 等探测落地再判一次（不写 seen）；⑫取词失败 ⇒ 文案回退中文；
+//                     ⑬busy：自动降档的占位事件带 `auto:true` 且**不派发**（真实现 + dispatchEvent 记录）
 //   E 组 变异自证：把关键判断改坏（外框/还原/输入框/自动降档/回退口/自动档守卫）⇒ 对应判据必红
-//                     （E6–E8 是**真变异**：改坏后跑同一组输入，证明判据确实有分辨力）
+//                     （E6–E10 是**真变异**：改坏后跑同一组输入，证明判据确实有分辨力）
 //
 // 用法: node tools/theme-assist-test.mjs
 import fs from 'node:fs'
@@ -92,6 +98,14 @@ const FN_AUTOCAP_LEDGER = sliceFn('mpw4kAutoCapLedger')
 const FN_AUTOCAP_KEY = sliceFn('mpw4kAutoCapKey')
 const FN_AUTOCAP_COMMIT = sliceFn('mpwAutoCapCommit')
 const FN_AUTOCAP_MAIN = sliceFn('mpwAutoCap4kForSource')
+/* ①(2026-10-02 拍板：不写设置 ⇒ 临时覆盖) 新增/改动的三片真实现：
+   · `mpwAutoCapTransient` 的读取口（用户设过优先，否则命中当前壁纸的临时覆盖）；
+   · 壁纸身份解析（覆盖按 key 失效）；
+   · `mpwBusyEmit`（auto:true 静音守卫）与 `pollTranscodeProgress`（软重挂后喂真实转码进度）。 */
+const FN_RESMAX_EFF = sliceFn('mpwResMaxEffective')
+const FN_AUTOCAP_KEYOF = sliceFn('mpwAutoCapKeyOf')
+const FN_BUSY = sliceFn('mpwBusyEmit')
+const FN_POLL = sliceFn('pollTranscodeProgress')
 const FN_FF_NOTE = sliceFn('mpwNoteFfmpegReady')
 const FN_FF_KNOWN = sliceFn('mpwFfmpegReadyKnown')
 const FN_FF_KICK = sliceFn('mpwFfmpegProbeKick')
@@ -109,6 +123,8 @@ const DECLS = [
   sliceDecl('let', 'mpwFfmpegWaiters'),
   sliceDecl('const', 'MPW_4K_MIN_PX'),
   sliceDecl('const', 'MPW_4K_AUTOCAP_RES'),
+  /* 临时覆盖（= 自动降档的唯一落点；不再是设置里的 resMax）：真声明从源码原样搬进来。 */
+  sliceDecl('let', 'mpwAutoCapTransient'),
   /* boot 收尾闸门（自动降档补写要用）：真声明 + 由世界预设值（`__win.__bootPending`）初始化。 */
   sliceDecl('let', 'mpwBootPending'),
   sliceDecl('let', 'mpwStoreDirty'),
@@ -197,20 +213,36 @@ function mkWorld({ bgBase = 'rgba(255,255,255,0.2)', sidebarFill = '#f9fafb', fr
   const win = {
     innerWidth: 1920, innerHeight: 1080, __perf: null,
     location: { search: '' },
+    /* `mpwBusyEmit` 真正派发时会走这里 ⇒ 判据能看见"进度条收到的是哪些事件"（D⑬）。 */
+    dispatchEvent: (ev) => { (win.__events = win.__events || []).push(ev); return true },
   }
   return { doc, win, html, body, wrap, head, all, styleFor }
 }
 /** 把切片 + 桩环境拼成一个可执行的 apply/revert/自动降档（就是 lib 里那几段原文，只换外部依赖）。
- *  `extra.mutate(code)`：对拼好的源码做**变异**（E 组自证用；真源零改动）。 */
+ *  `extra.mutate(code)`：对拼好的源码做**变异**（E 组自证用；真源零改动）。
+ *  `extra.realPoll`：软重挂后的进度轮询用**真实现**（FN_POLL）+ 记录派发的 busy 事件（D⑬ 的 busy 判据）。 */
 function loadAssist(world, section, extra = {}) {
+  /* 轮询：默认记录参数（软重挂到底走的哪一档）；`realPoll` 时换成真实现（含它自己发的 tc: 进度事件）。 */
+  const pollImpl = extra.realPoll
+    ? FN_POLL
+    : 'const pollTranscodeProgress = (src, fps, maxW, scale) => { __win.__polls = (__win.__polls || []).concat([{ src: String(src), fps: fps, maxW: maxW, scale: scale }]); return 0 };';
   const raw = [
     'const window = __win; const document = __doc; const location = __win.location;',
     'const DEFAULT_THEME_ASSIST = true; const DEFAULT_COMPOSER_BLUR = false; const DEFAULT_BLUR = 12; const DEFAULT_UNIFY_AMOUNT = 30;',
     'const ALLOWED_FPS = [24, 30, 48, 60]; const HOST_URL = "http://127.0.0.1:1/api/mpkg-wallpaper";',
-    'const getComputedStyle = __cs; const bgElements = () => ({ wrap: __wrap });',
+    'const getComputedStyle = __cs; const bgElements = () => ({ wrap: __wrap, video: null });',
+    /* 软重挂的媒体层桩：只记录 URL（真实现里是 showVideoEl/showVideoEdge；Edge 走 canvas）。
+       `IS_EDGE=false` ⇒ 判据盯的是 `showVideoEl` 那一条（非 Edge 主路径）。 */
+    'const IS_EDGE = false;',
+    'const showVideoEl = (u) => { __win.__remounts = (__win.__remounts || []).concat([String(u)]) };',
+    'const showVideoEdge = (u) => { __win.__edgeRemounts = (__win.__edgeRemounts || []).concat([String(u)]) };',
+    'const CustomEvent = class { constructor(type, init) { this.type = type; this.detail = init && init.detail } };',
+    /* 定时器桩：`setInterval` 只同步跑一次回调（进度轮询的第一发）⇒ 真实现能跑、又不会留下跑不完的定时器。 */
+    'const setInterval = (fn) => { try { fn(); } catch (e) {} return 1; }; const clearInterval = () => {};',
+    pollImpl,
     'const readSection = () => __section; const mpwPersistEmit = (m) => { __notes.push(String(m)) };',
     'const fetch = __fetch;',
-    /* 落盘口桩：`__win.__noWriteSection` = 连模块级 writeSection 也拿不到（D8 的"两条口都没有"）。
+    /* 落盘口桩：`__win.__noWriteSection` = 连模块级 writeSection 也拿不到（D8b 的"两条口都没有"）。
        mpwSwitchPatchFull 在沙箱里按恒等桩 —— 本组只走 `{resMax:…}` 这一条（不碰源字段），
        它的真实现（源字段归一化）由 switch-wiring/panel 那条线覆盖。 */
     'const writeSection = (next, instant) => { if (__win.__noWriteSection) throw new Error("no writeSection");'
@@ -230,9 +262,11 @@ function loadAssist(world, section, extra = {}) {
     FN_ALPHA, FN_THEME, FN_FRAMES, FN_STYLE, FN_REVERT, FN_APPLY, FN_COMPOSER, FN_PERF,
     FN_SCENEUI, FN_TSPEC, FN_AUTOCAP_OFF, FN_AUTOCAP_TRANSCODABLE, FN_AUTOCAP_DECISION,
     FN_AUTOCAP_LEDGER, FN_AUTOCAP_KEY, FN_AUTOCAP_COMMIT, FN_AUTOCAP_MAIN,
+    FN_AUTOCAP_KEYOF, FN_RESMAX_EFF, FN_BUSY,
     FN_FF_NOTE, FN_FF_KNOWN, FN_FF_KICK, FN_FF_INFLIGHT, FN_FF_WAITER, FN_PERF_MSG, FN_ANNOUNCE, FN_ON_BOOT, FN_BOOT_SETTLE,
     'return { alpha: mpwColorAlpha, theme: mpwThemeState, apply: mpwApplyThemeAssist, revert: mpwRevertThemeAssist,'
     + ' perf: mpwPerfNoteForSource, composer: mpwComposerBlurEffective, autoCap: mpwAutoCap4kForSource,'
+    + ' resMaxEff: (s) => mpwResMaxEffective(s), busy: (p) => mpwBusyEmit(p),'
     + ' noteFfmpeg: mpwNoteFfmpegReady, ffmpeg: mpwFfmpegReadyKnown, settleBoot: () => mpwBootSettle("test"),'
     + ' kickProbe: (why) => mpwFfmpegProbeKick(why), bootPending: () => mpwBootPending,'
     + ' setBridge: (b) => { __mpwSceneUiBridge = b } };',
@@ -282,10 +316,11 @@ ok('A6 闸门/应用接线：apply 路径调用 `mpwApplyThemeAssist(section)`',
   /try \{ mpwApplyThemeAssist\(section\); \}/.test(SRC))
 
 /* ── ①(2026-10-02 用户第 1/2 项) 新增行为的接线判据 ───────────────────────── */
-ok('A7 ≥4K 自动降档：常量/判据函数/回退口/两份台账都在源码里（`MPW_4K_AUTOCAP_RES = 1920`、`?autocap=off`、`__mpw4kAutoCap`、`__mpwPerfNote.autoCap`）',
-  /const MPW_4K_AUTOCAP_RES = 1920;/.test(SRC) && /function mpw4kAutoCapDecision\(/.test(SRC)
+ok('A7 ≥4K 自动降档：临时覆盖 + 判据函数 + 回退口 + 两份台账都在源码里（`mpwAutoCapTransient`、`mpwResMaxEffective`、`MPW_4K_AUTOCAP_RES = 1920`、`?autocap=off`、`__mpw4kAutoCap`、`__mpwPerfNote.autoCap`）',
+  /let mpwAutoCapTransient = null;/.test(SRC) && /function mpwResMaxEffective\(/.test(SRC)
+  && /function mpw4kAutoCapDecision\(/.test(SRC)
   && /get\("autocap"\) === "off"/.test(SRC) && /window\.__mpw4kAutoCap/.test(SRC)
-  && /n\.autoCap = out;/.test(SRC) && /b\.commit\(\{ resMax: resMax \}, true, true\)/.test(SRC))
+  && /n\.autoCap = out;/.test(SRC) && /led\.mode = "transient";/.test(FN_AUTOCAP_MAIN))
 ok('A8 ≥4K 两条提示文案走 t() 且 zh/en 成对（`perfNote4kAuto` / `perfNote4kAdvisory` 各 2 处；取词失败回退中文，不弹键名）',
   (SRC.match(/"perfNote4kAuto":/g) || []).length === 2 && (SRC.match(/"perfNote4kAdvisory":/g) || []).length === 2
   && /mpwPersistEmit\(mpwPerfMsg\("perfNote4kAuto", "[^"]*已自动降到 1080p（可在设置里改回）"\)\)/.test(SRC)
@@ -306,9 +341,17 @@ ok('A12 面板显示生效值：`composerBlurShown` 由 mpwComposerBlurEffective
   && /mpwThemeState\(\)\.translucent\)\.on;/.test(SRC) && /,\s*composerBlurShown\),/.test(SRC))
 ok('A13 ≥4K 的触发点仍是 <video> 的 loadedmetadata（自动降档与一次性提示同一入口）',
   /video\.addEventListener\("loadedmetadata", \(\) => \{\s*try \{ mpwPerfNoteForSource\(video\.videoWidth, video\.videoHeight\); \}/.test(SRC))
-ok('A14 落盘口两条路：优先面板桥 commit，桥拿不到（面板没挂载）时回退同一落盘路径 writeSection + 通知面板重读',
-  /if \(b && typeof b\.commit === "function"\) \{ b\.commit\(\{ resMax: resMax \}, true, true\); return true \}/.test(SRC)
-  && /writeSection\(Object\.assign\(\{\}, cur, full\), true\)/.test(SRC) && /mpwSectionNotify\(\)/.test(FN_AUTOCAP_COMMIT))
+ok('A14 自动降档**不再写设置**（2026-10-02 拍板）：主路径里没有 `mpwAutoCapCommit(` / `writeSection(` / `mpwMarkUserSet(` 调用，落点是临时覆盖 + 软重挂（`showVideoEl(spec2.playUrl)`）+ 1080p 档的进度轮询',
+  !/mpwAutoCapCommit\(/.test(FN_AUTOCAP_MAIN) && !/writeSection\(/.test(FN_AUTOCAP_MAIN)
+  && !/mpwMarkUserSet\(/.test(FN_AUTOCAP_MAIN)
+  && /mpwAutoCapTransient = \{ key: key, maxW: d\.resMax \};/.test(FN_AUTOCAP_MAIN)
+  && /showVideoEl\(spec2\.playUrl\)/.test(FN_AUTOCAP_MAIN)
+  && /pollTranscodeProgress\(img, spec2\.fps \|\| 30, spec2\.maxW \|\| 0, spec2\.scale \|\| ""\)/.test(FN_AUTOCAP_MAIN))
+ok('A15b 唯一上限读取口：外观应用路径的转码规格从 `mpwResMaxEffective(section)` 取上限（不再直接读 `section.resMax`）',
+  /const resMaxN = mpwResMaxEffective\(section\);/.test(SRC) && !/const resMaxN = section\.resMax/.test(SRC)
+  && /if \(own > 0\) return own;/.test(FN_RESMAX_EFF) && /t\.key === mpwAutoCapKeyOf\(s2\)/.test(FN_RESMAX_EFF))
+ok('A15c busy 静音接线：`mpwBusyEmit` 对 `payload.auto === true` 直接 return（不派发）；自动降档在软重挂前发一发 `{ auto: true }` 占位',
+  /if \(payload && payload\.auto === true\) return/.test(FN_BUSY) && /mpwBusyEmit\(\{ auto: true \}\)/.test(FN_AUTOCAP_MAIN))
 ok('A15 读数"在飞"不算"拿不到"：判据函数出 `await-transcode-probe`，落地后由 mpwOnFfmpegProbe 补判一次（不写 seen、不重试、换壁纸判废）',
   /if \(ffInFlight === true\) return \{ act: false, why: "await-transcode-probe", resMax: 0 \};/.test(FN_AUTOCAP_DECISION)
   && /mpw4kAutoCapDecision\(W, H, sec\.resMax, mpwFfmpegReadyKnown\(\), mpwAutoCapOff\(\),\s*dup, mpw4kAutoCapTranscodable\(sec\), mpwFfmpegProbeInFlight\(\)\)/.test(FN_AUTOCAP_MAIN)
