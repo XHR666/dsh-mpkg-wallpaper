@@ -273,6 +273,79 @@ const SUBAGENT_FACTS = () => {
     tokens,
   }
 }
+/** 左栏"粉色"因果实验用的事实采集。
+ *  mode: baseline | bf-none | bf-restore | bgwrap-hidden | bgwrap-restore | media-filter-none | media-filter-restore
+ *  另外采：每层 token 解析值、壁纸层媒体事实、"谁在画"清单（与左栏矩形相交 + elementsFromPoint）。 */
+const SIDEBAR_FACTS = (mode) => {
+  const H = globalThis.__pp; if (!H) return { err: 'page-helpers-missing' }
+  const pathOf = H.pathOf
+  const col = document.querySelector('[class*="sidebarCol"]')
+  const wrap = document.getElementById('mpw-bgWrap')
+  const TOKENS = ['--mpw-bg-blur', '--mpw-panel-tint', '--mpw-aqua-rgb', '--mpw-mask-rgb', '--mpw-chrome-alpha', '--mpw-unify-surface', '--mpw-surface-side-frost']
+  const touched = []
+  if (col && mode === 'bf-none') { touched.push({ what: 'sidebarCol.backdropFilter', prev: col.style.backdropFilter || '(inline 空)' }); col.style.setProperty('backdrop-filter', 'none', 'important'); col.style.setProperty('-webkit-backdrop-filter', 'none', 'important') }
+  if (col && mode === 'bf-restore') { col.style.removeProperty('backdrop-filter'); col.style.removeProperty('-webkit-backdrop-filter') }
+  if (col && mode === 'sidebar-hidden') { touched.push({ what: 'sidebarCol.display', prev: col.style.display || '(inline 空)' }); col.style.setProperty('display', 'none', 'important') }
+  if (col && mode === 'sidebar-restore') { col.style.removeProperty('display') }
+  if (wrap && mode === 'bgwrap-hidden') { touched.push({ what: 'bgWrap.display', prev: wrap.style.display || '(inline 空)' }); wrap.style.display = 'none' }
+  if (wrap && mode === 'bgwrap-restore') { wrap.style.display = '' }
+  const mediaSel = '#mpw-bgWrap img, #mpw-bgWrap video, #mpw-bgWrap canvas'
+  if (mode === 'media-filter-none') {
+    for (const m of document.querySelectorAll(mediaSel)) { touched.push({ what: 'media.filter', cls: String(m.className).slice(0, 30), prev: m.style.filter || '(inline 空)' }); m.style.setProperty('filter', 'none', 'important') }
+  }
+  if (mode === 'media-filter-restore') { for (const m of document.querySelectorAll(mediaSel)) m.style.removeProperty('filter') }
+  const layer = (e, tag) => {
+    const c = getComputedStyle(e)
+    const r = e.getBoundingClientRect()
+    const pre = (pseudo) => { try { const pc = getComputedStyle(e, pseudo); const content = pc.content; if (!content || content === 'none' || content === 'normal') return null; return { content: String(content).slice(0, 24), bg: pc.backgroundColor, bgImage: String(pc.backgroundImage).slice(0, 60), opacity: pc.opacity, inset: pc.inset, z: pc.zIndex } } catch (err) { return null } }
+    const toks = {}
+    for (const t of TOKENS) { const v = c.getPropertyValue(t).trim(); if (v) toks[t] = v.slice(0, 48) }
+    return { tag, sel: pathOf(e), cls: String(e.className).slice(0, 70), bg: c.backgroundColor, bgImage: String(c.backgroundImage).slice(0, 60), bf: c.backdropFilter, filter: String(c.filter).slice(0, 60), mixBlend: c.mixBlendMode, opacity: c.opacity, z: c.zIndex, display: c.display, position: c.position, rect: [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)], before: pre('::before'), after: pre('::after'), tokens: toks }
+  }
+  const chain = []
+  let cur = col
+  let depth = 0
+  while (cur && cur !== document.documentElement && depth < 9) { chain.push(layer(cur, depth === 0 ? 'sidebarCol' : 'ancestor' + depth)); cur = cur.parentElement; depth++ }
+  const htmlLayer = getComputedStyle(document.documentElement)
+  const htmlToks = {}
+  for (const t of TOKENS) { const v = htmlLayer.getPropertyValue(t).trim(); if (v) htmlToks[t] = v.slice(0, 48) }
+  /* 谁在画：与左栏矩形相交、且"有画东西的迹象"的元素 + elementsFromPoint(左栏中心) 命中的整条链 */
+  const who = []
+  if (col) {
+    const rr = col.getBoundingClientRect()
+    const cx = rr.x + rr.width / 2, cy = rr.y + rr.height / 2
+    const seen = new Set()
+    const consider = (e, why) => {
+      if (!e || e.nodeType !== 1 || seen.has(e)) return
+      seen.add(e)
+      const c = getComputedStyle(e)
+      const r = e.getBoundingClientRect()
+      const paints = !/rgba?\(\s*0,\s*0,\s*0,\s*0\s*\)|^transparent$|color\(srgb 0 0 0 \/ 0\)/.test(c.backgroundColor) || c.backgroundImage !== 'none' || c.backdropFilter !== 'none' || String(c.filter) !== 'none' || c.mixBlendMode !== 'normal'
+      if (!paints) return
+      who.push({ why, sel: pathOf(e), cls: String(e.className).slice(0, 60), bg: c.backgroundColor, bgImage: String(c.backgroundImage).slice(0, 60), filter: String(c.filter).slice(0, 50), bf: c.backdropFilter, mixBlend: c.mixBlendMode, opacity: c.opacity, z: c.zIndex, rect: [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)], intersectsCol: !(r.right < rr.left || r.left > rr.right || r.bottom < rr.top || r.top > rr.bottom), isOurs: /mpw/i.test(String(e.className) + String(e.id)) })
+    }
+    for (const e of document.elementsFromPoint(cx, cy)) consider(e, 'elementsFromPoint(center)')
+    for (const e of document.elementsFromPoint(rr.x + 10, cy)) consider(e, 'elementsFromPoint(left)')
+    for (const e of document.querySelectorAll('body *')) {
+      const r = e.getBoundingClientRect()
+      if (r.width < 4 || r.height < 4) continue
+      if (r.right < rr.left || r.left > rr.right || r.bottom < rr.top || r.top > rr.bottom) continue
+      consider(e, 'intersects-sidebar-rect')
+      if (who.length > 40) break
+    }
+  }
+  return {
+    mode, touched,
+    sidebarCol: col ? layer(col, 'sidebarCol') : null,
+    bgWrap: wrap ? layer(wrap, 'bgWrap') : { found: false },
+    wrapChildren: wrap ? Array.from(wrap.children).slice(0, 10).map((m) => { const c = getComputedStyle(m); const r = m.getBoundingClientRect(); const pc = (() => { try { const q = getComputedStyle(m, '::before'); return { bg: q.backgroundColor, bgImage: String(q.backgroundImage).slice(0, 60), filter: String(q.filter).slice(0, 50), inset: q.inset } } catch (e) { return null } })(); return { tag: m.tagName, id: m.id, cls: String(m.className).slice(0, 60), filter: String(c.filter).slice(0, 80), bf: c.backdropFilter, transform: String(c.transform).slice(0, 60), opacity: c.opacity, bg: c.backgroundColor, bgImage: String(c.backgroundImage).slice(0, 70), z: c.zIndex, display: c.display, rect: [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)], before: pc } }) : [],
+    wrapMedia: Array.from(document.querySelectorAll(mediaSel)).slice(0, 4).map((m) => { const c = getComputedStyle(m); const r = m.getBoundingClientRect(); return { tag: m.tagName, cls: String(m.className).slice(0, 40), filter: String(c.filter).slice(0, 80), transform: String(c.transform).slice(0, 60), objectFit: c.objectFit, opacity: c.opacity, rect: [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)], src: String(m.currentSrc || m.src || '').slice(0, 60) } }),
+    chain, whoPaints: who.slice(0, 26),
+    htmlBg: htmlLayer.backgroundColor, htmlTokens: htmlToks,
+    bodyBg: getComputedStyle(document.body).backgroundColor,
+    effective: (() => { try { const x = globalThis.__mpwPersist.read() || {}; return { unifyAmount: x.unifyAmount, sidebarAlpha: x.sidebarAlpha, blurFollowUnify: x.blurFollowUnify, enabled: x.enabled } } catch (e) { return { err: String(e && e.message || e) } } })(),
+  }
+}
 const FIND_IDLE_ROW = () => {
   const H = globalThis.__pp; if (!H) return { err: 'page-helpers-missing' }
   const vis = H.VIS
@@ -467,6 +540,32 @@ const RIGHTBAR_FN = () => {
   const hit = Array.from(document.querySelectorAll('button,[role="button"]')).filter(VIS).find((e) => /展开右侧|右侧边栏|视图选项/.test((e.getAttribute('aria-label') || '') + String(e.textContent || '')))
   if (hit) { hit.click(); return { clicked: 'by-label', aria: hit.getAttribute('aria-label') } }
   return { clicked: 'none' }
+}
+
+/** 像素采样：对给定 rect 截图，再在页面里用 canvas 解出平均色与五点色（无头 Firefox **不合成 backdrop-filter**，
+ *  所以这里的像素只当"合成结果"的旁证；因果结论以 computed 值为准 —— 见 JSON 里的 note）。 */
+const samplePixels = async (page, clip) => {
+  try {
+    const buf = await page.screenshot({ clip, type: 'png' })
+    const b64 = buf.toString('base64')
+    return await page.evaluate(async (data) => {
+      const img = new Image()
+      img.src = 'data:image/png;base64,' + data
+      await img.decode()
+      const c = document.createElement('canvas'); c.width = img.width; c.height = img.height
+      const g = c.getContext('2d'); g.drawImage(img, 0, 0)
+      const d = g.getImageData(0, 0, c.width, c.height).data
+      let r = 0, gg = 0, b = 0, n = 0
+      for (let i = 0; i < d.length; i += 4) { r += d[i]; gg += d[i + 1]; b += d[i + 2]; n++ }
+      const pts = []
+      for (const [fx, fy] of [[0.5, 0.1], [0.5, 0.5], [0.5, 0.9], [0.2, 0.5], [0.8, 0.5]]) {
+        const x = Math.min(c.width - 1, Math.round(fx * (c.width - 1))), y = Math.min(c.height - 1, Math.round(fy * (c.height - 1)))
+        const i = (y * c.width + x) * 4
+        pts.push([d[i], d[i + 1], d[i + 2]])
+      }
+      return { w: c.width, h: c.height, avg: [Math.round(r / n), Math.round(gg / n), Math.round(b / n)], samples: pts }
+    }, b64)
+  } catch (e) { return { err: String(e && e.message || e).slice(0, 160) } }
 }
 
 /* ── 3 主流程 ───────────────────────────────────────────────────────────── */
@@ -676,6 +775,53 @@ try {
       return { count: out.length, rows: out.slice(0, 14), whiteCount: out.filter((x) => x.whiteText).length }
     })
     result.groupsOut.popovers = pop
+  }
+
+  /* ── 组 sidebar-causal：把"左栏粉色/主色"的因果钉死（7 步，每步 40×40 中心块 + 整栏像素 + computed） ── */
+  if (want('sidebar-causal')) {
+    const rec = { patch: { enabled: true, unifyTint: true, unifyAmount: 4, sidebarAlpha: 100, blurFollowUnify: true }, steps: [] }
+    rec.note = '无头 Firefox 本机**不合成 backdrop-filter** ⇒ 像素里的"4bf-none 不变"不能当"backdrop 没参与"的证据；因果以 computed（谁在画）为准，像素用于"壁纸层是否提供颜色"这一支。'
+    try {
+      rec.write = await setSection(rec.patch)
+      await page.waitForTimeout(1400)
+      const clipCenter = async () => page.evaluate(() => { const e = document.querySelector('[class*="sidebarCol"]'); if (!e) return null; const r = e.getBoundingClientRect(); return { x: Math.max(0, Math.round(r.x + r.width / 2 - 20)), y: Math.max(0, Math.round(r.y + r.height / 2 - 20)), width: 40, height: 40 } })
+      const clipFull = async () => page.evaluate(() => { const e = document.querySelector('[class*="sidebarCol"]'); if (!e) return null; const r = e.getBoundingClientRect(); return { x: Math.max(0, Math.round(r.x)), y: Math.max(0, Math.round(r.y)), width: Math.max(1, Math.round(r.width)), height: Math.max(1, Math.round(r.height)) } })
+      const fixedC = await clipCenter(); const fixedF = await clipFull()   // 基线坐标固定，后面"隐藏左栏"也采同一块
+      rec.clips = { patch40: fixedC, fullRect: fixedF }
+      const sample = async (label, mode, restoreMode) => {
+        const step = { label, mode }
+        try {
+          step.facts = await page.evaluate(SIDEBAR_FACTS, mode)
+          /* 改完样式必须等"合成/重绘"落定再截图（否则量到的是上一帧 ⇒ 实验 4 会假阴）：
+             两次 rAF + 250ms 的固定等待 */
+          await page.evaluate(() => new Promise((res) => requestAnimationFrame(() => requestAnimationFrame(() => res(1))))).catch(() => {})
+          await page.waitForTimeout(300)
+          step.patch40 = fixedC ? await samplePixels(page, fixedC) : null
+          step.fullRect = fixedF ? await samplePixels(page, fixedF) : null
+          if (restoreMode) { await page.evaluate(SIDEBAR_FACTS, restoreMode); await page.waitForTimeout(350); step.afterRestore = await page.evaluate(SIDEBAR_FACTS, 'baseline') }
+          await page.waitForTimeout(300)
+        } catch (e) { step.err = String(e && e.message || e).slice(0, 200) }
+        rec.steps.push(step)
+        console.log('CAUSAL ' + label.padEnd(22) + ' patch40=' + JSON.stringify(step.patch40 && step.patch40.avg) + '  左栏bg=' + (step.facts && step.facts.sidebarCol && step.facts.sidebarCol.bg) + ' bf=' + (step.facts && step.facts.sidebarCol && step.facts.sidebarCol.bf) + ' wrap.display=' + (step.facts && step.facts.bgWrap && step.facts.bgWrap.display) + ' media.filter=' + JSON.stringify(((step.facts && step.facts.wrapMedia) || []).map((m) => m.filter).slice(0, 2)) + ' touched=' + JSON.stringify(step.facts && step.facts.touched))
+      }
+      await sample('1-baseline', 'baseline')
+      await sample('2-media-filter-none', 'media-filter-none', 'media-filter-restore')
+      await sample('3-bgwrap-display-none', 'bgwrap-hidden', 'bgwrap-restore')
+      await sample('4-bf-none', 'bf-none', 'bf-restore')
+      await sample('5-baseline-again', 'baseline')
+      await setSection({ enabled: false }); await page.waitForTimeout(1700)
+      await sample('6-plugin-off(enabled=false)', 'baseline')
+      await setSection({ enabled: true }); await page.waitForTimeout(1500)
+      await sample('7-plugin-on-again', 'baseline')
+      /* 决定性一测：把左栏整块藏掉，同一坐标直接采"壁纸的原始像素" ⇒ 与 1/5 的粉色对比
+         · 一致 ⇒ 粉色就是壁纸在**该处**的局部色（"平均色"是误读，比如壁纸那一片本来就是均匀粉）
+         · 明显不同（偏灰/偏杂）⇒ 站内确实有东西在做大范围平均/染色（再去 whoPaints 里找） */
+      const whole = await samplePixels(page, { x: 0, y: 0, width: VIEWPORT.width, height: VIEWPORT.height })
+      rec.wholeViewportAvg = whole && whole.avg
+      console.log('CAUSAL ' + 'whole-viewport'.padEnd(22) + ' avg=' + JSON.stringify(rec.wholeViewportAvg))
+      await sample('8-sidebar-hidden(local pixels)', 'sidebar-hidden', 'sidebar-restore')
+    } catch (e) { rec.err = String(e && e.message || e).slice(0, 240) }
+    result.groupsOut.sidebarCausal = rec
   }
 
   /* ── 组 6：左栏取色（sidebarAlpha=100, unifyAmount=4） ── */
