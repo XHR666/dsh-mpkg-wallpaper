@@ -397,9 +397,12 @@ if (!NO_MUT) {
   const MUTS = [
     {
       id: 'ssot-value-drift',
-      why: '只改 SSOT 里顶栏磨砂的一处取值（35% → 28%）——共享定义点被改动必须被取值等价判据抓到',
-      mut: (s) => s.replace('tok("--mpw-surface-frost-top", `color-mix(in srgb, var(--dsw-static-neutral-bluish-950) ${hdrAlpha}%, transparent)`);',
-        'tok("--mpw-surface-frost-top", `color-mix(in srgb, var(--dsw-static-neutral-bluish-950) ${Math.max(0, hdrAlpha - 7)}%, transparent)`);'),
+      why: '只改 SSOT 里顶栏磨砂的一处取值（不透明度 -7%）——共享定义点被改动必须被取值等价判据抓到',
+      /* ①(2026-10-02 表面模型重做) 锚点跟着实现改：顶栏底色不再是写死的中性色字面量，
+         而是 `mpwSurfaceColor(基色, 不透明度)`（基色 = 宿主自己的 token）。漂移注入改成
+         把那个不透明度减 7 —— 语义与旧注入一致（同一处取值被改动），只是字面量换了。 */
+      mut: (s) => s.replace('tok("--mpw-surface-frost-top", mpwSurfaceColor(surfacePlan.header.base, hdrAlpha / 100));',
+        'tok("--mpw-surface-frost-top", mpwSurfaceColor(surfacePlan.header.base, Math.max(0, hdrAlpha - 7) / 100));'),
       expect: 'A',
     },
     {

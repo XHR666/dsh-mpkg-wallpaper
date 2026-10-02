@@ -196,8 +196,11 @@ const HOST_OVERRIDE_REGISTRY = [
     props: ['--dsw-specific-sidebar-fill'],
     valueRe: /^transparent$/i,
     selectorRe: /^html body( \.pI_x6G_sidebarCol| \[class\*="sidebarCol"\]| \.hHd-Xa_root| \[data-slot="sidebar"\])/,
-    feature: (p) => p.sidebar !== false && hasWall(p),
-    reason: '侧栏透出壁纸**开**：宿主 --dsw-specific-sidebar-fill 置 transparent，只打侧栏白名单容器（?sbfill=wide 才回退全局）；关档走 opaque 那条',
+    /* ①(2026-10-02 表面模型重做) 新增例外：**「界面透明度」= 0（完全不透明）⇒ 插件完全不覆盖宿主**
+       （连 sidebar-fill 都不透明化，见 lib/client.js 的 chromeInert）⇒ 这一档没有这条声明是**正确行为**，
+       不是漏接线。其余所有档位照旧必须有（判据的强度不变，只把"条件"写准）。 */
+    feature: (p) => p.sidebar !== false && hasWall(p) && Number(p.sidebarAlpha !== undefined ? p.sidebarAlpha : 65) > 0,
+    reason: '侧栏透出壁纸**开**且界面透明度 > 0：宿主 --dsw-specific-sidebar-fill 置 transparent，只打侧栏白名单容器（?sbfill=wide 才回退全局）；关档走 opaque 那条；透明度 = 0 ⇒ 交还宿主（chromeInert）',
     doc: 'docs/TOKEN-NAMESPACE.md:90',
   },
   {
