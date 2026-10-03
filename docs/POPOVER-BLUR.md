@@ -54,7 +54,9 @@
 **我们自己的**侧栏磨砂层（`sblurObserver` 只摘 sidebarCol 内的近全屏弹窗）。`uV2eYG_card` 的 `blur(14px)` 是**宿主自己的规则**，
 一直都在——之前没人往「弹层自己的 blur 被它截断」这个方向量过。
 
-## 6. B 档修复（✅ 已实现，3.15.6；按结论 A 执行，理由如上）
+## 6. B 档修复 v1（✅ 已实现，3.15.6；按结论 A 执行，理由如上）
+
+> ⚠ 历史：v1（摘祖先 blur）→ v2（根级模糊层）→ **v3（去截断 + 补霜，见 §8）**，本节只作沿革留存。
 
 - **候选 1（推荐）**：弹层打开期间，向 head **临时注入**一条带 `!important` 的规则把 `uV2eYG_card`（及其同族卡片的 bf）中性化，
   弹层关闭/移动到 body 外即移除（实验③已验证该路径有效且可逆）。必须：只在弹层打开期间、逐字还原、
@@ -77,3 +79,51 @@
   CSSOM 扫描需在会话视图内做（本轮调试页未进会话）。修复实现时以运行期 CSSOM 为准。
 - 实验③只对**第一个**截断者做了中性化；若卡片族里另有截断者（本轮三处的链上没有），修复要按链上全集处理。
 - 背后 lumaStd 的阈值判定（<2 实心 / <12 渐变 / 其余有内容）是本轮约定的经验口径，不是官方定义。
+
+## 8. v3 定案（2026-10-05，3.16.3）：去截断 + 补霜（取代 v2「根级模糊层」）
+
+用户复报（3.16.2 之后）：**"指令菜单 / 权限 / 上下文占用只剩一层白色半透明，模糊没了"**。
+真机矩阵 `tools/host-popover-probe.mjs --groups glass-placement`（**结构性判据**，不用像素：本机无头
+Firefox 不合成 backdrop-filter，§3 实验②已证）把 v2 的两条落点都堵死了：
+
+| 玻璃层落点 | 层自己的 backdrop root | 绘制次序（`elementsFromPoint` 命中栈） |
+|---|---|---|
+| 卡片子树里（v2 最终版：插在弹层父节点、紧挨弹层之前、`z = 弹层z − 1`） | **被 `uV2eYG_card[bf=blur(14px)]` 截断**（采样到的只是卡片内部已经糊过的底色 ⇒ 观感 = "白色半透明、没模糊"） | 层在弹层之下 ✓ |
+| body 下（z = 4 / 8 / 50 / 2000 / 2999 全试过） | 干净（root = 整页） | **层压在整个弹层之上**（弹层在卡片的层叠上下文里 ⇒ body 级定位元素整体画在它上面），弹层 5/5 采样点被盖 |
+
+⇒ 只剩一条路：**把截断源头摘掉**。`--groups glass-fix` 的真机实验（全部同步可逆）：
+
+- 对 `uV2eYG_card` 摘 `backdrop-filter` + 补 `z-index:0`（它本来就是 `position:relative`）后：
+  弹层（`_list_1nxmc_8`）的**截断链清空**、弹层矩形**一字不动**（`矩形未变=true`）、
+  在卡片内补的霜层与卡片矩形**逐像素重合**（`sameRect=true`）、弹层中心命中仍是弹层自己（`inside-surface`）；
+- 只用 `isolation:isolate` 造层叠上下文时，链里仍留着 `isolation`（本机判据把它算作截断成因之一）
+  ⇒ 采用「定位元素 + `z-index:0`」（`auto` 与 `0` 的绘制次序一致，不会挪动它与其他元素的上下关系）；
+- **静态祖先不碰**：变体实验里给它 `position:relative` 会把宿主弹层带跑（`矩形未变=false`）⇒ 这类退回 C 类实底。
+
+落地（`lib/client.js`，宿主元素一个都不碰语义，只"摘一个属性 + 垫一层自己的霜层"）：
+
+- `mpwPopClassifySync()` 三分类不变；B 类现在收集**待去截断祖先**：我们自己的弹层装饰
+  （`p.matches(MPW_POP_TAG_SEL) && !p.hasAttribute("data-mpw-pop-bg")`）或已知包装容器
+  （`_card|composer|overlayAnchor|_seat|_stack`），且必须是定位元素；
+- `mpwPopUntruncApply(need)` 幂等地打/摘 `data-mpw-pop-untrunc` 与容器内的 `data-mpw-pop-frost`
+  （`inset:0` + `z-index:-1` + 沿用容器原 `backdrop-filter`）⇒ 容器磨砂一点没少、弹层自己的 blur
+  采样整页（**含被弹层压住的目标条**）；
+- 静态规则 `html body [data-mpw-pop-untrunc][data-mpw-pop-untrunc] { backdrop-filter:none !important }`；
+  我们自己的弹层表面规则统一追加 `:not([data-mpw-pop-untrunc])` —— 否则我们给菜单容器刷的那层 blur
+  特异性太高、根本摘不掉（真机 `_3e4SsG_menu` 就是这种：它是加号菜单的**外层容器**，blur 是我们给的）；
+- **旧「根级模糊层」整体删除**（含滚动/缩放重贴监听、层账本、包含块偏移校正）。
+
+真机复测（3.16.3，`--groups glass-fix,tip-flicker`）：
+
+- 权限菜单：`untrunc=1 frost=1 glass=1 trunc=0 旧根级层=0`；卡片 `bf=none / inline z="0"`；
+  霜层 `bf=blur(14px) z=-1 rect=卡片 rect`；弹层表面 `bf=blur(11px) 截断链=[]`；
+- 加号菜单：外层 `_3e4SsG_menu` 同样拿到干净的 root（`bf=blur(11px) 截断链=[]`）；
+- **关掉弹层后**：`untrunc=0 frost=0 glass=0 trunc=0`、无残留、卡片 `bf` 与 inline `z-index` 还原。
+
+## 9. v3 的未验证边界
+
+- 「像素上真的变模糊了」依旧拿不到本机证据（同上）⇒ 需用户真机确认；
+- 霜层用 `z-index:-1` 画在**容器背景之上、内容之下**，前提是容器是层叠上下文（定位元素即可）；
+  静态祖先一律退回 C 类（实底），不硬来；
+- 多截断祖先（真机加号菜单链上有 `_3e4SsG_menu` + `uV2eYG_card`）按"逐个收集、逐层去截断"处理，
+  每个都配一层霜层；链长上限沿用分类时的 12 层。

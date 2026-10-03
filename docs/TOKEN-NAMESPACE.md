@@ -66,6 +66,7 @@ DSH 把设计 token 定义在 **`body`** 上，不是 `:root`：
 | `--mpw-surface-dialog-frost-dark` / `-light` | 面板（本插件弹窗） | `color-mix(… 80% …)` | `.mpw_dialog`（虚化档） |
 | `--mpw-surface-pop` / `-dark` | 面板（弹层·**仅"用户显式调过弹层不透明度 / 开了遮罩染色"时的整片覆盖**） | `color-mix(… var(--dsw-specific-sidebar-fill) <弹层不透明度>% …)` / `rgba(18,22,30, …)` | `:is(<弹层选择器集>)`（**只在上面那两个显式条件下才产出规则**） |
 | `--mpw-pop-surface` / `-dark` / `-alpha` | 面板（弹层·**兜底底**，与上一行**互相独立**） | `color-mix(… var(--dsw-specific-sidebar-fill) calc(var(--mpw-pop-surface-alpha, .58) * 100%) …)` | **只有** `html body [data-mpw-pop-bg]` |
+| `--mpw-pop-trunc-surface` | 面板（弹层·**糊不到页面背后时的实底**） | `<左栏底色> 88%`（**自有 token**，不借宿主） | **只有** `html body [data-mpw-pop-trunc]` |
 | `--mpw-surface-composer` / `-light` | 面板（输入框） | 字面量 `#1b2233 42%` / `#dde3ee 55%` | `[data-composer-card]` |
 | `--mpw-surface-glass` / `-dark` | 面板（设置右区） | `color-mix(… bluish-00 / -950 62% …)` | `.mpw_glassHost` |
 | `--mpw-surface-content` / `-unify-light` | 面板（内容区） | `color-mix(… bluish-950 / --dsw-alias-bg-base …)` | `.ydkMvW_root` |
@@ -200,9 +201,18 @@ node tools/token-namespace-test.mjs
    JS（`mpwTagPopoverBg()`，rAF 合并、随弹层插入 DOM 触发）打 `data-mpw-pop-bg`，
    CSS 用**独立 token** `--mpw-pop-surface(-dark)`（默认 α = 0.58）刷一层玻璃底；
 3. **硬前提**：只有 `computed backdrop-filter` 里真有 `blur()`（我们的或宿主的）才刷底 ——
-   半透明底 + 没模糊 = 字叠字，比原来更糟；
+   半透明底 + 没模糊 = 字叠字，比原来更糟。**已带标记的表面放行**（`data-mpw-pop-glass`/`-trunc`）：
+   C 类实底规则会把表面的 `backdrop-filter` 撤成 `none`，只认 computed 值会导致"打标/撤标"逐帧自激
+   （真机：提示气泡与面板底色"时有时无"）。标记值记**当初的理由**（`empty` / `painted`），
+   复核只走结构性判据，绝不重读底色 —— 那时读到的是我们自己画的那层；
 4. 用户**显式**动过「弹层不透明度」滑条、或开了主题色遮罩/染色时，才回到"整片覆盖"
-   （`--mpw-surface-pop`）—— 那是他的明确要求，不是我们的默认。
+   （`--mpw-surface-pop`）—— 那是他的明确要求，不是我们的默认；
+5. **提示气泡（`role="tooltip"`）一律不接管底色**：宿主的气泡是深底浅字
+   （`--dsw-alias-tooltip-bg` = `#2c2c2e` 配 `#fff` 字），我们的 58% 浅底压上去 = 白字看不清
+   （真机反馈）；它自己的 `blur` 由 CSS 那条 `[role="tooltip"]` 规则照常给；
+6. C 类实底**用自己的 token** `--mpw-pop-trunc-surface`（原来是
+   `color-mix(… var(--dsw-specific-sidebar-fill) 88% …)`）：真机在侧栏作用域里那枚宿主 token
+   被算成**透明** ⇒ C 类面板整个透明、白字直接看不见（提示气泡"没有底"就是这个）。
 
 机器判据：`fog-model-test` F8 组（禁止 `rgba(var(颜色 token))` 这类会被静默丢弃的值 + 弹层选择器
 排除内层滚动视口）、`style-scope-guard`（`host:JObwrW-panel` / `host:groupTitle` 登记）、

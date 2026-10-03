@@ -275,7 +275,7 @@ const RS_SEL = /\[data-sidebar-right-panel\]|\[data-dockkit-(pane|strip|surface|
     !/--mpw-unify-surface/.test(s) && !/--mpw-surface-side-frost/.test(s) && TOKEN(css, 'mpw-surface-side-frost') === '',
     JSON.stringify({ unifySurface: (s.match(/--mpw-unify-surface/g) || []).length, frost: (s.match(/--mpw-surface-side-frost/g) || []).length }))
   ok('B1c 透明度 0 ⇒ 连"半径 0 ⇒ backdrop-filter: none"那条接管规则也不产出（**0 处**，而不是产出个 `none`）',
-    !HAS_RULE(css, /\[data-mpw-unify\] \[data-sidebar-right-panel\]/, /backdrop-filter/)
+    !HAS_RULE(css, /\[data-mpw-unify\] \[data-mpw-rs-surface\]/, /backdrop-filter/)
     && TOKEN(css, 'mpw-unify-blur') === '',
     JSON.stringify({ blur: TOKEN(css, 'mpw-unify-blur') }))
   ok('B1d 透明度 0 ⇒ 暗色档同款：`--mpw-unify-surface-dark` 也不产出（不是"逐字等于亮色那条"）',
@@ -294,7 +294,7 @@ const RS_SEL = /\[data-sidebar-right-panel\]|\[data-dockkit-(pane|strip|surface|
     && TOKEN(css, 'mpw-unify-surface-dark') === TOKEN(css, 'mpw-unify-surface'),
     JSON.stringify([TOKEN(css, 'mpw-unify-surface'), TOKEN(css, 'mpw-unify-surface-dark')]))
   ok('B1g 半径 0 ⇒ 接管规则的 backdrop-filter 是 **none**（不是 blur(0px)：后者仍建 containing block）',
-    HAS_RULE(css, /\[data-mpw-unify\] \[data-sidebar-right-panel\]/, /backdrop-filter:\s*none/) && TOKEN(css, 'mpw-unify-blur') === '0px',
+    HAS_RULE(css, /\[data-mpw-unify\] \[data-mpw-rs-surface\]/, /backdrop-filter:\s*none/) && TOKEN(css, 'mpw-unify-blur') === '0px',
     JSON.stringify({ blur: TOKEN(css, 'mpw-unify-blur') }))
   /* ①(2026-10-02 真机定案) 抑制规则的判据从 `:has([class*="_overlay"])` 改成 **JS 门控**
      `body[data-mpw-sblur-off]`：宿主的 `uV2eYG_overlayAnchor`（聊天输入区锚点）常驻 DOM ⇒
@@ -312,7 +312,7 @@ const RS_SEL = /\[data-sidebar-right-panel\]|\[data-dockkit-(pane|strip|surface|
   const css = boot({ enabled: true, image: true, unifyTint: true, unifyAmount: 24, sidebarAlpha: 60, chatFollow: false })
   ok('B2 半径/透明度都跟着两个条走：透明度 60 ⇒ 生效不透明度 40.0%、blur=24px、规则里就是 blur(24px)',
     TOKEN(css, 'mpw-unify-surface') === SURF(SIDE_BASE, 40) && TOKEN(css, 'mpw-unify-blur') === '24px'
-    && HAS_RULE(css, /\[data-mpw-unify\] \[data-sidebar-right-panel\]/, /backdrop-filter:\s*blur\(24px\)/),
+    && HAS_RULE(css, /\[data-mpw-unify\] \[data-mpw-rs-surface\]/, /backdrop-filter:\s*blur\(24px\)/),
     JSON.stringify([TOKEN(css, 'mpw-unify-surface'), TOKEN(css, 'mpw-unify-blur')]))
 }
 {

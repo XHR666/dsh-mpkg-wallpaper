@@ -664,6 +664,346 @@ const PP_BLUR = (arg) => {
   return { err: 'unknown-mode:' + mode }
 }
 
+/* ── 1c ③(2026-10-05) 弹层玻璃层**落点**矩阵 + 判定（真机只读；只动探针自己插的那一层）────────
+   背景（真机反馈："指令菜单 / 权限 / 上下文占用只剩一层白色半透明，模糊没了"）：上一版把玻璃层从
+   body 挪进了**弹层自己的父节点**（紧挨弹层之前、z = 弹层z−1），为的是糊到被菜单压住的"未运行的目标"条。
+   若那条父链上有 backdrop-filter（输入框卡片 uV2eYG_card 实测 blur(14px)）⇒ 层的 backdrop root 被截断在
+   卡片内部，采样到的只是卡片自己已经糊过的底色 ⇒ 观感 = "有 alpha、没模糊"。
+   ⚠ 本机无头 Firefox **不合成 backdrop-filter**（见 samplePixels 注释）⇒ 本组**不用像素**，只用两条结构性判据：
+     ① 层的截断祖先：沿层自己的父链找第一个带 bf/filter/opacity<1/transform/contain/isolation/mask/clip-path
+        的祖先 —— 有 ⇒ 层采样不到页面（root 被截断）；无 ⇒ root = 整页。
+     ② 绘制次序：`elementsFromPoint` 命中栈（按绘制顺序）判定"层在弹层之下 / 在目标条之上"。
+   探针层带 `data-plugin="dsh-mpkg-wallpaper"` ⇒ 插件 observer 把它的 style 写入当自己的、不来回打架；
+   插件自己那层在矩阵期间临时 `display:none`（同样是"自己的元素"⇒ 插件不会改回来），矩阵跑完逐字还原。 */
+const GLASS_PLACEMENT = async (arg) => {
+  const sel = arg && arg.sel
+  const blur = (arg && arg.blur) || 'blur(11px)'
+  const short = (el) => el ? (String(el.className || '').split(/\s+/).filter(Boolean)[0] || el.tagName.toLowerCase()) : 'null'
+  let P = null   // 探针层（声明在前：基线命中栈要先于它创建时调用 stack()）
+  const TRUNC = (c) => {
+    const bad = []
+    if (c.backdropFilter && c.backdropFilter !== 'none') bad.push('bf=' + c.backdropFilter)
+    if (c.filter && c.filter !== 'none') bad.push('filter=' + c.filter)
+    if (c.opacity && c.opacity !== '1' && Number(c.opacity) < 1) bad.push('opacity=' + c.opacity)
+    if (c.transform && c.transform !== 'none') bad.push('transform')
+    if (c.willChange && /filter|opacity|transform/i.test(c.willChange)) bad.push('will-change=' + c.willChange)
+    if (c.contain && c.contain !== 'none' && /paint|layout|strict|content/.test(c.contain)) bad.push('contain=' + c.contain)
+    if (c.isolation === 'isolate') bad.push('isolation')
+    if (c.maskImage && c.maskImage !== 'none') bad.push('mask')
+    if (c.clipPath && c.clipPath !== 'none') bad.push('clip-path')
+    return bad
+  }
+  const nearestTrunc = (el) => {
+    for (let p = el.parentElement, i = 0; p && p !== document.documentElement && i < 40; p = p.parentElement, i++) {
+      const c = getComputedStyle(p)
+      const bad = TRUNC(c)
+      if (bad.length) return { cls: short(p), tag: p.tagName, bad, position: c.position, z: c.zIndex }
+    }
+    return null
+  }
+  const stack = (x, y) => {
+    try {
+      return document.elementsFromPoint(x, y).slice(0, 7).map((e) => (e === P ? '<P>' : short(e) + (e.hasAttribute && e.hasAttribute('data-mpw-pop-bg') ? '[bg]' : '')))
+    } catch (e) { return ['err:' + String(e && e.message || e).slice(0, 40)] }
+  }
+  const surface = (() => {
+    let el = sel ? document.querySelector(sel) : null
+    if (!el) el = document.querySelector('[data-mpw-pop-glass], [data-mpw-pop-bg], [data-mpw-pop-trunc]')
+    return el
+  })()
+  if (!surface) return { found: false }
+  const scs = getComputedStyle(surface)
+  const sr = surface.getBoundingClientRect()
+  /* 插件自己那一层（当前落点 = 待验证的对象） */
+  const pluginLayers = Array.from(document.querySelectorAll('[data-mpw-pop-glass-layer]'))
+  const pluginFacts = pluginLayers.map((l) => {
+    const c = getComputedStyle(l)
+    const r = l.getBoundingClientRect()
+    return {
+      parent: short(l.parentElement), parentIsSurfaceParent: l.parentElement === surface.parentElement,
+      prevSiblingIsSurface: l.nextSibling === surface,
+      z: c.zIndex, bf: c.backdropFilter, display: c.display, position: c.position,
+      rect: [Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)],
+      trunc: nearestTrunc(l), truncSelf: TRUNC(c),
+    }
+  })
+  const savedDisplay = pluginLayers.map((l) => l.style.display)
+  for (const l of pluginLayers) l.style.display = 'none'
+  /* 采样点：弹层内部 5 点 + 卡片中心 + 目标条（有就采）+ 弹层下缘外 24px */
+  const pts = []
+  const push = (label, x, y) => { if (x > 1 && y > 1 && x < innerWidth - 1 && y < innerHeight - 1) pts.push({ label, x: Math.round(x), y: Math.round(y) }) }
+  const FR = [[0.5, 0.5], [0.5, 0.15], [0.5, 0.85], [0.15, 0.5], [0.85, 0.5]]
+  for (const [fx, fy] of FR) push('pop:' + fx + '/' + fy, sr.left + sr.width * fx, sr.top + sr.height * fy)
+  const card = (() => { let p = surface.parentElement; for (let i = 0; p && i < 20; p = p.parentElement, i++) { if (TRUNC(getComputedStyle(p)).length) return p } return null })()
+  if (card) { const cr = card.getBoundingClientRect(); push('card:center', cr.left + cr.width / 2, cr.top + cr.height / 2); push('card:top+6', cr.left + cr.width / 2, cr.top + 6) }
+  const bar = document.querySelector('[data-goal-bar]')
+  if (bar) { const br = bar.getBoundingClientRect(); push('goalbar:center', br.left + br.width / 2, br.top + br.height / 2); push('goalbar:left', br.left + 40, br.top + br.height / 2) }
+  push('below-pop', sr.left + sr.width / 2, sr.bottom + 24)
+  const baseStack = {}
+  for (const p of pts) baseStack[p.label] = stack(p.x, p.y)
+  /* 探针层：真尺寸 fixed（不用 scale 技巧，避免包含块偏移干扰判定） */
+  P = document.createElement('div')
+  P.setAttribute('data-plugin', 'dsh-mpkg-wallpaper')
+  P.setAttribute('data-mpw-probe-layer', '')
+  P.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;pointer-events:auto;border-radius:12px;background:transparent;backdrop-filter:' + blur + ';'
+  document.body.appendChild(P)
+  const CAND = [
+    { id: 'body-z4', parent: 'body', z: 4 },
+    { id: 'body-z8', parent: 'body', z: 8 },
+    { id: 'body-z50', parent: 'body', z: 50 },
+    { id: 'body-z2000', parent: 'body', z: 2000 },
+    { id: 'body-z-popminus', parent: 'body', z: 'popminus' },
+    { id: 'parent-z-popminus(当前实现)', parent: 'anchor', z: 'popminus' },
+    { id: 'parent-z4', parent: 'anchor', z: 4 },
+  ]
+  const zOf = (mode) => {
+    if (mode === 'popminus') { const pz = parseInt(scs.zIndex, 10); return Number.isFinite(pz) ? String(Math.max(0, pz - 1)) : 'auto' }
+    return String(mode)
+  }
+  const out = []
+  for (const cand of CAND) {
+    const rec = { id: cand.id }
+    try {
+      if (cand.parent === 'anchor') surface.parentElement.insertBefore(P, surface)
+      else document.body.appendChild(P)
+      P.style.left = Math.round(sr.left) + 'px'; P.style.top = Math.round(sr.top) + 'px'
+      P.style.width = Math.max(2, Math.round(sr.width)) + 'px'; P.style.height = Math.max(2, Math.round(sr.height)) + 'px'
+      P.style.zIndex = zOf(cand.z)
+      await new Promise((res) => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(res, 90))))
+      for (const l of pluginLayers) if (l.style.display !== 'none') l.style.display = 'none'
+      rec.parent = short(P.parentElement)
+      rec.prevSiblingIsSurface = P.nextSibling === surface
+      rec.z = getComputedStyle(P).zIndex
+      rec.trunc = nearestTrunc(P)
+      rec.hits = {}
+      for (const p of pts) {
+        const st = stack(p.x, p.y)
+        rec.hits[p.label] = { top: st[0] || null, layerIdx: st.indexOf('<P>'), stack: st }
+      }
+      const popHits = Object.keys(rec.hits).filter((k) => k.indexOf('pop:') === 0)
+      const below = popHits.filter((k) => rec.hits[k].layerIdx > 0).length
+      const covers = popHits.filter((k) => rec.hits[k].layerIdx === 0).length
+      rec.judge = { popPoints: popHits.length, layerBelowPopover: below, layerCoversPopover: covers, rootTruncated: !!rec.trunc }
+    } catch (e) { rec.err = String(e && e.message || e).slice(0, 160) }
+    out.push(rec)
+  }
+  try { P.remove() } catch (e) {}
+  for (let i = 0; i < pluginLayers.length; i++) { try { pluginLayers[i].style.display = savedDisplay[i] } catch (e) {} }
+  return {
+    found: true,
+    surface: { cls: short(surface), tag: surface.tagName, z: scs.zIndex, bf: scs.backdropFilter, bg: scs.backgroundColor, rect: [Math.round(sr.left), Math.round(sr.top), Math.round(sr.width), Math.round(sr.height)], attrs: ['glass', 'bg', 'trunc'].filter((a) => surface.hasAttribute('data-mpw-pop-' + a)) },
+    card: card ? { cls: short(card), tag: card.tagName, bad: TRUNC(getComputedStyle(card)) } : null,
+    pluginLayer: pluginFacts,
+    baseStack,
+    points: pts.map((p) => p.label),
+    matrix: out,
+  }
+}
+/* ── 1d ③(2026-10-05) 右栏头部按钮 tooltip 的"底色时有时无 + 白字"采样 ────────────────
+   用户真机："右栏右上角 收起侧边栏/全屏/分栏 的提示气泡底色忽有忽无，而且字是白的（浅底上看不清）"。
+   判据：悬停期间**逐帧采样** tooltip 的 computed bg/color/bf/标记属性，出现 ≥2 种取值 = 闪烁；
+   同时记 token（--dsw-alias-tooltip-bg / --mpw-pop-surface）与祖先链最近的截断祖先，供判断是谁在改。 */
+const TIP_TARGETS = () => {
+  const short = (el) => String((el && el.className) || '').split(/\s+/).filter(Boolean)[0] || (el && el.tagName || '?')
+  const hosts = Array.from(document.querySelectorAll('[data-sidebar-right-panel],[data-dockkit-pane],[data-dockkit-strip],[data-dockkit-surface]'))
+  const out = []
+  const seen = new Set()
+  const consider = (b, inHost) => {
+    if (seen.has(b)) return
+    const r = b.getBoundingClientRect()
+    if (r.width < 4 || r.height < 4) return
+    seen.add(b)
+    out.push({
+      aria: b.getAttribute('aria-label'), title: b.getAttribute('title'), cls: short(b), inHost,
+      rect: [Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)],
+      cx: Math.round(r.left + r.width / 2), cy: Math.round(r.top + r.height / 2),
+    })
+  }
+  for (const h of hosts) {
+    const hr = h.getBoundingClientRect()
+    for (const b of h.querySelectorAll('button,[role="button"]')) {
+      const br = b.getBoundingClientRect()
+      if (br.top > hr.top + 96) continue
+      consider(b, short(h))
+    }
+  }
+  for (const b of document.querySelectorAll('button,[role="button"]')) {
+    const lab = (b.getAttribute('aria-label') || '') + String(b.textContent || '')
+    if (/收起侧边栏|全屏|分栏|收起右|展开右/.test(lab)) consider(b, 'by-label')
+  }
+  return out
+}
+const TIP_SAMPLE = () => {
+  const short = (el) => String((el && el.className) || '').split(/\s+/).filter(Boolean)[0] || (el && el.tagName || '?')
+  const vis = (el) => { const r = el.getBoundingClientRect(); const c = getComputedStyle(el); return r.width > 2 && r.height > 2 && c.display !== 'none' && c.visibility !== 'hidden' && Number(c.opacity) > 0.05 }
+  const cands = Array.from(document.querySelectorAll('[role="tooltip"], [class*="_tooltip"], [class*="Tooltip"], [data-dsh-tooltip], [data-mpw-pop-bg][role="tooltip"]')).filter(vis)
+  const rows = cands.slice(0, 3).map((el) => {
+    const c = getComputedStyle(el)
+    const r = el.getBoundingClientRect()
+    return {
+      cls: short(el), role: el.getAttribute('role'),
+      bg: c.backgroundColor, color: c.color, bf: c.backdropFilter, z: c.zIndex, pos: c.position,
+      attrs: ['glass', 'bg', 'trunc'].filter((a) => el.hasAttribute('data-mpw-pop-' + a)).join('+') || '-',
+      rect: [Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)],
+      text: String(el.textContent || '').slice(0, 16),
+      tipTok: c.getPropertyValue('--dsw-alias-tooltip-bg').trim(),
+      parentCls: short(el.parentElement), parentBg: el.parentElement ? getComputedStyle(el.parentElement).backgroundColor : null,
+    }
+  })
+  return {
+    t: (performance.now() / 1000).toFixed(2),
+    count: rows.length,
+    rows,
+    popSurface: getComputedStyle(document.body).getPropertyValue('--mpw-pop-surface').trim(),
+    bodyAttrs: Array.from(document.body.attributes).map((a) => a.name).filter((n) => /^data-mpw/.test(n)).join(','),
+  }
+}
+
+/* ── 1e ③(2026-10-05) 「去截断 + 补霜」可行性实验（真机只读，全部可逆）───────────────
+   本组 glass-placement 的结论：挂在卡片子树里的玻璃层，backdrop root 必被卡片截断；挂到 body 的层
+   root 干净，但**盖在弹层之上**（弹层在卡片的层叠上下文里，body 级定位元素整体压过它）。
+   ⇒ 只剩一条路：**弹层开着时把"截断祖先"的 backdrop-filter 摘掉**（root 回到整页，弹层自己的
+   blur(11px) 就采样得到页面了），同时把卡片丢掉的磨砂用**卡片内 z-index:-1 的补偿霜层**找回来
+   （z-index 负值按 CSS 绘制顺序画在父元素背景之上、内容之下；卡片需要是层叠上下文 ⇒ 试 `isolation:isolate`，
+   它不在 backdrop root 的成因清单里）。本实验就是验证这三件事：链是否真清空 / 弹层矩形是否被带跑 /
+   补偿霜层是否严丝合缝盖住卡片。 */
+const UNTRUNC_EXP = async (arg) => {
+  const sel = arg && arg.sel
+  const short = (el) => el ? (String(el.className || '').split(/\s+/).filter(Boolean)[0] || el.tagName.toLowerCase()) : 'null'
+  const TRUNC = (c) => {
+    const bad = []
+    if (c.backdropFilter && c.backdropFilter !== 'none') bad.push('bf=' + c.backdropFilter)
+    if (c.filter && c.filter !== 'none') bad.push('filter=' + c.filter)
+    if (c.opacity && c.opacity !== '1' && Number(c.opacity) < 1) bad.push('opacity=' + c.opacity)
+    if (c.transform && c.transform !== 'none') bad.push('transform')
+    if (c.willChange && /filter|opacity|transform/i.test(c.willChange)) bad.push('will-change=' + c.willChange)
+    if (c.contain && c.contain !== 'none' && /paint|layout|strict|content/.test(c.contain)) bad.push('contain=' + c.contain)
+    if (c.isolation === 'isolate') bad.push('isolation')
+    if (c.maskImage && c.maskImage !== 'none') bad.push('mask')
+    if (c.clipPath && c.clipPath !== 'none') bad.push('clip-path')
+    return bad
+  }
+  const chainOf = (el) => {
+    const out = []
+    for (let p = el.parentElement, i = 0; p && p !== document.documentElement && i < 40; p = p.parentElement, i++) {
+      const c = getComputedStyle(p)
+      const bad = TRUNC(c)
+      if (bad.length) out.push({ cls: short(p), tag: p.tagName, bad, position: c.position, z: c.zIndex })
+    }
+    return out
+  }
+  const rectOf = (el) => { const r = el.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)] }
+  const raf2 = () => new Promise((res) => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(res, 70))))
+  const hideLayers = () => { for (const l of document.querySelectorAll('[data-mpw-pop-glass-layer]')) l.style.display = 'none' }
+  const surface = (sel && document.querySelector(sel)) || document.querySelector('[data-mpw-pop-glass]') || document.querySelector('[data-mpw-pop-bg]')
+  if (!surface) return { found: false }
+  const card = (() => { for (let p = surface.parentElement, i = 0; p && p !== document.documentElement && i < 40; p = p.parentElement, i++) { if (TRUNC(getComputedStyle(p)).length) return p } return null })()
+  const cs0 = getComputedStyle(surface), cc0 = card ? getComputedStyle(card) : null
+  const out = {
+    found: true,
+    surface: { cls: short(surface), rect: rectOf(surface), bf: cs0.backdropFilter, attrs: ['glass', 'bg', 'trunc'].filter((a) => surface.hasAttribute('data-mpw-pop-' + a)) },
+    card: card ? { cls: short(card), tag: card.tagName, rect: rectOf(card), bf: cc0.backdropFilter, position: cc0.position, z: cc0.zIndex, isolation: cc0.isolation, radius: cc0.borderTopLeftRadius, cardZIndexHost: cc0.zIndex } : null,
+    chainBefore: chainOf(surface),
+  }
+  if (!card) { out.note = '弹层没有截断祖先（A 类）⇒ 本实验不适用'; return out }
+  /* 注入：卡片摘 bf + isolation:isolate；弹层恢复自己的 bf（同特异性、更晚 ⇒ 压过插件的 glass 规则） */
+  card.setAttribute('data-mpw-probe-card', '')
+  surface.setAttribute('data-mpw-probe-bf', '')
+  const st = document.createElement('style')
+  st.setAttribute('data-mpw-probe', 'untunc')
+  st.textContent = 'html body [data-mpw-probe-card]{backdrop-filter:none !important;-webkit-backdrop-filter:none !important;isolation:isolate !important;}\n'
+    + 'html body [data-mpw-probe-bf]{backdrop-filter:var(--mpw-pop-blur, blur(11px)) !important;-webkit-backdrop-filter:var(--mpw-pop-blur, blur(11px)) !important;}\n'
+  document.head.appendChild(st)
+  await raf2(); hideLayers(); await raf2()
+  const hitAt = (x, y) => { try { const el = document.elementFromPoint(x, y); return el ? (surface.contains(el) ? 'inside-surface' : short(el)) : null } catch (e) { return 'err' } }
+  const sr1 = surface.getBoundingClientRect()
+  out.afterNeutralize = {
+    chain: chainOf(surface), surfaceRect: rectOf(surface), rectKept: JSON.stringify(rectOf(surface)) === JSON.stringify(out.surface.rect),
+    cardBf: getComputedStyle(card).backdropFilter, cardIsolation: getComputedStyle(card).isolation,
+    surfaceBf: getComputedStyle(surface).backdropFilter,
+    hitCenter: hitAt(sr1.left + sr1.width / 2, sr1.top + sr1.height / 2),
+    cardIsStackingCtxGuess: getComputedStyle(card).isolation === 'isolate',
+  }
+  /* 补偿霜层：卡片内 absolute inset:0、z-index:-1、沿用卡片原来的 bf */
+  const frost = document.createElement('div')
+  frost.setAttribute('data-plugin', 'dsh-mpkg-wallpaper')
+  frost.setAttribute('data-mpw-probe-frost', '')
+  frost.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;z-index:-1;pointer-events:none;border-radius:' + (cc0.borderTopLeftRadius || '12px') + ';backdrop-filter:' + (out.card.bf || 'blur(14px)') + ';'
+  card.insertBefore(frost, card.firstChild)
+  await raf2(); hideLayers(); await raf2()
+  const fr = frost.getBoundingClientRect(), cr = card.getBoundingClientRect()
+  out.frost = {
+    rect: rectOf(frost), cardRect: rectOf(card), parentIsCard: frost.parentElement === card,
+    sameRect: Math.abs(fr.left - cr.left) < 1.5 && Math.abs(fr.top - cr.top) < 1.5 && Math.abs(fr.width - cr.width) < 1.5 && Math.abs(fr.height - cr.height) < 1.5,
+    position: getComputedStyle(frost).position, z: getComputedStyle(frost).zIndex, bf: getComputedStyle(frost).backdropFilter,
+    chainOfFrost: chainOf(frost).slice(0, 3),
+  }
+  /* 变体：卡片用 position:relative;z-index:0 代替 isolation（看弹层矩形是否被带跑） */
+  st.textContent = 'html body [data-mpw-probe-card]{backdrop-filter:none !important;-webkit-backdrop-filter:none !important;position:relative !important;z-index:0 !important;}\n'
+    + 'html body [data-mpw-probe-bf]{backdrop-filter:var(--mpw-pop-blur, blur(11px)) !important;-webkit-backdrop-filter:var(--mpw-pop-blur, blur(11px)) !important;}\n'
+  await raf2(); hideLayers(); await raf2()
+  out.variantRelZ = { chain: chainOf(surface), surfaceRect: rectOf(surface), rectKept: JSON.stringify(rectOf(surface)) === JSON.stringify(out.surface.rect), cardPosition: getComputedStyle(card).position, cardZ: getComputedStyle(card).zIndex }
+  /* 清理：逐字还原 */
+  try { st.remove() } catch (e) {}
+  try { frost.remove() } catch (e) {}
+  try { card.removeAttribute('data-mpw-probe-card') } catch (e) {}
+  try { surface.removeAttribute('data-mpw-probe-bf') } catch (e) {}
+  await raf2(); hideLayers()
+  out.cleanup = { cardBf: getComputedStyle(card).backdropFilter, cardPosition: getComputedStyle(card).position, cardZ: getComputedStyle(card).zIndex, cardIsolation: getComputedStyle(card).isolation, surfaceBf: getComputedStyle(surface).backdropFilter, frostGone: !document.querySelector('[data-mpw-probe-frost]'), attrsGone: !card.hasAttribute('data-mpw-probe-card') && !surface.hasAttribute('data-mpw-probe-bf') }
+  return out
+}
+
+/* ── 1f ③(2026-10-05 v3) 插件当前落点读数：去截断祖先 + 补的霜层 + 弹层自己的截断链 ───────── */
+const POP_FIX_STATE = () => {
+  const short = (el) => el ? (String(el.className || '').split(/\s+/).filter(Boolean)[0] || el.tagName.toLowerCase()) : 'null'
+  const TRUNC = (c) => {
+    const bad = []
+    if (c.backdropFilter && c.backdropFilter !== 'none') bad.push('bf=' + c.backdropFilter)
+    if (c.filter && c.filter !== 'none') bad.push('filter=' + c.filter)
+    if (c.opacity && c.opacity !== '1' && Number(c.opacity) < 1) bad.push('opacity=' + c.opacity)
+    if (c.transform && c.transform !== 'none') bad.push('transform')
+    if (c.willChange && /filter|opacity|transform/i.test(c.willChange)) bad.push('will-change=' + c.willChange)
+    if (c.contain && c.contain !== 'none' && /paint|layout|strict|content/.test(c.contain)) bad.push('contain=' + c.contain)
+    if (c.isolation === 'isolate') bad.push('isolation')
+    if (c.maskImage && c.maskImage !== 'none') bad.push('mask')
+    if (c.clipPath && c.clipPath !== 'none') bad.push('clip-path')
+    return bad
+  }
+  const chainOf = (el) => {
+    const out = []
+    for (let p = el.parentElement, i = 0; p && p !== document.documentElement && i < 40; p = p.parentElement, i++) {
+      const c = getComputedStyle(p); const bad = TRUNC(c)
+      if (bad.length) out.push({ cls: short(p), bad })
+    }
+    return out
+  }
+  const rr = (el) => { const r = el.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)] }
+  return {
+    untruncCount: document.querySelectorAll('[data-mpw-pop-untrunc]').length,
+    frostCount: document.querySelectorAll('[data-mpw-pop-frost]').length,
+    glassCount: document.querySelectorAll('[data-mpw-pop-glass]').length,
+    truncCount: document.querySelectorAll('[data-mpw-pop-trunc]').length,
+    glassLayerCount: document.querySelectorAll('[data-mpw-pop-glass-layer]').length,
+    untruncs: Array.from(document.querySelectorAll('[data-mpw-pop-untrunc]')).map((el) => {
+      const c = getComputedStyle(el)
+      const frost = Array.from(el.children || []).find((x) => x.hasAttribute && x.hasAttribute('data-mpw-pop-frost')) || null
+      const fc = frost ? getComputedStyle(frost) : null
+      return {
+        cls: short(el), inlineZ: el.style.zIndex, bf: c.backdropFilter, position: c.position, z: c.zIndex, isolation: c.isolation, rect: rr(el),
+        frost: frost ? { bf: fc.backdropFilter, z: fc.zIndex, position: fc.position, rect: rr(frost), sameRect: JSON.stringify(rr(frost)) === JSON.stringify(rr(el)), chain: chainOf(frost) } : null,
+      }
+    }),
+    cards: Array.from(document.querySelectorAll('[class*="uV2eYG_card"]')).map((el) => {
+      const c = getComputedStyle(el)
+      return { cls: short(el), bf: c.backdropFilter, inlineZ: el.style.zIndex, position: c.position, frost: !!el.querySelector('[data-mpw-pop-frost]'), rect: rr(el) }
+    }),
+    surfaces: Array.from(document.querySelectorAll('[data-mpw-pop-bg]')).map((el) => {
+      const c = getComputedStyle(el)
+      return { cls: short(el), bf: c.backdropFilter, why: el.getAttribute('data-mpw-pop-bg'), attrs: ['glass', 'trunc'].filter((a) => el.hasAttribute('data-mpw-pop-' + a)).join('+') || '-', chain: chainOf(el), rect: rr(el) }
+    }),
+  }
+}
+
 /* ── 2 组 6/7/8 的页面侧采集 ─────────────────────────────────────────────── */
 const SIDEBAR_TINT = () => {
   const one = (sel) => { const e = document.querySelector(sel); if (!e) return { sel, found: false }; const c = getComputedStyle(e); return { sel, found: true, cls: String(e.className).slice(0, 70), bg: c.backgroundColor, bgImage: String(c.backgroundImage).slice(0, 90), bf: c.backdropFilter, color: c.color } }
@@ -1224,6 +1564,137 @@ try {
         ' | 合成=' + (e.e2 && e.e2.synthesis ? String(e.e2.synthesis).slice(0, 24) : 'n/a'))))
     }
     result.groupsOut.popoverBlurExp = rec
+  }
+
+  /* ── 组 glass-placement（③ 2026-10-05）：玻璃层**落点矩阵**（结构性判据，不用像素）──
+     要回答的是：把玻璃层放哪儿，才能"采样得到整页（root 不被截断）"且"画在弹层之下、目标条之上"。 */
+  if (want('glass-placement')) {
+    const rec = { at: new Date().toISOString(), targets: [] }
+    const targets3 = [
+      { id: 'plus-menu', sel: 'div._3e4SsG_viewport', opener: [{ sel: 'button[aria-label="指令"]' }, { sel: 'button[aria-label="添加附件"]' }] },
+      { id: 'permission', sel: 'div._list_1nxmc_8', opener: [{ sel: 'button[aria-label^="访问模式"]' }] },
+      { id: 'dialog-ctx', sel: 'div.JObwrW_panel, [class*="JObwrW_panel"]', opener: [{ sel: 'button[aria-label*="上下文"]' }, { sel: '[aria-label*="上下文"]' }, { sel: 'button[aria-label*="已用"]' }] },
+      { id: 'model-l1(挂 body 的健康对照)', sel: '[class*="_7KE1Ra_menu"], div[id$=":-menu"]', opener: [{ sel: 'button[aria-label^="选择模型"]' }] },
+    ]
+    for (const t of targets3) {
+      const e = { id: t.id, sel: t.sel }
+      try {
+        try { await page.keyboard.press('Escape') } catch (err) {}
+        await page.evaluate(CLOSE_ALL); await page.waitForTimeout(400)
+        const found = await page.evaluate(FIND_OPENER, t.opener)
+        e.openedBy = found && { why: found.why, clicked: found.clicked }
+        if (!found || !found.path) { e.blocked = 'no-opener'; rec.targets.push(e); console.log('GLASS ' + t.id + ' → no-opener'); continue }
+        const s2 = selOf(found.path)
+        try { await page.locator(s2).first().click({ timeout: 4000 }) } catch (err) { await page.evaluate((x) => { const e2 = document.querySelector(x); if (e2) e2.click() }, s2) }
+        await page.waitForTimeout(1300)
+        e.placement = await page.evaluate(GLASS_PLACEMENT, { sel: t.sel })
+        await page.waitForTimeout(200)
+        e.after = await page.evaluate((s) => { const el = document.querySelector(s); return el ? { cls: String(el.className).slice(0, 40), attrs: ['glass', 'bg', 'trunc'].filter((a) => el.hasAttribute('data-mpw-pop-' + a)) } : null }, t.sel)
+        e.layersAfter = await page.evaluate(() => Array.from(document.querySelectorAll('[data-mpw-pop-glass-layer]')).map((l) => ({ display: l.style.display, z: l.style.zIndex, parent: String((l.parentElement && l.parentElement.className) || '').slice(0, 30) })))
+        try { await page.keyboard.press('Escape') } catch (err) {}
+        await page.waitForTimeout(250)
+      } catch (err) { e.blocked = 'exception ' + String((err && err.message) || err).slice(0, 140) }
+      rec.targets.push(e)
+      const pl = e.placement
+      if (pl && pl.found) {
+        console.log('GLASS ' + t.id + ' 表面=' + pl.surface.cls + ' z=' + pl.surface.z + ' bf=' + pl.surface.bf + ' 标记=[' + pl.surface.attrs.join('+') + '] rect=' + JSON.stringify(pl.surface.rect))
+        console.log('      截断祖先链第一处（卡片）=' + (pl.card ? pl.card.cls + ' [' + pl.card.bad.join(',') + ']' : '无') + ' | 插件现有层=' + JSON.stringify(pl.pluginLayer.map((x) => ({ parent: x.parent, prevSibIsSurface: x.prevSiblingIsSurface, z: x.z, bf: x.bf, display: x.display, trunc: x.trunc && (x.trunc.cls + '[' + x.trunc.bad.join(',') + ']') }))))
+        for (const m of pl.matrix) {
+          if (m.err) { console.log('      ' + m.id + ' → err ' + m.err); continue }
+          console.log('      ' + m.id.padEnd(30) + ' parent=' + String(m.parent).padEnd(22) + ' z=' + String(m.z).padEnd(6) + ' root截断=' + (m.trunc ? m.trunc.cls + '[' + m.trunc.bad.join(',') + ']' : '无') + ' | 弹层采样点 ' + m.judge.layerBelowPopover + '/' + m.judge.popPoints + ' 在层之上' + (m.judge.layerCoversPopover ? ' ⚠ 层盖住弹层 ' + m.judge.layerCoversPopover + ' 点' : ''))
+          const pop1 = m.hits && m.hits['pop:0.5/0.5']
+          if (pop1) console.log('          栈@弹层中心: ' + pop1.stack.join(' < '))
+        }
+        const base = pl.baseStack['pop:0.5/0.5']
+        if (base) console.log('      基线栈@弹层中心（无探针层）: ' + base.join(' < '))
+      } else console.log('GLASS ' + t.id + ' → ' + (e.blocked || '未采到（' + JSON.stringify(pl && pl.found) + '）'))
+    }
+    result.groupsOut.glassPlacement = rec
+  }
+
+  /* ── 组 tip-flicker（③ 2026-10-05）：右栏头部按钮 tooltip 逐帧采样（底色忽有忽无 / 白字）──
+     悬停不放、连采 12 帧（≈1.4s），按序列化值数**不同取值个数** ⇒ >1 即闪烁；同时留 token 与祖先读数。 */
+  if (want('tip-flicker')) {
+    const rec = { at: new Date().toISOString(), targets: [] }
+    const tg = await page.evaluate(TIP_TARGETS)
+    rec.targets = tg
+    console.log('TIP 候选按钮 ' + tg.length + ' 个：' + tg.slice(0, 8).map((x) => (x.aria || x.title || x.cls) + '@' + x.cx + ',' + x.cy).join(' | '))
+    for (const b of tg.slice(0, 6)) {
+      const e = { aria: b.aria, title: b.title, cls: b.cls, inHost: b.inHost, cx: b.cx, cy: b.cy, samples: [] }
+      try {
+        await page.mouse.move(b.cx, b.cy)
+        await page.waitForTimeout(700)
+        for (let i = 0; i < 12; i++) { e.samples.push(await page.evaluate(TIP_SAMPLE)); await page.waitForTimeout(110) }
+        await page.mouse.move(5, 5)
+        await page.waitForTimeout(250)
+      } catch (err) { e.blocked = String((err && err.message) || err).slice(0, 120) }
+      rec.targets.push(e)
+      const withTip = e.samples.filter((s) => s.count > 0)
+      const keys = new Set(withTip.map((s) => JSON.stringify(s.rows.map((r) => [r.bg, r.color, r.bf, r.attrs, r.rect.join(',')]))))
+      const first = withTip.length ? withTip[0].rows[0] : null
+      console.log('TIP ' + (b.aria || b.title || b.cls) + ' → 采到 tooltip 的帧 ' + withTip.length + '/' + e.samples.length + '，不同取值 ' + keys.size + (keys.size > 1 ? ' ⚠ 闪' : '') +
+        (first ? ' | cls=' + first.cls + ' bg=' + first.bg + ' color=' + first.color + ' bf=' + first.bf + ' z=' + first.z + ' 标记=' + first.attrs + ' rect=' + JSON.stringify(first.rect) + ' text=' + JSON.stringify(first.text) + ' tipTok=' + first.tipTok : ' | 未采到'))
+      if (keys.size > 1) { for (const k of keys) console.log('      · ' + k) }
+    }
+    result.groupsOut.tipFlicker = rec
+  }
+
+  /* ── 组 glass-fix（③ 2026-10-05）：去截断 + 补霜的可行性（链清空 / 矩形不动 / 霜层对齐）── */
+  if (want('glass-fix')) {
+    const rec = { at: new Date().toISOString(), targets: [] }
+    const targets4 = [
+      { id: 'permission', sel: 'div._list_1nxmc_8', opener: [{ sel: 'button[aria-label^="访问模式"]' }] },
+      { id: 'plus-menu', sel: 'div._3e4SsG_viewport', opener: [{ sel: 'button[aria-label="指令"]' }, { sel: 'button[aria-label="添加附件"]' }] },
+      { id: 'model-l1(健康对照)', sel: '[class*="_7KE1Ra_menu"], div[id$=":-menu"]', opener: [{ sel: 'button[aria-label^="选择模型"]' }] },
+    ]
+    for (const t of targets4) {
+      if (ONLY_TARGET.length && !ONLY_TARGET.includes(t.id)) continue
+      const e = { id: t.id, sel: t.sel }
+      try {
+        try { await page.keyboard.press('Escape') } catch (err) {}
+        await page.evaluate(CLOSE_ALL); await page.waitForTimeout(400)
+        const found = await page.evaluate(FIND_OPENER, t.opener)
+        if (!found || !found.path) { e.blocked = 'no-opener'; rec.targets.push(e); console.log('FIX ' + t.id + ' → no-opener'); continue }
+        const s2 = selOf(found.path)
+        try { await page.locator(s2).first().click({ timeout: 4000 }) } catch (err) { await page.evaluate((x) => { const e2 = document.querySelector(x); if (e2) e2.click() }, s2) }
+        await page.waitForTimeout(1300)
+        e.fixState = await page.evaluate(POP_FIX_STATE)
+        e.exp = await page.evaluate(UNTRUNC_EXP, { sel: t.sel })
+        try { await page.keyboard.press('Escape') } catch (err) {}
+        await page.waitForTimeout(700)
+        e.afterClose = await page.evaluate(POP_FIX_STATE)
+      } catch (err) { e.blocked = 'exception ' + String((err && err.message) || err).slice(0, 140) }
+      rec.targets.push(e)
+      if (e.afterClose) {
+        const ac = e.afterClose
+        const strayBf = ac.untruncs.filter((u) => u.bf !== 'none').length
+        const cardsBack = (ac.cards || []).map((c) => c.cls + ' bf=' + c.bf + ' inlineZ=' + JSON.stringify(c.inlineZ) + ' 霜层=' + c.frost)
+        console.log('AFTERCLOSE ' + t.id + ' untrunc=' + ac.untruncCount + ' frost=' + ac.frostCount + ' glass=' + ac.glassCount + ' trunc=' + ac.truncCount
+          + ' | 还挂着去截断的祖先=' + JSON.stringify(ac.untruncs.map((u) => u.cls + ' bf=' + u.bf + ' inlineZ=' + JSON.stringify(u.inlineZ)))
+          + ' | 残留 bf 未摘=' + strayBf + ' | 存留表面=' + JSON.stringify(ac.surfaces.map((s) => s.cls + '[' + s.attrs + ']'))
+          + ' | 卡片还原=' + JSON.stringify(cardsBack))
+      }
+      const x = e.exp
+      if (e.fixState) {
+        const fs = e.fixState
+        console.log('FIXSTATE ' + t.id + ' untrunc=' + fs.untruncCount + ' frost=' + fs.frostCount + ' glass=' + fs.glassCount + ' trunc=' + fs.truncCount + ' 旧根级层=' + fs.glassLayerCount)
+        for (const u of fs.untruncs) console.log('   去截断祖先: ' + u.cls + ' bf=' + u.bf + ' pos=' + u.position + ' z=' + u.z + '(inline ' + JSON.stringify(u.inlineZ) + ') isolation=' + u.isolation + ' rect=' + JSON.stringify(u.rect) + ' | 霜层=' + JSON.stringify(u.frost))
+        for (const c of (fs.cards || [])) console.log('   输入框卡片: ' + c.cls + ' bf=' + c.bf + ' inlineZ=' + JSON.stringify(c.inlineZ) + ' pos=' + c.position + ' 霜层=' + c.frost + ' rect=' + JSON.stringify(c.rect))
+        for (const s of fs.surfaces) console.log('   弹层表面: ' + s.cls + ' why=' + s.why + ' bf=' + s.bf + ' 标记=' + s.attrs + ' 截断链=' + JSON.stringify(s.chain) + ' rect=' + JSON.stringify(s.rect))
+      }
+      if (x && x.found) {
+        console.log('FIX ' + t.id + ' 表面=' + x.surface.cls + '[' + x.surface.attrs.join('+') + '] ' + JSON.stringify(x.surface.rect) + ' bf=' + x.surface.bf)
+        console.log('    截断祖先链(前)=' + JSON.stringify(x.chainBefore))
+        console.log('    卡片=' + JSON.stringify(x.card))
+        if (x.afterNeutralize) {
+          console.log('    摘掉卡片 bf + isolation:isolate 后：链=' + JSON.stringify(x.afterNeutralize.chain) + ' 矩形未变=' + x.afterNeutralize.rectKept + ' 卡片bf=' + x.afterNeutralize.cardBf + ' 卡片isolation=' + x.afterNeutralize.cardIsolation + ' 表面bf=' + x.afterNeutralize.surfaceBf + ' 中心命中=' + x.afterNeutralize.hitCenter)
+          console.log('    补偿霜层=' + JSON.stringify(x.frost))
+          console.log('    变体 position:relative;z-index:0：链=' + JSON.stringify(x.variantRelZ.chain) + ' 矩形未变=' + x.variantRelZ.rectKept + ' pos=' + x.variantRelZ.cardPosition + ' z=' + x.variantRelZ.cardZ)
+          console.log('    还原=' + JSON.stringify(x.cleanup))
+        } else console.log('    ' + (x.note || '无卡片'))
+      } else console.log('FIX ' + t.id + ' → ' + (e.blocked || '未采到'))
+    }
+    result.groupsOut.glassFix = rec
   }
 
   /* ── 组 session-ink（批次 2 P6）：会话列表 id 文字（`ZKlsPq_label`）"变白看不清"的状态矩阵 ──
