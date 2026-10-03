@@ -30,7 +30,8 @@ const reset = () => { for (const k of CLEAR) { try { delete globalThis[k] } catc
 const registry = []
 const installShim = () => {
   const attrSel = (sel) => { const m = /^\[([^\]=~^$|]+)\]$/.exec(String(sel).trim()); return m ? m[1].trim() : null }
-  globalThis.document.querySelectorAll = (sel) => { const a = attrSel(sel); if (a) return registry.filter((el) => el.hasAttribute(a)); return [] }
+  const allEls = () => { const out = []; const walk = (e) => { for (const c of (e.children || [])) { out.push(c); walk(c) } }; try { walk(globalThis.document.body) } catch (e) {} ; return out }
+  globalThis.document.querySelectorAll = (sel) => { const a = attrSel(sel); if (a) return allEls().filter((el) => el.hasAttribute && el.hasAttribute(a)); return [] }
   globalThis.document.querySelector = (sel) => globalThis.document.querySelectorAll(sel)[0] || null
   const base = globalThis.getComputedStyle
   globalThis.getComputedStyle = (el) => {
@@ -64,10 +65,11 @@ ok('A2 三条路的判据齐备：弹层表面集合 + 已知包装容器白名�
   && CLIENT.includes('truncated.add(el)') && CLIENT.includes('glasses.add(el)'))
 ok('A3 不再摘宿主祖先的 blur（untrunc 规则已移除：无 backdrop-filter:none 的注入样式）',
   !CLIENT.includes('data-mpw-pop-untrunc-style'))
-ok('A4 根级模糊层：fixed + pointer-events:none + transform 定位（只走合成） + 读 --mpw-pop-blur',
+ok('A4 模糊层：fixed + pointer-events:none + transform 定位（只走合成）+ 插在弹层父节点里、层级=弹层 z-1 + 读 --mpw-pop-blur',
   /data-mpw-pop-glass-layer/.test(CLIENT)
-  && /position:fixed;left:0;top:0;width:1px;height:1px;pointer-events:none;z-index:4/.test(CLIENT)
-  && /transform", "translate\(/.test(CLIENT) && /--mpw-pop-blur/.test(CLIENT))
+  && /position:fixed;left:0;top:0;width:1px;height:1px;pointer-events:none;border-radius:12px;transform-origin:0 0/.test(CLIENT)
+  && /transform", "translate\(/.test(CLIENT) && /--mpw-pop-blur/.test(CLIENT)
+  && /host.insertBefore\(layer, el\)/.test(CLIENT) && /Math.max\(0, pz - 1\)/.test(CLIENT))
 ok('A5 滚动/缩放时重贴（fixed 层跟着弹层走）', /addEventListener\("scroll"/.test(CLIENT) && /addEventListener\("resize"/.test(CLIENT))
 
 console.log('== B 组：三条路的行为 ==')
