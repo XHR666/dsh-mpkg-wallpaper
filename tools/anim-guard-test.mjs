@@ -74,8 +74,9 @@ console.log('== A 组：静态（闸门 / 三工人 / mpwperf / 文档登记）=
 ok('A1 闸门定义存在：mpwHeavyGate + mpwHeavyAnimRunning（getAnimations 只读、不强制布局）',
   CLIENT.includes('function mpwHeavyGate(name, fn) {') && CLIENT.includes('function mpwHeavyAnimRunning() {')
   && /document\.getAnimations && document\.getAnimations\(\)\.length/.test(CLIENT))
-ok('A2 四个工人都接了闸门：sblur / popTag / hdrBlur / npFit（登记名各自唯一）',
-  ['sblur', 'popTag', 'hdrBlur', 'npFit'].every((n) => CLIENT.includes('mpwHeavyGate("' + n + '"')))
+ok('A2 四个工人都接了闸门：sblur / popTag / hdrBlur / npFit（登记名各自唯一；npFit 走 npFitGate 包装）',
+  ['sblur', 'popTag', 'hdrBlur'].every((n) => CLIENT.includes('mpwHeavyGate("' + n + '"')))
+  && CLIENT.includes('npFitGate("npFit", evaluate)')
 ok('A3 sblur 从"每批突变同步 check"改成 rAF 帧内合并 + 闸门',
   /sblurObserver = new MutationObserver\(\(\) => \{\n\s*if \(sbraf\) return;/.test(CLIENT)
   && CLIENT.includes('const sbrun = () => {'))
