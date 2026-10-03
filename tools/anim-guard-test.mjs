@@ -90,7 +90,10 @@ let w = boot()
 const H = globalThis.__mpwHeavyTest
 ok('B0 __mpwHeavyTest 出口就位（state/gate/flushNow）', !!H && typeof H.gate === 'function' && typeof H.flushNow === 'function' && typeof H.state === 'function')
 // 动画在跑：闸门必须拦下（重活零执行 = 零 getBoundingClientRect）
-w.__anims = [{ fake: 1 }]
+const RUN1 = () => [{ playState: 'running', effect: { getTiming: () => ({ iterations: 1 }) } }]
+const FINISHED = () => [{ playState: 'finished', effect: { getTiming: () => ({ iterations: 1 }) } }]
+const INFINITE = () => [{ playState: 'running', effect: { getTiming: () => ({ iterations: Infinity }) } }]
+w.__anims = RUN1()
 let ran = 0
 const job = () => { rects++; ran++ }
 const allowed = H.gate('probe-job', job)
@@ -103,7 +106,7 @@ w.__anims = []
 const n = H.flushNow()
 ok('B2 动画停 ⇒ flushNow 补跑执行（账目清空）', n === 1 && ran === 1 && rects === 1 && H.state().pending.length === 0 && H.state().timer === false, 'ran=' + ran + ' rects=' + rects)
 // 动画在跑 → 静静等真实 400ms 定时器 ⇒ 自动补跑
-w.__anims = [{ fake: 1 }]
+w.__anims = RUN1()
 H.gate('probe-job-2', job)
 ok('B2b 第二次登记 + 定时器在', H.state().pending.indexOf('probe-job-2') >= 0 && H.state().timer === true)
 await new Promise((r) => setTimeout(r, 600))
@@ -112,6 +115,21 @@ ok('B3 真实 400ms 定时器到点 ⇒ 补跑自动执行、账目清空', ran 
 w.__anims = []
 const allowed2 = H.gate('probe-job-3', job)
 ok('B4 动画停 ⇒ gate 直接放行（调用方当场执行，不进补跑账目）', allowed2 === true && H.state().pending.length === 0)
+/* ②(2026-10-05 真机回归) 判据必须区分"真在跑"与"只是留在动画表里"，并保证闸门**不会把功能饿死**：
+   真机现场是四个弹层全部丢掉兜底底（只剩宿主的不透明白底 + 我们的 blur = "白色滤镜没有玻璃"），
+   根因就是旧判据把 finished / 无限循环动画也当成"在动画"⇒ 登记后永不放行。 */
+w.__anims = FINISHED()
+ok('B5 finished 动画（CSS fill:forwards 会留在动画表里）不算"在跑"⇒ 闸门直接放行',
+  H.animRunning() === false && H.gate('probe-job-4', job) === true, 'animRunning=' + H.animRunning())
+w.__anims = INFINITE()
+ok('B6 无限循环动画（光标闪烁/转圈：永不结束）不算"在跑"⇒ 闸门直接放行（旧写法会永久饿死所有重活）',
+  H.animRunning() === false && H.gate('probe-job-5', job) === true, 'animRunning=' + H.animRunning())
+w.__anims = RUN1()
+let streakAllows = 0
+for (let i = 0; i < 6; i++) { if (H.gate('probe-job-6-' + i, job) === true) streakAllows++ }
+ok('B7 兜底：连续推迟到上限后**无条件放行一次**（宁可多跑一次重活，也不能永久饿死）',
+  streakAllows >= 1, '放行次数=' + streakAllows)
+w.__anims = []
 
 console.log('== C 组：?mpwperf=off（apply 直接 return）==')
 boot(null, '?mpwperf=off')

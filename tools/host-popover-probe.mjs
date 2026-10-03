@@ -1074,6 +1074,18 @@ try {
           try { await page.locator(s2).first().click({ timeout: 4000 }) } catch (e) { await page.evaluate((x) => { const e2 = document.querySelector(x); if (e2) e2.click() }, s2) }
           await page.waitForTimeout(1300)
           p.dump = await page.evaluate(POPOVER_SUBTREE, t.sel)
+          /* ②(2026-10-05) 兜底底标记的**调度 vs 条件**之辨：先读"有没有标记/有没有被饿死"，
+             再手动跑一次标记器并回读——手动跑能打上 ⇒ 之前是调度问题（闸门/observer）；
+             手动跑也打不上 ⇒ 条件问题（宿主画了不透明白底、面积超阈值、祖先已有底…）。 */
+          p.popTag = await page.evaluate(() => {
+            const T = globalThis.__mpwPopTagTest
+            const H = globalThis.__mpwHeavyTest
+            const tagged = document.querySelectorAll('[data-mpw-pop-bg]').length
+            const before = T && T.state ? T.state() : null
+            const ran = T && T.run ? T.run() : null
+            const after = T && T.state ? T.state() : null
+            return { taggedBefore: tagged, heavy: H && H.state ? H.state() : null, anims: (document.getAnimations ? document.getAnimations().length : -1), ran, before, after }
+          })
           if (!p.dump.found) p.blocked = 'blocked:container-not-found'
           /* P3 三个只读字段（批次 2，只加读数不改口径）：truncatedBy / effectiveBlur / backdropPainted */
           try {

@@ -36,6 +36,13 @@ console.log('== 真机那条半残档：只剩 image token ==')
   const after = (() => { try { return P.healState() } catch { return {} } })()
   ok('A8 自愈链真的被这条档触发过（旧实现因 mpkgKey 为空直接 return false ⇒ attempted 恒 0；同一状态只试一次是既有去重，不算失败）',
     Number(after.attempted || 0) >= 1 && !!after.last, 'attempted=' + after.attempted + ' last.from=' + String((after.last || {}).from))
+  ok('A10 自愈写回时清掉"与当前类型不符"的 sceneKey（真机残留：converted=mp4 却挂着上一个场景的 sceneKey；null 是唯一被粘性护栏尊重的删除语义）',
+    (() => {
+      const bad = { image: 'host:?token=X&index=0', converted: 'mp4', mpkgKey: 'custommpkg|X.mpkg', sceneKey: 'scene|probe|old-bundle/scene.pkg' }
+      const fixed = P.stripForeignSceneKey(bad)
+      const keep = P.stripForeignSceneKey({ image: 'host:?ltoken=L&scene=1', converted: 'scene', sceneKey: 'scene|L' })
+      return fixed.sceneKey === null && keep.sceneKey === 'scene|L'
+    })(), '')
   ok('A9 自愈用的是从 token 反推出来的 key（不是空 key）',
     String((after.last || {}).key || '') === 'custommpkg|小鸟游星野01_04.mpkg', JSON.stringify(after.last || {}))
 }

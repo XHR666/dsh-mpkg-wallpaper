@@ -73,7 +73,11 @@ const buildChain = (surfaceBlur, cardBlur) => {
   const card = globalThis.document.createElement('div'); card.className = 'uV2eYG_card'
   const mid = globalThis.document.createElement('div'); mid.className = 'mid-layer'
   const surface = globalThis.document.createElement('div'); surface.className = '_3e4SsG_menu'; surface.setAttribute('data-mpw-pop-bg', '')
-  card.__cs = cardBlur ? { backdropFilter: cardBlur } : {}
+  /* ②(2026-10-05) 截断祖先分两类：**透明包装**（只有 backdrop-filter、没有底）⇒ 摘它的 blur 没损失；
+     **自己有可见底的玻璃板**（真机：子代理展开框/输入框卡片 uV2eYG_card）⇒ 动它 = 用户能看到的那层模糊
+     没了（真机回归现场）⇒ 不许动它，改为把弹层表面做实在。夹具默认透明包装，D 组专项用有底祖先。
+     ⚠ 必须显式写 backgroundColor：桩里读不到 ⇒ mpwColorAlpha 会按"认不出 = 不透明(1)"处理。 */
+  card.__cs = cardBlur ? { backdropFilter: cardBlur, backgroundColor: 'rgba(0, 0, 0, 0)' } : {}
   surface.__cs = surfaceBlur ? { backdropFilter: surfaceBlur } : {}
   body.appendChild(card); card.appendChild(mid); mid.appendChild(surface)
   registry.push(card, mid, surface)
@@ -114,7 +118,7 @@ ok('B0 __mpwPopUntruncTest 出口就位', !!H && typeof H.sync === 'function' &&
   // 无模糊的表面：不满足硬前提 ⇒ 不打标
   const { card: card2, surface: surf2 } = (() => {
     const body = globalThis.document.body
-    const c2 = globalThis.document.createElement('div'); c2.className = 'uV2eYG_card'; c2.__cs = { backdropFilter: 'blur(14px)' }
+    const c2 = globalThis.document.createElement('div'); c2.className = 'uV2eYG_card'; c2.__cs = { backdropFilter: 'blur(14px)', backgroundColor: 'rgba(0, 0, 0, 0)' }
     const s2 = globalThis.document.createElement('div'); s2.className = '_menu'; s2.setAttribute('data-mpw-pop-bg', ''); s2.__cs = {}
     body.appendChild(c2); c2.appendChild(s2)
     registry.push(c2, s2)
@@ -133,8 +137,8 @@ ok('B0 __mpwPopUntruncTest 出口就位', !!H && typeof H.sync === 'function' &&
   const n = H.sync()
   ok('B4 健康弹层（body 下，模型选择器形态）⇒ 不打标、规则元素不落', n === 0 && !H.stylePresent(), 'n=' + n)
   // 只打第一个截断祖先：card 外再套一层截断者 ⇒ 只标近的那个
-  const outer = globalThis.document.createElement('div'); outer.className = 'outer-blur'; outer.__cs = { backdropFilter: 'blur(6px)' }
-  const card = globalThis.document.createElement('div'); card.className = 'uV2eYG_card'; card.__cs = { backdropFilter: 'blur(14px)' }
+  const outer = globalThis.document.createElement('div'); outer.className = 'outer-blur'; outer.__cs = { backdropFilter: 'blur(6px)', backgroundColor: 'rgba(0, 0, 0, 0)' }
+  const card = globalThis.document.createElement('div'); card.className = 'uV2eYG_card'; card.__cs = { backdropFilter: 'blur(14px)', backgroundColor: 'rgba(0, 0, 0, 0)' }
   const mid = globalThis.document.createElement('div'); mid.className = 'mid'
   const surf = globalThis.document.createElement('div'); surf.className = '_menu'; surf.setAttribute('data-mpw-pop-bg', ''); surf.__cs = { backdropFilter: 'blur(11px)' }
   body.appendChild(outer); outer.appendChild(card); card.appendChild(mid); mid.appendChild(surf)
@@ -157,13 +161,34 @@ console.log('== C 组：变异自证（真源零改动）==')
   const MH = globalThis.__mpwPopUntruncTest
   registry.length = 0
   const body = globalThis.document.body
-  const c = globalThis.document.createElement('div'); c.className = 'uV2eYG_card'; c.__cs = { backdropFilter: 'blur(14px)' }
+  const c = globalThis.document.createElement('div'); c.className = 'uV2eYG_card'; c.__cs = { backdropFilter: 'blur(14px)', backgroundColor: 'rgba(0, 0, 0, 0)' }
   const s = globalThis.document.createElement('div'); s.className = '_menu'; s.setAttribute('data-mpw-pop-bg', ''); s.__cs = {}
   body.appendChild(c); c.appendChild(s); registry.push(c, s)
   const n = MH.sync()
   ok('C1 把"身后要有模糊"前提改掉 ⇒ 无模糊表面也被打标（B3 对应断言必红）', n === 1 && c.hasAttribute('data-mpw-pop-untrunc'), 'n=' + n)
 }
 reset()
+
+console.log('\n== D 组：祖先自己是"有底的玻璃板" ⇒ 绝不动它（真机回归：子代理展开框的模糊被摘没了）==')
+{
+  reset()
+  loadPlugin({ quiet: true, settings: { enabled: true, image: 'stub-wallpaper.png' }, search: '' })
+  installShim()
+  const { card, surface } = buildChain('blur(11px)', 'blur(14px)')
+  card.__cs.backgroundColor = 'rgba(255, 255, 255, 0.55)'       // 宿主输入框卡片那种"看得见的玻璃"
+  const n = globalThis.__mpwPopUntruncTest.sync()
+  ok('D1 有底玻璃祖先不被摘 blur（它是用户看得见的那层玻璃），也不打 data-mpw-pop-untrunc',
+    n >= 1000 && !card.hasAttribute('data-mpw-pop-untrunc'), 'n=' + n + ' untrunc=' + card.hasAttribute('data-mpw-pop-untrunc'))
+  ok('D2 改为把**弹层自己**标记为"实底"（data-mpw-pop-trunc；宿主元素一个都不碰）',
+    surface.hasAttribute('data-mpw-pop-trunc') && !surface.hasAttribute('data-mpw-pop-untrunc'), '')
+  /* 现实场景：弹层关了 ⇒ 标记器摘掉 data-mpw-pop-bg（元素可能还在 DOM 里一瞬）⇒ 我们的实底标记也必须撤掉 */
+  const n2 = (() => { surface.removeAttribute('data-mpw-pop-bg'); return globalThis.__mpwPopUntruncTest.sync() })()
+  ok('D3 表面不再是弹层表面（标记被摘）⇒ 实底标记也清掉、返回值归零（可逆、不留残留）',
+    !surface.hasAttribute('data-mpw-pop-trunc') && n2 === 0, 'n2=' + n2)
+  ok('D4 生产代码里"有底玻璃祖先"的判据在场（α ≥ 0.05）+ 实底规则用我们自己的标记属性（不碰宿主选择器）',
+    /if \(mpwColorAlpha\(acs\.backgroundColor\) >= 0\.05\) \{ blockedByGlass = true; break \}/.test(CLIENT)
+    && /\[data-mpw-pop-trunc\] \{ background-color: color-mix\(in srgb, var\(--dsw-specific-sidebar-fill\) 88%/.test(CLIENT))
+}
 
 console.log(`\n===== popover-untrunc: ${pass} 通过 / ${fail} 失败 =====`)
 if (!fail) console.log('✓ P3 收口：弹层开着期间截断祖先的 blur 被可逆摘除（CSSOM !important 规则），关了即还原')
