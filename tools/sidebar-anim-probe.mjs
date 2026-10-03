@@ -60,6 +60,7 @@ const OUT = path.resolve(arg('out', path.join(PLUGIN, 'tools', 'probe-out', 'sid
 const WORK = path.resolve(arg('work', path.join(os.tmpdir(), 'mpw-sidebar-anim')))
 const COOKIE = path.join(WORK, 'cookie.json')
 const SCAN = has('scan')
+const OPEN_SESSION = has('open-session')   // ③(2026-10-05) 在**会话里**测（真机线索：空会话流畅、会话里卡）
 const HEADED = has('headed')
 const RUNS = Math.max(1, Number(arg('runs', '3')))
 const GROUPS = String(arg('groups', 'on,off')).split(',').map((x) => x.trim()).filter(Boolean)
@@ -279,6 +280,18 @@ const SCAN_BUTTONS = () => {
   return out
 }
 
+/* ③(2026-10-05) 打开一条会话（宿主类名 / 点击行）：真机现象是"空会话流畅、会话里卡"，
+   而本探针原先只在空会话里跑 ⇒ 会话视图必须能进来才有分辨力。自包含（不依赖 __pp 注入）。 */
+const OPEN_SESSION_FN = (idx) => {
+  const VIS = (el) => { try { const r = el.getBoundingClientRect(); const c = getComputedStyle(el); return r.width > 2 && r.height > 2 && c.display !== 'none' && c.visibility !== 'hidden' } catch (e) { return false } }
+  const rootEl = () => document.querySelector('.wSkVaW_root') || document.querySelector('.wSkVaW_scrollBody')
+  const state = () => { const r = rootEl(); return { chatTextLen: r ? String(r.textContent || '').length : 0, rows: document.querySelectorAll('[class*="sessionRow"]').length, domNodes: document.getElementsByTagName('*').length } }
+  const rows = Array.from(document.querySelectorAll('[class*="sessionRow"]')).filter(VIS)
+  if (!rows.length) return { clicked: 'none', why: 'no-session-row', ...state() }
+  const i = ((idx || 0) % rows.length + rows.length) % rows.length
+  rows[i].click()
+  return { clicked: 'sessionRow', index: i, ...state() }
+}
 const SIDEBAR_STATE = () => {
   // [data-slot="sidebar"] 实测是 display:contents 0×0（真机调试 2026-10-03）⇒ 以 sidebarCol 优先，取第一个有宽度的
   const sels = ['[class*="sidebarCol"]', '.hHd-Xa_root', '[data-slot="sidebar"]']
@@ -504,6 +517,41 @@ try {
     } else if (!rec.pluginActive) { rec.err = 'plugin-not-active-unexpected'; return rec }
     await page.waitForSelector('[data-slot="sidebar"],[class*="sidebarCol"]', { state: 'attached', timeout: HOST_WAIT }).catch(() => {})
     await page.waitForTimeout(SETTLE)
+    if (OPEN_SESSION) {
+      rec.sessionTries = []
+      for (let k = 0; k < 6; k++) {
+        const r = await page.evaluate(OPEN_SESSION_FN, k)
+        rec.sessionTries.push(r)
+        await page.waitForTimeout(2500)
+        if (r && (r.chatTextLen || 0) > 300) break
+      }
+      rec.session = rec.sessionTries[rec.sessionTries.length - 1] || null
+    }
+    if (group === 'css-nohas') {
+      /* ③(2026-10-05) 只摘**含 :has() 的规则**（CSSOM deleteRule，JS/壁纸/其余样式全留）：
+         这份注入样式里 `body:has([class*="_overlay"])` 一类"存在性"规则会让样式重算退化成
+         全文档扫描（子串类名进不了失效集）——会话越大越贵，正好对上"空会话流畅、会话里卡"。
+         用量对照：这一组 ≈ 中性化组 ⇒ 元凶就是它们；仍 ≈ 开组 ⇒ 成本在壁纸/合成，不在选择器。 */
+      rec.cssNoHas = await page.evaluate(() => {
+        const st = Array.from(document.querySelectorAll('style[data-plugin="dsh-mpkg-wallpaper"]'))[0]
+        if (!st) return { ok: false, why: 'no-style' }
+        let sheet = null
+        try { sheet = Array.from(document.styleSheets).find((x) => x.ownerNode === st) } catch (e) {}
+        if (!sheet) return { ok: false, why: 'no-sheet' }
+        let removed = 0, total = 0
+        const walk = (rules) => {
+          for (let i = rules.length - 1; i >= 0; i--) {
+            let r = null
+            try { r = rules[i] } catch (e) { continue }
+            total++
+            if (r.cssRules) { walk(r.cssRules); continue }
+            if (r.selectorText && /:has\(/.test(r.selectorText)) { try { rules.deleteRule(i); removed++ } catch (e) {} }
+          }
+        }
+        try { walk(sheet.cssRules) } catch (e) { return { ok: false, why: String(e && e.message || e).slice(0, 80) } }
+        return { ok: true, removed, total }
+      })
+    }
     if (group === 'off') {
       rec.neutralize = await page.evaluate((m) => window.__mpwMo.neutralize(m), neutralizeMap)
       rec.pluginStylesLeft = await page.evaluate(() => window.__mpwMo.pluginStyleCount())
@@ -550,7 +598,7 @@ try {
         ? 'frames=' + s.frames + ' p50=' + s.p50 + ' p95=' + s.p95 + ' max=' + s.max + ' >50ms=' + s.gapsOver50
           + ' mo=' + rec.stats.mo.totalBatches + '批/' + rec.stats.mo.totalMs + 'ms'
           + (rec.neutralize ? ' 中性化(断' + rec.neutralize.disconnected + '/样式' + rec.neutralize.styles + ')' : '')
-        : 'FAIL: ' + rec.err)
+        : 'FAIL: ' + rec.err) + (rec.session ? ' 会话=' + (rec.session.chatTextLen || 0) + '字/' + (rec.session.domNodes || 0) + '节点' : '')
         + (rec.warn ? ' ⚠' + rec.warn : ''))
       if (!rec.ok) continue
       await page.waitForTimeout(600)   // 收起按钮在收起态会从 DOM 消失（真机调试），复位靠下一次 run 的 reload
