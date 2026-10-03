@@ -641,7 +641,7 @@ node tools/source-heal-token-test.mjs || fail=1
 # ①(P3 修复 2026-10-03) 弹层玻璃 backdrop root 被截断（读数 docs/POPOVER-BLUR.md）：
 #   mpwPopUntruncSync 给第一个带 blur 的截断祖先打 data-mpw-pop-untrunc + 静态 !important 规则，
 #   弹层关即撤（宿主逐字还原）；判据 11 条：打标/幂等/还原/硬前提/健康弹层/多层只标第一个/变异自证
-node tools/popover-untrunc-test.mjs || fail=1
+node tools/popover-glass-test.mjs || fail=1
 # ①(2026-09-23 用户第 1 项 B) 视频「按屏幕物理尺寸预缩（ffmpeg lanczos）」档 —— **默认关**：
 #   依据 ../docs/USER-ITEMS-20260921.md 第 19 条实测（`3588989102` 2558×1438@60）：非全屏尺寸上
 #   「一次直降」的**闪烁**是「逐级减半」的 1.6~2.7×，代价是细节低 1.4~1.9× ⇒ 取舍，默认不翻。
