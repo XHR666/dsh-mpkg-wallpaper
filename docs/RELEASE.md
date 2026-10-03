@@ -5,7 +5,7 @@
 > （`node tools/integrity-check.mjs`）。这份文件把**发布前置**、**确切命令**、**发布后验证**和
 > **回滚**钉死成可复制的步骤 —— 照着跑就行，不靠记忆。
 >
-> 状态（2026-10-05 实测）：本地 `package.json` = **3.16.3**（= 仓库 HEAD `f2b2a4f`）；npm 官方 registry 上 `latest` = **3.16.1**（`npm view dsh-mpkg-wallpaper version --registry=https://registry.npmjs.org`）⇒ 3.16.2 起（含本版）**尚未发布**，发布走第 0 节流程。全量门禁最近一次：**PASS 12 / FAIL 0**（805s，输入指纹 b6148eea896e）。
+> 状态（2026-10-05 实测）：本地 `package.json` = **3.16.3**（代码提交 `f2b2a4f`）；npm 官方 registry 上 `latest` = **3.16.3**（`npm view dsh-mpkg-wallpaper version --registry=https://registry.npmjs.org`，发布后复核）；tag `v3.16.3` 已推；GitHub release 已建（<https://github.com/XHR666/dsh-mpkg-wallpaper/releases/tag/v3.16.3>）。全量门禁最近一次：**PASS 12 / FAIL 0**（805s，输入指纹 b6148eea896e）。3.16.2 未单独发版（其修复随 3.16.3 一起发布）。
 >
 > 状态（2026-09-23 12:50 +0800 实测）：本地 `package.json` = **3.13.3**（= 仓库 HEAD `784e2d5`）；
 > npm 官方 registry 上 `latest` = **3.13.3**（`npm view dsh-mpkg-wallpaper dist-tags --registry=https://registry.npmjs.org/`
