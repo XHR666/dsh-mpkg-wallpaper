@@ -81,6 +81,16 @@ const buildChain = (surfaceBlur, cardBlur) => {
   surface.__cs = surfaceBlur ? { backdropFilter: surfaceBlur } : {}
   body.appendChild(card); card.appendChild(mid); mid.appendChild(surface)
   registry.push(card, mid, surface)
+  /* 桩 DOM 没有 Element.matches ⇒ 垫一层最小实现：测试用 `__inPopSet` 显式声明"这个元素在弹层表面
+     集合里"（= 用户正看着的那块面板），属性选择器按属性判。生产代码只调 `p.matches(MPW_POP_TAG_SEL)`。 */
+  for (const el of [card, mid, surface]) {
+    el.matches = (sel) => {
+      const s2 = String(sel || '')
+      if (/JObwrW_panel|_menu|_popover|_denseList/.test(s2)) return !!el.__inPopSet
+      const m = /^\[([^\]=~^$|]+)\]$/.exec(s2.trim())
+      return m ? el.hasAttribute(m[1].trim()) : false
+    }
+  }
   return { card, mid, surface }
 }
 
@@ -90,10 +100,10 @@ ok('A1 mpwPopUntruncSync / 规则元素都在；规则必须带 !important（实
   && /popUntruncStyleEl\.textContent = "\[data-mpw-pop-untrunc\] \{ backdrop-filter: none !important; -webkit-backdrop-filter: none !important; \}"/.test(CLIENT))
 ok('A2 硬前提在源码里：表面 computed backdrop-filter 含 blur 才继续（与 mpwTagPopoverBg 同口径）',
   /indexOf\("blur"\) < 0\) continue;/.test(CLIENT))
-ok('A3 接线两处：prun（随突变重算）+ setupPopTagWatch 初始；且都在 mpwHeavyGate 闸门之后（不开新重活）',
-  (CLIENT.match(/mpwPopUntruncSync\(\); /g) || []).length >= 2
+ok('A3 接线：同步快路（新增子树当场判定，消灭"先白后变"）+ rAF 兜底（受 mpwHeavyGate 闸门）+ setup 初始',
+  CLIENT.includes('function mpwTagPopoverFast(records)') && CLIENT.includes('mpwTagPopoverFast(records)')
   && CLIENT.indexOf('mpwHeavyGate("popTag", prun)') >= 0
-  && CLIENT.indexOf('mpwHeavyGate("popTag", prun)') < CLIENT.indexOf('try { mpwPopUntruncSync(); } catch (e) {}'))
+  && (CLIENT.match(/mpwPopUntruncSync\(\); /g) || []).length >= 2)
 
 console.log('== B 组：行为 ==')
 reset()
@@ -175,9 +185,12 @@ console.log('\n== D 组：祖先自己是"有底的玻璃板" ⇒ 绝不动它�
   loadPlugin({ quiet: true, settings: { enabled: true, image: 'stub-wallpaper.png' }, search: '' })
   installShim()
   const { card, surface } = buildChain('blur(11px)', 'blur(14px)')
-  card.__cs.backgroundColor = 'rgba(255, 255, 255, 0.55)'       // 宿主输入框卡片那种"看得见的玻璃"
+  /* 祖先自己也在"弹层表面集合"里 = 用户正在看的那块面板（真机：子代理展开框 / 后台任务面板） */
+  card.className = 'JObwrW_panel'
+  card.__inPopSet = true                                        // 它自己就是"我们管的弹层表面"
+  card.__cs.backgroundColor = 'rgba(255, 255, 255, 0.55)'
   const n = globalThis.__mpwPopUntruncTest.sync()
-  ok('D1 有底玻璃祖先不被摘 blur（它是用户看得见的那层玻璃），也不打 data-mpw-pop-untrunc',
+  ok('D1 祖先自己是"我们管的弹层表面"（用户正看着的面板）⇒ 不摘它的 blur、不打 data-mpw-pop-untrunc',
     n >= 1000 && !card.hasAttribute('data-mpw-pop-untrunc'), 'n=' + n + ' untrunc=' + card.hasAttribute('data-mpw-pop-untrunc'))
   ok('D2 改为把**弹层自己**标记为"实底"（data-mpw-pop-trunc；宿主元素一个都不碰）',
     surface.hasAttribute('data-mpw-pop-trunc') && !surface.hasAttribute('data-mpw-pop-untrunc'), '')
@@ -185,9 +198,37 @@ console.log('\n== D 组：祖先自己是"有底的玻璃板" ⇒ 绝不动它�
   const n2 = (() => { surface.removeAttribute('data-mpw-pop-bg'); return globalThis.__mpwPopUntruncTest.sync() })()
   ok('D3 表面不再是弹层表面（标记被摘）⇒ 实底标记也清掉、返回值归零（可逆、不留残留）',
     !surface.hasAttribute('data-mpw-pop-trunc') && n2 === 0, 'n2=' + n2)
-  ok('D4 生产代码里"有底玻璃祖先"的判据在场（α ≥ 0.05）+ 实底规则用我们自己的标记属性（不碰宿主选择器）',
-    /if \(mpwColorAlpha\(acs\.backgroundColor\) >= 0\.05\) \{ blockedByGlass = true; break \}/.test(CLIENT)
+  ok('D4 生产代码里"祖先自己是弹层表面 + 有底"的判据在场 + 实底规则用我们自己的标记属性（不碰宿主选择器）',
+    /if \(mpwColorAlpha\(acs\.backgroundColor\) >= 0\.05 && ancestorIsSurface\) \{ blockedByGlass = true; break \}/.test(CLIENT)
+    && /ancestorIsSurface = p\.matches\(MPW_POP_TAG_SEL\)/.test(CLIENT)
     && /\[data-mpw-pop-trunc\] \{ background-color: color-mix\(in srgb, var\(--dsw-specific-sidebar-fill\) 88%/.test(CLIENT))
+  /* D5：**有底但不是弹层表面**的包装（真机：输入框卡片 uV2eYG_card）⇒ 允许摘它的 blur，换来弹层真模糊 */
+  {
+    const { card: card5, surface: surf5 } = buildChain('blur(11px)', 'blur(14px)')
+    card5.className = 'uV2eYG_card'
+    card5.__inPopSet = false                                     // 只是"挡在前面的包装"，不是面板
+    card5.__cs.backgroundColor = 'rgba(255, 255, 255, 0.55)'
+    const n5 = globalThis.__mpwPopUntruncTest.sync()
+    /* D6：摘掉之后祖先自己没有 blur 了 ⇒ 第二轮不许"找不到带 blur 的祖先"就把它当陈旧标记还原（真机抖动） */
+  {
+    const { card: c6, surface: s6 } = buildChain('blur(11px)', 'blur(14px)')
+    c6.className = 'uV2eYG_card'; c6.__inPopSet = false
+    c6.__cs.backgroundColor = 'rgba(255, 255, 255, 0.55)'
+    const n6a = globalThis.__mpwPopUntruncTest.sync()
+    c6.__cs.backdropFilter = 'none'          // 我们刚把它摘掉 ⇒ 下一轮读到的就是 none
+    const n6b = globalThis.__mpwPopUntruncTest.sync()
+    ok('D6 抖动修复：已经摘过、弹层还开着 ⇒ 下一轮保持（不许因为"祖先已无 blur"就还原再摘，来回抖）',
+      n6a === 1 && n6b === 1 && c6.hasAttribute('data-mpw-pop-untrunc'), 'n6a=' + n6a + ' n6b=' + n6b)
+    /* 弹层关掉（标记被摘）⇒ 祖先属性与规则一起还原 */
+    s6.removeAttribute('data-mpw-pop-bg')
+    const n6c = globalThis.__mpwPopUntruncTest.sync()
+    ok('D6b 弹层关 ⇒ 祖先属性摘除、规则元素撤走（宿主逐字还原）',
+      n6c === 0 && !c6.hasAttribute('data-mpw-pop-untrunc'), 'n6c=' + n6c)
+  }
+  ok('D5 有底但**不是**弹层表面的包装（真机：输入框卡片 uV2eYG_card）⇒ 摘它的 blur，弹层这才糊得到页面背后',
+      n5 === 1 && card5.hasAttribute('data-mpw-pop-untrunc') && !surf5.hasAttribute('data-mpw-pop-trunc'),
+      'n5=' + n5 + ' untrunc=' + card5.hasAttribute('data-mpw-pop-untrunc') + ' trunc=' + surf5.hasAttribute('data-mpw-pop-trunc'))
+  }
 }
 
 console.log(`\n===== popover-untrunc: ${pass} 通过 / ${fail} 失败 =====`)

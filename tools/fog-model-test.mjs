@@ -883,9 +883,10 @@ console.log('\n== H 组：无雾层 ⇒ 不给宿主叠 backdrop-filter（+ chro
     '')
   ok('H9b 变异自证：把"最外层"判据改坏（去掉祖先判定）⇒ 每个命中元素都会被标记（H9 的"只认标记"就退化成两层都刷）',
     (() => {
-      const m = mutant('rs-outer', 'for (let p = el.parentElement, i = 0; p && i < 40; p = p.parentElement, i++) { if (set.has(p)) { inner = true; break } }', 'inner = false;')
+      /* ②(2026-10-05) 锚点跟随重写后的实现：`hasMatchedAncestor()` 里的 `if (set.has(p)) return true` */
+      const m = mutant('rs-outer', 'for (let p = el.parentElement, i = 0; p && i < 40; p = p.parentElement, i++) { if (set.has(p)) return true }', 'return false;')
       const src2 = fs.readFileSync(m, 'utf8')
-      return !/if \(set\.has\(p\)\) \{ inner = true; break \}/.test(src2)
+      return !/if \(set\.has\(p\)\) return true/.test(src2)
     })(), '')
 }
 
