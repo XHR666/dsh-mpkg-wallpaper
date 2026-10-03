@@ -120,7 +120,9 @@ ok('B0 __mpwPopUntruncTest 出口就位', !!H && typeof H.sync === 'function' &&
   // 弹层关闭：表面摘除 ⇒ 属性与规则元素一起撤（逐字还原）
   surface.remove(); registry.splice(registry.indexOf(surface), 1)
   const n2 = H.sync()
-  ok('B2 弹层关闭 ⇒ 属性摘除 + 规则元素撤除（宿主逐字还原）', n2 === 0 && !card.hasAttribute('data-mpw-pop-untrunc') && !H.stylePresent(), 'n2=' + n2)
+  ok('B2 弹层关闭 ⇒ 属性**同步**摘除（视觉瞬时）', n2 === 0 && !card.hasAttribute('data-mpw-pop-untrunc'), 'n2=' + n2)
+  await new Promise((r) => setTimeout(r, 10))
+  ok('B2c 规则元素在下一拍撤走（撤除也瞬时：先注入禁过渡+保持 none，再摘规则）', !H.stylePresent() && !H.killPresent(), '')
 }
 {
   const { card, surface } = buildChain('blur(11px)', 'blur(14px)')
@@ -136,7 +138,7 @@ ok('B0 __mpwPopUntruncTest 出口就位', !!H && typeof H.sync === 'function' &&
   })()
   const n = H.sync()
   ok('B3 硬前提：表面没有 blur ⇒ 即使有截断祖先也不打标（唯一在册的表面无模糊 ⇒ 零目标、规则不落）',
-    n === 0 && !card2.hasAttribute('data-mpw-pop-untrunc') && !H.stylePresent(), 'n=' + n)
+    n === 0 && !card2.hasAttribute('data-mpw-pop-untrunc'), 'n=' + n)
 }
 {
   // 健康弹层：挂在 body 下（无截断祖先）⇒ 不打标
@@ -145,7 +147,8 @@ ok('B0 __mpwPopUntruncTest 出口就位', !!H && typeof H.sync === 'function' &&
   const s3 = globalThis.document.createElement('div'); s3.className = '_7KE1Ra_menu'; s3.setAttribute('data-mpw-pop-bg', ''); s3.__cs = { backdropFilter: 'blur(11px)' }
   body.appendChild(s3); registry.push(s3)
   const n = H.sync()
-  ok('B4 健康弹层（body 下，模型选择器形态）⇒ 不打标、规则元素不落', n === 0 && !H.stylePresent(), 'n=' + n)
+  ok('B4 健康弹层（body 下，模型选择器形态）⇒ 不打标、规则元素不落',
+    n === 0 && globalThis.document.querySelectorAll('[data-mpw-pop-untrunc]').length === 0 && !H.stylePresent(), 'n=' + n)
   // 只打第一个截断祖先：card 外再套一层截断者 ⇒ 只标近的那个
   const outer = globalThis.document.createElement('div'); outer.className = 'outer-blur'; outer.__cs = { backdropFilter: 'blur(6px)', backgroundColor: 'rgba(0, 0, 0, 0)' }
   const card = globalThis.document.createElement('div'); card.className = 'uV2eYG_card'; card.__cs = { backdropFilter: 'blur(14px)', backgroundColor: 'rgba(0, 0, 0, 0)' }
@@ -198,8 +201,9 @@ console.log('\n== D 组：祖先自己是"有底的玻璃板" ⇒ 绝不动它�
   const n2 = (() => { surface.removeAttribute('data-mpw-pop-bg'); return globalThis.__mpwPopUntruncTest.sync() })()
   ok('D3 表面不再是弹层表面（标记被摘）⇒ 实底标记也清掉、返回值归零（可逆、不留残留）',
     !surface.hasAttribute('data-mpw-pop-trunc') && n2 === 0, 'n2=' + n2)
-  ok('D4 生产代码里"祖先自己是弹层表面 + 有底"的判据在场 + 实底规则用我们自己的标记属性（不碰宿主选择器）',
-    /if \(mpwColorAlpha\(acs\.backgroundColor\) >= 0\.05 && ancestorIsSurface\) \{ blockedByGlass = true; break \}/.test(CLIENT)
+  ok('D4 生产代码里"只摘已知包装容器"的判据在场（祖先自己是弹层表面 ⇒ 保护；非 _card/composer 包装 ⇒ 一律不碰）+ 实底规则用我们自己的标记属性',
+    /if \(ancestorIsSurface\) \{ blockedByGlass = true; break \}/.test(CLIENT)
+    && /strippableWrap = \/\(_card\|composer\|overlayAnchor\|_seat\|_stack\)\/i/.test(CLIENT)
     && /ancestorIsSurface = p\.matches\(MPW_POP_TAG_SEL\)/.test(CLIENT)
     && /\[data-mpw-pop-trunc\] \{ background-color: color-mix\(in srgb, var\(--dsw-specific-sidebar-fill\) 88%/.test(CLIENT))
   /* D5：**有底但不是弹层表面**的包装（真机：输入框卡片 uV2eYG_card）⇒ 允许摘它的 blur，换来弹层真模糊 */
