@@ -131,7 +131,7 @@ git status --porcelain
 | 包内**不得**出现 | `*.bak*`（如 `lib/client.js.bak-20260907`）、`lib/liquid-glass/**`（10 文件，P-127 有意排除）、`tools/`、`docs/`、`screenshots/`、`dist/`、个人绝对路径、凭据字面量 |
 | bundle 产物 | `dist/dsh-mpkg-wallpaper.bundle.mjs`，字节数与 sha256 见 `tools/probe-out/bundle-manifest.json`（**本轮未重建**；`dist/` 不入库、不随 npm 包发布） |
 
-## 2. 发布命令（一行；**用户确认后**才执行）
+## 2. 发布命令（一行；**不可逆动作**：门禁全绿 + 明确批准后才执行）
 
 ```bash
 cd <仓库根> && npm publish --registry=https://registry.npmjs.org
@@ -142,6 +142,20 @@ cd <仓库根> && npm publish --registry=https://registry.npmjs.org
 - 包名 `dsh-mpkg-wallpaper` 是**非 scoped** 包 ⇒ 不需要 `--access public`。
 - 发布前 npm 会自动跑 `prepublishOnly`/`prepare`（本包**没有**这些脚本，`package.json` 里也无 `scripts` 段 ⇒ 发布=纯打包上传，不会触发构建）。
 - 不要加 `--tag`：默认 `latest` 就是本插件在 profile 里 `dsh plugin add dsh-mpkg-wallpaper` 解析的标签。
+
+### 2.1 发布文字纪律（**硬约束**，与 commit 同族）
+
+`gh release create` 的**标题与描述**、`git tag -a` 的说明、npm 说明、本文件里对外可见的段落，**只写客观技术描述**：
+
+- ❌ 不写「用户说 / 用户要求 / 用户实测 / 用户真机 / 用户反馈 / 用户原话 / 用户点名 / 您 / 你报的 / 你正在看的」这类表述，**不引用用户原话**，也不转述其主观描述。
+- ✅ 现象用**客观读数 + 可复现条件**表述。反例 → 正例：
+  `（…用户夸过的那几处玻璃…）` → `（…几处既有玻璃效果…）`；
+  `（这正是你报的那条）` → `（本版修复的目标）`。
+- ✅ 证据出处写文件/判据/提交号（`docs/PATCHES.md`、`tools/xxx-test.mjs`、提交哈希）。
+- 内部证据链（`docs/PATCHES.md` / `docs/ANIMATION-PERF.md` 等工作区文档）不受此限，可保留必要的原始记录。
+
+> 附：本机 `gh` 是 2.4.0，**没有 `gh release edit`** ⇒ 改已发布说明走 REST：
+> `gh api -X PATCH repos/<owner>/<repo>/releases/<id> --input payload.json`（`payload.json` = `{"body":"<全文>"}`；`<id>` 由 `gh api repos/<owner>/<repo>/releases/tags/<tag> -q .id` 取）。
 
 ## 3. 发布后验证
 
