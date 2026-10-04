@@ -742,6 +742,16 @@ node tools/scene-video-test.mjs || fail=1
 #   `lib/index.js` 换 scene 目录时真的调了清理 —— 并配**四个变异体各自必红**（去掉字节闸门 /
 #   去掉读前腾位置 / 去掉 TTL sweep / 删掉 index.js 的清理调用）。40 通过 / 0 失败。
 node tools/scene-video-cache-test.mjs || fail=1
+# ①(2026-10-04) **「只判不取」的 scene 视频 verdict**（对照上游同族 issue #136 的修法；对比报告
+#   ../docs/reverse/ELYSIA-COMPARE-ABSORB-20261004.md）。动机：`ensureSceneVideo` 是"判定 + 提取"
+#   一体的，而客户端卡片/清单阶段只问 `{has}`（lib/client.js 的 sceneVideoCheckUrl 只读 d.has）——
+#   本机实测 792MB 的容器全量扫描读 791.6MB / 446ms，而只读目录表 + 候选前缀的 verdict 读 **64KB /
+#   0.4ms**（~12000× 读量）。本判据钉住三条：① verdict 的"只判不取"契约（读量只含头+前缀）；
+#   ② **压缩条目**在索引先行口径下必须能被还原（头解析的条目 flags 恒 0、size 是存储长度 ⇒ 旧实现
+#   会把 LZ4 链条目当 raw 用；语料 0 命中，但这是构造性缺陷）；③ 接线/结构棘轮（路由先试 verdict、
+#   条目读取必须走 decodeStoredEntry）。含 1 个变异体（去掉压缩判定 ⇒ D3 必红）+ 可选语料段
+#   （verdict 与全量扫描判定一致、读量结构性上界）。15 通过 / 0 失败 / 无浏览器/无网络。
+node tools/scene-video-verdict-test.mjs || fail=1
 # ①(2026-09-23 静默失败审计 #3，../docs/SILENT-FAILURE-AUDIT-20260923.md §A-3 表 #3/#4) 上面两条门禁测的是
 #   "探测得对 / 缓存得对"，这一条测"探测或落盘**失败时不许说谎**"：`ensureSceneVideo` 改前把三种状态
 #   压成一个 `null` —— ② 两级探测都抛也写 `{hash:null}` 负缓存（/custom-scene-video-check 永久回
