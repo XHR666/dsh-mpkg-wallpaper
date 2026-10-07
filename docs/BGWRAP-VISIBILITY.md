@@ -212,3 +212,35 @@ node tools/bgwrap-visible-test.mjs --client <改动前的 client.js>   # 必须�
 如实报出（有源却没有画面），但如果将来确认存在"合法空清单"的壁纸，应当在清单层就把它标成"无可画内容"
 而不是放宽这里；③ 本测试是**源码切片 + 假 DOM**，没有跑真浏览器的像素级验证（真机像素判据在本机
 `llvmpipe` 下不可信，与本文档原有口径一致）。
+
+## 追加（2026-10-07 上游同族轮）：壁纸层挂在哪 —— 层宿主 `#mpw-layers`（macOS 可拖区）
+
+**上游同族缺陷**（`elysia395/dsh-wallpaper-engine` 的 #120/#121，v1.1.0 已修）：macOS 桌面端装上壁纸
+插件后，顶栏那一整条（含顶层标签条）的空白处**都拖不动窗口**，关掉插件立刻恢复。
+
+**机制**（不是猜测：宿主前端在 darwin 下有一条 `html[data-platform=darwin] body>:not(#root){-webkit-app-region:no-drag}`，
+而 Electron 对 `app-region: no-drag` 的语义是**几何挖除** —— "excluding a rectangular area from a draggable
+region"，与绘制顺序、`z-index`、`pointer-events` 都无关）。macOS 壳没有原生标题栏 ⇒ 窗口可拖几何**全部**
+来自 Web 前端的 `-webkit-app-region: drag`（只有宿主打了 `[data-window-drag]` 的那几行）。
+我们此前把两个**整屏**浮层直接挂在 `document.body` 上（`#mpw-bgWrap` 壁纸层、`#mpw-aqua-mask` 水雾遮罩，
+另有 `#mpw-clock` 与 `.mpw_mask` 弹窗遮罩走 portal 到 body）⇒ 它们都落在 `body>:not(#root)` 里 ⇒
+整屏矩形从可拖区被减掉 ⇒ 可拖区变空集，窗口拖不动。
+
+**修法**：所有整屏 / 可见浮层挂进一个**层宿主**容器 `#mpw-layers`（`lib/client.js` 的 `mpwLayerHost()`），
+容器本身是 `position:absolute; left:0; top:0; width:0; height:0`：
+
+| 要求 | 为什么 |
+| --- | --- |
+| 盒子必须 0×0 | 被 `no-drag` 挖掉的面积 = 容器自己的矩形 ⇒ 0 |
+| 子元素必须在容器里 | `-webkit-app-region` **不是继承属性**，而宿主那条规则只命中 `body` 的**直接子元素** ⇒ 子元素不再被命中 |
+| 不许 `z-index` | 非 auto 会自建层叠上下文 ⇒ `#mpw-bgWrap` 的 `z-index:-1` 会被困在容器里（就是 P0 那类"层被压住"的老问题） |
+| 不许 `transform`/`filter`/`backdrop-filter`/`contain`/`will-change` | 会变成 `position:fixed` 后代的 **containing block** ⇒ 整屏浮层按 0×0 的容器定位、直接看不见 |
+| 必须脱离文档流（`absolute`） | `static` 会变成 body 的 flex/grid 项（宿主 body 的 display 不在我们手里），`fixed` 会自建层叠上下文 |
+
+**判据**：`tools/wallpaper-lifecycle-test.mjs` 的 T 组（9 条：容器存在/复用、是 body 直接子元素、0×0 +
+absolute、无那六个属性、`data-plugin` 标记、壁纸层确实在容器里、四处接线、body 直挂只剩 0 尺寸工具节点、
+代码里一个 `-webkit-app-region` 都没有）+ 两条变异自证（容器退回整屏 fixed / 壁纸层退回直挂 body）。
+
+**诚实边界**：① 本仓**没有 macOS 环境**，上面是"机制 + 结构契约"级判据，**未做真机验证**；
+② 若宿主将来把那条 darwin 规则改成命中后代（或把 `-webkit-app-region` 改成继承），层宿主这一层保护
+就会失效 —— 那时候的红点会出现在 T 组之外的**真机**，判据本身看不出来（结构仍然正确）。

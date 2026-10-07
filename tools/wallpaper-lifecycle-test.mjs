@@ -86,9 +86,14 @@ function mkNode (tag, cls, opts) {
       toggle: (c, on) => { if (on === void 0) { set.has(c) ? set.delete(c) : set.add(c) } else if (on) set.add(c); else set.delete(c) },
     },
     setAttribute: (k, v) => attrs.set(String(k), String(v)),
-    getAttribute: (k) => (attrs.has(String(k)) ? attrs.get(String(k)) : null),
-    removeAttribute: (k) => attrs.delete(String(k)),
-    hasAttribute: (k) => attrs.has(String(k)),
+    /* ①(2026-10-07 上游同族轮) `class` 属性必须忠实反映 `classList`（真 DOM 里两者是同一个东西）：
+       否则 `[class*="sidebarCol"]` 这类选择器在这个世界里**恒不命中**，靠它选元素的判据会静默假绿
+       （本组 S 就是这么发现自己没测到东西的）。两边都写过的情形取**并集**（不丢任何一次写入）。 */
+    getAttribute: (k) => (String(k) === 'class'
+      ? ([Array.from(set).join(' '), attrs.get('class')].filter(Boolean).join(' ') || null)
+      : (attrs.has(String(k)) ? attrs.get(String(k)) : null)),
+    removeAttribute: (k) => { if (String(k) === 'class') set.clear(); attrs.delete(String(k)) },
+    hasAttribute: (k) => (String(k) === 'class' ? (set.size > 0 || attrs.has('class')) : attrs.has(String(k))),
     appendChild (c) { this.children.push(c); c.parentElement = this; return c },
     removeChild (c) { this.children = this.children.filter((x) => x !== c); return c },
     remove () { if (this.parentElement) this.parentElement.removeChild(this) },
@@ -212,10 +217,28 @@ function boot (opts = {}) {
   const video = reg(mkNode('video', 'mpw-bgVideo')); video.id = 'mpw-bgVideo'
   const frame = reg(mkNode('iframe', 'mpw-webFrame'))
   wrap.appendChild(img); wrap.appendChild(video); wrap.appendChild(frame)
-  doc.body.appendChild(wrap)
+  /* ①(2026-10-07 上游同族轮) 生产在 apply 期就建了层宿主（`#mpw-layers`：0×0 的 absolute 容器，
+     整屏浮层挂它而**不是** body —— 免得把 macOS 的窗口可拖区挖掉，见 lib/client.js 的 mpwLayerHost）。
+     桩世界在 boot 里重置过 body.children，所以这里按**同一条契约**重建一份，让生产后续的
+     `getElementById` 复用看到的就是它。 */
+  if (opts.noLayerHost) {
+    /* T 组专用：**不**预建层宿主 ⇒ 生产的 `mpwLayerHost()` 必须自己走一遍创建路径
+       （否则判据测到的是夹具的节点，变异改生产代码也拦不住 —— 这条是踩过的坑）。 */
+    doc.body.appendChild(wrap)
+  } else {
+    const layerHost = reg(mkNode('div', 'mpw-layers'))
+    layerHost.id = 'mpw-layers'
+    layerHost.style.cssText = 'position:absolute;left:0;top:0;width:0;height:0;'
+    layerHost.setAttribute('data-plugin', 'dsh-mpkg-wallpaper')
+    doc.body.appendChild(layerHost)
+    ids.set('mpw-layers', layerHost)
+    layerHost.appendChild(wrap)
+  }
   ids.set('mpw-bgWrap', wrap); ids.set('mpw-bgImg', img); ids.set('mpw-bgVideo', video)
   const origById = doc.getElementById
-  doc.getElementById = (id) => ids.get(String(id)) || origById(String(id))
+  /* ①(2026-10-07) 回退到"注册表里按 id 找"：生产里 `#mpw-layers`（层宿主）这类节点靠
+     `getElementById` 复用，桩若不认就会**每次新建一个** ⇒ 判据看到的结构与生产不一致。 */
+  doc.getElementById = (id) => ids.get(String(id)) || nodes.find((n) => String(n.id) === String(id)) || origById(String(id))
   const L = globalThis.__mpwLifecycleTest
   return { loaded, doc, L, reg, wrap, img, video, frame }
 }
@@ -986,6 +1009,94 @@ console.log('\n== R. NP-5 暂停持久化：刷新后保持暂停 + 不跑起播
 /* ══════════════════════════════════════════════════════════════════════════════════
    K. 变异自证
    ══════════════════════════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════════════════════════
+   S. ①(上游同族缺陷) dockkit「整屏面板」不再被左栏困住（宽面板算"开着的层"）
+   形态（上游报的那条真机症状）：右栏面板切到全屏时与对话窗口重叠。机制与左栏玻璃直接相关：
+   ① 左栏的 `backdrop-filter` 让它成为 `position:fixed` 后代的 **containing block** ⇒ 面板按左栏的
+      盒子定位（真机读数 {x:13,w:254} = 被压进左栏）；② 它同时给左栏建层叠上下文 ⇒ 我们自己钉的
+      `z-index:12`（dockkit 面板）连同面板一起被困在左栏 z-index:1 里面。
+   而那条路径的面板**没有 dialog 角色、也没有 overlay 类名** ⇒ 只认 MPW_LAYER_SEL 的判据对它
+   一条都不命中。本组钉住新增的判据：宽 ≥60% 视口的 dockkit 面板 = "开着的层"（玻璃让位 + 左栏抬升），
+   半屏/量不到视口宽时**不许**触发（常见态误伤比不修更糟）。
+   ══════════════════════════════════════════════════════════════════════════════════ */
+console.log('\n== S. ① 整屏 dockkit 面板：宽面板算"开着的层"（玻璃让位 + 左栏抬升）==')
+{
+  const { doc, L } = boot({ settings: {} })
+  const OLD_W = globalThis.innerWidth
+  globalThis.innerWidth = 1440
+  const side = mkNode('div', 'pI_x6G_sidebarCol', { rect: { x: 12, y: 12, width: 256, height: 876, top: 12, left: 12, right: 268, bottom: 888 } })
+  doc.body.appendChild(side)
+  const pane = mkNode('div', 'P3OORG_pane', { attrs: { 'data-dockkit-pane': '' }, __pos: 'fixed', rect: { x: 0, y: 0, width: 900, height: 880, top: 0, left: 0, right: 900, bottom: 880 } })
+  side.appendChild(pane)
+  ok('S1 宽 900/1440 = 62.5% 视口 ⇒ 判成"整屏面板"', L.isWidePanel(pane) === true)
+  ok('S2 整屏面板 ⇒ 左栏被打上 ' + L.layerHostAttr + '（玻璃规则让位 ⇒ 面板不再是 containing block）',
+    L.syncLayerHosts() && side.hasAttribute(L.layerHostAttr) === true)
+  ok('S2 面板自身也在祖先链上（同一趟标记）', pane.hasAttribute(L.layerHostAttr) === true)
+  L.sideLiftSync()
+  ok('S3 整屏面板 ⇒ 左栏抬升（面板随子树回到宿主为它设计的层）', side.hasAttribute('data-mpw-side-lift') === true)
+  /* 半屏：常见态，**不许**触发（否则等于天天摘左栏玻璃） */
+  pane.__rect = { x: 500, y: 0, width: 500, height: 880, top: 0, left: 500, right: 1000, bottom: 880 }
+  ok('S4 半屏 500/1440 = 34.7% ⇒ 不算整屏面板', L.isWidePanel(pane) === false)
+  L.syncLayerHosts(); L.sideLiftSync()
+  ok('S4 半屏 ⇒ 两个标记都摘掉（自愈，不粘住）',
+    side.hasAttribute(L.layerHostAttr) === false && side.hasAttribute('data-mpw-side-lift') === false)
+  /* 再回到全屏 ⇒ 标记回来（状态可逆，不是一次性的） */
+  pane.__rect = { x: 0, y: 0, width: 1100, height: 880, top: 0, left: 0, right: 1100, bottom: 880 }
+  L.syncLayerHosts(); L.sideLiftSync()
+  ok('S5 回到全屏 ⇒ 标记回来（可逆 + 幂等）', side.hasAttribute(L.layerHostAttr) === true && side.hasAttribute('data-mpw-side-lift') === true)
+  /* 量不到视口宽 ⇒ 不猜（宁可不抬，也不误摘玻璃） */
+  globalThis.innerWidth = 0
+  ok('S6 量不到视口宽（innerWidth=0）⇒ 不判成整屏面板（不猜）', L.isWidePanel(pane) === false)
+  globalThis.innerWidth = OLD_W
+  ok('S7 候选选择器用的是宿主**属性名**（data-dockkit-pane / -surface），不是哈希类名',
+    String(L.widePanelSel || '').indexOf('data-dockkit-pane') >= 0 && String(L.widePanelSel || '').indexOf('data-dockkit-surface') >= 0)
+  /* 玻璃规则的接线：标记必须真的能把左栏的 backdrop-filter 摘掉（否则标记只是记账） */
+  const srcS = fs.readFileSync(clientPath, 'utf8')
+  ok('S8 玻璃规则带 `:not([data-mpw-holds-layer])` 闸门（标记 = 真的摘掉左栏 backdrop-filter）',
+    /\[class\*="sidebarCol"\]:not\(\[data-sidebar-right-panel\]\):not\(\[data-mpw-holds-layer\]\)/.test(srcS)
+    || /\[class\*="sidebarCol"\]:not\(\[data-mpw-holds-layer\]\)/.test(srcS))
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════
+   T. ①(上游同族缺陷) macOS 拖拽区：整屏浮层不再直挂 body（层宿主 `#mpw-layers`）
+   上游症状：装了壁纸插件之后，macOS 桌面端顶栏那一整条（含顶层标签条）的空白处都**拖不动窗口**，
+   关掉插件立刻恢复。机制：宿主前端在 darwin 下有一条
+   `html[data-platform=darwin] body>:not(#root){-webkit-app-region:no-drag}`，而 Electron 对 `no-drag`
+   的语义是**几何挖除**（把这矩形从可拖区减掉，与绘制顺序/z-index/pointer-events 都无关）
+   ⇒ 我们直挂 body 的整屏浮层（壁纸层 / 遮罩 / 时钟）把可拖区减成了空集。
+   修法：所有整屏浮层挂进一个 **0×0 的 absolute 容器**（容器自己的盒子 0×0 ⇒ 挖掉面积 = 0；
+   子元素不在 `body>*` 集合里 ⇒ 宿主那条规则不再命中它们）。
+   本组钉住：容器契约（0×0 / absolute / 不建层叠上下文、不当 fixed 后代的 containing block）
+   + 四处接线 + "我们不跟宿主抢拖拽"。⚠ macOS 真机未验（本仓无 macOS 环境）⇒ 判据只到结构层。
+   ══════════════════════════════════════════════════════════════════════════════════ */
+console.log('\n== T. ① 层宿主：整屏浮层不直挂 body（macOS 可拖区不被挖空）==')
+{
+  /* 这组**不预建**层宿主（`noLayerHost`）⇒ `L.layerHost()` 走的是生产创建路径，变异改得动。 */
+  const { doc, L } = boot({ settings: {}, noLayerHost: true })
+  const h1 = L.layerHost()
+  const h2 = L.layerHost()
+  ok('T1 生产按需创建层宿主，且可复用（两次调用拿到同一节点，不会越挂越多）',
+    !!h1 && h1 === h2 && h1.id === 'mpw-layers', h1 ? String(h1.id) : '(null)')
+  ok('T1 层宿主是 body 的直接子元素（它自己的盒子 0×0 ⇒ 被挖掉的面积是 0）', !!h1 && h1.parentElement === doc.body)
+  ok('T2 容器盒子 0×0 + absolute（脱离文档流：不是 flex/grid 项、不占位）',
+    !!h1 && /position:absolute/.test(h1.style.cssText) && /width:0/.test(h1.style.cssText) && /height:0/.test(h1.style.cssText),
+    h1 ? h1.style.cssText : '(null)')
+  ok('T2 容器不建层叠上下文、也不当 fixed 后代的 containing block（z-index/transform/filter/backdrop-filter/contain/will-change/opacity/isolation 一个都没有）',
+    !!h1 && !/z-index|transform|filter|contain|will-change|opacity|isolation/i.test(h1.style.cssText), h1 ? h1.style.cssText : '(null)')
+  ok('T2 容器带 data-plugin 标记（我们自己的突变不再喂回自己的观察器）',
+    !!h1 && h1.getAttribute('data-plugin') === 'dsh-mpkg-wallpaper')
+  const srcT = fs.readFileSync(clientPath, 'utf8')
+  ok('T3 四处整屏浮层都走层宿主（壁纸层 / 时钟 / 水雾遮罩 / 弹窗 portal）',
+    /mpwLayerHost\(\)\.appendChild\(wrap\)/.test(srcT) && /mpwLayerHost\(\)\.appendChild\(clockEl\)/.test(srcT)
+    && /mpwLayerHost\(\)\.appendChild\(aquaMaskEl\)/.test(srcT) && /createPortal\(node, mpwLayerHost\(\)\)/.test(srcT))
+  ok('T3 body 直挂只剩 0 尺寸工具节点（整屏浮层一个都不许留）',
+    !/document\.body \|\| document\.documentElement\)\.appendChild\((wrap|clockEl|aquaMaskEl)\)/.test(srcT))
+  /* 只看**代码**（注释里会写 `-webkit-app-region` 解释机制，那是文档不是行为）。 */
+  const srcTNoComments = srcT.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+  ok('T4 不跟宿主抢窗口拖拽：代码里一个 `-webkit-app-region` 都没有（挖除是几何语义，写它抢不过）',
+    !/app-region/.test(srcTNoComments), (srcTNoComments.match(/app-region/g) || []).length + ' 处')
+}
+
 const MUTATIONS = [
   { id: 'switch-keeps-stale-weburl', expect: 'A', why: '换档补全退化（不再成套清空）⇒ 残留 webUrl 又能抢先武装（真机黑屏的直接成因）', mut: (s) => s.replace('if (hasImg && !hasWeb) { if (p.webUrl === void 0) p.webUrl = null; if (p.sceneKey === void 0) p.sceneKey = null }', '') },
   { id: 'pickmount-renderer-any-type', expect: 'B', why: '渲染器 URL 又在**任何**类型下都算 web（修前形态）⇒ mp4 档上的残留渲染器 URL 抢到挂载权（真机黑屏 + 破图图标）', mut: (s) => s.replace('if (!shapeMismatch && rendererUrl && (converted === "scene" || (!image && !converted))) return { mount: "web", reason: "scene-renderer" };', 'if (!shapeMismatch && rendererUrl) return { mount: "web", reason: "scene-renderer" };') },
@@ -1004,7 +1115,11 @@ const MUTATIONS = [
   /* C3 的两道防线（换档硬归零 + 早退收口）互为兜底：只拆一道仍然不红 = 设计如此；
      变异必须把两道一起退回（= 修前的完整形态）才算有分辨力。 */
   { id: 'np-paused-not-restored', expect: 'R', why: '刷新后不按持久化意图恢复（把它退回"内存态、刷新即播放"）⇒ 用户的暂停被换成播放', mut: (s) => s.replace('try { npApplyPersistedPause(s); } catch (e) {}', '') },
-  { id: 'np-paused-written-by-internal-state', expect: 'R', why: '内部状态也去写 npPaused（把"用户意图"和"我们的内部暂停"混在一起）⇒ 刷新后把内部状态当意图恢复', mut: (s) => s.replace('const userPaused = s.npPaused !== void 0 ? !!s.npPaused : DEFAULT_NP_PAUSED;', 'const userPaused = true;') },
+  /* ①(2026-10-07) 这条原来替换的是 `npApplyPersistedPause` 里的 `userPaused`，而 R 组夹具本身就是
+     `npPaused: true` ⇒ 替换后行为逐字段不变（R 一条都不红）。真正对应"内部状态混进用户意图"的
+     锚点是**唯一写入口**：让它忽略用户给的值（= 把我们的内部暂停当成用户意图写进去），
+     用户按了播放也写成暂停 ⇒ 刷新后又变暂停（R8 就是这条）。 */
+  { id: 'np-paused-written-by-internal-state', expect: 'R', why: '写入口把"我们的内部暂停"混进用户意图（忽略用户按的值、一律写成暂停）⇒ 刷新后把内部状态当意图恢复：用户按了播放，重开还是暂停', mut: (s) => s.replace('writeSection(Object.assign({}, s, { npPaused: now }), true);', 'writeSection(Object.assign({}, s, { npPaused: true }), true);') },
   { id: 'unmuted-before-gesture', expect: 'Q', why: '去掉"手势前恒 muted"（修前形态）⇒ 加载后若干秒自己从 muted 翻成可听（真机 48/48 拍的可听播放）', mut: (s) => s.replace('if (!npGestureSeen) return true;', '') },
   { id: 'link-off-freezes-whole-video', expect: 'Q', why: '联动关退回"整体暂停/禁用"（被用户判为 bug 的旧口径）⇒ 用户"关闭状态下暂停播放用不了"', mut: (s) => s.replace('} else if (vid && !link) {', '} else if (false) {') },
   { id: 'source-change-keeps-old-audio', expect: 'O', why: '换档硬归零与早退收口**一起**退回（修前形态）⇒ 上一张壁纸的 <audio> 继续放（用户："切掉了还在放他的声音"）', mut: (s) => s.replace('if (npSrcIdPrev !== null && idNow !== npSrcIdPrev) npAudioHardReset("source-changed:" + npSrcIdPrev + "->" + idNow);', '').replace('if (npAudio && (!npAudio.paused || npAudio.getAttribute("src"))) npAudioHardReset("no-scan-url");', '') },
@@ -1014,6 +1129,12 @@ const MUTATIONS = [
   /* C 的两道闸是**互为兜底**的（applyNowPlaying 那条跳过 + npPrimePlay 内部闸），任一条单独生效就够
      ⇒ 变异必须把两道一起拆掉才是"修前的完整形态"（否则拆一道仍然不红，那是设计如此，不是假绿）。 */
   { id: 'apply-prime-ignores-hidden', expect: 'N', why: 'applyNowPlaying 的补起播与 npPrimePlay 的内部闸**一起**退回（修前的完整形态）⇒ 被节流的延迟重放会在后台起播', mut: (s) => s.replace('if (vid.paused && !npPlayBlocked && !mpwHiddenAudioBlock()) npPrimePlay(vid);', 'if (vid.paused && !npPlayBlocked) npPrimePlay(vid);').replace('if (wallUserPaused || powPaused || npUserPausedOf(video) || npCardPaused || mpwHiddenAudioBlock()) {', 'if (wallUserPaused || powPaused || npUserPausedOf(video) || npCardPaused) {') },
+  /* ①(上游同族缺陷) 层宿主这条腿的两半各自承重：容器契约坏了 ⇒ 结构判据红；谁直挂 body ⇒ 接线判据红。 */
+  { id: 'layer-host-fullscreen-fixed', expect: 'T', why: '层宿主退回"整屏 fixed + z-index"⇒ 挖掉面积变回整屏（macOS 可拖区还是空集），而且自建层叠上下文会把壁纸层的 z-index:-1 困住', mut: (s) => s.replace('host.style.cssText = "position:absolute;left:0;top:0;width:0;height:0;";', 'host.style.cssText = "position:fixed;left:0;top:0;width:100%;height:100%;z-index:0;";') },
+  { id: 'bgwrap-direct-on-body', expect: 'T', why: '壁纸层又直挂 body（修前形态）⇒ macOS 顶栏可拖区被整片挖掉', mut: (s) => s.replace('mpwLayerHost().appendChild(wrap);', '(document.body || document.documentElement).appendChild(wrap);') },
+  /* ①(上游同族缺陷) 整屏 dockkit 面板这条腿的两半各自承重：拆掉"算层"或拆掉"抬升"都必须变红。 */
+  { id: 'wide-panel-not-a-layer', expect: 'S', why: '整屏 dockkit 面板不再算"开着的层"（退回只认 dialog/overlay 类名的形态）⇒ 左栏玻璃继续把它当 containing block + 层叠上下文困住（上游同族症状）', mut: (s) => s.replace('for (const el of Array.from(document.querySelectorAll(MPW_WIDE_PANEL_SEL))) { if (mpwIsWidePanel(el)) all.push(el) }', '') },
+  { id: 'wide-panel-no-side-lift', expect: 'S', why: '整屏面板不再抬升左栏（只摘玻璃）⇒ 面板的 z-index:12 仍被左栏 z-index:1 的层叠上下文困住（"重叠"这一半没修）', mut: (s) => s.replace('for (const p of Array.from(side.querySelectorAll(MPW_WIDE_PANEL_SEL))) {\n\t\t\t\t\t\t\tif (mpwIsWidePanel(p)) { want = true; break }\n\t\t\t\t\t\t}', '') },
   { id: 'pow-pause-hidden-default-false', expect: 'J', why: '切页暂停退回默认关（修前形态）⇒ 切到别的标签页声音继续', mut: (s) => s.replace('const DEFAULT_POW_PAUSE_HIDDEN = true;', 'const DEFAULT_POW_PAUSE_HIDDEN = false;') },
 ]
 
@@ -1034,7 +1155,10 @@ if (!NO_MUT) {
     for (const line of out.split('\n')) {
       const g = /^== ([A-Z])\./.exec(line.trim())
       if (g) group = g[1]
-      if (/^\s*✗/.test(line)) redGroups.add(group)
+      /* ①(2026-10-07) 只认 `ok()` 打出来的缩进 ✗（两空格）。结尾那句
+         `✗ 壁纸生命周期门禁未通过` 没有缩进，原来会被算到最后**一个组**头上 ⇒ 任何失败都会让
+         末尾那组假红，并使"期望末尾组变红"的变异假绿（本轮 S 组加在末尾时才暴露出来）。 */
+      if (/^ {2}✗/.test(line)) redGroups.add(group)
     }
     const hit = redGroups.has(m.expect)
     const exitOk = r.status !== 0

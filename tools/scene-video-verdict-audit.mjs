@@ -18,18 +18,27 @@
  *   node tools/scene-video-verdict-audit.mjs --roots 0923,1004
  */
 import { readFileSync, readdirSync, statSync, existsSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { createHash } from 'node:crypto'
-import { join, basename } from 'node:path'
+import { join, basename, resolve, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import {
   parsePkg, readPkgEntry, collectSceneVideoFiles, scanSceneVideo,
 } from '../lib/pkg-extract.js'
 
-const WS = process.env.MPW_WS || '/root/Desktop/DSHarea'
+/* ①(2026-10-07) 工作区根按**脚本位置**推导（`<工作区>/dsh-mpkg-wallpaper/tools/` ⇒ 上两级），
+   不再写死本机路径 —— 公开仓库里带操作环境路径既泄信息、也让这个工具换台机器就找不到语料
+   （跨平台静态门禁的 `host-workspace-path` 判据就是这么红起来的）。`MPW_WS` 仍可显式覆盖。 */
+const HERE = dirname(fileURLToPath(import.meta.url))
+const WS = process.env.MPW_WS || resolve(HERE, '..', '..')
 const argv = process.argv.slice(2)
 const argVal = (k, d = null) => { const i = argv.indexOf(k); return i >= 0 && argv[i + 1] ? argv[i + 1] : d }
 const ROOTS = (argVal('--roots', '0917,0923,dd,wallpaperE,1004')).split(',').map((s) => s.trim()).filter(Boolean)
 const SAMPLE = Number(argVal('--sample', '0')) || 0
-const OUT = argVal('--json', '/tmp/scene-video-verdict-audit.json')
+/* ①(2026-10-07) 默认输出路径走 `os.tmpdir()`（跨平台静态门禁 B1：`lib/**`、`tools/**` 里不许写死
+   `/tmp`/宿主绝对路径 —— 写死的话 Windows 上会落到一个不存在或权限不足的位置，而且临时目录是环境属性）。
+   仍在 `/tmp` 的机器上解析结果**逐字节相同**（Linux/macOS 的 os.tmpdir() 就是 /tmp）。 */
+const OUT = argVal('--json', join(tmpdir(), 'scene-video-verdict-audit.json'))
 const sha = (b) => (b && b.length ? createHash('sha256').update(b).digest('hex').slice(0, 32) : null)
 
 /* legacy 口径的选择规则（照 lib/index.js findSceneVideoInPkg，一字不差） */

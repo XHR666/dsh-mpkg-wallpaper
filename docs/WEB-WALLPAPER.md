@@ -849,3 +849,51 @@ userDirectoryFiles* 9 / Media*Listener 2 / PluginListener 2`（42 张）。本�
 `wallpaperAudioListener`（4 次 / 1 张：作者自己的回调函数名，写作
 `window.wallpaperRegisterAudioListener(wallpaperAudioListener)`）、
 `wallpaperSettings`（4 次 / 1 张：作者自建配置对象）、`__weh`（6 次 / 3 张：Vite/React 打包产物内部符号）。
+
+## 17. 帧级夺焦围栏：壁纸文档里的 `window.focus()` 不再抢走 DSH 的键盘焦点
+
+**症状（上游同族缺陷：`elysia395/dsh-wallpaper-engine` 的 #148/#149，v1.3.1 落围栏）**：播某些网页类
+壁纸时，DSH 自己的输入框 / 下拉框 / 账号菜单**每被点一次就失去焦点**（窗口仍在焦点、`relatedTarget`
+为 `null` ⇒ 焦点被搬进了**另一个文档**）。与点击位置无关，只有"必须持有键盘焦点才正常"的那类控件
+看得出来。
+
+**机制（三步，本插件的架构逐条对得上 —— 这是我们**同病**的判据，不是猜）**：
+
+| 步 | 我们的落点 | 触发 |
+| --- | --- | --- |
+| ① 壁纸层在宿主页里是**背景** | `.mpw-bgWrap`（`pointer-events:none`，鼠标事件归 DSH UI） | 常驻 |
+| ② 指针被转成帧内**合成事件** | 父页捕获相采样 → `op:"pointer"` → 帧内 shim `elementFromPoint` + `dispatchEvent`（`isTrusted:false`） | 交互注入期间，每次真实指针动作 |
+| ③ 作者在**捕获相 `mousedown`** 里调 `window.focus()` | 壁纸文档自己的脚本（作者为了在 WE 桌面模式下"让键盘有处可去"） | 作者页加载后 |
+
+⇒ 宿主里**任何位置**点一下，焦点就被搬进壁纸帧：DSH 的 composer / 下拉框当场丢焦点；而且我们自己的
+键盘注入（父页捕获相 `keydown` → `op:"key"`）也一起静默失效（父页收不到按键了）。围栏同时修好这两件事。
+
+**修法**：随 shim 一起、在**作者脚本之前**注入一段经典脚本（标记 `data-mpw-focus-guard="1"`，源码 =
+`mpwFocusGuardSource()`，注入顺序是**围栏 → shim → 种子**）：
+
+- 把**帧级** `window.focus` 换成"计数 + 吞掉"（先直接赋值；赋值不生效时用 `defineProperty` 兜底）；
+- **元素级** `HTMLElement.prototype.focus()` **原样放行** —— 壁纸自己的编辑框 / 模态输入框 / 软键盘照常工作；
+- **绝不抛**：每步各自 try/catch；没有可拦的 `focus` 时 `installed:false` 如实退场（不改作者页行为）；
+- 计数：`window.__mpwFocusGuard = { version, calls, blocked, allowed, installed, allow }`（帧内控制台自证）；
+- **第一次**真拦下时给父页一条 `{mpw:'mpw:web', op:'focus-guard', blocked, calls}` ⇒ 宿主 `/diag` 落一条
+  `focus-guard` 事件。不透明源下父页读不到帧内 `window`，这是唯一的宿主侧证据；
+- shim 的 `caps.focusGuard` 播报"围栏在位"（宿主可查 `__mpwShimCaps.focusGuard`）。
+
+**逃生门（不是用户开关）**：`window.__mpwFocusGuard.allow = true` 之后原函数照旧调用、`allowed` 累加 ——
+只给对比测试用。
+
+**只在 `?mpwshim=1` 那条路注入**（= auto / sandbox 档：帧是不透明源，键盘本来就走我们的合成通道）。
+**compat 档不注入**：那一档是用户显式要"等价裸 iframe"，作者页可能真的要拿键盘，围栏会让它静默失灵。
+
+**已知残留（不在围栏射程内，出现时别读成"围栏没生效"）**：
+
+- 跨源 `WindowProxy` 上的 `top.focus()` / `parent.focus()` 无法从壁纸文档侧改写（同源策略允许调用、
+  禁止改写）；要拦只能在宿主半拦，代价是与作者页来回拉锯，本仓不做。
+- **元素级** `el.focus()`（作者用定时器把自己的输入框顶到焦点，例如"编辑时保持软键盘"）**故意放行** ——
+  那是壁纸真正需要的焦点。这类"周期性夺焦"仍会把焦点搬进帧：此时 `__mpwFocusGuard.blocked` 不涨而
+  症状仍在，那就是这条残留。
+
+**判据**：`tools/web-wallpaper-test.mjs` 的 FG 组（29 条：注入顺序 / 运行时可拦 / 计数与一条回执 /
+逃生门 / 幂等 / 元素级放行 / 只读访问器兜底 / 无 `focus` 退场 / 裸上下文自足 / 客户端镜像的 op 名与
+`/diag` 落点 / `caps` 播报）。真机核对三处：壁纸帧控制台 `__mpwFocusGuard.blocked`、宿主页
+`__mpwShimCaps.focusGuard`、`/diag` 的 `focus-guard` 事件。

@@ -27,6 +27,7 @@ import {
   resolveWebFrameMode, webFrameSandboxAttr, webFramePlan, webFrameStatus,
   detectWebWallpaperKind, detectWallpaperDir, declaredTypeOf, declaredFileOf,
   isShimRequest, webPolicyFromQuery, buildSeedScript, rewriteWebEntryHtml, webAssetCorsHeaders,
+  FOCUS_GUARD_ATTR, mpwFocusGuardSource,
   listWallpaperFiles, readProjectJson,
   // ①(WP-1) 存储 facade / 宿主音量 / CSP / 源级改写
   WEB_STORE_ROUTE, WEB_STORE_QUERY_KEY, WEB_STORE_MAX_VALUE, WEB_STORE_MAX_KEYS, WEB_STORE_MAX_BYTES,
@@ -284,8 +285,14 @@ console.log('\n== C. shim 注入：作者脚本之前、幂等、转义 ==')
   const fragment = rewriteWebEntryHtml('<div>裸片段</div><script src="a.js"></script>')
   ok(/^<!DOCTYPE html>/.test(fragment) && fragment.indexOf(SHIM_ATTR) < fragment.indexOf('a.js'), 'C5 残缺 HTML → 整段包裹且顺序正确')
 
+  /* 注入的 script 数（每个都带 data-mpw-* 标记）；`<script` 的**开标签数**不能当基线 ——
+     被转义的作者/种子字面量里也有 `<script>` 文本，那是内容不是标签。 */
+  const injectedScripts = (h) => (String(h).match(/<script data-mpw-/g) || []).length
   const escaped = rewriteWebEntryHtml('<head></head>', { shimSource: 'var s = "</script><b>";' })
-  ok(escaped.indexOf('<\\/script') > 0 && escaped.split('</script>').length === 2, 'C6 shim 源码里的 </script> 被转义（不会提前闭合宿主 script 标签）')
+  /* ①(上游同族轮) 计数口径改成"真实闭合标签数 == 注入的 script 数"：注入体从 1 个变 2 个
+     （帧级夺焦围栏 + shim）时这条判据仍然钉住"注入体里的 </script> 一律转义"这件事本身。 */
+  ok(escaped.indexOf('<\\/script') > 0 && (escaped.match(/<\/script>/g) || []).length === injectedScripts(escaped),
+    'C6 shim 源码里的 </script> 被转义（真实闭合标签与注入的 script 一一对应）')
 
   const empty = rewriteWebEntryHtml('')
   ok(empty.indexOf(SHIM_ATTR) > 0, 'C6 空 HTML 也能得到可用外壳（不抛错）')
@@ -301,7 +308,7 @@ console.log('\n== C. shim 注入：作者脚本之前、幂等、转义 ==')
   const seed = buildSeedScript({ muted: false, speed: 2, paused: true }, 'sub/a.html')
   ok(/^window\.__mpwWebSeed=/.test(seed) && /"speed":2/.test(seed) && /"entry":"sub\/a.html"/.test(seed), 'C7 种子脚本内容正确')
   const nasty = rewriteWebEntryHtml('<head></head>', { seedScript: buildSeedScript({}, 'x"></script><script>bad()') })
-  ok((nasty.match(/<\/script>/g) || []).length === 2 && nasty.indexOf('<\\/script') > 0, 'C7 种子脚本里的 </script> 字面量被转义（真实闭合标签只有注入的两个）')
+  ok((nasty.match(/<\/script>/g) || []).length === injectedScripts(nasty) && nasty.indexOf('<\\/script') > 0, 'C7 种子脚本里的 </script> 字面量被转义（真实闭合标签只有注入的那几个）')
 
   // 宿主路由源码守卫：注入点必须在两条网页壁纸资源路由上（不是新增旁路）
   const host = read('lib/index.js')
@@ -964,6 +971,92 @@ console.log('\n== J. ①(WP-1) CSP 阻塞判定（照抄上游）+ HTML 源级 f
 }
 
 /* ══════════════════ F. 洁净度（无 GPL 代码 / 无跨仓硬路径） ══════════════════ */
+/* ══════════════════ FG. 帧级夺焦围栏（上游同族缺陷） ══════════════════ */
+console.log('\n== FG. 帧级夺焦围栏：壁纸文档里的 window.focus() 不再抢走 DSH 的键盘焦点 ==')
+{
+  const author = '<!DOCTYPE html><html><head><title>w</title><script src="app.js"></script></head><body></body></html>'
+  const out = rewriteWebEntryHtml(author)
+  ok(out.indexOf(FOCUS_GUARD_ATTR) > 0, 'FG1 入口 HTML 注入围栏（与 shim 同一处注入）')
+  ok(out.indexOf(FOCUS_GUARD_ATTR) < out.indexOf(SHIM_ATTR), 'FG1 围栏排在 shim **之前**（shim 自己抛错也不影响围栏在位）')
+  ok(out.indexOf(FOCUS_GUARD_ATTR) < out.indexOf('<title>') && out.indexOf(FOCUS_GUARD_ATTR) < out.indexOf('app.js'),
+    'FG1 围栏在作者 head/作者脚本之前（作者捕获相 mousedown 里调 window.focus() 时围栏已在位）')
+  const noGuard = rewriteWebEntryHtml(author, { focusGuard: false })
+  ok(noGuard.indexOf(FOCUS_GUARD_ATTR) < 0 && noGuard.indexOf(SHIM_ATTR) > 0, 'FG1 逐字节对照口 focusGuard:false：只少围栏、shim 照旧')
+  ok(new RegExp('<script [^>]*' + FOCUS_GUARD_ATTR + '="1"').test(out), 'FG1 围栏带标记属性 + 版本（幂等/顺序断言用）')
+
+  /* 运行时：在**假 window**（与 shim 同一个 vm 上下文）里跑生产注入体，不是副本 */
+  const mk = (kind) => {
+    const env = makeShimEnv()
+    const w = env.sandbox
+    const calls = []
+    if (kind === 'plain') w.focus = function () { calls.push(1) }
+    if (kind === 'accessor') { const raw = function () { calls.push(1) }; Object.defineProperty(w, 'focus', { configurable: true, get() { return raw } }) }
+    return { env, w, calls, posted: env.posted, install: () => vm.runInContext(mpwFocusGuardSource(), env.ctx, { filename: 'mpw-focus-guard.js' }) }
+  }
+  {
+    const t = mk('plain')
+    let threw = null
+    try { t.install() } catch (e) { threw = e }
+    ok(!threw && !!t.w.__mpwFocusGuard && t.w.__mpwFocusGuard.installed === true, 'FG2 围栏装好（installed=true）', threw ? String(threw && threw.message) : '')
+    eq(t.w.focus(), undefined, 'FG2 帧级 window.focus() 被吞掉（返回 undefined，不转交原函数）')
+    eq(t.calls.length, 0, 'FG2 原函数一次都没被调用（真拦下，不是只记账）')
+    eq(t.w.__mpwFocusGuard.blocked, 1, 'FG2 拦下计数 +1（帧内控制台可自证）')
+    const fb = t.posted.filter((p) => p.m.op === 'focus-guard')
+    eq(fb.length, 1, 'FG2 第一次拦下给父页一条回执（宿主 /diag 可见）')
+    eq(fb[0].m.mpw, SHIM_MSG, 'FG2 回执带协议标记（父页的来源校验才认它）')
+    eq(fb[0].m.blocked, 1, 'FG2 回执带拦下计数')
+    t.w.focus(); t.w.focus()
+    eq(t.posted.filter((p) => p.m.op === 'focus-guard').length, 1, 'FG2 回执只发一次（不刷父页日志）')
+    eq(t.w.__mpwFocusGuard.calls, 3, 'FG2 调用次数照记（calls 与 blocked 分开）')
+    t.w.__mpwFocusGuard.allow = true
+    t.w.focus()
+    eq(t.calls.length, 1, 'FG2 allow=true 是逃生门：原函数照旧调用')
+    eq(t.w.__mpwFocusGuard.allowed, 1, 'FG2 放行也计数（对比测试要能看出"围栏被打开过"）')
+    t.install()
+    eq(t.w.__mpwFocusGuard.calls, 4, 'FG2 重复注入幂等（计数不重置）')
+    const el = { focus() { return 'el-ok' } }
+    eq(el.focus(), 'el-ok', 'FG2 元素级 focus() 原样放行（壁纸自己的编辑框/软键盘照常工作）')
+    t.w.__mpwWebControl({ mpw: SHIM_MSG, op: 'ping' })
+    const pong = t.posted.filter((p) => p.m.op === 'pong').pop()
+    ok(!!pong && !!pong.m.caps && !!pong.m.caps.focusGuard && pong.m.caps.focusGuard.installed === true && pong.m.caps.focusGuard.version === 1,
+      'FG3 shim 的 caps 播报围栏在位（宿主侧 __mpwShimCaps.focusGuard 可查）')
+  }
+  {
+    const t = mk('accessor')
+    let threw = null
+    try { t.install() } catch (e) { threw = e }
+    ok(!threw && t.w.__mpwFocusGuard.installed === true && t.w.focus() === undefined && t.calls.length === 0,
+      'FG4 继承来的只读/访问器 focus：defineProperty 兜底仍拦得住')
+  }
+  {
+    const t = mk('none')                       // 桩上下文里本来就没有 focus
+    let threw = null
+    try { t.install() } catch (e) { threw = e }
+    ok(!threw && !!t.w.__mpwFocusGuard && t.w.__mpwFocusGuard.installed === false, 'FG4 没有可拦的 focus ⇒ 如实退场（不抛、installed=false）')
+  }
+  {
+    const sandbox = {}
+    sandbox.window = sandbox
+    sandbox.parent = { postMessage() {} }
+    let threw = null
+    try { vm.runInContext(mpwFocusGuardSource(), vm.createContext(sandbox)) } catch (e) { threw = e }
+    ok(!threw && !!sandbox.__mpwFocusGuard && sandbox.__mpwFocusGuard.calls === 0,
+      'FG5 注入体自足：只有 window 的裸上下文里也能跑（不引用模块作用域的名字，不抛）')
+    const src = mpwFocusGuardSource()
+    ok(!/\bimport\b|\bexport\b|\brequire\s*\(/.test(src), 'FG5 注入体不含 import/export/require（它被当经典脚本执行）')
+    ok(src.indexOf('__mpwFocusGuard') > 0 && src.indexOf('window') >= 0, 'FG5 注入体只碰 window 与标准内建')
+  }
+  {
+    const clientSrc = read('lib/client.js')
+    const opName = (/op:\s*"([a-z-]+)"/.exec(mpwFocusGuardSource()) || [])[1]
+    eq(opName, 'focus-guard', 'FG6 围栏回执的 op 名（客户端镜像要认同一个名字）')
+    ok(clientSrc.indexOf('d.op === "' + opName + '"') > 0, 'FG6 客户端镜像：' + opName + ' 回执被处理（两侧改名不同步 ⇒ 变红）')
+    ok(clientSrc.indexOf('mpwWebDiag("' + opName + '"') > 0, 'FG6 客户端镜像：回执落进 /diag（不透明源下父页读不到帧内 window ⇒ 只能靠这条）')
+    ok(clientSrc.indexOf('frame.__mpwFocusGuard') > 0, 'FG6 客户端镜像：计数挂在帧元素上（可查状态）')
+    ok(read('lib/index.js').indexOf('rewriteWebEntryHtml') > 0, 'FG6 宿主侧接线：注入仍走唯一入口 rewriteWebEntryHtml（不新增旁路）')
+  }
+}
+
 console.log('\n== F. 洁净度：插件不含任何 GPL 代码/派生物 ==')
 {
   const stripComments = (s) => s.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:])\/\/[^\n]*/g, '$1 ')

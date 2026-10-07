@@ -534,7 +534,13 @@ for (const f of FIXTURES) {
   fs.writeFileSync(path.join(TC_WEB_DIR, 'index.html'), '<!doctype html><title>tc</title>')
   const steamInstall = path.join(HOST_FX, '.local', 'share', 'Steam', 'steamapps', 'common', 'wallpaper_engine')
   fs.mkdirSync(path.join(steamInstall, 'projects', 'myprojects', 'tc-steam'), { recursive: true })
-  fs.writeFileSync(path.join(steamInstall, 'wallpaper32.exe'), 'fixture')
+  /* ①(2026-10-07 上游同族轮) 夹具用 **WE 2.x 的真实布局**：可执行文件在 `distribution/` 子目录下，
+     顶层只有 `ChromaAppInfo.xml`/`installer.exe`/`launcher.exe`。旧夹具把 exe 放在顶层 ⇒ 只探顶层的
+     判据在这份夹具上永远命中，**探测缺陷在门禁里是隐形的**。 */
+  fs.mkdirSync(path.join(steamInstall, 'distribution'), { recursive: true })
+  fs.writeFileSync(path.join(steamInstall, 'distribution', 'wallpaper32.exe'), 'fixture')
+  fs.writeFileSync(path.join(steamInstall, 'launcher.exe'), 'fixture')
+  fs.writeFileSync(path.join(steamInstall, 'ChromaAppInfo.xml'), '<chroma/>')
   fs.writeFileSync(path.join(steamInstall, 'projects', 'myprojects', 'tc-steam', 'project.json'),
     '{\n  "type": "video",\n  "title": "Steam 尾逗号夹具",\n  "file": "clip.mp4",\n}')
   fs.writeFileSync(path.join(steamInstall, 'projects', 'myprojects', 'tc-steam', 'clip.mp4'), 'FAKE-MP4')
@@ -561,7 +567,7 @@ for (const f of FIXTURES) {
       JSON.stringify({ strictOk, proj: proj && { title: proj.title, file: proj.file }, kind: det.kind, reason: det.reason }))
 
     /* ② 真路由 /steam-inventory（真 apply() + 桩 req/res；与 lib/index.js 的既有路由测试同一套桩） */
-    const { apply } = await import('file://' + IDX)
+    const { apply, weInstallMarker, WE_INSTALL_MARKERS } = await import('file://' + IDX)
     const routes = []
     apply({ webServer: { register: (r) => routes.push(r) }, loader: null, logger: { info() {}, warn() {}, error() {} } })
     const R = routes.find((x) => x.kind === 'exact' && x.path === '/api/mpkg-wallpaper/steam-inventory')
@@ -588,11 +594,43 @@ for (const f of FIXTURES) {
         console.log('  · S2-E2EH-STEAM SKIP —— `locateWallpaperEngine()` 命中的不是夹具安装目录（' + String(install)
           + '）⇒ 本机有别的候选，端到端这条按条件项跳过（不假绿）')
       } else {
-        check('S2-E2EH-STEAM', '真路由 `/steam-inventory`：尾逗号 project.json 的壁纸**列得进来**（title 读自该文件；改前 catch 跳过 ⇒ 少一条）',
+        check('S2-E2EH-STEAM', '真路由 `/steam-inventory`：**WE 2.x 的 distribution/ 布局**下安装目录仍被认出来（夹具顶层没有 exe），尾逗号 project.json 的壁纸**列得进来**（title 读自该文件；改前 catch 跳过 ⇒ 少一条）',
           body.status === 200 && !!hit && hit.type === 'video' && items.length === 2 && items.some((w) => w.title === 'Steam 健康夹具'),
           JSON.stringify({ status: body.status, installDir: install, items }))
       }
     }
+
+    /* ⑤(2026-10-07 上游同族轮) 安装标记的**纯函数**判据：`weInstallMarker(dir, exists)` 可注入 exists
+       ⇒ 在没装 WE 的机器上也能逐项钉住"两级 × 两个位宽"的清单与优先级（端到端那条只覆盖 32 位新布局）。 */
+    const fakeDir = path.join(HOST_FX, 'fake-we-install')
+    const probe = (rels) => {
+      const have = new Set(rels.map((r) => path.join(fakeDir, ...r.split('/'))))
+      return weInstallMarker(fakeDir, (p) => have.has(p))
+    }
+    check('S3-WEINST', '`WE_INSTALL_MARKERS` 是稳定清单（distribution/ 32+64 位在前，顶层旧布局在后）',
+      JSON.stringify(WE_INSTALL_MARKERS) === JSON.stringify(['distribution/wallpaper32.exe', 'distribution/wallpaper64.exe', 'wallpaper32.exe', 'wallpaper64.exe']),
+      JSON.stringify(WE_INSTALL_MARKERS))
+    check('S3-WEINST', 'WE 2.x 新布局：`distribution/wallpaper32.exe` 命中（旧判据只看顶层 ⇒ 判成未安装）',
+      probe(['distribution/wallpaper32.exe']) === 'distribution/wallpaper32.exe', String(probe(['distribution/wallpaper32.exe'])))
+    check('S3-WEINST', 'WE 2.x 新布局 64 位单装：`distribution/wallpaper64.exe` 也命中',
+      probe(['distribution/wallpaper64.exe']) === 'distribution/wallpaper64.exe', String(probe(['distribution/wallpaper64.exe'])))
+    check('S3-WEINST', '旧布局（顶层 exe）继续命中：升级判据不许把老安装判成未安装',
+      probe(['wallpaper32.exe']) === 'wallpaper32.exe' && probe(['wallpaper64.exe']) === 'wallpaper64.exe',
+      JSON.stringify([probe(['wallpaper32.exe']), probe(['wallpaper64.exe'])]))
+    check('S3-WEINST', '两种布局同时存在时取清单**靠前**的那个（结果稳定，与目录遍历顺序无关）',
+      probe(['wallpaper32.exe', 'distribution/wallpaper32.exe']) === 'distribution/wallpaper32.exe',
+      String(probe(['wallpaper32.exe', 'distribution/wallpaper32.exe'])))
+    check('S3-WEINST', '只有 `distribution/version.json`（弱标记）时**不**算已安装 —— 宁可不认，也不把无关目录当壁纸库',
+      probe(['distribution/version.json']) === null && probe(['ChromaAppInfo.xml', 'launcher.exe', 'installer.exe']) === null,
+      JSON.stringify([probe(['distribution/version.json']), probe(['ChromaAppInfo.xml', 'launcher.exe', 'installer.exe'])]))
+    let threwNull = null
+    try { threwNull = weInstallMarker(fakeDir, () => { throw new Error('exists 抛') }) } catch (e) { threwNull = 'THREW:' + String(e && e.message || e) }
+    check('S3-WEINST', '注入的 exists 抛异常时返回 null（判据不许把宿主拖崩）', threwNull === null, String(threwNull))
+    const idxSrcW = fs.readFileSync(IDX, 'utf8')
+    check('S3-WEINST', '接线：`locateWallpaperEngine()` 两处判据都走 `weInstallMarker`（Steam 库 + 备用目录），单文件旧探针 0 残留',
+      /if \(weInstallMarker\(dir\)\) return dir;/.test(idxSrcW) && /return weInstallMarker\(alt\) \? alt : null;/.test(idxSrcW)
+        && !/existsSync\(join\(dir, 'wallpaper32\.exe'\)\)/.test(idxSrcW),
+      JSON.stringify({ steam: /if \(weInstallMarker\(dir\)\) return dir;/.test(idxSrcW), alt: /return weInstallMarker\(alt\) \? alt : null;/.test(idxSrcW) }))
   } catch (e) {
     check('S2-E2EH-WW', '宿主侧真实现端到端（尾逗号 project.json）', false, String((e && e.message) || e))
   } finally {
