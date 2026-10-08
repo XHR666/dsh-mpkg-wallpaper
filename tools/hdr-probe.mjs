@@ -75,7 +75,8 @@ const TARGET = withExtra(TARGET0)
 //   用来把"背后有内容"这个前提补齐；它同时会打印它自己用了什么手段（可审计）。
 const FORCE_WALL = argv.includes('--force-wall')
 // --force-chrome 探针侧兜底（可审计）：
-//   ① 无会话时宿主给 header 加 wSkVaW_headerHidden（rect=0）⇒ 磨砂/描边没有尺寸可测；
+//   ① 无会话时宿主给 header 加 wSkVaW_headerHidden（0.1.x）/ wSkVaW_headerBlank + wSkVaW_headerSessionless
+//      （0.2.0-rc.2 实测，rect 很矮甚至 0）⇒ 磨砂/描边没有尺寸可测；
 //      这里只**显示**它（不动任何颜色/边框/token）。
 //   ② 本机无会话 ⇒ 宿主不渲染右侧 TurnNavigator rail（.eGxaPq_*）⇒ 用**真实类名复刻节点**
 //      插进页面，让宿主 CSS 自己命中它（"条看不见"到底是不是我们弄的，只能这样量）。
@@ -273,7 +274,9 @@ print(json.dumps({"box":list(box),"meanAbsDiff":round(mean,3),"maxDiff":mx,"chan
 // ---------- 主流程 ----------
 const { firefox } = await loadPlaywright()
 const cookie = readCookie()
-const browser = await firefox.launch({ headless: !HEADED, firefoxUserPrefs: withAudioMute({ 'gfx.webrender.all': true } })
+/* ①(2026-10-09) 补上缺失的右括号：这一行在 HEAD 上就是坏的（`node --check tools/hdr-probe.mjs`
+   直接 SyntaxError ⇒ 这个探针根本跑不起来；顺手修掉，不改任何行为。 */
+const browser = await firefox.launch({ headless: !HEADED, firefoxUserPrefs: withAudioMute({ 'gfx.webrender.all': true }) })
 const ctx = await browser.newContext({ viewport: { width: 1292, height: 810 }, deviceScaleFactor: 1 })
 await ctx.addCookies([{ name: cookie.name, value: cookie.value, domain: '127.0.0.1', path: '/', httpOnly: true, sameSite: 'Strict' }])
 const page = await ctx.newPage()
@@ -327,10 +330,10 @@ if (FORCE_CHROME) {
   forceChromeApplied = await page.evaluate(() => {
     const out = {}
     const st = document.createElement('style'); st.id = 'mpw-probe-forcechrome'
-    st.textContent = '.wSkVaW_headerHidden{visibility:visible !important;opacity:1 !important;display:flex !important;height:56px !important;min-height:56px !important;width:100% !important}'
+    st.textContent = '.wSkVaW_headerHidden,.wSkVaW_headerBlank,.wSkVaW_headerSessionless{visibility:visible !important;opacity:1 !important;display:flex !important;height:56px !important;min-height:56px !important;width:100% !important}'
     document.head.appendChild(st)
     const h = document.querySelector('.wSkVaW_header') || document.querySelector('header')
-    if (h) { try { h.classList.remove('wSkVaW_headerHidden') } catch {} }
+    if (h) { try { h.classList.remove('wSkVaW_headerHidden', 'wSkVaW_headerBlank', 'wSkVaW_headerSessionless') } catch {} }
     out.header = h ? JSON.stringify(h.getBoundingClientRect()) : 'no header'
     // rail 复刻：类名与层级按真机 diag（.eGxaPq_frame > .eGxaPq_rail > .eGxaPq_mark/markUnloaded/markPreview/markActive）
     if (!document.querySelector('.eGxaPq_mark')) {
