@@ -126,6 +126,14 @@ ok('M2 CSS 兜底把 material 家族排除在我们的兜底底之外（:not([da
 ok('M3 Token 用量 / 会话统计（role=dialog）仍走宿主面板白底，不被 pop-bg/trunc 接管',
   /\[role="dialog"\][^{]*\{[^}]*--mpw-surface-panel/.test(CLIENT) || CLIENT.includes('--mpw-surface-panel'))
 
+/* ①(2026-10-09 DSH 0.2.0) E/I 的"不许改坏"钉子：用户明确说下面两块现在是**想要的效果**，
+   所以我们**一个字符都不许碰**（今天事实上就是 0 命中，这两条断言把它钉死；将来真要接管
+   必须先删掉断言并写明理由 —— 让"改坏"必须是一次显式决定，而不是顺手）。 */
+ok('M4 目标条（nLMEza_bar）不在我们的任何 CSS/JS 里（用户说它现在就是要的效果）',
+  !/nLMEza/.test(CLIENT))
+ok('M5 Token 用量 / 会话统计（bRhRbq_panel）同样不被我们接管（走宿主自己的白底 + blur40）',
+  !/bRhRbq/.test(CLIENT))
+
 ok('A7 提示气泡不接管底色（深底浅字的宿主气泡：我们压上去就成白字看不清）',
   /el.getAttribute\("role"\) === "tooltip"/.test(CLIENT))
 ok('A8 会话里掉帧：快路不再夹带全文档扫描（mpwSideLiftSync 只在节流的重活路径里）',
