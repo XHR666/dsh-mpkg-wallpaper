@@ -300,14 +300,19 @@ console.log('\n== E. 金丝雀：我们依赖的 DOM 锚点是否还在"已装�
     const blob = files.map((f) => fs.readFileSync(path.join(libDir, f), 'utf8')).join('\n');
     ok('better-sidebar ' + ver + ' 产物可读（' + files.length + ' 个 js）', files.length > 0);
     // 我们 bsCompat 的作用域锚点：根节点属性（0.19.x：src/client/index.tsx 里 setAttribute 到 body 下的 host）
-    const NEED = ['data-dsh-better-sidebar', '_panel', '_bottomPanel', '_pane', '_tabBar', '_terminalWrap', '_editorHeader', '_browserBar'];
+    const NEED = ['data-dsh-better-sidebar', '_panel', '_bottomPanel', '_pane', '_tabBar', '_editorHeader', '_browserBar'];
     for (const tok of NEED) {
       const n = blob.split(tok).length - 1;
       if (n > 0) ok('锚点仍在: ' + tok, true, '×' + n);
       else bad('锚点消失: ' + tok + '（我们 bsCompat 的规则在该版本上会静默失效，需更新 docs/BETTER-SIDEBAR-COMPAT.md 与选择器）');
     }
     // 已放弃的锚点（0.19 删除浮窗/添加栏）：允许为 0，但必须确认"不是我们唯一的锚点"
-    const GONE_OK = ['data-dsh-float-window', '_floatWindow', '_addBar', '_addButton'];
+    const GONE_OK = ['data-dsh-float-window', '_floatWindow', '_addBar', '_addButton',
+      /* ①(2026-10-09 better-sidebar 0.24.1) `_terminalWrap` 该类已从产物里消失（188 个 class 映射键里
+         只剩 terminalRetry / SyUHSa_terminal 图标类）；终端内容改落通用 `_paneContent`，而我们的
+         "面板表面"三条规则本就含 `[class*="_pane"]:not([class*="_panel"])` ⇒ 意图仍覆盖，
+         旧的 `_terminalWrap` 选择器已从 lib/client.js 删除（留着是死规则）。依据：该版本产物实测。 */
+      '_terminalWrap'];
     const goneNow = GONE_OK.filter((t) => !blob.includes(t));
     console.log('  · 该版本已无（预期，规则仅为旧版保留）: ' + (goneNow.join(' ') || '（无）'));
     ok('作用域锚点与面板类名锚点都不为空（不是"全都消失"的假绿）',
