@@ -111,6 +111,21 @@ ok('A6 反自激②：兜底底标记把理由写进属性值、复核只走结�
   CLIENT.includes('const reason = el.getAttribute("data-mpw-pop-bg");')
   && CLIENT.includes('if (reason === "empty") { need = !mpwPopHasPaintedAncestor(el); why = "empty" }')
   && CLIENT.includes('else if (reason === "painted") { need = mpwPopIsFloating(el); why = "painted" }'))
+/* ①(2026-10-09 DSH 0.2.0) 宿主新菜单自带**内层 material 底**（._material_ri079_21，58% + 自家 blur40）：
+   我们再垫一层自己的 58% ⇒ 叠成 ≈82% 近白（真机："白、没模糊"）。以下三条是**不许改坏**的护栏：
+   ① 判据必须存在（属性优先，宿主声明 data-menu-material 就撤我们的底）；
+   ② CSS 兜底不许把 material 家族再刷上我们的表面 token（防"表面先插入那一帧"）；
+   ③ Token 用量 / 会话统计（bRhRbq_panel，role=dialog）维持宿主白底：走 --mpw-surface-panel，
+      不许被 pop-bg / trunc 那两条接管（用户明确说这两块现在是正常效果）。 */
+ok('M1 宿主 material 菜单不再叠我们的底（data-menu-material 判据在位 + sticky 复核只走结构判据）',
+  CLIENT.includes('data-menu-material') && CLIENT.includes('mpwPopHostMaterial')
+  && CLIENT.includes('if (el.hasAttribute && el.hasAttribute("data-menu-material")) { need = false; why = "host-material" }'))
+ok('M2 CSS 兜底把 material 家族排除在我们的兜底底之外（:not([data-menu-material])）',
+  CLIENT.includes('[data-mpw-pop-bg]:not([data-menu-material])')
+  && CLIENT.includes('[data-ds-dark-theme] [data-mpw-pop-bg]:not([data-menu-material])'))
+ok('M3 Token 用量 / 会话统计（role=dialog）仍走宿主面板白底，不被 pop-bg/trunc 接管',
+  /\[role="dialog"\][^{]*\{[^}]*--mpw-surface-panel/.test(CLIENT) || CLIENT.includes('--mpw-surface-panel'))
+
 ok('A7 提示气泡不接管底色（深底浅字的宿主气泡：我们压上去就成白字看不清）',
   /el.getAttribute\("role"\) === "tooltip"/.test(CLIENT))
 ok('A8 会话里掉帧：快路不再夹带全文档扫描（mpwSideLiftSync 只在节流的重活路径里）',
