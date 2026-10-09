@@ -391,6 +391,21 @@ const STEP_OPEN_SUBAGENT = () => {
  *  filter / opacity<1 / mask / contain:paint / mix-blend-mode）以及它是不是我们的规则画的。
  *  目的：0.2.0 里宿主把菜单外壳写成 `isolation:isolate`，子层 `._material_*` 的 blur(40px)
  *  只能采样外壳内部 ⇒ 看起来"完全没模糊"；我们要知道每一处到底卡在哪一层。 */
+/** 内层容器取证：某元素 + 它的子节点（≤2 层）各自画了什么底/模糊，以及我们有没有命中它 */
+const STEP_INNER = (sel) => {
+  const P = globalThis.__sp
+  const el = document.querySelector(sel)
+  if (!el) return { sel, missing: true }
+  const rows = []
+  const walk = (e, d) => {
+    if (d > 2 || rows.length > 24) return
+    rows.push(Object.assign(P.facts(e), { depth: d }))
+    for (const c of Array.from(e.children)) walk(c, d + 1)
+  }
+  walk(el, 0)
+  return { sel, self: P.facts(el), rows }
+}
+
 const STEP_BD_CHAIN = (sel) => {
   const P = globalThis.__sp
   const el = document.querySelector(sel)
@@ -536,6 +551,57 @@ const STEP_CLICK_OPENER = (plan) => {
   return null
 }
 
+/** 确定性抓取：点开某个入口 → 等目标元素出现 → 抓它和内层（≤2 层）的背景/模糊 */
+const STEP_OPEN_AND_CAPTURE = async (plan) => {
+  const P = globalThis.__sp
+  const out = { plan, steps: [] }
+  for (const step of plan) {
+    if (step.click) {
+      const el = step.click.aria ? document.querySelector('[aria-label="' + step.click.aria + '"]') : P.byText(step.click.text)
+      if (!el) { out.steps.push({ click: step.click, missing: true }); continue }
+      let t = el
+      for (let i = 0; i < 3 && t && t.tagName !== 'BUTTON' && t.getAttribute('role') !== 'button'; i++) t = t.parentElement
+      try { (t || el).click() } catch (e) { out.steps.push({ click: step.click, err: String(e && e.message || e).slice(0, 80) }); continue }
+      out.steps.push({ click: step.click, clicked: true })
+    }
+    if (step.wait) {
+      const t0 = Date.now()
+      let ok = false
+      while (Date.now() - t0 < (step.timeout || 6000)) {
+        if (document.querySelector(step.wait)) { ok = true; break }
+        await new Promise((r) => setTimeout(r, 120))
+      }
+      out.steps.push({ wait: step.wait, ok, ms: Date.now() - t0 })
+      if (!ok) continue
+    }
+    if (step.capture) {
+      const el = document.querySelector(step.capture)
+      out.steps.push({ capture: step.capture, found: !!el, data: el ? (function () {
+        const rows = []
+        const walk = (e, d) => { if (d > 2 || rows.length > 26) return; rows.push(Object.assign(P.facts(e), { depth: d })); for (const c of Array.from(e.children)) walk(c, d + 1) }
+        walk(el, 0)
+        return { self: P.facts(el), rows }
+      })() : null })
+    }
+    if (step.escape) { try { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })) } catch (e) { /* 忽略 */ } await new Promise((r) => setTimeout(r, 400)) }
+  }
+  return out
+}
+
+const STEP_CSS_REV = () => {
+  let text = ''
+  try { for (const st of Array.from(document.styleSheets)) { try { for (const r of Array.from(st.cssRules || [])) text += r.cssText } catch (e) { /* 跨域表跳过 */ } } } catch (e) { /* 忽略 */ }
+  const has = (n) => text.indexOf(n) >= 0
+  return {
+    bytes: text.length,
+    sessionStatsUsage: has('data-session-stats-usage'),
+    sessionStatsDetails: has('data-session-stats-details'),
+    teamPanel: has('data-team-panel'),
+    rightbarParked: has('data-mpw-rightbar-parked'),
+    hdrBlank: has('data-mpw-hdr-blank'),
+  }
+}
+
 const STEP_NEW_POPOVERS = () => globalThis.__sp.overview() && (() => {
   const P = globalThis.__sp
   const roots = Array.from(document.querySelectorAll('body > *')).filter(P.vis).filter((e) => { const r = e.getBoundingClientRect(); return r.width > 80 && r.height > 40 })
@@ -609,6 +675,8 @@ try {
 
   /* ①(2026-10-09) 必须落到**有内容的会话**：0.2.0 的用量条 / 权限选择器 / 子智能体入口只在有内容的会话里渲染
      （空会话里 `[data-composer-card]` 也在 ⇒ 只按 composer 判断会误判成"已就绪"） */
+  result.cssRev = await page.evaluate(STEP_CSS_REV)
+  console.log('· 运行中的 CSS 是否含最新规则：' + JSON.stringify(result.cssRev))
   result.convStates = []
   try { await page.waitForSelector('[data-row-key^="session:"]', { timeout: 25000 }) } catch (e) { result.rowsMissing = true }
   await page.waitForTimeout(800)
@@ -715,6 +783,22 @@ try {
     try { await page.screenshot({ path: path.join(OUTDIR, 'shot-020-newsession.png') }) } catch (e) { /* 忽略 */ }
     console.log('· 新会话标题栏：blankAttr=' + (result.headerBlank && result.headerBlank.blankAttr) + ' frostEl=' + (result.headerBlank && result.headerBlank.frostEl) + ' bg=' + (result.headerBlank && result.headerBlank.bg) + ' bf=' + (result.headerBlank && result.headerBlank.bf))
   } catch (e) { result.newSessionErr = String((e && e.message) || e).slice(0, 160) }
+  /* ①(2026-10-10 第四批真机) 确定性抓取：智能体团队 / 会话统计 / Token 用量 / 模型选择器内层 */
+  try {
+    result.innerCapture = await page.evaluate(STEP_OPEN_AND_CAPTURE, [
+      { click: { aria: '智能体团队' }, wait: '[data-team-panel]', capture: '[data-team-panel]', escape: true },
+      { click: { text: 'tok/s|缓存命中|性能与用量' }, wait: '[data-session-stats-usage], [data-session-stats-details], [class*="bRhRbq_panel"]', capture: 'dl[data-session-stats-usage]', escape: true },
+      { click: { text: 'tok/s|缓存命中|性能与用量' }, wait: '[data-session-stats-details], [class*="bRhRbq_panel"]', capture: 'dl[data-session-stats-details]', escape: true },
+      { click: { text: 'DeepSeek|V4|模型' }, wait: '[data-menu-material]', capture: '[data-menu-material]', escape: true },
+    ])
+    for (const st of (result.innerCapture.steps || [])) {
+      if (st.capture && st.data) {
+        const sf = st.data.self || {}
+        console.log('· capture ' + st.capture + ' → bg=' + String(sf.bg).slice(0, 30) + ' bf=' + sf.bf)
+        for (const r of (st.data.rows || []).slice(1, 6)) console.log('     d' + r.depth + ' ' + r.tag + '.' + String(r.cls).slice(0, 28) + ' bg=' + String(r.bg).slice(0, 28) + ' bf=' + String(r.bf).slice(0, 18))
+      } else console.log('· capture ' + (st.capture || JSON.stringify(st)) + ' 未成功')
+    }
+  } catch (e) { result.innerCaptureErr = String((e && e.message) || e).slice(0, 160) }
   /* ①(2026-10-09 第三批真机) 模糊死因：逐表面看"第一个 backdrop root 是谁" */
   result.bdChains = {}
   result.bdChains.triggerMenu = await page.evaluate(STEP_BD_CHAIN, '[data-trigger-menu], [class*="_3e4SsG_menu"]')
@@ -754,6 +838,15 @@ try {
           tokenPanel: await page.evaluate(STEP_BD_CHAIN, '[class*="bRhRbq_panel"]'),
         }
       } catch (e) { after.bdErr = String((e && e.message) || e).slice(0, 120) }
+      try {
+        after.inner = {
+          statsUsage: await page.evaluate(STEP_INNER, 'dl[data-session-stats-usage], [data-session-stats-usage]'),
+          statsDetails: await page.evaluate(STEP_INNER, 'dl[data-session-stats-details], [data-session-stats-details]'),
+          teamPanel: await page.evaluate(STEP_INNER, '[data-team-panel]'),
+          teamBody: await page.evaluate(STEP_INNER, '[class*="VoX2oq_body"]'),
+          popoverSurface: await page.evaluate(STEP_INNER, '[data-menu-material], [data-trigger-menu], [role="menu"], [class*="_menu_"]'),
+        }
+      } catch (e) { after.innerErr = String((e && e.message) || e).slice(0, 120) }
       result.opened[name] = { clicked, after }
       console.log('· ' + name + '：' + (clicked ? ('点了 ' + clicked.via) : '没找到可点的入口') + (after && after.popovers ? ('；浮层 ' + after.popovers.length + ' 个') : ''))
     } catch (e) { result.opened[name] = { err: String((e && e.message) || e).slice(0, 200) } }
