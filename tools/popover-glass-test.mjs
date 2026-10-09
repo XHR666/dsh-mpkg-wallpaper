@@ -135,10 +135,17 @@ ok('M4 目标条（nLMEza_bar）不在我们的任何 CSS/JS 里（用户说它�
    ⇒ 这是**显式决定**要接管：真机读数原本是 bg=rgb(255,255,255)（不透明）⇒ 宿主自带 blur(40px)
    一点都看不见；现在换成霜化底（--mpw-surface-panel-frost 80%）+ 常量 blur(11px)。
    断言随之改向：钉**新**行为（这两块必须走霜化表面），而不是"零接管"。 */
-ok('M5 Token 用量 / 会话统计（bRhRbq_panel）按用户要求走霜化表面（80% + blur(11px)，不再是纯白不透明）',
-  CLIENT.includes('[data-session-stats-usage]') && CLIENT.includes('[data-session-stats-details]')
-  && CLIENT.includes('[class*="bRhRbq_panel"]')
-  && /\[class\*="bRhRbq_panel"\][\s\S]{0,300}--mpw-surface-panel-frost/.test(CLIENT))
+/* ②(2026-10-10 第四批真机) 用户报"会话统计 / Token 用量弹框里的 grid 容器是纯白、没有模糊"。
+   真机 + 宿主 CSS 定案：`dl.bRhRbq_details` 与 `._7KE1Ra_cell/_option/_groups` 在宿主里全是
+   `background:0 0`（自己不画底）⇒ 白是**我们叠出来的**：面板已经 80% 霜化，内层再刷 80%
+   ⇒ 合成 96% ≈ 纯白。断言随之改向"**内层不吃我们的底**、只有面板本身霜化"，
+   并钉住另外两条本次修复：团队面板 ::before 实心底中和、外层已玻璃时内层不吃兜底底。 */
+ok('M5 弹框内层不再叠白底：dl[data-session-stats-*] 不被我们刷底，面板本身仍霜化；团队面板 ::before 已中和；内层兜底底有祖先判据',
+  !/^[ \t]*html body \[data-session-stats-(usage|details)\][^{]*\{[^}]*--mpw-surface-panel-frost/m.test(CLIENT)
+  && /^[ \t]*html body \[class\*="bRhRbq_panel"\][^{]*\{[^}]*--mpw-surface-panel-frost/m.test(CLIENT)
+  && CLIENT.includes('[data-team-panel]::before')
+  && CLIENT.includes('mpwPopInsideMenuShell')
+  && CLIENT.includes('[data-team-panel]::before,'))
 
 ok('A7 提示气泡不接管底色（深底浅字的宿主气泡：我们压上去就成白字看不清）',
   /el.getAttribute\("role"\) === "tooltip"/.test(CLIENT))
