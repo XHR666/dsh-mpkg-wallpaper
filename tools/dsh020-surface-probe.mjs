@@ -33,6 +33,7 @@ const argv = process.argv.slice(2)
 const arg = (k, d) => { const i = argv.indexOf('--' + k); return i >= 0 && argv[i + 1] && !argv[i + 1].startsWith('--') ? argv[i + 1] : d }
 const has = (k) => argv.includes('--' + k)
 const HEADED = has('headed')
+const ONLY_INNER = has('only-inner')          // 只跑弹框内层复核（第四批真机用）
 const BROWSER = arg('browser', 'firefox')          // 只支持 firefox：本机（proot）Chromium 起得来但一建页就崩
                                                    // （browserType.launch 后 newPage 即 closed，已实测三种 flag 组合），
                                                    // 用户 Via/Chromium 的差异只能靠"结构 + 计算样式"推断，见 tools/probe-out 说明
@@ -161,7 +162,43 @@ const INIT_HELPERS = () => {
     hasSectionTest: !!globalThis.__mpwSectionTest, hasPersist: !!globalThis.__mpwPersist,
     bgWrapParent: (() => { const w = document.getElementById('mpw-bgWrap'); return w && w.parentElement ? P.pathOf(w.parentElement) : null })(),
   })
+  /** 伪元素读数：宿主经常把真正的底/模糊画在 ::before / ::after 上
+   *  （真机案例：.VoX2oq_panel::before 画 var(--dsw-specific-menu) + backdrop-filter），
+   *  只读元素自身会得出"我们明明改了却没效果"的错误结论。 */
+  P.pseudo = (el, which) => {
+    try {
+      const c = getComputedStyle(el, which || '::before')
+      return {
+        content: c.content, bg: c.backgroundColor, bf: c.backdropFilter,
+        inset: [c.top, c.right, c.bottom, c.left].join(' '), z: c.zIndex,
+        pos: c.position, radius: c.borderRadius, display: c.display,
+      }
+    } catch (e) { return { err: String((e && e.message) || e).slice(0, 80) } }
+  }
   globalThis.__sp = P
+}
+
+/* ── 内层复核（第四批真机）：挑有用量数据的会话 → 开用量弹框 → 开团队面板 → 开子代理树 ── */
+const STEP_CLICK_SESSION = (i) => {
+  const rows = Array.from(document.querySelectorAll('[data-row-key^="session:"]')).filter((r) => !/新会话/.test(r.textContent || ''))
+  const r = rows[i]
+  if (!r) return { missing: true, total: rows.length }
+  try { r.click() } catch (e) { return { err: String((e && e.message) || e).slice(0, 80) } }
+  return { total: rows.length, key: r.getAttribute('data-row-key') }
+}
+const STEP_USAGE_PILL = () => {
+  const P = globalThis.__sp
+  const p = document.querySelector('[class*="bOPqQW_pill"]')
+  return p ? { found: true, text: P.txt(p, 60), facts: P.facts(p) } : { found: false }
+}
+const STEP_CAPTURE_DEEP = (sel) => {
+  const P = globalThis.__sp
+  const el = document.querySelector(sel)
+  if (!el) return { sel, missing: true }
+  const chain = []
+  let n = el, k = 0
+  while (n && n.nodeType === 1 && k++ < 5) { chain.push(Object.assign(P.facts(n), { depth: k, pseudoBefore: P.pseudo(n, '::before'), pseudoAfter: P.pseudo(n, '::after') })); n = n.parentElement }
+  return { sel, self: Object.assign(P.facts(el), { pseudoBefore: P.pseudo(el, '::before'), pseudoAfter: P.pseudo(el, '::after') }), chain }
 }
 
 /* ── 2 页面侧采集步骤（每个都是独立 page.evaluate 函数） ───────────────────── */
@@ -693,6 +730,81 @@ try {
   }
   result.openSession = { final: state }
   await page.waitForTimeout(1500)
+  if (ONLY_INNER) {
+    const shot = async (n) => { try { await page.screenshot({ path: path.join(OUTDIR, 'shot-020-' + n + '.png') }) } catch (e) { /* 忽略 */ } }
+    const show = (label, v) => {
+      if (!v || v.missing) { console.log('· ' + label + ' 未定位'); return }
+      const sf = v.self || {}
+      console.log('· ' + label + ' → bg=' + String(sf.bg).slice(0, 34) + ' bf=' + String(sf.bf).slice(0, 22)
+        + ' | ::before bg=' + String((sf.pseudoBefore || {}).bg).slice(0, 30) + ' bf=' + String((sf.pseudoBefore || {}).bf).slice(0, 18))
+    }
+    result.inner = {}
+    let pill = await page.evaluate(STEP_USAGE_PILL)
+    for (let i = 0; i < 8 && !pill.found; i++) {
+      const click = await page.evaluate(STEP_CLICK_SESSION, i)
+      if (click.missing) break
+      await page.waitForTimeout(1400)
+      pill = await page.evaluate(STEP_USAGE_PILL)
+      result.inner['pick' + i] = { click, found: pill.found }
+    }
+    result.inner.pill = pill
+    console.log('· 用量 pill：' + (pill.found ? ('找到 ' + String(pill.text).slice(0, 40)) : '未找到（该会话没有用量数据）'))
+    if (pill.found) {
+      try {
+        await page.evaluate(() => { const p = document.querySelector('[class*="bOPqQW_pill"]'); if (p) p.click() })
+        try { await page.waitForSelector('[class*="bRhRbq_panel"], dl[data-session-stats-usage], dl[data-session-stats-details]', { timeout: 7000 }) } catch (e) { result.inner.statsWaitTimeout = true }
+        await page.waitForTimeout(700)
+        result.inner.statsUsage = await page.evaluate(STEP_CAPTURE_DEEP, 'dl[data-session-stats-usage]')
+        result.inner.statsDetails = await page.evaluate(STEP_CAPTURE_DEEP, 'dl[data-session-stats-details]')
+        result.inner.statsPanel = await page.evaluate(STEP_CAPTURE_DEEP, '[class*="bRhRbq_panel"]')
+        await shot('statsdialog')
+        show('statsUsage', result.inner.statsUsage); show('statsDetails', result.inner.statsDetails); show('statsPanel', result.inner.statsPanel)
+        try { await page.keyboard.press('Escape') } catch (e) { /* 忽略 */ }
+        await page.waitForTimeout(600)
+      } catch (e) { result.inner.statsErr = String((e && e.message) || e).slice(0, 140) }
+    }
+    try {
+      const teamRect = await page.evaluate(() => {
+        const t = document.querySelector('[data-team-action], [class*="VoX2oq_trigger"], [class*="VoX2oq_root"]')
+        if (!t) return null
+        const r = t.getBoundingClientRect()
+        return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height, path: globalThis.__sp.pathOf(t) }
+      })
+      result.inner.teamRect = teamRect
+      if (teamRect) { try { await page.mouse.click(teamRect.x, teamRect.y) } catch (e) { result.inner.teamMouseErr = String((e && e.message) || e).slice(0, 80) } }
+      try { await page.waitForSelector('[data-team-panel]', { timeout: 6000 }) } catch (e) { result.inner.teamWaitTimeout = true }
+      await page.waitForTimeout(600)
+      result.inner.teamPanel = await page.evaluate(STEP_CAPTURE_DEEP, '[data-team-panel]')
+      result.inner.teamBody = await page.evaluate(STEP_CAPTURE_DEEP, '[class*="VoX2oq_body"]')
+      await shot('teampanel')
+      show('teamPanel', result.inner.teamPanel); show('teamBody', result.inner.teamBody)
+      try { await page.keyboard.press('Escape') } catch (e) { /* 忽略 */ }
+      await page.waitForTimeout(500)
+    } catch (e) { result.inner.teamErr = String((e && e.message) || e).slice(0, 140) }
+    try {
+      const clicked = await page.evaluate(() => {
+        const P = globalThis.__sp
+        const e = P.byText('个子智能体|子智能体|智能体团队', document.querySelector('.wSkVaW_header, header') || document)
+        if (!e) return null
+        let n = e
+        for (let i = 0; i < 3 && n && n.tagName !== 'BUTTON'; i++) n = n.parentElement
+        try { (n || e).click() } catch (err) { return 'err' }
+        return P.pathOf(n || e)
+      })
+      result.inner.treeClick = clicked
+      try { await page.waitForSelector('[class*="ZKlsPq_menu"]', { timeout: 6000 }) } catch (e) { result.inner.treeWaitTimeout = true }
+      await page.waitForTimeout(700)
+      result.inner.treeMenu = await page.evaluate(STEP_CAPTURE_DEEP, '[class*="ZKlsPq_menu"]')
+      result.inner.treeBody = await page.evaluate(STEP_CAPTURE_DEEP, '[class*="ZKlsPq_menuBody"]')
+      result.inner.treeRow = await page.evaluate(STEP_CAPTURE_DEEP, '[class*="ZKlsPq_row"]')
+      await shot('subagenttree')
+      show('treeMenu', result.inner.treeMenu); show('treeBody', result.inner.treeBody); show('treeRow', result.inner.treeRow)
+    } catch (e) { result.inner.treeErr = String((e && e.message) || e).slice(0, 140) }
+    dump()
+    console.log('✎ --only-inner 产物：tools/probe-out/surface-map-020.json + shot-020-statsdialog/teampanel/subagenttree.png')
+    try { await browser.close() } catch (e) { /* 忽略 */ }
+    process.exit(0)
+  }
   result.left = await page.evaluate(STEP_LEFT)
   result.overview = await page.evaluate(STEP_OVERVIEW)
 
