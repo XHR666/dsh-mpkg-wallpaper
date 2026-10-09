@@ -131,8 +131,14 @@ ok('M3 Token 用量 / 会话统计（role=dialog）仍走宿主面板白底，�
    必须先删掉断言并写明理由 —— 让"改坏"必须是一次显式决定，而不是顺手）。 */
 ok('M4 目标条（nLMEza_bar）不在我们的任何 CSS/JS 里（用户说它现在就是要的效果）',
   !/nLMEza/.test(CLIENT))
-ok('M5 Token 用量 / 会话统计（bRhRbq_panel）同样不被我们接管（走宿主自己的白底 + blur40）',
-  !/bRhRbq/.test(CLIENT))
+/* ①(2026-10-09 用户第三批第 2 项：'会话统计和 token 用量的地方，它的模糊好像也是没有生效的')
+   ⇒ 这是**显式决定**要接管：真机读数原本是 bg=rgb(255,255,255)（不透明）⇒ 宿主自带 blur(40px)
+   一点都看不见；现在换成霜化底（--mpw-surface-panel-frost 80%）+ 常量 blur(11px)。
+   断言随之改向：钉**新**行为（这两块必须走霜化表面），而不是"零接管"。 */
+ok('M5 Token 用量 / 会话统计（bRhRbq_panel）按用户要求走霜化表面（80% + blur(11px)，不再是纯白不透明）',
+  CLIENT.includes('[data-session-stats-usage]') && CLIENT.includes('[data-session-stats-details]')
+  && CLIENT.includes('[class*="bRhRbq_panel"]')
+  && /\[class\*="bRhRbq_panel"\][\s\S]{0,300}--mpw-surface-panel-frost/.test(CLIENT))
 
 ok('A7 提示气泡不接管底色（深底浅字的宿主气泡：我们压上去就成白字看不清）',
   /el.getAttribute\("role"\) === "tooltip"/.test(CLIENT))

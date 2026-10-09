@@ -349,6 +349,19 @@ const STEP_PARK = () => {
 
 /** 展开态右栏：2~3 层子树里谁在画底（找"Sub Agent 面板不透明"的那一层） */
 /** 展开右栏（稳定锚点：宿主 0.2.0 的 `button[data-sidebar-right-expand="true"]`） */
+/** 打开"+"展开的触发候选菜单（slash menu）：聚焦输入框打一个 "/" */
+const STEP_OPEN_TRIGGER = () => {
+  const P = globalThis.__sp
+  const box = document.querySelector('[data-composer-input], [data-composer-card] textarea, [data-composer-card] [contenteditable="true"], textarea')
+  if (!box) return { none: true }
+  try { box.focus() } catch (e) { /* 忽略 */ }
+  try {
+    if (box.tagName === 'TEXTAREA' || box.tagName === 'INPUT') { box.value = '/'; box.dispatchEvent(new Event('input', { bubbles: true })) }
+    else { box.textContent = '/'; box.dispatchEvent(new InputEvent('input', { bubbles: true })) }
+  } catch (e) { return { err: String((e && e.message) || e).slice(0, 120) } }
+  return { typed: true, tag: box.tagName }
+}
+
 const STEP_EXPAND_RIGHT = () => {
   const P = globalThis.__sp
   if (!document.querySelector('[data-rightbar-collapsed]')) return { already: true }
@@ -374,6 +387,32 @@ const STEP_OPEN_SUBAGENT = () => {
 }
 
 /** 面包屑可见性（bug F）：命中测试打到的是不是面包屑自己 */
+/** 模糊为什么是死的：从目标表面往上走，找出**第一个 backdrop root**（backdrop-filter / isolation /
+ *  filter / opacity<1 / mask / contain:paint / mix-blend-mode）以及它是不是我们的规则画的。
+ *  目的：0.2.0 里宿主把菜单外壳写成 `isolation:isolate`，子层 `._material_*` 的 blur(40px)
+ *  只能采样外壳内部 ⇒ 看起来"完全没模糊"；我们要知道每一处到底卡在哪一层。 */
+const STEP_BD_CHAIN = (sel) => {
+  const P = globalThis.__sp
+  const el = document.querySelector(sel)
+  if (!el) return { sel, missing: true }
+  const rows = []
+  let n = el, k = 0
+  while (n && n.nodeType === 1 && k++ < 14) {
+    const c = getComputedStyle(n)
+    const ours = !!(n.hasAttribute && (n.hasAttribute('data-mpw-rs-surface') || n.hasAttribute('data-mpw-holds-layer') || n.hasAttribute('data-mpw-pop-bg') || n.hasAttribute('data-mpw-pop-untrunc') || n.hasAttribute('data-mpw-pop-frost')))
+    rows.push({
+      path: P.pathOf(n).slice(-58),
+      attr: ['data-mpw-rs-surface', 'data-mpw-holds-layer', 'data-mpw-pop-bg', 'data-mpw-pop-untrunc', 'data-menu-material', 'data-trigger-menu', 'data-team-panel'].filter((a) => n.hasAttribute && n.hasAttribute(a)),
+      bf: c.backdropFilter, iso: c.isolation, filter: c.filter === 'none' ? 'none' : 'set', op: c.opacity,
+      mask: (c.maskImage && c.maskImage !== 'none') || (c.webkitMaskImage && c.webkitMaskImage !== 'none') ? 'set' : 'none',
+      contain: c.contain, blend: c.mixBlendMode, z: c.zIndex, pos: c.position, ours,
+    })
+    n = n.parentElement
+  }
+  const firstRoot = rows.findIndex((r, i) => i > 0 && (r.bf !== 'none' || r.iso === 'isolate' || r.filter === 'set' || Number(r.op) < 1 || r.mask === 'set' || /paint/.test(r.contain) || (r.blend && r.blend !== 'normal')))
+  return { sel, self: P.facts(el), firstRoot: firstRoot < 0 ? null : rows[firstRoot], chain: rows }
+}
+
 const STEP_CRUMB = () => {
   const P = globalThis.__sp
   const el = document.querySelector('[class*="crumbCurrent"], [class*="crumb"]')
@@ -644,6 +683,15 @@ try {
   result.expandRight = await page.evaluate(STEP_EXPAND_RIGHT)
   await page.waitForTimeout(1400)
   try { await page.waitForFunction(() => !document.querySelector('[data-rightbar-collapsed]'), null, { timeout: 8000 }) } catch (e) { result.expandTimeout = true }
+  result.openTrigger = await page.evaluate(STEP_OPEN_TRIGGER)
+  await page.waitForTimeout(1200)
+  result.triggerMenu = await page.evaluate(STEP_BD_CHAIN, '[data-trigger-menu], [data-menu-material]')
+  try { await page.screenshot({ path: path.join(OUTDIR, 'shot-020-triggermenu.png') }) } catch (e) { /* 忽略 */ }
+  if (result.triggerMenu && !result.triggerMenu.missing) {
+    const sf = result.triggerMenu.self || {}
+    console.log('· 触发候选菜单：bg=' + String(sf.bg).slice(0, 30) + ' bf=' + sf.bf + ' | 第一个 root=' + (result.triggerMenu.firstRoot ? result.triggerMenu.firstRoot.path : '无'))
+  } else console.log('· 触发候选菜单：未定位')
+  try { await page.keyboard.press('Escape') } catch (e) { /* 忽略 */ }
   result.openSubagent = await page.evaluate(STEP_OPEN_SUBAGENT)
   await page.waitForTimeout(1600)
   result.rightAfterToggle = await page.evaluate(STEP_RIGHT)
@@ -667,6 +715,19 @@ try {
     try { await page.screenshot({ path: path.join(OUTDIR, 'shot-020-newsession.png') }) } catch (e) { /* 忽略 */ }
     console.log('· 新会话标题栏：blankAttr=' + (result.headerBlank && result.headerBlank.blankAttr) + ' frostEl=' + (result.headerBlank && result.headerBlank.frostEl) + ' bg=' + (result.headerBlank && result.headerBlank.bg) + ' bf=' + (result.headerBlank && result.headerBlank.bf))
   } catch (e) { result.newSessionErr = String((e && e.message) || e).slice(0, 160) }
+  /* ①(2026-10-09 第三批真机) 模糊死因：逐表面看"第一个 backdrop root 是谁" */
+  result.bdChains = {}
+  result.bdChains.triggerMenu = await page.evaluate(STEP_BD_CHAIN, '[data-trigger-menu], [class*="_3e4SsG_menu"]')
+  result.bdChains.materialMenu = await page.evaluate(STEP_BD_CHAIN, '[data-menu-material]')
+  result.bdChains.tokenPanel = await page.evaluate(STEP_BD_CHAIN, '[class*="bRhRbq_panel"], [data-session-stats-usage], [data-session-stats-details]')
+  result.bdChains.teamPanel = await page.evaluate(STEP_BD_CHAIN, '[data-team-panel], [class*="VoX2oq_panel"]')
+  result.bdChains.subagentPane = await page.evaluate(STEP_BD_CHAIN, '[data-dockkit-pane]')
+  result.bdChains.rightPanel = await page.evaluate(STEP_BD_CHAIN, '[data-sidebar-right-panel], [class*="P3OORG_panel"]')
+  result.bdChains.rightSurface = await page.evaluate(STEP_BD_CHAIN, '[data-dockkit-surface]')
+  for (const [k, v] of Object.entries(result.bdChains)) {
+    if (!v || v.missing) { console.log('· bd:' + k + ' 未定位'); continue }
+    console.log('· bd:' + k + ' 自身 bf=' + (v.self && v.self.bf) + ' bg=' + (v.self && String(v.self.bg).slice(0, 26)) + ' | 第一个 root = ' + (v.firstRoot ? (v.firstRoot.path + ' [bf=' + v.firstRoot.bf + ' iso=' + v.firstRoot.iso + ' filter=' + v.firstRoot.filter + ' op=' + v.firstRoot.op + ' ours=' + v.firstRoot.ours + ']') : '无'))
+  }
   console.log('· 面包屑：' + JSON.stringify(result.crumb && { text: result.crumb.text, hitIsCrumb: result.crumb.hitIsCrumb, underFrost: result.crumb.underFrost }))
   result.composer = await page.evaluate(STEP_COMPOSER)
   result.usageBar = await page.evaluate(STEP_USAGE_BAR)
@@ -685,6 +746,14 @@ try {
       const clicked = await page.evaluate(STEP_CLICK_OPENER, plan)
       await page.waitForTimeout(900)
       const after = await page.evaluate(STEP_NEW_POPOVERS)
+      /* 弹层**还开着**的时候立刻量它的 backdrop 链（关掉后再量就定位不到了） */
+      try {
+        after.bd = {
+          materialMenu: await page.evaluate(STEP_BD_CHAIN, '[data-menu-material]'),
+          triggerMenu: await page.evaluate(STEP_BD_CHAIN, '[data-trigger-menu]'),
+          tokenPanel: await page.evaluate(STEP_BD_CHAIN, '[class*="bRhRbq_panel"]'),
+        }
+      } catch (e) { after.bdErr = String((e && e.message) || e).slice(0, 120) }
       result.opened[name] = { clicked, after }
       console.log('· ' + name + '：' + (clicked ? ('点了 ' + clicked.via) : '没找到可点的入口') + (after && after.popovers ? ('；浮层 ' + after.popovers.length + ' 个') : ''))
     } catch (e) { result.opened[name] = { err: String((e && e.message) || e).slice(0, 200) } }
