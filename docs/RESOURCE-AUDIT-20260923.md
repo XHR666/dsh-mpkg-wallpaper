@@ -310,3 +310,25 @@ grep -rn "clearSceneVideoScanCache\|scanSceneVideo(" lib/*.js
   ⇒ 若要彻底结案，需按名字级核对（下一轮：在该文件里定位"状态集合"的实际数据结构与其持有方式 ✗）。
 
 **结论**：审计指出的"**750ms 周期重压**"这一主要成本已重构落地 ✓；"弱引用化"一项**待名字级细查** ⬜。
+
+### #6/#7/#9 的"状态集合弱引用化"—— **名字级细查结果**（2026-10-11）
+
+`lib/audio-bus.js:217-225` 的状态容器实测（**8 个中 5 个已是弱引用** ✓）：
+
+| 容器 | 类型 | 说明（代码注释） |
+|---|---|---|
+| `masters` | **WeakMap** ✓ | `ctx -> masterGain` |
+| `hostVerdict` | **WeakMap** ✓ | `ctx -> 我们最后写下去的裁决值`（判"被外部改动/覆盖"的基线） |
+| `mediaMutedByUs` | **WeakSet** ✓ | 被**我们**按下的静音（解除时只撤销自己按的） |
+| `tappedMedia` | **WeakSet** ✓ | 被 `createMediaElementSource` 接管的元素（不能 pause） |
+| `masterParams` / `gainParams` | **WeakSet** ✓ | `AudioParam` 身份登记 |
+| `adopted` | `Set` ✗（**有意强引用**） | "被我们接管过的 ctx（**含**安装前就存在的老 ctx）——**静音要遍历这一份**" |
+| `media` | `Set` ✗（**有意强引用**） | "媒体元素（含 `new Audio()` 与 shadow DOM 里的）" |
+
+另有若干**有界**结构（`A.entries.length > 63 ⇒ shift`、`log.length > 300 ⇒ shift`、`R.entries.length > 31 ⇒ shift`）✓。
+
+**结论**：审计原话"状态集合弱引用化"**大部分已落地** ✓；剩余两个强引用集合是**为可枚举而有意保留** ✓
+（弱引用无法遍历 ⇒ 静音/解除必须能枚举 ✗）。
+**仍可追问的精确一题**（下一轮，1 条命令即可判）：`adopted` / `media` 在**释放路径**上是否有对应的 `delete` ✗
+（例：`:815` 有 `state.mediaMutedByUs.delete(el)`；需核对媒体元素/ctx 销毁时是否也从这两个 Set 移除 ✗）；
+若无 ⇒ 长会话反复挂载/卸载壁纸时它们会单调增长 ✗（这与审计的原始关切同源 ✓）。
