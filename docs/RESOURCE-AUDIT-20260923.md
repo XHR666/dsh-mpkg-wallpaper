@@ -237,3 +237,19 @@ grep -rn "clearSceneVideoScanCache\|scanSceneVideo(" lib/*.js
 
 且代码注释**自述**"①(2026-09-23 审计 #1) 新增字段" ⇒ 本条属**审计的后续修复已落地**，不再是开放问题 ✓。
 （若仍需进一步降低常驻，可调 `MPW_SCENE_VIDEO_CACHE_BYTES`；但"无界增长"的描述已不成立 ✗。）
+
+### 第 2 条（np 播放器 blob 兜底 URL 从不 `revoke`）—— **复核为已修** ✓
+
+只读核验（`lib/client.js`，2026-10-11）：
+
+- 兜底处 `:10460-10464` 的注释自述：**①(2026-09-23 资源审计 #2) 顺序纪律：先设新 src，再 revoke 上一支 blob URL**；
+  实际代码顺序即 `npAudio.src = obj; npBlobUrlSet(obj);` ✓；
+- 释放逻辑在 helper `:9682-9687`：
+  `function npBlobUrlSet(next) { const prev = npBlobUrl; npBlobUrl = next ? String(next) : "";`
+  `  if (prev && prev !== npBlobUrl) { try { URL.revokeObjectURL(prev) } catch (e) { mpwErr("npBlobUrlSet", e) } } return prev || null; }`
+  ⇒ **释放的是"上一支"**、且 `prev !== npBlobUrl` 守卫保证**绝不释放当前正在播的那支** ✓；释放失败也**不再静默**（走 `mpwErr` ✓）。
+- 另外 `:10454-10457` 有 **32 MiB 上限**（`size > (32 << 20) 直接 return`）⇒ 单次兜底不会钉住超大 Blob ✓。
+
+**方法学注记（我自己的错，记录以免复发）**：复核时我先用"创建点后 60 行内是否出现 `revokeObjectURL`"的**粗筛**，
+因此把本条误判为"仍待修" ✗ —— 实际释放发生在**另一个 helper** 里 ✗。
+教训与台账第 5/6 条纪律同源：**判定"未实现/未修"必须追到跨函数/跨文件的实现处**，窗口式 grep 不足以定论 ✗。
