@@ -856,6 +856,17 @@ try {
         result.menu[name].layers = info
         console.log('· ' + name + ' 层次读数: ' + JSON.stringify(info).slice(0, 700))
       } catch (e) { console.log('· 层次读数失败: ' + String((e && e.message) || e).slice(0, 90)) }
+      /* ③(2026-10-10) 规则归属：抓出"谁在给这个直角容器 backdrop-filter" —— 只看含 backdrop-filter 的规则 */
+      if (name === 'model') {
+        try {
+          const rules = await page.evaluate(STEP_RULES, ['_7KE1Ra_groups', '\\[role="menu"\\]', '_surface_ri079_', '_material_ri079_', 'data-mpw-menu-inner'])
+          result.menu.rules = rules
+          const pick = (arr, tag) => (arr || []).filter((r) => /backdrop-filter/.test(String(r.css || ''))).slice(0, 8).map((r) => tag + ' | ' + String(r.sel).slice(0, 78) + ' | ' + String(String(r.css).match(/backdrop-filter:[^;]{0,60}/) || '').slice(0, 60))
+          const list = pick(rules.ours, '我方').concat(pick(rules.host, '宿主'))
+          console.log('· 命中该族的 backdrop-filter 规则 ' + list.length + ' 条（counts ours=' + rules.counts.ours + ' host=' + rules.counts.host + '）')
+          for (const l of list) console.log('     ' + l)
+        } catch (e) { console.log('· 规则归属失败: ' + String((e && e.message) || e).slice(0, 90)) }
+      }
       const rows = (result.menu[name].dump || {}).rows || []
       console.log('· ' + name + ' 菜单里画了底的节点 ' + rows.length + ' 个：')
       for (const r of rows.slice(0, 14)) console.log('     d' + r.depth + ' ' + String(r.path).slice(-52) + ' | bg=' + String(r.bg).slice(0, 26) + ' bf=' + String(r.bf).slice(0, 14) + ' | ::before=' + String(r.pBefore).slice(0, 34) + ' | ' + String(r.attrs).slice(0, 40))
