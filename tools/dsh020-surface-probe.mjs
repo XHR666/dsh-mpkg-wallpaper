@@ -808,8 +808,20 @@ try {
       await shot('menu-' + name)
       /* ②(2026-10-10 第六批真机) 用户说的"带提供商的白块"在**二级菜单**里：点开"模型"行再扫全页 */
       if (name === 'model') {
-        result.menu.level2 = await page.evaluate(STEP_OPEN_LEVEL2)
-        await page.waitForTimeout(1200)
+        /* 用真实鼠标点"模型"行（宿主只认真实指针事件；in-page click 会让菜单收起） */
+        const r2 = await page.evaluate(() => {
+          const P = globalThis.__sp
+          const root = document.querySelector('[data-menu-material], [class*="_7KE1Ra_menu"]')
+          if (!root) return null
+          for (const c of Array.from(root.querySelectorAll('[class*="_7KE1Ra_cell"], [class*="_7KE1Ra_option"]'))) {
+            const t = P.txt(c, 30)
+            if (/模型/.test(t) && !/推理/.test(t)) { const r = c.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, text: t } }
+          }
+          return null
+        })
+        result.menu.level2Rect = r2
+        if (r2) { try { await page.mouse.click(r2.x, r2.y) } catch (e) { result.menu.level2MouseErr = String((e && e.message) || e).slice(0, 70) } }
+        await page.waitForTimeout(1400)
         result.menu.docPainted = await page.evaluate(STEP_DUMP_PAINTED_DOC)
         await shot('menu-model-l2')
         console.log('· 二级菜单点击：' + JSON.stringify(result.menu.level2).slice(0, 140))
