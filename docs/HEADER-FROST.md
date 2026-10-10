@@ -281,3 +281,52 @@ node /tmp/hdrwatch/measure2.mjs --mode align|click|cloneheader --trials 3 --labe
 * 若宿主未来把顶栏搬到 `[data-slot="main.conversation"]`/`[data-slot="main"]` 之外的位置
   （即上面两个稳定锚点也失效），自愈会退回 3s 保险的频率 —— 届时诊断字段
   `headerFrost.watch.targets` 会先变小（1）可作为预警。
+
+---
+
+## 8. 侧栏磨砂被"智能体团队"面板误摘（2026-10-11 P-307 真机 bug + 修复）
+
+### 8.1 现象与归属
+
+用户原话：「把**智能体团队**展开时，会导致**左侧边栏的模糊效果消失**；一关闭又恢复。」
+归属 = **插件侧**（不是 DSH 自身）：面板本身是 DSH 的 `dsh-experimental-client-ui-agent-team`
+（`.VoX2oq_panel`），而"侧栏磨砂"由我们注入；摘除动作由插件的 `data-mpw-sblur-off` 触发。
+
+### 8.2 根因（触发链，file:line 均为修复前）
+
+1. 面板经 `createPortal(…, document.body)` 挂到 **body**（`@deepseek-ai/dsh-experimental-client-ui-agent-team/lib/client.js:324`；
+   `role:"dialog"` `:332`、`data-team-panel` `:335`）；其 CSS 在同文件 `:12`：
+   `.VoX2oq_panel{position:fixed; width:min(500px,100vw - 32px); max-height:min(680px,100vh - 32px); …}`。
+2. 插件的 `sblurObserver`（`lib/client.js` `MutationObserver(document.body,{childList,subtree})`）被这次
+   body 插入触发 → rAF 合并 → `check()`。
+3. `check()` 的 `hasDlg` **第一支是全文档**的：`[…'_overlay','_modal',role=dialog].some(isOpenOverlay)`，
+   而 `isOpenOverlay` = `position:fixed` + 可见 + **高度 ≥ 70% innerHeight** ⇒ 面板高可达 680px，
+   在 `vh ≤ 971px` 的窗口里必然命中（**与侧栏有无祖先关系无关**）。
+4. ⇒ `document.body.setAttribute("data-mpw-sblur-off","")` ⇒ `buildCss` 的
+   `html body[data-mpw-sblur][data-mpw-sblur-off] [class*="sidebarCol"]{backdrop-filter:none!important}`
+   把侧栏磨砂摘掉。收起时 portal 节点卸载 ⇒ 属性摘除 ⇒ 磨砂恢复。
+
+**为什么这是缺陷而不是有意取舍**：`data-mpw-sblur-off` 的唯一目的是避免「侧栏的 `backdrop-filter`
+变成 `position:fixed` 后代的 **containing block**」（真机已知案例：设置弹窗 `VOzbGW_overlay` 是
+`sidebarCol` 的后代 ⇒ 面板被压成 254px，见 §6 与 `docs/WALLPAPER-LIFECYCLE.md`）。body portal 的面板
+与侧栏没有祖先关系 ⇒ 摘它纯属误伤（Token 用量 / 会话统计 `bRhRbq_panel` 同理）。
+
+### 8.3 修法（最小改动，**不动任何 CSS**）
+
+* `check()` 第一支限定为"**真的是 `[class*="sidebarCol"]` 后代**"（`el.closest(...)`）；
+  **第二支本来就已经限定在侧栏内** —— 这次只是把两支对齐。
+* 回退位：`?sblurscope=legacy` ⇒ 逐位回"全文档"口径（登记见 `docs/README-DIAGNOSTICS.md` 开关表）。
+* 判据：`node tools/sidebar-frost-team-panel-test.mjs`（门禁第 2 步；17 断言 + 变异自证）——
+  A 段切真源码跑六种世界（team panel ⇒ 不摘 / 设置弹窗 ⇒ 摘 / 挂到侧栏下 ⇒ 摘 / legacy ⇒ 摘 /
+  高度不足 ⇒ 不摘），B 段在 `_stub` 上跑**真 `check()`** 断言 body 属性落点，C 段钉 CSS 面；
+  变异（撤掉"限侧栏后代"）期望红集 == 实际红集 == `['A1']`（打印 `MUTANT-RED-OK`）。
+
+### 8.4 边界（如实）
+
+* **只修默认（CSS 接管）档**：`?inlinefrost=1` 的旧内联档里 `applyFrostInline()` 的 `overlayOpen`
+  判据同样是"全文档 fixed + 高 ≥70%vh" ⇒ 该档下 team panel 仍会清掉侧栏**内联**磨砂。
+  该档是排障对照档（默认关）⇒ 列为后续；真要修，同一处加 `mpwInSidebarSubtree` 即可。
+* 修后：body portal 的浮层打开时，**标题栏/右栏/dock 的磨砂也不再被摘**（同一属性被它们复用）。
+  对 body portal 浮层它们在结构上同样没有包含块风险 ⇒ 方向一致；观感变化建议真机看一眼。
+* 判据 A6 记录了阈值：面板高 < 70%vh（如 vh=900 时 <630px）本就不触发 —— 真机上"窗口很高 + 团队很小"
+  时可能复现不了，属预期。

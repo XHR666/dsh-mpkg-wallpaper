@@ -499,6 +499,14 @@ node tools/media-session-wiring-test.mjs || fail=1
 #   bug② 标题栏磨砂注入链（假 DOM：注入 + 内联样式 + 半透明底 + 宿主标记 + 诊断 reason + 回退开关）。
 #   详见 docs/HEADER-FROST.md、docs/TIMELINE-RAIL-TOKEN.md
 node tools/frost-rail-test.mjs || fail=1
+# ⓪(2026-10-11 P-307 用户 bug「展开智能体团队 ⇒ 左侧边栏模糊消失」)：
+#   `setupSblurObserver()` 的 `check()` 第一支原来**全文档**找"近全屏 fixed 弹层"；智能体团队面板是
+#   DSH `createPortal(…, document.body)` 的 `.VoX2oq_panel`（role=dialog / fixed / 最高 680px）⇒ 与侧栏
+#   没有祖先关系却照样触发 `data-mpw-sblur-off` ⇒ `body[data-mpw-sblur-off] [class*="sidebarCol"]` 把
+#   侧栏磨砂摘掉；收起即恢复（与用户描述逐字吻合）。修法：第一支限定为"真的是 sidebarCol 后代"
+#   （第二支本来就这样）+ 回退位 `?sblurscope=legacy`。判据三段（A 切片纯逻辑 / B 桩上真 check() 的
+#   属性落点 / C CSS 面）+ 变异自证（撤掉修法 ⇒ 期望红集恰为 ['A1']）。详见 docs/HEADER-FROST.md §8。
+node tools/sidebar-frost-team-panel-test.mjs || fail=1
 # ①(2026-09-17 壁纸层可见性轮) `.mpw-bgWrap`：有壁纸源时**不得** display:none（且两种 none 正常语义
 #   ——"无源" vs "面板不透明度 100" ——必须可判别）；有源时 `img.src` 必须留下（旧写法 showImageEl 里
 #   无条件清 src ⇒ "图层在但没有画面"，真机表现为刷新后图片/GIF 壁纸不显示）；`?bgwrapfix=legacy` 回退开关接线。
