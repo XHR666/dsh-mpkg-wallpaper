@@ -168,7 +168,7 @@ ok('M7 子智能体会话树只补模糊、不补底（ZKlsPq_menu 进模糊规�
    **底色与模糊两条规则**里排除（两层都钉住，防止将来只改一条）。 */
 ok('M8 material 外壳里的内层容器（直角滚动容器）被一条 !important 规则直接中和（只加不改既有规则）',
   CLIENT.includes('data-mpw-menu-inner')
-  && /html body \[data-mpw-menu-inner\] \{[\s\S]{0,200}backdrop-filter: none !important/.test(CLIENT)
+  && /html body \[data-mpw-menu-inner\]\[data-mpw-menu-inner\] \{[\s\S]{0,200}backdrop-filter: none !important/.test(CLIENT)
   && /querySelectorAll\('\[data-menu-material\], \[data-trigger-menu\], \[class\*="ZKlsPq_menu"\]'\)/.test(CLIENT))
 
 ok('A7 提示气泡不接管底色（深底浅字的宿主气泡：我们压上去就成白字看不清）',

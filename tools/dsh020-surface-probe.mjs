@@ -840,7 +840,7 @@ try {
       try {
         const info = await page.evaluate(() => {
           const shell = document.querySelector('[data-menu-material], [class*="_7KE1Ra_menu"]')
-          const cs = (e) => { if (!e) return null; const c = getComputedStyle(e); return { cls: String(e.className).slice(0, 44), bg: c.backgroundColor, radius: c.borderRadius, bf: c.backdropFilter, pos: c.position } }
+          const cs = (e) => { if (!e) return null; const c = getComputedStyle(e); return { cls: String(e.className).slice(0, 44), bg: c.backgroundColor, radius: c.borderRadius, bf: c.backdropFilter, pos: c.position, inner: !!(e.hasAttribute && e.hasAttribute('data-mpw-menu-inner')) } }
           const body = getComputedStyle(document.body)
           const root = getComputedStyle(document.documentElement)
           const tok = (n) => String(body.getPropertyValue(n) || root.getPropertyValue(n) || '').trim()
