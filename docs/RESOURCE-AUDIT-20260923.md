@@ -223,3 +223,17 @@ grep -rn "clearSceneVideoScanCache\|scanSceneVideo(" lib/*.js
   ⇒ **请手动或由 CI 执行**：`node tools/err-seen-bound-test.mjs`。
 
 其余各条（`sceneVideoScanCache` 缓存整段视频字节、np 播放器 blob URL 无 `revokeObjectURL`、双 id 注册静默 `catch` 等）**仍待修**。
+
+### 第 1 条（`sceneVideoScanCache` 缓存整段内嵌视频字节）—— **复核为已修** ✓
+
+只读核验（`lib/pkg-extract.js`，2026-10-11）：
+
+- `:2257` `SCENE_VIDEO_SCAN_CACHE_MAX_ITEMS = 64`；
+- `:2258-2260` `SCENE_VIDEO_SCAN_CACHE_MAX_BYTES`（默认 **64 MB**，上限 1 GB，可用环境变量 `MPW_SCENE_VIDEO_CACHE_BYTES` 调整）；
+- `:2261` `..._MAX_ITEM_BYTES = MAX_BYTES / 2`（**超大半条直接拒收** ⇒ 单条不会撑满预算）；
+- `:2262` `..._TTL_MS = 10 * 60 * 1000`（10 分钟过期）；
+- `:2291` `sceneVideoCacheDropOldest()`（逐出 Map 头部 = 最久未访问 ⇒ **LRU**）＋ `:2301/:2314` `sceneVideoCacheEvict()` 的 `while` 预算闸门；
+- `:2263-2265` 计数器 `hits/misses/entriesRead/bytesRead/evictions/preReadEvictions/oversize/expired`，快照函数 `sceneVideoScanStats()` 暴露 `bytes`（已驻留字节可见）。
+
+且代码注释**自述**"①(2026-09-23 审计 #1) 新增字段" ⇒ 本条属**审计的后续修复已落地**，不再是开放问题 ✓。
+（若仍需进一步降低常驻，可调 `MPW_SCENE_VIDEO_CACHE_BYTES`；但"无界增长"的描述已不成立 ✗。）
