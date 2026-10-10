@@ -179,6 +179,44 @@ const INIT_HELPERS = () => {
   globalThis.__sp = P
 }
 
+/** 点开二级菜单：在第一级菜单里点含"模型"的那一行（带 › 的 cell） */
+const STEP_OPEN_LEVEL2 = () => {
+  const P = globalThis.__sp
+  const root = document.querySelector('[data-menu-material], [class*="_7KE1Ra_menu"]')
+  if (!root) return { none: true }
+  const cands = Array.from(root.querySelectorAll('[class*="_7KE1Ra_cell"], [class*="_7KE1Ra_option"], [role="menuitem"], button'))
+  for (const c of cands) {
+    const t = P.txt(c, 40)
+    if (/^\s*模型/.test(t) || /模型\s*$/.test(t)) {
+      let n = c
+      for (let i = 0; i < 2 && n && n.tagName !== 'BUTTON' && n.getAttribute('role') !== 'menuitem' && !/cell|option/.test(String(n.className)); i++) n = n.parentElement
+      try { (n || c).click() } catch (e) { return { err: String((e && e.message) || e).slice(0, 60) } }
+      return { clicked: P.pathOf(n || c), text: t }
+    }
+  }
+  return { notFound: true, sample: cands.slice(0, 5).map((c) => P.txt(c, 24)) }
+}
+
+/** 整页扫"画了底的节点"（面积 > 800px²、可见），用来抓任何位置的白色块 */
+const STEP_DUMP_PAINTED_DOC = () => {
+  const P = globalThis.__sp
+  const alpha = (c) => { try { const m = String(c).match(/rgba?\(([^)]+)\)/); if (!m) return 1; const p = m[1].split(/[ ,/]+/); return p.length > 3 ? parseFloat(p[3]) : 1 } catch (e) { return 1 } }
+  const rows = []
+  for (const e of Array.from(document.querySelectorAll('body *'))) {
+    if (rows.length > 40) break
+    let cs = null; try { cs = getComputedStyle(e) } catch (err) { continue }
+    if (cs.display === 'none' || cs.visibility === 'hidden' || Number(cs.opacity) === 0) continue
+    const r = e.getBoundingClientRect()
+    if (r.width * r.height < 800 || r.bottom < 0 || r.top > innerHeight) continue
+    const bgA = alpha(cs.backgroundColor)
+    const image = cs.backgroundImage && cs.backgroundImage !== 'none'
+    if (bgA < 0.05 && !image) continue
+    if (/^(BODY|HTML)$/.test(e.tagName)) continue
+    rows.push({ path: P.pathOf(e).slice(-58), rect: P.rect(e), bg: cs.backgroundColor, bgImage: String(cs.backgroundImage).slice(0, 30), bf: cs.backdropFilter, mpw: Array.from(e.attributes).map((x) => x.name).filter((n) => n.startsWith('data-mpw')).join(',') })
+  }
+  return rows
+}
+
 /* ── 只查模型/推理选择器：整棵子树里**所有画了底的节点**（含伪元素），定位白块 ── */
 const STEP_DUMP_PAINTED = (rootSel) => {
   const P = globalThis.__sp
@@ -768,6 +806,16 @@ try {
       await page.waitForTimeout(500)
       result.menu[name].dump = await page.evaluate(STEP_DUMP_PAINTED, '[data-menu-material], [class*="_7KE1Ra_menu"]')
       await shot('menu-' + name)
+      /* ②(2026-10-10 第六批真机) 用户说的"带提供商的白块"在**二级菜单**里：点开"模型"行再扫全页 */
+      if (name === 'model') {
+        result.menu.level2 = await page.evaluate(STEP_OPEN_LEVEL2)
+        await page.waitForTimeout(1200)
+        result.menu.docPainted = await page.evaluate(STEP_DUMP_PAINTED_DOC)
+        await shot('menu-model-l2')
+        console.log('· 二级菜单点击：' + JSON.stringify(result.menu.level2).slice(0, 140))
+        console.log('· 整页画底节点 ' + (result.menu.docPainted || []).length + ' 个（面积>800）：')
+        for (const r of (result.menu.docPainted || []).slice(0, 18)) console.log('     ' + String(r.path).slice(-46) + ' | rect=' + JSON.stringify(r.rect) + ' | bg=' + String(r.bg).slice(0, 30) + ' bf=' + String(r.bf).slice(0, 16) + ' | ' + String(r.mpw).slice(0, 30))
+      }
       const rows = (result.menu[name].dump || {}).rows || []
       console.log('· ' + name + ' 菜单里画了底的节点 ' + rows.length + ' 个：')
       for (const r of rows.slice(0, 14)) console.log('     d' + r.depth + ' ' + String(r.path).slice(-52) + ' | bg=' + String(r.bg).slice(0, 26) + ' bf=' + String(r.bf).slice(0, 14) + ' | ::before=' + String(r.pBefore).slice(0, 34) + ' | ' + String(r.attrs).slice(0, 40))
