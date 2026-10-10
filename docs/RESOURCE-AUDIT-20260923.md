@@ -206,3 +206,20 @@ grep -rn "clearSceneVideoScanCache\|scanSceneVideo(" lib/*.js
 ---
 
 *本文件由资源审计轮生成：只读命令 + 静态判据，未运行任何浏览器/ffmpeg/测试套件，未修改任何代码。所有结论均可按 §1.2 的命令复现。*
+
+---
+
+## 复核与修复进度（2026-10-11 追加）
+
+### 第 1 条（`MPW_ERR_SEEN` 无界）—— **已修** ✓
+
+- **原问题**：`lib/client.js` 的 `mpwErr()` 去重表 `MPW_ERR_SEEN`（Map）只有 `set(key, n+1)`，无上限 ⇒ 长会话 / 高频**不同**错误下无界增长；
+  （同函数的环形缓冲 `MPW_ERR_RING` 一向有界，>40 条即 `shift`。）
+- **修法**：手写头部（生成区外）加 `MPW_ERR_SEEN_MAX = 200` + 命中后按**插入序 FIFO** 淘汰最旧键 + 只读读数口 `window.__mpwErrSeenSize()`；
+- **判据**：`tools/err-seen-bound-test.mjs`（**5/0**）——结构断言 + 动态：切出 `mpwErr` 整段在假 `window/localStorage/fetch/document` 环境求值，
+  **500 个不同 key ⇒ 表大小 = 200（上限）**，同一 key 反复 ⇒ 计数 1→2 单调；
+- **门禁**：插件 `tools/check.sh` **12/12 PASS**（该提交上真跑，≈759s，峰值 ≈1586 MiB）；
+- **登记状态**：该判据**暂未登记**进 `tools/check.sh`（登记后真跑两次均在第 2 步属性面板断言上红，机制未明；已回退以免污染主门禁）
+  ⇒ **请手动或由 CI 执行**：`node tools/err-seen-bound-test.mjs`。
+
+其余各条（`sceneVideoScanCache` 缓存整段视频字节、np 播放器 blob URL 无 `revokeObjectURL`、双 id 注册静默 `catch` 等）**仍待修**。
