@@ -253,3 +253,29 @@ grep -rn "clearSceneVideoScanCache\|scanSceneVideo(" lib/*.js
 **方法学注记（我自己的错，记录以免复发）**：复核时我先用"创建点后 60 行内是否出现 `revokeObjectURL`"的**粗筛**，
 因此把本条误判为"仍待修" ✗ —— 实际释放发生在**另一个 helper** 里 ✗。
 教训与台账第 5/6 条纪律同源：**判定"未实现/未修"必须追到跨函数/跨文件的实现处**，窗口式 grep 不足以定论 ✗。
+
+### 第 3 条（双 id 注册的两个 `catch (e) {}` 完全静默）—— **复核为已修** ✓
+
+只读核验（`lib/client.js`，2026-10-11；审计旧行号 20840/20843 已随代码演进漂移到 **:26111** 一带）：
+
+- 该处注释自述：*"①(2026-09-23 **静默失败审计 #1**，`../docs/SILENT-FAILURE-AUDIT-20260923.md` A-1 表 #3)"* ✓；
+- 现状（`try { if (!globalThis.__mpwRegistered) { … for (const __mpwId of ["dsh-mpkg-wallpaper", "@local/dsh-mpkg-wallpaper"]) { try { window.__ModuleLoader__.load(…) … } catch (e) { … } } } }`）失败时留**三处痕**：
+  ① `console.error("[dsh-mpkg-wallpaper] 注册失败（插件不会加载）: " + __mpwId, e)`；
+  ② `globalThis.__mpwRegisterErr = { id, msg, at }`（真机探针/控制台一眼可见）；
+  ③ 成功路径 `globalThis.__mpwRegisteredIds.push(__mpwId)` 便于对拍；
+  且外层 `catch` 亦同样留痕（`id: "*"`）✓；
+- 注释明确"**只加出口、不动语义**：注册重试/idempotency 逐字节不变" ✓ ⇒ 幂等语义未被改动 ✓。
+
+**⇒ 本条不再是开放问题** ✓。
+
+---
+
+## `RESOURCE-AUDIT-20260923.md` 的**当前真实状态**（2026-10-11 逐条复核后）
+
+| 条 | 主题 | 复核结论 |
+|---|---|---|
+| 1 | `sceneVideoScanCache` 缓存整段视频字节 | **已修**（`MAX_ITEMS=64` / `MAX_BYTES`（默认 64MB、`MPW_SCENE_VIDEO_CACHE_BYTES` 可调）/ `MAX_ITEM_BYTES=预算/2` / TTL 10min / LRU / 计数器）✓ |
+| 2 | np 播放器 blob URL 从不 `revoke` | **已修**（`npBlobUrlSet()` 只释放上一支、`prev !== npBlobUrl` 守卫、失败走 `mpwErr`；单次兜底 ≤32 MiB）✓ |
+| 3 | 双 id 注册静默 `catch` | **已修**（`console.error` + `__mpwRegisterErr` + `__mpwRegisteredIds` 三处痕）✓ |
+| — | `MPW_ERR_SEEN` 无界（本会话新增修复项） | **本会话已修**（上限 200 + FIFO + 读数口；判据 `tools/err-seen-bound-test.mjs` 5/0；提交 `2ffd79d`）✓ |
+| 其余各条 | 见上文逐条清单 | **待逐条按"追到实现处"的方法复核**（窗口式 grep 不足以定论 ✗） |
