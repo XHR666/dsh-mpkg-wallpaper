@@ -824,10 +824,17 @@ try {
         await page.waitForTimeout(1400)
         result.menu.docPainted = await page.evaluate(STEP_DUMP_PAINTED_DOC)
         await shot('menu-model-l2')
-        console.log('· 二级菜单点击：' + JSON.stringify(result.menu.level2).slice(0, 140))
+        console.log('· 二级菜单点击：' + JSON.stringify(result.menu.level2 || result.menu.level2Rect || null).slice(0, 140))
         console.log('· 整页画底节点 ' + (result.menu.docPainted || []).length + ' 个（面积>800）：')
         for (const r of (result.menu.docPainted || []).slice(0, 18)) console.log('     ' + String(r.path).slice(-46) + ' | rect=' + JSON.stringify(r.rect) + ' | bg=' + String(r.bg).slice(0, 30) + ' bf=' + String(r.bf).slice(0, 16) + ' | ' + String(r.mpw).slice(0, 30))
       }
+      /* ②(2026-10-10) 把菜单子树的 outerHTML 存盘：用户"点检查弹框就收起"抓不到 HTML，
+         这里用探针代抓（含二级菜单），落到 tools/probe-out/menu-<name>.html 供离线分析。 */
+      try {
+        const html = await page.evaluate((sel) => { const e = document.querySelector(sel); return e ? e.outerHTML : '' }, '[data-menu-material], [class*="_7KE1Ra_menu"]')
+        if (html) { fs.writeFileSync(path.join(OUTDIR, 'menu-' + name + '.html'), html); console.log('· 已存 outerHTML: tools/probe-out/menu-' + name + '.html (' + html.length + ' 字符)') }
+        else console.log('· ' + name + ' outerHTML 为空（菜单已关？）')
+      } catch (e) { console.log('· ' + name + ' outerHTML 存盘失败: ' + String((e && e.message) || e).slice(0, 80)) }
       const rows = (result.menu[name].dump || {}).rows || []
       console.log('· ' + name + ' 菜单里画了底的节点 ' + rows.length + ' 个：')
       for (const r of rows.slice(0, 14)) console.log('     d' + r.depth + ' ' + String(r.path).slice(-52) + ' | bg=' + String(r.bg).slice(0, 26) + ' bf=' + String(r.bf).slice(0, 14) + ' | ::before=' + String(r.pBefore).slice(0, 34) + ' | ' + String(r.attrs).slice(0, 40))
