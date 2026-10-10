@@ -341,6 +341,12 @@ node tools/thumb-chain-test.mjs || fail=1
 #       的包这两者一般是缺失的）；
 #     E 变异自证 6 组（accept / 嗅探 / preview 路由 / 失败清理 / 回收 / reason 两处各自承重）。
 node tools/pkg-import-test.mjs || fail=1
+# ①(P-309 2026-10-11 资源审计 #4 剩余半) 上传副本**内容哈希去重**：`/upload` 边收边算 sha256（流式）⇒
+#   `hash → token` 命中且旧副本仍在 ⇒ 复用旧 token/路径、丢弃本次落盘（清掉磁盘双份 + files 双条目）；
+#   命中刷新 lastUsed；回收时同步清索引；**任何失败都回退随机 token**（去重不破坏导入）。
+#   回退位 `MPW_UPLOAD_DEDUP=0`（环境变量 ⇒ 不进 URL 开关表）。判据：A 去重语义五条 + B 回退档 + 变异自证
+#   （撤掉"命中即复用" ⇒ 期望红集 == 实际红集 == ["A2","A3","A4","A4b"]）。详见 docs/RESOURCE-AUDIT-20260923.md。
+node tools/upload-dedup-test.mjs || fail=1
 # ①(2026-09-27 类型判定轮) 同一路线的**类型判定**判据（`/custom-dir` 目录级判定）：用户点名
 #   「包含 mp4 的 scene 壁纸的 MPKG 形式会不会被只识别成 MP4、丢掉 scene 效果」。
 #   实测错判（真机可复现）：`signals.scene` 第三顺位是**任意 `.pkg/.mpkg`** ⇒ "是容器就是场景"；

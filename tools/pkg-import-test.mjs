@@ -119,6 +119,18 @@ F.pkgSingle = path.join(FX, 'scene.pkg');
 fs.writeFileSync(F.pkgSingle, buildContainer('PKGV0022', [
   ['scene.json', SCENE_JSON], ['project.json', PROJECT_JSON], ['preview.gif', GIF], ['textures/noise.tex', SMALL_TEX],
 ]));
+/* ①(P-309 2026-10-11 去重轮) G9 回收判据要的是"**多份不同内容的副本**"：同一内容现在会被 `/upload`
+   按 sha256 去重成一份（见 tools/upload-dedup-test.mjs）⇒ C 段/E5 改用这组"条目名与形状同 pkgSingle、
+   内容每次只差 1 字节"的夹具（**不放松任何断言**，只是让"连续导入 N 次"仍等于"N 份副本"）。 */
+F.distinct = [];
+for (let i = 0; i < 6; i++) {
+  const p = path.join(FX, 'distinct-' + i + '.mpkg');
+  fs.writeFileSync(p, buildContainer('PKGV0022', [
+    ['scene.json', SCENE_JSON], ['project.json', PROJECT_JSON],
+    ['preview.gif', Buffer.concat([GIF, Buffer.from([i])])], ['textures/noise.tex', SMALL_TEX],
+  ]));
+  F.distinct.push(p);
+}
 F.mpkgReal = path.join(FX, 'we_mobile.mpkg');
 fs.writeFileSync(F.mpkgReal, buildContainer('PKGM0014', [['scene.json', SCENE_JSON], ['preview.gif', GIF]]));
 F.mpkgPackdir = path.join(FX, 'packdir_style.mpkg');
@@ -459,7 +471,7 @@ console.log('\n══ C 上传容器副本回收（G9，上限 + 在用保护）
     ok('C0 上限已登记（__mpwTest.limits.UPLOAD_KEEP=2）', H.mod.__mpwTest.limits.UPLOAD_KEEP === 2);
     const tokens = [];
     for (let i = 0; i < 5; i++) {
-      const r = await uploadFile(H.base, F.pkgSingle);
+      const r = await uploadFile(H.base, F.distinct[i]);   // ①(P-309) 内容各不相同 ⇒ 5 次导入 = 5 份副本（去重不介入）
       if (r.json && r.json.ok) tokens.push({ token: r.json.token, entries: r.json.entries });
     }
     ok('C1 连续 5 次导入后：DATA_DIR 里的上传副本 ≤ UPLOAD_KEEP（原实现 5 个全留着，永不回收）',
@@ -475,8 +487,8 @@ console.log('\n══ C 上传容器副本回收（G9，上限 + 在用保护）
     const sRec = tokens.find((t) => t.token === survivor) || tokens[3];
     const mIdx = (sRec.entries.find((e) => e.name === 'preview.gif') || sRec.entries[0]).index;
     const m = await reqJson(H.base, 'GET', BASE + '/media?token=' + survivor + '&index=' + mIdx);
-    await uploadFile(H.base, F.pkgSingle);
-    await uploadFile(H.base, F.pkgSingle);
+    await uploadFile(H.base, F.distinct[4]);              // ①(P-309) 用**新鲜的不同内容**造"后续导入"压力
+    await uploadFile(H.base, F.distinct[5]);
     ok('C2 正在播放（/media 读过）的副本不被后续导入挤掉（lastUsed 保护）',
       m.status === 200 && uploadNames(H.dataDir).indexOf(survivor + '.mpkg') >= 0,
       'survivor=' + survivor.slice(0, 8) + ' files=' + uploadNames(H.dataDir).length);
@@ -713,10 +725,11 @@ console.log('\n══ E 变异自证（8 组，各自必红）══');
   // E5（G9 回收）
   {
     const lib = copyLib('gc');
-    mutate(path.join(lib, 'index.js'), 'try { pruneUploads(filePath); } catch { /* 回收失败不影响导入 */ }', '/* 变异：不回收 */');
+    mutate(path.join(lib, 'index.js'), 'try { pruneUploads(effPath); } catch { /* 回收失败不影响导入 */ }', '/* 变异：不回收 */');   // ①(P-309) 落点随去重改成 effPath
     const H = await bootHost(lib, { env: { DSH_WE_UPLOAD_KEEP: 2, DSH_WE_UPLOAD_MAX_BYTES: 64 * 1024 * 1024 } });
     try {
-      for (let i = 0; i < 4; i++) await uploadFile(H.base, F.pkgSingle);
+      for (let i = 0; i < 4; i++) await uploadFile(H.base, F.distinct[i]);   // ①(P-309) 4 份不同内容 ⇒ 该断言仍测"不回收 ⇒ 4 份"
+
       expect('E5 去掉"上传成功即回收"⇒ 4 份副本全留着（C1 变红）', uploadNames(H.dataDir).length === 4, 'count=' + uploadNames(H.dataDir).length);
     } finally { await H.stop(); }
   }

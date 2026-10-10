@@ -353,3 +353,23 @@ grep -rn "clearSceneVideoScanCache\|scanSceneVideo(" lib/*.js
 3. **判据先行**：新增 `tools/audio-bus-set-prune-test.mjs` —— 造 N 个已脱离/已关闭对象 ⇒ 触发一次静音遍历后两集合大小回到基线 ✓；仍存活的对象**不被误删** ✓（反假绿）；
 4. **回退位**：如涉及行为差异，用环境变量/设置项回到旧行为 ✓；
 5. 生成区纪律：只改 `lib/audio-bus.js` ✓（`lib/client.js` 的 `MPW-AUDIO-BUS-BEGIN` 区由 `tools/build-audio-bus.mjs` 生成 ✗ 不得手改），跑 `tools/check.sh`（含第 11 步"单文件 bundle 等价性" ✓）。
+
+---
+
+### 第 4 条（上传副本**没有内容哈希去重**）—— **已修** ✓（P-309，2026-10-11）
+
+- **原缺口**：`/upload` 每次 `crypto.randomBytes(16)` 新 token（`lib/index.js` 的 upload 路由）；`pruneUploads()`
+  只有**数量 + 字节**上限 ⇒ **重复导入同一 mpkg 仍占双份磁盘 + `files` 双条目**（审计主表 #4"无界台账 + 磁盘堆积"的后半）。
+- **修法**：接收流上**边写边算 sha256**（流式，不整包驻留）⇒ `hash → token` 索引命中且旧副本仍在（同 size）
+  ⇒ **丢弃本次落盘、复用旧 token/路径**；命中时刷新该记录的 `lastUsed`（保护窗）。
+  任何一步失败（预热/哈希/旧文件消失/删临时文件失败）都**回退随机 token**——去重**绝不破坏导入**。
+  回收路径同步清理索引（`pruneUploads` 删副本时删对应哈希项）；重启后用**懒预热**
+  `ensureUploadHashes()`（只对 `^[0-9a-f]{32}\.mpkg$` 形状的上传物、每份只算一次，用户文件一律不碰）。
+- **回退位**：环境变量 **`MPW_UPLOAD_DEDUP=0`** ⇒ 不算哈希、不建索引、逐字节回旧行为
+  （**环境变量**，不是 URL 参数 ⇒ 不进渲染器 `README-DIAGNOSTICS` 主表，不触发 `diag-flag-check` 双向校验）。
+- **判据**：`tools/upload-dedup-test.mjs`（挂门禁第 2 步；9 断言 + 变异自证 `MUTANT-RED-OK`，红集 `["A2","A3","A4","A4b"]`）：
+  ①同内容二次传 ⇒ 同 token + `deduped:true` + 磁盘仍一份 + `files` 仍一条；②同大小不同内容 ⇒ 不去重；
+  ③命中刷新 `lastUsed`；④`MPW_UPLOAD_DEDUP=0` ⇒ 两次新 token、磁盘两份；⑤`pruneUploads` 上限语义不变 + 索引同步清。
+- **连带**：`tools/pkg-import-test.mjs` 的 G9 回收判据（C 段/E5）原用"同一夹具连续导入 N 次"表示"N 份副本" ⇒
+  改为**内容各不相同的等价夹具**（C 段 `F.distinct`），**未放松任何断言**（现 78/0）；E5 的变异落点随
+  `pruneUploads(filePath)` → `pruneUploads(effPath)` 同步更新。
