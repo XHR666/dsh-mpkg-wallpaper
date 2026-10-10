@@ -332,3 +332,24 @@ grep -rn "clearSceneVideoScanCache\|scanSceneVideo(" lib/*.js
 **仍可追问的精确一题**（下一轮，1 条命令即可判）：`adopted` / `media` 在**释放路径**上是否有对应的 `delete` ✗
 （例：`:815` 有 `state.mediaMutedByUs.delete(el)`；需核对媒体元素/ctx 销毁时是否也从这两个 Set 移除 ✗）；
 若无 ⇒ 长会话反复挂载/卸载壁纸时它们会单调增长 ✗（这与审计的原始关切同源 ✓）。
+
+### #6/#7/#9 的**残留结论**：`adopted` / `media` 无删除点 ⇒ **真待办**（2026-10-11 定论）
+
+探针（均在**源文件** `lib/audio-bus.js` 内，只读）：
+
+| 探针 | 命中 |
+|---|---|
+| `adopted.delete` / `adopted.clear` | **0** ✗ |
+| `media.delete` / `media.clear` | **0** ✗ |
+| `function release` / `function teardown` / `.clear()` | **0** ✗ |
+| （对比）`mediaMutedByUs.delete(el)` | 命中（`:815` ✓——但它本来就是 WeakSet ✗ 不是本条对象） |
+
+⇒ **`adopted`（`Set<AudioContext>`）与 `media`（`Set<MediaElement>`）在整个源文件里没有移除路径** ✗：
+它们**只增不减**，长会话里反复挂载/卸载壁纸、或页面反复 `new Audio()` 时**单调增长** ✗（弱引用无法替代，因为静音必须能**遍历** ✓）。
+
+**施工要点（需完整预算：改源 + 重建生成区 + 跑 12 步门禁）**
+1. 给两处登记点补**成对的生命周期清理**：ctx 关闭（`state === 'closed'` / 失活）时从 `adopted` 移除；媒体元素 `emptied`/`removed`（或 `MutationObserver` 观察到脱离 shadow/宿主 DOM）时从 `media` 移除 ✗；
+2. 或退一步：**定期压缩**（每次静音遍历时顺带剔除"已关闭的 ctx / 已脱离文档的元素"，用 `isConnected` 与 `ctx.state` 判定 ✓）；
+3. **判据先行**：新增 `tools/audio-bus-set-prune-test.mjs` —— 造 N 个已脱离/已关闭对象 ⇒ 触发一次静音遍历后两集合大小回到基线 ✓；仍存活的对象**不被误删** ✓（反假绿）；
+4. **回退位**：如涉及行为差异，用环境变量/设置项回到旧行为 ✓；
+5. 生成区纪律：只改 `lib/audio-bus.js` ✓（`lib/client.js` 的 `MPW-AUDIO-BUS-BEGIN` 区由 `tools/build-audio-bus.mjs` 生成 ✗ 不得手改），跑 `tools/check.sh`（含第 11 步"单文件 bundle 等价性" ✓）。
