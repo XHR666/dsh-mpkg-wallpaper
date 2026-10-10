@@ -194,8 +194,9 @@ RC=1
 2. **`/lg` 路由在"从 npm 安装"的副本上是 404**（§3 末）：静态读码证明**优雅降级**，
    但本轮**禁止起浏览器/未跑 HTTP 实测** ⇒ 判据待主对话（`curl` 一次即可，不必开浏览器）。
 3. **`nlink=2`（仓库外还有一组硬链接备份）** 仍未定位（P-122 §9 第 3 项）：移出发布面**不涉及**它。
-4. **`lib/client.js.bak-20260907`**（480 471 B，S-2）仍在仓库、仍靠 `!lib/**/*.bak*` 不进包；
-   本轮**没删**（不在 ① 的授权范围）。
+4. **`lib/client.js.bak-20260907`**（480 471 B，S-2）—— **2026-10-11 已删除**（用户授权插件侧清理）：该文件**未被 git 跟踪**、
+   且 `package.json` 的 `files` 负向模式（`!lib/**/*.bak*`）本就把它挡在包外 ⇒ 删除**零发布影响**；
+   全仓引用仅剩注释/文档（`tools/integrity-check.mjs` 的历史踩坑说明、本文档、`docs/LIQUID-GLASS-DEDUP.md`）。
 5. **`glass.*` 家族里另有 5 个孤儿 i18n 键**（`glass.title`/`glass.desc`/`glass.color`/
    `glass.color.hint`/`glass.alpha`，全仓**无 `t("…")` 调用点**）与 2 个无读取点的设置字段
    （`glassColor`/`glassAlpha`）—— 与 ② 的 `glassWindow` 同源（WebGL 时代的"液态玻璃（elysia395 方案）"

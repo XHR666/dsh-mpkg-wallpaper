@@ -104,7 +104,7 @@ lib/index.js:3304    const lgDir = join(fileURLToPath(new URL('.', import.meta.u
 | `tools/probe-out/{style-scope,bundle-manifest}.json` | 探针产物（`.gitignore` 忽略），非测试输入 | 无影响 |
 
 **④ 纯历史副本**：`tools/liquid-demo/vendor/**`（9 文件，本次删除）、
-`lib/client.js.bak-20260907`（`files` 负向模式排除，不进包）。
+`lib/client.js.bak-20260907`（`files` 负向模式排除，不进包）—— **2026-10-11 已删除**（未被 git 跟踪 + 本就被排除 ⇒ 零发布影响）。
 
 ---
 
