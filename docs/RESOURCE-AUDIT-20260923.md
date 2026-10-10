@@ -297,3 +297,16 @@ grep -rn "clearSceneVideoScanCache\|scanSceneVideo(" lib/*.js
 
 **施工纪律提醒**：`lib/client.js` 是**手写主体 + 若干生成区**的单文件产物（`MPW-BLOBRETRY-BEGIN` / `MPW-WEJSON-BEGIN` / `MPW-THUMB-BEGIN` / `MPW-PROPS-MODEL-BEGIN` / `MPW-DIAG-SUBSYS-BEGIN` / `MPW-AUDIO-BUS-BEGIN`（由 `tools/build-audio-bus.mjs` 生成）/ `MPW-NP-GEN-START`）
 ⇒ **生成区内不得手改** ✗；改动必须落在手写区或对应的源文件（如 `lib/audio-bus.js`）并跑该仓库 12 步门禁（含"单文件 bundle 等价性"第 11 步 ✓）。
+
+### #6/#7/#9（audio-bus 状态集合弱引用化 + 事件驱动替代 750ms 全遍历）—— **大体重构已落地**（保留一项待细查）
+
+只读核验**源头文件** `lib/audio-bus.js`（68,733 B；`lib/client.js` 的 `MPW-AUDIO-BUS-BEGIN` 区由 `tools/build-audio-bus.mjs` 从本文件生成 ⇒ 按生成区纪律，**核验与改动都应在本文件** ✓）：
+
+- 注释自述重构：*"…'重新调度包络'的窗口从 **750ms 轮询**收敛到同一拍"*、*"旧实现每 750ms 真的做了四件事"*、
+  *"旧写法每 750ms 对每个同源帧**重入**一次 ⇒ 变成**空操作**，而不是每拍重压一遍帧内音频图"*；
+- 读数口：*"这行 = 有人从外面重入这个 realm 的总线（旧写法每 750ms 对每个同源帧来一次）"* ⇒ 说明有可观测计数；
+- 现状计数（本文件内）：`WeakMap` **2** 处、`emit(` **21** 处、`addEventListener` **6** 处、`setInterval` **1** 处（不再是"每 750ms 全遍历"的形态）；
+- **保留项**：审计原话里的"状态集合**弱引用化**"未逐名确认（本文件 `WeakRef` **0** 处、`stateSet` **0** 处 ⇒ 可能已改名或不再需要 ✗）
+  ⇒ 若要彻底结案，需按名字级核对（下一轮：在该文件里定位"状态集合"的实际数据结构与其持有方式 ✗）。
+
+**结论**：审计指出的"**750ms 周期重压**"这一主要成本已重构落地 ✓；"弱引用化"一项**待名字级细查** ⬜。
