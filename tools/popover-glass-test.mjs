@@ -147,6 +147,21 @@ ok('M5 弹框内层不再叠白底：dl[data-session-stats-*] 不被我们刷底
   && CLIENT.includes('mpwPopInsideMenuShell')
   && CLIENT.includes('[data-team-panel]::before,'))
 
+/* ②(2026-10-10 第五批真机) 用户报"有壁纸时加号菜单/子代理树只剩白底、没模糊"。机制：这两类弹层
+   落在我们自己的玻璃祖先里（卡片 blur14/侧栏/面板）⇒ 自己的 blur 采样不到页面；而主路去截断只扫
+   [data-mpw-pop-bg]，宿主 material 菜单按 H 判据**故意没有**这个标记 ⇒ 永远不去截断。
+   这里钉住新加的**专用趟**的三条纪律：只加不删（不能重演上轮把 B1 输入框卡片 case 弄坏的那次）、
+   只处理最近一个带 blur 的祖先、绝不参与 glasses/truncated 打标（否则又会给它们叠一层我们的底）。 */
+ok('M6 专用去截断趟：宿主 material 菜单 / 触发候选菜单 / 子代理树都进 need，且只加不删',
+  CLIENT.includes('function mpwPopUntruncExtra(')
+  && /mpwPopUntruncExtra\(neutralize\)[\s\S]{0,80}mpwPopUntruncApply\(neutralize\)/.test(CLIENT)
+  && /function mpwPopUntruncExtra[\s\S]{0,1800}?need\.add\(p\)/.test(CLIENT)
+  && !/function mpwPopUntruncExtra[\s\S]{0,1800}?glasses\.add/.test(CLIENT)
+  && !/function mpwPopUntruncExtra[\s\S]{0,1800}?truncated\.add/.test(CLIENT))
+ok('M7 子智能体会话树只补模糊、不补底（ZKlsPq_menu 进模糊规则，不进底色规则）',
+  /html body :is\(\$\{popTreeSel\}\),\n\$\{popSurfaceSel\} \{/.test(CLIENT)
+  && !/popSurfaceCss = \(popAlphaUserSet[\s\S]{0,400}popTreeSel/.test(CLIENT))
+
 ok('A7 提示气泡不接管底色（深底浅字的宿主气泡：我们压上去就成白字看不清）',
   /el.getAttribute\("role"\) === "tooltip"/.test(CLIENT))
 ok('A8 会话里掉帧：快路不再夹带全文档扫描（mpwSideLiftSync 只在节流的重活路径里）',
