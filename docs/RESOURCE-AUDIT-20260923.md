@@ -279,3 +279,21 @@ grep -rn "clearSceneVideoScanCache\|scanSceneVideo(" lib/*.js
 | 3 | 双 id 注册静默 `catch` | **已修**（`console.error` + `__mpwRegisterErr` + `__mpwRegisteredIds` 三处痕）✓ |
 | — | `MPW_ERR_SEEN` 无界（本会话新增修复项） | **本会话已修**（上限 200 + FIFO + 读数口；判据 `tools/err-seen-bound-test.mjs` 5/0；提交 `2ffd79d`）✓ |
 | 其余各条 | 见上文逐条清单 | **待逐条按"追到实现处"的方法复核**（窗口式 grep 不足以定论 ✗） |
+
+---
+
+## 优先级列表的**现状映射**（2026-10-11 复核后）
+
+审计自列的优先顺序与当前状态（逐条**追到实现处**核验，非窗口式 grep ✗）：
+
+| 审计优先级 | 主题 | 现状 |
+|---|---|---|
+| **#1** | `sceneVideoScanCache` 去字节 + 字节预算 | **已修** ✓（`MAX_ITEMS=64` / `MAX_BYTES`（默认 64MB、`MPW_SCENE_VIDEO_CACHE_BYTES` 可调）/ 单条≤预算/2 / TTL 10min / **LRU** / 计数器） |
+| **#2** | np blob URL 成对 revoke | **已修** ✓（`npBlobUrlSet()` 只释放上一支 + `prev !== npBlobUrl` 守卫 + 失败走 `mpwErr`） |
+| **#3** | 注册入口补错误出口 | **已修** ✓（`console.error` + `globalThis.__mpwRegisterErr={id,msg,at}` + `__mpwRegisteredIds`） |
+| **#4** | 上传去重 + `files` 上限 + `DATA_DIR` 清理 | ⬜ **未做** —— 与工作区台账「插件队列 #26」**同题**：施工规格已侦察（锚点 `referencedUploadTokens` / `pruneUploads` / `uploadStat` / 导入路径调用点 / `files.get(token).lastUsed` 保护窗；方案=流式 sha256 + `hashIndex` 复用 + 删时摘索引 + 回退位 `MPW_UPLOAD_DEDUP=0` + 判据） |
+| **#6/#7/#9** | audio-bus 状态集合弱引用化 + 事件驱动替代 750ms 全遍历 | ⬜ **未做** —— 需先按"追到实现处"定位（`lib/` 与 `lib/audio-bus.js` 的生成区关系见 `tools/build-audio-bus.mjs` ✗ 改生成区=改源 ✗） |
+| 其余条目 | 见上文逐条清单 | ⬜ 待逐条复核 |
+
+**施工纪律提醒**：`lib/client.js` 是**手写主体 + 若干生成区**的单文件产物（`MPW-BLOBRETRY-BEGIN` / `MPW-WEJSON-BEGIN` / `MPW-THUMB-BEGIN` / `MPW-PROPS-MODEL-BEGIN` / `MPW-DIAG-SUBSYS-BEGIN` / `MPW-AUDIO-BUS-BEGIN`（由 `tools/build-audio-bus.mjs` 生成）/ `MPW-NP-GEN-START`）
+⇒ **生成区内不得手改** ✗；改动必须落在手写区或对应的源文件（如 `lib/audio-bus.js`）并跑该仓库 12 步门禁（含"单文件 bundle 等价性"第 11 步 ✓）。
