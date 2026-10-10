@@ -835,6 +835,27 @@ try {
         if (html) { fs.writeFileSync(path.join(OUTDIR, 'menu-' + name + '.html'), html); console.log('· 已存 outerHTML: tools/probe-out/menu-' + name + '.html (' + html.length + ' 字符)') }
         else console.log('· ' + name + ' outerHTML 为空（菜单已关？）')
       } catch (e) { console.log('· ' + name + ' outerHTML 存盘失败: ' + String((e && e.message) || e).slice(0, 80)) }
+      /* ②(2026-10-10) 菜单各层读数：外壳 / 内层 material / 内层 groups(role=menu) 的 bg+radius，
+         以及三枚相关 token 的生效值 —— 用来判定"直角白块"到底是哪一层被谁画的。 */
+      try {
+        const info = await page.evaluate(() => {
+          const shell = document.querySelector('[data-menu-material], [class*="_7KE1Ra_menu"]')
+          const cs = (e) => { if (!e) return null; const c = getComputedStyle(e); return { cls: String(e.className).slice(0, 44), bg: c.backgroundColor, radius: c.borderRadius, bf: c.backdropFilter, pos: c.position } }
+          const body = getComputedStyle(document.body)
+          const root = getComputedStyle(document.documentElement)
+          const tok = (n) => String(body.getPropertyValue(n) || root.getPropertyValue(n) || '').trim()
+          return {
+            shell: cs(shell),
+            material: cs(shell && shell.querySelector('[class*="_material_ri079_"]')),
+            groups: cs(shell && shell.querySelector('[role="menu"]')),
+            groupHeading: cs(shell && shell.querySelector('[data-menu-group-heading]')),
+            option: cs(shell && shell.querySelector('[class*="_7KE1Ra_option"]')),
+            tokens: { mpwPopSurface: tok('--mpw-pop-surface'), mpwSurfacePop: tok('--mpw-surface-pop'), dswMenuFill: tok('--dsw-menu-surface-fill') },
+          }
+        })
+        result.menu[name].layers = info
+        console.log('· ' + name + ' 层次读数: ' + JSON.stringify(info).slice(0, 700))
+      } catch (e) { console.log('· 层次读数失败: ' + String((e && e.message) || e).slice(0, 90)) }
       const rows = (result.menu[name].dump || {}).rows || []
       console.log('· ' + name + ' 菜单里画了底的节点 ' + rows.length + ' 个：')
       for (const r of rows.slice(0, 14)) console.log('     d' + r.depth + ' ' + String(r.path).slice(-52) + ' | bg=' + String(r.bg).slice(0, 26) + ' bf=' + String(r.bf).slice(0, 14) + ' | ::before=' + String(r.pBefore).slice(0, 34) + ' | ' + String(r.attrs).slice(0, 40))

@@ -155,12 +155,21 @@ ok('M5 弹框内层不再叠白底：dl[data-session-stats-*] 不被我们刷底
 ok('M6 专用去截断趟：宿主 material 菜单 / 触发候选菜单 / 子代理树都进 need，且只加不删',
   CLIENT.includes('function mpwPopUntruncExtra(')
   && /mpwPopUntruncExtra\(neutralize\)[\s\S]{0,80}mpwPopUntruncApply\(neutralize\)/.test(CLIENT)
-  && /function mpwPopUntruncExtra[\s\S]{0,1800}?need\.add\(p\)/.test(CLIENT)
-  && !/function mpwPopUntruncExtra[\s\S]{0,1800}?glasses\.add/.test(CLIENT)
-  && !/function mpwPopUntruncExtra[\s\S]{0,1800}?truncated\.add/.test(CLIENT))
+  && /function mpwPopUntruncExtra[\s\S]{0,4000}?need\.add\(p\)/.test(CLIENT)
+  && !/function mpwPopUntruncExtra[\s\S]{0,4000}?glasses\.add/.test(CLIENT)
+  && !/function mpwPopUntruncExtra[\s\S]{0,4000}?truncated\.add/.test(CLIENT))
 ok('M7 子智能体会话树只补模糊、不补底（ZKlsPq_menu 进模糊规则，不进底色规则）',
   /html body :is\(\$\{popTreeSel\}\),\n\$\{popSurfaceSel\} \{/.test(CLIENT)
   && !/popSurfaceCss = \(popAlphaUserSet[\s\S]{0,400}popTreeSel/.test(CLIENT))
+/* ③(2026-10-10 真机层次读数定案) 用户："外面的圆角那圈模糊正常，里面有一个直角的矩形又是白的"。
+   读数为证：宿主 material 菜单里 `._7KE1Ra_groups[role="menu"]` 是 **radius 0** 的滚动容器，
+   而我们那条 `[role="menu"]` 弹层规则把 blur 打在了它身上 ⇒ 它把身后的 58% 白底在方形区域内
+   又糊一遍。修法：外层已是 material 外壳时，内层容器统一打 data-mpw-menu-inner，并从
+   **底色与模糊两条规则**里排除（两层都钉住，防止将来只改一条）。 */
+ok('M8 material 外壳里的内层容器（直角滚动容器）被一条 !important 规则直接中和（只加不改既有规则）',
+  CLIENT.includes('data-mpw-menu-inner')
+  && /html body \[data-mpw-menu-inner\] \{[\s\S]{0,200}backdrop-filter: none !important/.test(CLIENT)
+  && /querySelectorAll\('\[data-menu-material\], \[data-trigger-menu\], \[class\*="ZKlsPq_menu"\]'\)/.test(CLIENT))
 
 ok('A7 提示气泡不接管底色（深底浅字的宿主气泡：我们压上去就成白字看不清）',
   /el.getAttribute\("role"\) === "tooltip"/.test(CLIENT))
