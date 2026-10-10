@@ -33,7 +33,8 @@ const argv = process.argv.slice(2)
 const arg = (k, d) => { const i = argv.indexOf('--' + k); return i >= 0 && argv[i + 1] && !argv[i + 1].startsWith('--') ? argv[i + 1] : d }
 const has = (k) => argv.includes('--' + k)
 const HEADED = has('headed')
-const ONLY_INNER = has('only-inner')          // 只跑弹框内层复核（第四批真机用）
+const ONLY_INNER = has('only-inner')
+const ONLY_MENU = has('only-menu')            // 只跑"模型选择器里谁在画白底"（第五批真机用）          // 只跑弹框内层复核（第四批真机用）
 const BROWSER = arg('browser', 'firefox')          // 只支持 firefox：本机（proot）Chromium 起得来但一建页就崩
                                                    // （browserType.launch 后 newPage 即 closed，已实测三种 flag 组合），
                                                    // 用户 Via/Chromium 的差异只能靠"结构 + 计算样式"推断，见 tools/probe-out 说明
@@ -176,6 +177,31 @@ const INIT_HELPERS = () => {
     } catch (e) { return { err: String((e && e.message) || e).slice(0, 80) } }
   }
   globalThis.__sp = P
+}
+
+/* ── 只查模型/推理选择器：整棵子树里**所有画了底的节点**（含伪元素），定位白块 ── */
+const STEP_DUMP_PAINTED = (rootSel) => {
+  const P = globalThis.__sp
+  const root = document.querySelector(rootSel)
+  if (!root) return { sel: rootSel, missing: true }
+  const alpha = (c) => {
+    try { const m = String(c).match(/rgba?\(([^)]+)\)/); if (!m) return 1; const parts = m[1].split(/[ ,/]+/); return parts.length > 3 ? parseFloat(parts[3]) : 1 } catch (e) { return 1 }
+  }
+  const rows = []
+  const walk = (e, d, path) => {
+    if (rows.length > 90 || d > 6) return
+    let cs = null
+    try { cs = getComputedStyle(e) } catch (err) { return }
+    const pb = P.pseudo(e, '::before'), pa = P.pseudo(e, '::after')
+    const painted = cs.backgroundColor && alpha(cs.backgroundColor) >= 0.05 && cs.backgroundColor !== 'transparent'
+    const pseudoPainted = (pb && pb.bg && alpha(pb.bg) >= 0.05) || (pa && pa.bg && alpha(pa.bg) >= 0.05)
+    if (painted || pseudoPainted || (cs.backgroundImage && cs.backgroundImage !== 'none')) {
+      rows.push({ depth: d, path: path + ' > ' + e.tagName.toLowerCase() + '.' + String(e.className || '').slice(0, 46), bg: cs.backgroundColor, bgImage: String(cs.backgroundImage).slice(0, 40), bf: cs.backdropFilter, pBefore: pb && (pb.bg + ' bf=' + pb.bf), pAfter: pa && (pa.bg + ' bf=' + pa.bf), attrs: Array.from(e.attributes).map((x) => x.name).filter((n) => n.startsWith('data-') || n === 'role').join(',') })
+    }
+    for (const c of Array.from(e.children)) walk(c, d + 1, path + ' > ' + e.tagName.toLowerCase() + '.' + String(e.className || '').slice(0, 30))
+  }
+  walk(root, 0, '')
+  return { sel: rootSel, root: P.facts(root), rows }
 }
 
 /* ── 内层复核（第四批真机）：挑有用量数据的会话 → 开用量弹框 → 开团队面板 → 开子代理树 ── */
@@ -730,6 +756,29 @@ try {
   }
   result.openSession = { final: state }
   await page.waitForTimeout(1500)
+  if (ONLY_MENU) {
+    const shot = async (n) => { try { await page.screenshot({ path: path.join(OUTDIR, 'shot-020-' + n + '.png') }) } catch (e) { /* 忽略 */ } }
+    result.menu = {}
+    for (const [name, openFn] of [
+      ['model', async () => { const clicked = await page.evaluate(() => { const P = globalThis.__sp; const e = P.byText('DeepSeek|V4|模型', document.querySelector('[data-composer-card], [data-composer-seat], [data-composer-stack]') || document); if (!e) return null; let n = e; for (let i = 0; i < 3 && n && n.tagName !== 'BUTTON'; i++) n = n.parentElement; try { (n || e).click() } catch (err) { return 'err' }; return P.pathOf(n || e) }); await page.waitForTimeout(1200); return clicked }],
+      ['reasoning', async () => { const clicked = await page.evaluate(() => { const P = globalThis.__sp; const e = P.byText('Max|推理|reasoning|effort', document.querySelector('[data-composer-card], [data-composer-seat], [data-composer-stack]') || document); if (!e) return null; let n = e; for (let i = 0; i < 3 && n && n.tagName !== 'BUTTON'; i++) n = n.parentElement; try { (n || e).click() } catch (err) { return 'err' }; return P.pathOf(n || e) }); await page.waitForTimeout(1200); return clicked }],
+    ]) {
+      result.menu[name] = { clicked: await openFn() }
+      try { await page.waitForSelector('[data-menu-material], [class*="_7KE1Ra_menu"]', { timeout: 6000 }) } catch (e) { result.menu[name].waitTimeout = true }
+      await page.waitForTimeout(500)
+      result.menu[name].dump = await page.evaluate(STEP_DUMP_PAINTED, '[data-menu-material], [class*="_7KE1Ra_menu"]')
+      await shot('menu-' + name)
+      const rows = (result.menu[name].dump || {}).rows || []
+      console.log('· ' + name + ' 菜单里画了底的节点 ' + rows.length + ' 个：')
+      for (const r of rows.slice(0, 14)) console.log('     d' + r.depth + ' ' + String(r.path).slice(-52) + ' | bg=' + String(r.bg).slice(0, 26) + ' bf=' + String(r.bf).slice(0, 14) + ' | ::before=' + String(r.pBefore).slice(0, 34) + ' | ' + String(r.attrs).slice(0, 40))
+      try { await page.keyboard.press('Escape') } catch (e) { /* 忽略 */ }
+      await page.waitForTimeout(500)
+    }
+    dump()
+    try { await browser.close() } catch (e) { /* 忽略 */ }
+    console.log('✎ --only-menu 产物：tools/probe-out/surface-map-020.json + shot-020-menu-*.png')
+    process.exit(0)
+  }
   if (ONLY_INNER) {
     const shot = async (n) => { try { await page.screenshot({ path: path.join(OUTDIR, 'shot-020-' + n + '.png') }) } catch (e) { /* 忽略 */ } }
     const show = (label, v) => {
