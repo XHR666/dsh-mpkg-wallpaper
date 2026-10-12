@@ -319,6 +319,13 @@ node tools/scene-props-push-test.mjs || fail=1
 #   C 组单一落点判据（占位显隐只有 mpwThumbSync 里的 3 处写入；事件入口只许"收起"）+ 旧实现对照。
 #   39 通过 / 0 失败。真机读数与两条真机探针见 docs/RELEASE.md。
 node tools/thumb-chain-test.mjs || fail=1
+# ①(2026-10-12 用户第 ① 条「画面左右各被切掉一部分」的**插件侧**同族缺陷) 场景**静态合成**的适配档：
+#   旧行为恒 `cover`（`scale = Math.max(vw/W, vh/H)`）⇒ 16:9 素材铺进非 16:9 的框会裁长边两端
+#   （真机截图 3392×2400 = 1.41333 ⇒ 左右各 10.31%，见 ../docs/reports/CROP-TEXT-POSITION-DIAGNOSIS.md §11/§12）。
+#   本档钉：缺省 `contain`（整幅可见、四边裁切 0.00%）+ 显式 `cover` 反向读数（左右各 10.25%）+
+#   `?scenefit=cover` 与设置 `sceneFit:"cover"` 两个回退口 + 算式唯一（旧裸 cover 必须已移除）+
+#   源级变异自证（缺省改回 cover ⇒ 必红，期望红集==实际红集）；9 断言；~0.2s；无浏览器/无语料。
+node tools/scene-fit-contain-test.mjs || fail=1
 # ①(2026-09-23 用户第 4 项「支持导入 pkg 单文件和 mpkg 文件」) 导入链回归 —— 依据核验报告
 #   `../docs/PKG-IMPORT-VERIFICATION-20260923.md`（12 条缺口 G1~G12）。原状（本机可复现）：
 #   单文件 `.pkg`（真机 magic `PKGV0022`）**没有任何入口**（accept 不含 .pkg、嗅探只认 PKGM
