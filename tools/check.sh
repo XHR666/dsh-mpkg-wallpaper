@@ -663,6 +663,12 @@ node tools/source-heal-token-test.mjs || fail=1
 #   mpwPopUntruncSync 给第一个带 blur 的截断祖先打 data-mpw-pop-untrunc + 静态 !important 规则，
 #   弹层关即撤（宿主逐字还原）；判据 11 条：打标/幂等/还原/硬前提/健康弹层/多层只标第一个/变异自证
 node tools/popover-glass-test.mjs || fail=1
+# ①(2026-10-24 加号菜单磨砂首帧) 加号菜单就地渲染在 [data-composer-card] 子树里，对话框虚化给
+#   卡片加的 blur 成为菜单磨砂的 backdrop root ⇒ 去截断补跑前整段无磨砂（重活节流+动画闸门最坏
+#   ~600ms；先开权限面板再点加号时被关闭动画拉得更长）。修复 = 观察器同步快路里对菜单壳做定点
+#   去截断（mpwPopUntruncFast，微任务、渲染前生效）。判据：接线/同步打标/观察器批次/两个反向/
+#   标记保全 + 变异自证（M1 摘接线 ⇒ T2 红；M2 判据恒假 ⇒ T1/T2 红；期望红集 == 实际红集）。
+node tools/plus-menu-frost-test.mjs || fail=1
 # ①(2026-09-23 用户第 1 项 B) 视频「按屏幕物理尺寸预缩（ffmpeg lanczos）」档 —— **默认关**：
 #   依据 ../docs/USER-ITEMS-20260921.md 第 19 条实测（`3588989102` 2558×1438@60）：非全屏尺寸上
 #   「一次直降」的**闪烁**是「逐级减半」的 1.6~2.7×，代价是细节低 1.4~1.9× ⇒ 取舍，默认不翻。

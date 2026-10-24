@@ -140,9 +140,14 @@ ok('M4 目标条（nLMEza_bar）不在我们的任何 CSS/JS 里（用户说它�
    `background:0 0`（自己不画底）⇒ 白是**我们叠出来的**：面板已经 80% 霜化，内层再刷 80%
    ⇒ 合成 96% ≈ 纯白。断言随之改向"**内层不吃我们的底**、只有面板本身霜化"，
    并钉住另外两条本次修复：团队面板 ::before 实心底中和、外层已玻璃时内层不吃兜底底。 */
-ok('M5 弹框内层不再叠白底：dl[data-session-stats-*] 不被我们刷底，面板本身仍霜化；团队面板 ::before 已中和；内层兜底底有祖先判据',
+/* ③(2026-10-24 视图一致性轮) 表面取值统一：这一族面板（[data-team-panel] / bRhRbq_panel）
+   的底从自造霜化档（--mpw-surface-panel-frost 80% 白）改为 --mpw-surface-panel-menu
+   （= 宿主 --dsw-specific-menu，与主界面菜单面板族同一表面）；机制不变
+   （元素级接管 + ::before/::after 透明化）。断言钉**新**取值（tools/panel-surface-token-test.mjs
+   做逐 token 相等与变异自证，这里只钉"接管结构还在、取值指向统一 token"）。 */
+ok('M5 弹框内层不再叠白底：dl[data-session-stats-*] 不被我们刷底，面板走统一菜单表面（--mpw-surface-panel-menu）；团队面板 ::before 已中和；内层兜底底有祖先判据',
   !/^[ \t]*html body \[data-session-stats-(usage|details)\][^{]*\{[^}]*--mpw-surface-panel-frost/m.test(CLIENT)
-  && /^[ \t]*html body \[class\*="bRhRbq_panel"\][^{]*\{[^}]*--mpw-surface-panel-frost/m.test(CLIENT)
+  && /^[ \t]*html body \[class\*="bRhRbq_panel"\][^{]*\{[^}]*--mpw-surface-panel-menu/m.test(CLIENT)
   && CLIENT.includes('[data-team-panel]::before')
   && CLIENT.includes('mpwPopInsideMenuShell')
   && CLIENT.includes('[data-team-panel]::before,'))
