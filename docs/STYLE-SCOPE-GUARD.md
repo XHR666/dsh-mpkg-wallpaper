@@ -39,7 +39,7 @@
 
 ---
 
-## 2. 允许清单账本（`ALLOWLIST`，35 条）
+## 2. 允许清单账本（`ALLOWLIST`，37 条）
 
 `docKind=existing` = 仓内既有文档本来就写了这件事；`docKind=ledger` = 既有文档没写，**在本表首次登记**（理由是代码注释里的功能语义 + 该作用域在真机 DOM 契约里的位置）。
 
@@ -68,6 +68,8 @@
 | `host:state-attrs` | refine | `[data-dragging]` / `[data-sidebar-collapsed]` / `[data-phase=…]` / `[data-dsh-sidebar-dragging]` | 宿主瞬时状态：只用于**抑制我们自己的规则**（"拖拽时别磨砂"） | 本表 |
 | `host:aria-roles` | anchor | `[role="dialog"\|alertdialog\|menu\|listbox\|combobox\|tooltip\|alert\|status"]` | 宿主弹层/菜单/提示的 ARIA 语义角色：弹窗虚化/菜单半透明的唯一稳定锚点（只改背景与模糊，不改布局） | 本表 |
 | `host:aria-refine` | refine | `[role="menuitem"\|"option"]` | 只在 `:not(…)` 里排除"菜单项/选项"，避免给交互项误加背景 | 本表 |
+| `host:sidebar-right-guide` | anchor | `[data-sidebar-right-guide-entry]` | 宿主右栏 guide 列表条目（每个注册侧栏 tab 的原生 button，稳定属性）：Issue#5④ 修复只在 `:hover` 态恢复与静默底同族的白（静默态不碰） | 本表 |
+| `third:session-delete-mark` | refine | `[data-dsh-session-delete]` | dsh-session-delete 插件 DOM 标记：只在 `:not(…)` 里把它的页内普通清单（回收站 role=listbox）从弹层表面/层级规则排除（Issue#5⑥）；绝不主动加样式 | 本表 |
 | `host:substr-anchor` | anchor | `[class*="_panel"\|"_bottomPanel"\|"_pane"\|"_tabBar"\|"_tabStrip"\|"_editorHeader"\|"_browserBar"\|"_terminal*"\|"_addBar"\|"_addButton"\|"_mask"\|"_overlay*"\|"_modal"\|"_portal"\|"settingsArea"\|"sidebarCol"\|"wSkVaW_header"\|"_header_"]` | 宿主/better-sidebar 类名子串锚点：0.16→0.19 换过前缀，子串匹配是当前唯一可行解 | `BETTER-SIDEBAR-COMPAT.md:207`（existing） |
 | `host:substr-component` | anchor | `[class*="P3OORG_panel"\|"QsffPG*"\|"composerSeat"\|"composerStack"\|"newSession"\|"thinkBody"]` | 宿主具体组件 hash 子串：只在这些组件内部细化 | 本表 |
 | `host:substr-menu` | anchor | `[class*="_menu*"\|"_dropdown"\|"_popover*"\|"_floatHeader_"\|"_selectMenu"\|"_denseList"\|"_expand"]` | 宿主弹层/菜单/下拉/顶栏展开面板：菜单半透明与"半透明又无模糊"抑制的作用域 | 本表 |

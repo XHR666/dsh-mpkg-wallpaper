@@ -88,29 +88,32 @@ const ALLOWLIST = [
   { id: 'host:radix-popper', kind: 'attr', tier: 'anchor', match: /^\[data-radix-popper-content-wrapper/, reason: '宿主浮层定位壳（radix popper）：宿主所有下拉/菜单都挂在它下面，是弹层半透明的稳定锚点', doc: 'docs/STYLE-SCOPE-GUARD.md:67', docKind: 'ledger' },
   { id: 'host:state-attrs', kind: 'attr', tier: 'refine', match: /^\[data-(dragging|sidebar-collapsed|phase=|dsh-sidebar)/, reason: '宿主瞬时状态标记（拖拽/折叠/激活阶段）：只用于**抑制我们自己的规则**（"拖拽时别磨砂"），不单独改宿主样式', doc: 'docs/STYLE-SCOPE-GUARD.md:68', docKind: 'ledger' },
   /* ①(2026-10-02 用户第 3 条第⑤⑥项 · 真机 HTML 由用户给出) */
-  { id: 'host:aria-modal', kind: 'attr', tier: 'refine', match: /^\[aria-modal="true"\]/, reason: '真正的模态对话框标记：只有模态才禁止玻璃（避免 backdrop-filter 成为下拉的 containing block）；非模态的 role=dialog 小面板（如上下文已用）保留玻璃效果', doc: 'docs/STYLE-SCOPE-GUARD.md:214', docKind: 'ledger' },
-  { id: 'host:JObwrW-panel', kind: 'attr', tier: 'anchor', match: /^\[class\*="JObwrW_panel"/, reason: '宿主"上下文已用"小面板（div.JObwrW_panel[role=dialog][aria-label=上下文已用]，内含 JObwrW_track/fill 圆环）：用户要求它与其他弹层同一套玻璃效果（探针实测 bg 纯白、bf=none）', doc: 'docs/STYLE-SCOPE-GUARD.md:212', docKind: 'ledger' },
-  { id: 'host:groupTitle', kind: 'attr', tier: 'anchor', match: /^\[class\*="(_?groupTitle|GroupTitle)"/, reason: '宿主弹层里的分组标题条（模型选择的提供商名，div._7KE1Ra_groupTitle）：只清它的宿主白底、让它透出容器玻璃；不单独给它加底/模糊（用户第 3 条⑤）', doc: 'docs/STYLE-SCOPE-GUARD.md:213', docKind: 'ledger' },
+  { id: 'host:aria-modal', kind: 'attr', tier: 'refine', match: /^\[aria-modal="true"\]/, reason: '真正的模态对话框标记：只有模态才禁止玻璃（避免 backdrop-filter 成为下拉的 containing block）；非模态的 role=dialog 小面板（如上下文已用）保留玻璃效果', doc: 'docs/STYLE-SCOPE-GUARD.md:216', docKind: 'ledger' },
+  { id: 'host:JObwrW-panel', kind: 'attr', tier: 'anchor', match: /^\[class\*="JObwrW_panel"/, reason: '宿主"上下文已用"小面板（div.JObwrW_panel[role=dialog][aria-label=上下文已用]，内含 JObwrW_track/fill 圆环）：用户要求它与其他弹层同一套玻璃效果（探针实测 bg 纯白、bf=none）', doc: 'docs/STYLE-SCOPE-GUARD.md:214', docKind: 'ledger' },
+  { id: 'host:groupTitle', kind: 'attr', tier: 'anchor', match: /^\[class\*="(_?groupTitle|GroupTitle)"/, reason: '宿主弹层里的分组标题条（模型选择的提供商名，div._7KE1Ra_groupTitle）：只清它的宿主白底、让它透出容器玻璃；不单独给它加底/模糊（用户第 3 条⑤）', doc: 'docs/STYLE-SCOPE-GUARD.md:215', docKind: 'ledger' },
   { id: 'host:aria-roles', kind: 'attr', tier: 'anchor', match: /^\[role="(dialog|alertdialog|menu|listbox|combobox|tooltip|alert|status)"/, reason: '宿主弹层/菜单/提示的 ARIA 语义角色：弹窗虚化/菜单半透明的唯一稳定锚点（只改背景与模糊，不改布局）', doc: 'docs/STYLE-SCOPE-GUARD.md:69', docKind: 'ledger' },
   { id: 'host:aria-refine', kind: 'attr', tier: 'refine', match: /^\[role="(menuitem|option)"/, reason: '只在 :not(...) 里排除"菜单项/选项"，避免给交互项误加背景', doc: 'docs/STYLE-SCOPE-GUARD.md:70', docKind: 'ledger' },
+  /* ①(2026-10-25 Issue#5④⑥) 右栏 guide 条目锚点 + 第三方插件自管标记 */
+  { id: 'host:sidebar-right-guide', kind: 'attr', tier: 'anchor', match: /^\[data-sidebar-right-guide-entry/, reason: '宿主右栏 guide 列表条目（dsh-client-ui-sidebar-right 为每个注册的侧栏 tab 渲染的原生 button，带稳定属性 data-sidebar-right-guide-entry=<tabId>）：Issue#5④ 修复只在 :hover 态把底色恢复为与静默底同族的白（静默态一个像素不碰）', doc: 'docs/STYLE-SCOPE-GUARD.md:71', docKind: 'ledger' },
+  { id: 'third:session-delete-mark', kind: 'attr', tier: 'refine', match: /^\[data-dsh-session-delete/, reason: 'dsh-session-delete 插件的 DOM 命名空间标记：只在 :not(...) 里把它的**页内普通清单**（回收站列表 role=listbox）从弹层表面/层级规则排除（Issue#5⑥：不排除会反盖住它自己的删除确认弹窗）；绝不主动给它加样式', doc: 'docs/STYLE-SCOPE-GUARD.md:72', docKind: 'ledger' },
 
   /* ── 宿主/第三方：类名子串（hash 会变，只能子串匹配 —— 既有文档明确说这是当前唯一可行解） ── */
   { id: 'host:substr-anchor', kind: 'attr', tier: 'anchor', match: /^\[class[*$^]?="(sidebarCol|wSkVaW_header|_header_|_overlay|_overlayLayer|_modal|_portal|_mask|_panel|_bottomPanel|_pane|_tabBar|_tabStrip|_editorHeader|_browserBar|_terminal|_terminalWrap|_xterm|_addBar|_addButton|settingsArea)/, reason: '宿主/better-sidebar 的类名子串锚点（面板、pane、tab 栏、编辑头、浏览器栏、终端壳、遮罩、设置区）：0.16→0.19 换过前缀，子串匹配是当前唯一可行解', doc: 'docs/BETTER-SIDEBAR-COMPAT.md:207', docKind: 'existing' },
-  { id: 'host:substr-component', kind: 'attr', tier: 'anchor', match: /^\[class[*$^]?="(P3OORG_panel|QsffPG|composerSeat|composerStack|newSession|thinkBody)/, reason: '宿主具体组件的 hash 子串（右栏 panel / 顶栏按钮组 / 输入区 seat·stack / 新建会话 / Deep-diving 正文）：只在这些组件内部细化', doc: 'docs/STYLE-SCOPE-GUARD.md:72', docKind: 'ledger' },
-  { id: 'host:substr-menu', kind: 'attr', tier: 'anchor', match: /^\[class[*$^]?="(_menu|_menu_|_dropdown|_popover|_popover_|_floatHeader_|_selectMenu|_denseList|_expand)/, reason: '宿主弹层/菜单/下拉/顶栏展开面板的类名子串：菜单半透明、"半透明又无模糊"抑制、展开面板避让的作用域', doc: 'docs/STYLE-SCOPE-GUARD.md:73', docKind: 'ledger' },
-  { id: 'host:substr-refine', kind: 'attr', tier: 'refine', match: /^\[class[*$^]?="(wrap|panel|box|section|container|card|_card|row|_row|button|badge|logo|logoRow|mode|segmented|fade|footArea|footerActions|root|icon|Icon|anchor|Anchor|item|Item|trigger|Trigger|groupTitle|status|Status|open|Open|Seat|Stack|seat|stack|overlay|primary|message|_scrollBody|_divider|_resizeHandle|_resizer|_expand|_tab|_emptyTabHost|bRhRbq_panel|ZKlsPq_menu|_material_ri079|_hint|_label|_meta|_title|_pane_)/, reason: '宿主结构的通用类名子串：只允许作为**已锚定**选择器里的后代细化（裸出现 = 无锚点 ⇒ 判红）', doc: 'docs/STYLE-SCOPE-GUARD.md:74', docKind: 'ledger' },
+  { id: 'host:substr-component', kind: 'attr', tier: 'anchor', match: /^\[class[*$^]?="(P3OORG_panel|QsffPG|composerSeat|composerStack|newSession|thinkBody)/, reason: '宿主具体组件的 hash 子串（右栏 panel / 顶栏按钮组 / 输入区 seat·stack / 新建会话 / Deep-diving 正文）：只在这些组件内部细化', doc: 'docs/STYLE-SCOPE-GUARD.md:74', docKind: 'ledger' },
+  { id: 'host:substr-menu', kind: 'attr', tier: 'anchor', match: /^\[class[*$^]?="(_menu|_menu_|_dropdown|_popover|_popover_|_floatHeader_|_selectMenu|_denseList|_expand)/, reason: '宿主弹层/菜单/下拉/顶栏展开面板的类名子串：菜单半透明、"半透明又无模糊"抑制、展开面板避让的作用域', doc: 'docs/STYLE-SCOPE-GUARD.md:75', docKind: 'ledger' },
+  { id: 'host:substr-refine', kind: 'attr', tier: 'refine', match: /^\[class[*$^]?="(wrap|panel|box|section|container|card|_card|row|_row|button|badge|logo|logoRow|mode|segmented|fade|footArea|footerActions|root|icon|Icon|anchor|Anchor|item|Item|trigger|Trigger|groupTitle|status|Status|open|Open|Seat|Stack|seat|stack|overlay|primary|message|_scrollBody|_divider|_resizeHandle|_resizer|_expand|_tab|_emptyTabHost|bRhRbq_panel|ZKlsPq_menu|_material_ri079|_hint|_label|_meta|_title|_pane_)/, reason: '宿主结构的通用类名子串：只允许作为**已锚定**选择器里的后代细化（裸出现 = 无锚点 ⇒ 判红）', doc: 'docs/STYLE-SCOPE-GUARD.md:76', docKind: 'ledger' },
   { id: 'host:bs-bottom-resize', kind: 'attr', tier: 'anchor', match: /^\[class[*$^]?="bottomResize/, reason: 'better-sidebar 底部面板的宿主 resize strip（8px 拖拽带）：bsFloat 圆角外壳 overflow:hidden 会把 strip 上沿切掉，故把它挪进面板内（top:-4px → 0）；只改位置不改宿主尺寸/交互', doc: 'docs/BETTER-SIDEBAR-COMPAT.md:332', docKind: 'existing' },
-  { id: 'host:substr-radius-compat', kind: 'selector', tier: 'anchor', match: /^:where\(\[class\*="wrap"\], \[class\*="panel"\], \[class\*="box"\], \[class\*="section"\], \[class\*="container"\]\)$/, reason: '第三方插件 UI 圆角兼容（roundCompat 开关，默认关）：**故意**匹配任意插件的容器类名子串，但零优先级 :where + 只写 border-radius ⇒ 不覆盖任何既有样式', doc: 'docs/STYLE-SCOPE-GUARD.md:76', docKind: 'ledger' },
+  { id: 'host:substr-radius-compat', kind: 'selector', tier: 'anchor', match: /^:where\(\[class\*="wrap"\], \[class\*="panel"\], \[class\*="box"\], \[class\*="section"\], \[class\*="container"\]\)$/, reason: '第三方插件 UI 圆角兼容（roundCompat 开关，默认关）：**故意**匹配任意插件的容器类名子串，但零优先级 :where + 只写 border-radius ⇒ 不覆盖任何既有样式', doc: 'docs/STYLE-SCOPE-GUARD.md:78', docKind: 'ledger' },
 
   /* ── 门控限定锚点：选择器里同时带 [data-mpw*] 门控时才成立（未门控时 PROHIBITIONS 先判红） ── */
   { id: 'rail:marks', kind: 'class', tier: 'anchor', requiresGate: true, match: /^\.(eGxaPq_|Y0dWHa_)|^\.qBU-ya/, reason: '宿主右侧轮次导航条/轨迹总览的类名：**只允许**出现在 body[data-mpw-rail-ink]（对比补偿）或 data-mpw-traject-clip（仅几何裁剪）门控下', doc: 'docs/TIMELINE-RAIL-TOKEN.md:181', docKind: 'existing' },
   { id: 'rail:mark-attrs', kind: 'attr', tier: 'anchor', requiresGate: true, match: /^\[class[*$^]?="(qBU-ya|_overview)/, reason: '宿主轨迹总览的类名子串（qBU-ya / _overview）：同上，只允许在 data-mpw-traject-clip 门控下做几何裁剪', doc: 'docs/TIMELINE-RAIL-TOKEN.md:181', docKind: 'existing' },
-  { id: 'host:todo-card', kind: 'attr', tier: 'anchor', requiresGate: true, match: /^\[class[*$^]?="lXshSW_root|^\[data-tool="todo_write"\]/, reason: '宿主任务列表（todo 卡片）容器与工具标记：todoBlur 只打它（宿主类名 hash 会变，故同时留 [data-tool="todo_write"] 兼容），门控在 body[data-mpw-todo-blur]', doc: 'docs/STYLE-SCOPE-GUARD.md:79', docKind: 'ledger' },
-  { id: 'host:substr-root-refine', kind: 'attr', tier: 'refine', match: /^\[class\$="_root"/, reason: '宿主通用 root 后缀（如 [class$="_root"][class*="qBU-ya"] 的复合写法）：只作为已锚定选择器里的复合细化', doc: 'docs/STYLE-SCOPE-GUARD.md:80', docKind: 'ledger' },
+  { id: 'host:todo-card', kind: 'attr', tier: 'anchor', requiresGate: true, match: /^\[class[*$^]?="lXshSW_root|^\[data-tool="todo_write"\]/, reason: '宿主任务列表（todo 卡片）容器与工具标记：todoBlur 只打它（宿主类名 hash 会变，故同时留 [data-tool="todo_write"] 兼容），门控在 body[data-mpw-todo-blur]', doc: 'docs/STYLE-SCOPE-GUARD.md:81', docKind: 'ledger' },
+  { id: 'host:substr-root-refine', kind: 'attr', tier: 'refine', match: /^\[class\$="_root"/, reason: '宿主通用 root 后缀（如 [class$="_root"][class*="qBU-ya"] 的复合写法）：只作为已锚定选择器里的复合细化', doc: 'docs/STYLE-SCOPE-GUARD.md:82', docKind: 'ledger' },
 
   /* ── 元素/通配：只允许作为已锚定选择器的细化 ── */
-  { id: 'type:any', kind: 'type', tier: 'refine', match: /^[a-zA-Z][a-zA-Z0-9-]*$/, reason: '元素选择器（button/header/svg/img/video/iframe/canvas/b/input…）：只允许作为**已锚定**选择器里的元素细化，裸元素选择器判红', doc: 'docs/STYLE-SCOPE-GUARD.md:81', docKind: 'ledger' },
-  { id: 'universal:any', kind: 'universal', tier: 'refine', match: /^\*$/, reason: '通配 *：只允许作为已锚定宿主作用域下的后代细化（如 [class*="sidebarCol"] *），裸 * 判红', doc: 'docs/STYLE-SCOPE-GUARD.md:82', docKind: 'ledger' },
+  { id: 'type:any', kind: 'type', tier: 'refine', match: /^[a-zA-Z][a-zA-Z0-9-]*$/, reason: '元素选择器（button/header/svg/img/video/iframe/canvas/b/input…）：只允许作为**已锚定**选择器里的元素细化，裸元素选择器判红', doc: 'docs/STYLE-SCOPE-GUARD.md:83', docKind: 'ledger' },
+  { id: 'universal:any', kind: 'universal', tier: 'refine', match: /^\*$/, reason: '通配 *：只允许作为已锚定宿主作用域下的后代细化（如 [class*="sidebarCol"] *），裸 * 判红', doc: 'docs/STYLE-SCOPE-GUARD.md:84', docKind: 'ledger' },
 ]
 
 /* ══════════════════════ 二、永远判红（不允许清单兜底） ══════════════════════ */
@@ -157,7 +160,7 @@ const TOKEN_POLICY = {
     '--dsw-alias-label-error', '--dsw-alias-line-secondary', '--dsw-alias-separator-primary',
     '--dsw-alias-border-secondary', '--dsw-alias-border-l2', '--dsw-alias-border-l3', '--dsw-alias-state-warn-label',
   ],
-  registeredGlobalDoc: 'docs/STYLE-SCOPE-GUARD.md:89',
+  registeredGlobalDoc: 'docs/STYLE-SCOPE-GUARD.md:91',
 }
 
 const ROOT_POLICY = {

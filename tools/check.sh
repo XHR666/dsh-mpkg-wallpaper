@@ -846,6 +846,12 @@ node tools/bs-scan-test.mjs || fail=1
 #   变异自证 M7 删排除 / M8 断标记 —— 期望红集 == 实际红集逐条相等（文件头有证据链 file:line）。
 node tools/pop-ctl-guard-test.mjs || fail=1
 
+# ①(2026-10-25 Issue#5) 透明度误伤修复面的判据：实底保住标记（插件市场 stickyHead / dsh-conv
+#   浮窗，两态对照）/ 右栏 guide 条目 hover 保底（变量两态）/ session-delete 回收站清单排除
+#   （CSS 三规则 + JS 标记父链跳过）/ applyTokenOverrides 根因两态留证。
+#   变异自证 M-solid / M-hover / M-listbox / M-skip —— 期望红集 == 实际红集逐条相等。
+node tools/issue5-surface-test.mjs || fail=1
+
 
 # ①(2026-09-17 单文件 bundle 轮 / MASTER-TODO §5 第 6 项)「npm + 单文件 bundle 两种装载」的机器门禁：
 #   单文件装载（README 方式四）是**只装宿主端**的降级通道；产物一旦与 lib/*.js 漂移（少一条路由、

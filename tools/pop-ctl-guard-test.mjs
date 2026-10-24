@@ -205,8 +205,10 @@ async function withMutant(id, what, pairs, expectRed, runGroup) {
 console.log('\n== M. 变异自证（期望红集 == 实际红集，逐条相等）==');
 
 // M7：从 POP_NOT 删掉排除 ⇒ 带标记的包装重新被表面选择器命中 ⇒ C3b 红
+// ①(2026-10-25) 锚点随 POP_NOT 演进更新：POP_NOT 末尾新增了 :not([data-dsh-session-delete])
+//   （Issue#5⑥），M7 只删 :not([data-mpw-pop-ctl]) 本身，断言对象不变。
 await withMutant('M7', 'POP_NOT 删掉 :not([data-mpw-pop-ctl])',
-  [[':not([data-mpw-pop-untrunc]):not([data-mpw-pop-ctl])`;', ':not([data-mpw-pop-untrunc])`; /* M7 */']], ['C3b', 'C2', 'C2b'],
+  [[':not([data-mpw-pop-untrunc]):not([data-mpw-pop-ctl]):not([data-dsh-session-delete])`;', ':not([data-mpw-pop-untrunc]):not([data-dsh-session-delete])`; /* M7 */']], ['C3b', 'C2', 'C2b'],
   async (f) => {
     const red = [];
     reset();
