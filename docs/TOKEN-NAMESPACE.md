@@ -62,6 +62,8 @@ DSH 把设计 token 定义在 **`body`** 上，不是 `:root`：
 | `--mpw-surface-rs-full` | 侧栏（右栏） | `rgba(var(--mpw-chrome-bg, …), calc(var(--mpw-rs-alpha, .45) * .55))` | 右栏全屏 `[data-rightbar-fullscreen]` |
 | `--mpw-surface-panel` / `-dark` | 面板 | `var(--dsw-static-neutral-bluish-00 / -950)` | `[role="dialog"], [role="alertdialog"]`；`settingsArea` 兜底 |
 | `--mpw-surface-panel-frost` / `-dark` | 面板 | `color-mix(… bluish-00 / -950 80% …)` | overlay 内对话框、设置面板磨砂 |
+| `--mpw-surface-panel-menu` | 面板（标题栏浮层面板档） | `var(--dsw-specific-menu)`（宿主常量；亮/暗/darwin 由宿主定义自动跟随） | `[data-team-panel]`、`[class*="bRhRbq_panel"]`（2026-10-24 视图一致性轮：与主界面菜单面板族同表面；判据 `tools/panel-surface-token-test.mjs`） |
+| `--mpw-panel-menu-blur` | 面板（同上） | `var(--dsw-menu-backdrop-filter)`（宿主常量 blur(40px) saturate(150%)） | 同上两条规则的 backdrop-filter（标准 + webkit） |
 | `--mpw-surface-dialog-dark` / `-light` | 面板（本插件弹窗） | `var(--dsw-static-neutral-bluish-950 / -00)` | `.mpw_dialog` |
 | `--mpw-surface-dialog-frost-dark` / `-light` | 面板（本插件弹窗） | `color-mix(… 80% …)` | `.mpw_dialog`（虚化档） |
 | `--mpw-surface-pop` / `-dark` | 面板（弹层·**仅"用户显式调过弹层不透明度 / 开了遮罩染色"时的整片覆盖**） | `color-mix(… var(--dsw-specific-sidebar-fill) <弹层不透明度>% …)` / `rgba(18,22,30, …)` | `:is(<弹层选择器集>)`（**只在上面那两个显式条件下才产出规则**） |

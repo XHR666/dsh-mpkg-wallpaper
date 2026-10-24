@@ -870,6 +870,14 @@ if [ "$GATE_RUN" = 1 ]; then           # ← 缓存命中时整块跳过（SKIP-
 node tools/style-scope-guard.mjs || fail=1
 node tools/token-namespace-test.mjs || fail=1
 
+# ①(2026-10-24 视图一致性轮) 「标题栏浮层面板」（智能体团队 [data-team-panel] /
+#   Token 用量 [class*=bRhRbq_panel]）表面与主界面菜单面板族统一的机器判据：
+#   SSOT 两个新 token（--mpw-surface-panel-menu / --mpw-panel-menu-blur）符号级取值 =
+#   宿主常量（--dsw-specific-menu / --dsw-menu-backdrop-filter）+ 产物规则消费点 + 暗色不单列 +
+#   ::before/::after 透明化结构仍在。变异自证：SSOT 值改回旧霜化档 / 磨砂改回 blur(11px) /
+#   删伪元素透明化 ⇒ 期望红集 == 实际红集逐条相等。
+node tools/panel-surface-token-test.mjs || fail=1
+
 fi                                     # ← 第 12 步结束
 gate_end 12
 
