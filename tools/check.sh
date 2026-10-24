@@ -832,6 +832,12 @@ node tools/bs-compat-default-test.mjs || fail=1
 #   （tools/bs-tab-test.mjs 文件头有链路与依据索引）。
 node tools/bs-tab-test.mjs || fail=1
 
+# ①(2026-10-24 任务二) 侧栏「扫描壁纸」第一位页签的链路判据：order 排序第一（含内置 tab 同场
+#   对比）/ 扫描→展示→点选应用全链路（桩环境状态迁移）/ 懒加载首屏挂载 < 库总数 / 空态与错误态 /
+#   网页壁纸先确认再落盘 / zh/en 键集逐键相等。变异自证 M-order / M-empty / M-lazy / M-apply ——
+#   期望红集 == 实际红集逐条相等（tools/bs-scan-test.mjs 文件头有链路与依据索引）。
+node tools/bs-scan-test.mjs || fail=1
+
 
 # ①(2026-09-17 单文件 bundle 轮 / MASTER-TODO §5 第 6 项)「npm + 单文件 bundle 两种装载」的机器门禁：
 #   单文件装载（README 方式四）是**只装宿主端**的降级通道；产物一旦与 lib/*.js 漂移（少一条路由、

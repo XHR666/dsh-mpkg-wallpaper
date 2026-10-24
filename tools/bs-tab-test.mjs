@@ -2,7 +2,7 @@
 //
 // 为什么需要它：插件向 dsh-better-sidebar 注册侧边栏 tab 有四段链路，任何一段断掉都是
 // "看起来接了、实际没接"的假绿：
-//   ① 注册本身（registerTab 恰好一次、字段齐全、id 不与内置 6 tab 重名）；
+//   ① 注册本身（registerTab 恰好两次=两个页签、字段齐全、id 不与内置 6 tab 重名）；
 //   ② 生命周期（必须包 ctx.effect ⇒ fiber 卸载撤销 ⇒ 重激活不抛 already registered）；
 //   ③ 可选依赖降级（better-sidebar 未装/未就绪 ⇒ 有界重试后安全跳过，绝不崩）；
 //   ④ i18n（zh/en 两表键集逐键相等；title/description 是函数 ⇒ guide 列表跟随语言）。
@@ -137,19 +137,20 @@ let A = {};
   A = { a, w };
   const ds = w.state.descriptors;
   const ids = ds.map((d) => d.id);
-  ok('A1 registerTab 恰好被调 1 次（壁纸页签）', w.state.calls === 1, 'calls=' + w.state.calls);
-  ok('A2a id = mpkg-wallpaper 且与内置不重名', ids.length === 1 && ids[0] === WALL_ID, 'ids=' + JSON.stringify(ids));
-  ok('A2b 不与内置 6 tab 重名', ids.every((i) => !BUILTIN_TAB_IDS.includes(i)), JSON.stringify(ids));
-  const d = w.state.lastDescriptor;
-  ok('A3 描述符字段齐全（title/description/icon 为函数、order 数值、single、component）',
-    !!d && typeof d.title === 'function' && typeof d.description === 'function'
-      && typeof d.icon === 'function' && typeof d.order === 'number'
-      && d.single === true && typeof d.component === 'function',
-    d ? JSON.stringify({ order: d.order, single: d.single }) : 'd=null');
+  ok('A1 registerTab 恰好被调 2 次（扫描+壁纸，不多不少）', w.state.calls === 2, 'calls=' + w.state.calls);
+  ok('A2a 两个 id = {mpkg-wallpaper:scan, mpkg-wallpaper} 且互不相同',
+    ids.length === 2 && ids.includes(SCAN_ID) && ids.includes(WALL_ID) && ids[0] !== ids[1], 'ids=' + JSON.stringify(ids));
+  ok('A2b 都不与内置 6 tab 重名', ids.every((i) => !BUILTIN_TAB_IDS.includes(i)), JSON.stringify(ids));
+  const d = w.state.lastDescriptor;   // 注册顺序 [scan, wallpaper] ⇒ last = 壁纸页签
+  ok('A3 两个描述符字段齐全（title/description/icon 为函数、order 数值、single、component）',
+    ds.length === 2 && ds.every((x) => typeof x.title === 'function' && typeof x.description === 'function'
+      && typeof x.icon === 'function' && typeof x.order === 'number'
+      && x.single === true && typeof x.component === 'function'),
+    JSON.stringify(ds.map((x) => ({ id: x.id, order: x.order }))));
   ok('A4 注册包在 ctx.effect 里（effect 名登记）',
     w.effectLog.includes('ui-mpkg-wallpaper: better-sidebar tab'), JSON.stringify(w.effectLog));
   ok('A5 apply 全程无异常', (a.applyErrors || []).length === 0, JSON.stringify((a.applyErrors || []).slice(0, 2)));
-  ok('A5b ready 表记录「壁纸」页签成功', (() => { const st = globalThis.__mpwBsTabState; return !!st && !!st.ready && st.ready[WALL_ID] === true; })(),
+  ok('A5b ready 表逐 tab 记录成功', (() => { const st = globalThis.__mpwBsTabState; return !!st && !!st.ready && st.ready[WALL_ID] === true && st.ready[SCAN_ID] === true; })(),
     JSON.stringify((globalThis.__mpwBsTabState || {}).ready));
 
   console.log('  -- A6 生命周期：卸载 → 重 apply ⇒ 重注册、不撞 already registered --');
@@ -159,7 +160,7 @@ let A = {};
   const errs0 = (A.a.applyErrors || []).length;
   A.a.plugin.apply(A.a.ctx);
   ok('A6b 重 apply 后重注册成功且无 already registered 异常',
-    w.state.calls === 2 && (A.a.applyErrors || []).length === errs0,
+    w.state.calls === 4 && (A.a.applyErrors || []).length === errs0,
     'calls=' + w.state.calls + ' errs=' + JSON.stringify((A.a.applyErrors || []).slice(errs0, errs0 + 2)));
 
   console.log('  -- A7 重复注册必须抛错（better-sidebar 契约，插件守卫存在的理由）--');
@@ -207,8 +208,8 @@ let B = {};
   const st4 = globalThis.__mpwBsTabState;
   b4.ctx.get = (n) => (n === 'betterSidebar' ? w2.svc : undefined);   // 服务"装好了"
   await sleep(450);                                 // 等下一跳（≤250ms）
-  ok('B4 服务晚到后自动注册成功且无异常',
-    st4 && st4.registered === true && w2.state.calls === 1 && (b4.applyErrors || []).length === 0,
+  ok('B4 服务晚到后自动注册成功（两个页签）且无异常',
+    st4 && st4.registered === true && w2.state.calls === 2 && (b4.applyErrors || []).length === 0,
     'registered=' + (st4 && st4.registered) + ' calls=' + w2.state.calls + ' errs=' + JSON.stringify((b4.applyErrors || []).slice(0, 2)));
 }
 
@@ -396,7 +397,7 @@ await withMutant('M2', '去掉 ctx.effect 包裹（内联注册、disposer 丢�
     reset();
     const w = makeBsWorld();
     const a = loadPlugin({ quiet: true, clientPath: f, ctxDecorate: w.decorate });
-    group('A1', w.state.calls === 1, 'calls=' + w.state.calls);
+    group('A1', w.state.calls === 2, 'calls=' + w.state.calls);
     group('A5', w.effectLog.includes('ui-mpkg-wallpaper: better-sidebar tab'), JSON.stringify(w.effectLog));
     w.unload();
     group('A6a', w.state.registered.size === 0, 'size=' + w.state.registered.size);
@@ -404,7 +405,7 @@ await withMutant('M2', '去掉 ctx.effect 包裹（内联注册、disposer 丢�
     const errs0 = (a.applyErrors || []).length;
     a.plugin.apply(a.ctx);
     const already = (a.applyErrors || []).slice(errs0).filter((m) => /already registered/.test(m));
-    group('A6b', w.state.calls === 2 && already.length === 0, 'calls=' + w.state.calls + ' already=' + JSON.stringify(already));
+    group('A6b', w.state.calls === 4 && already.length === 0, 'calls=' + w.state.calls + ' already=' + JSON.stringify(already));
     return red;
   });
 
