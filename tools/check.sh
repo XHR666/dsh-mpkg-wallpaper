@@ -825,16 +825,19 @@ node tools/better-sidebar-compat-test.mjs || fail=1
 node tools/bs-compat-default-test.mjs || fail=1
 
 # ①(2026-10-24 侧边栏 tab) 向 dsh-better-sidebar 注册「壁纸」页签（可选依赖）的四段链路判据：
-#   注册一次/字段/id 唯一（A）· ctx.effect 生命周期：卸载→重 apply 不撞 already registered（A6）·
-#   未装/未就绪 ⇒ 有界重试(250ms×32)后降级跳过（B）· zh/en 键集逐键相等 + 渲染期取词（C）·
-#   组件冒烟（D）+ 设置迁移跳转壳与配置读写等价（E）。变异自证 M1 去掉 optional 守卫 /
-#   M2 去掉 ctx.effect 包裹 / M3 id 撞内置 / M4 跳转壳失效 —— 期望红集 == 实际红集逐条相等
+#   注册恰好一次/字段/id 唯一（A）· ctx.effect 生命周期：卸载→重 apply 不撞 already registered（A6）·
+#   未装/未就绪 ⇒ 有界重试(250ms×32)后降级跳过（B）· zh/en 存留键 + 已删键零残留（C）·
+#   组件冒烟：侧栏页签 = 整页设置 + 内部 tab 8 项且 scan 第一位（D）+ 设置页恢复整页设置、
+#   两入口配置读写等价（E，①(2026-10-25) 跳转壳已按任务纠正删除）。变异自证 M1 去掉 optional 守卫 /
+#   M2 去掉 ctx.effect 包裹 / M3 id 撞内置 / M4 设置页变空壳 / M5 不传 scanTab —— 期望红集 == 实际红集逐条相等
 #   （tools/bs-tab-test.mjs 文件头有链路与依据索引）。
 node tools/bs-tab-test.mjs || fail=1
 
-# ①(2026-10-24 任务二) 侧栏「扫描壁纸」第一位页签的链路判据：order 排序第一（含内置 tab 同场
-#   对比）/ 扫描→展示→点选应用全链路（桩环境状态迁移）/ 懒加载首屏挂载 < 库总数 / 空态与错误态 /
-#   网页壁纸先确认再落盘 / zh/en 键集逐键相等。变异自证 M-order / M-empty / M-lazy / M-apply ——
+# ①(2026-10-25 任务纠正) 「壁纸」页签内部「扫描壁纸」面板的链路判据（独立页签已删）：
+#   内部 tab 顺序（侧栏版 scan 第一/设置页 7 项）/ 扫描目标优先级（自定义目录已选 ⇒ 只扫它，
+#   未选 ⇒ 扫 WE 库）/ 扫描→展示→点选应用全链路（桩环境状态迁移）/ 懒加载首屏挂载 < 库总数、
+#   无「继续展开」按钮、滚到底 = 全部结果可达 / 空态与错误态 / 网页壁纸先确认再落盘 /
+#   zh/en 键集逐键相等。变异自证 M-order / M-priority / M-empty / M-lazy / M-scroll / M-apply ——
 #   期望红集 == 实际红集逐条相等（tools/bs-scan-test.mjs 文件头有链路与依据索引）。
 node tools/bs-scan-test.mjs || fail=1
 

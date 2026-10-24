@@ -1,15 +1,22 @@
-// tools/bs-scan-test.mjs —— 侧栏「扫描壁纸」页签（第一位入口）的回归门禁（2026-10-24 任务二）
+// tools/bs-scan-test.mjs —— 「壁纸」页签内部「扫描壁纸」面板的回归门禁（2026-10-25 纠正版）
 //
-// 四段链路任何一段断掉都是"看起来有页签、实际不能扫描/不能应用"的假绿：
-//   ① 排序：order 在全部注册 tab（含内置 editor=10）中最小 ⇒ 侧栏第一位；
-//   ② 扫描→展示：进入即扫（kickScan）→ 大容器网格（缩略图走 mpwThumbChildren 同一候选链）；
-//   ③ 点选→应用：走与设置页同一条 mpwApplyWallFromList 管线（持久化逐键同形）；
-//   ④ 空态/错误态明确 + 懒加载分页（首屏挂载节点数 < 库总数，大库不全量挂 DOM）。
+// 契约（2026-10-25 任务纠正）：扫描入口不再是独立侧栏页签，而是侧栏「壁纸」页签内部 tab 栏
+// 第一位的面板（设置页那份不渲染）。四段链路任何一段断掉都是"看起来有扫描、实际不能用"的假绿：
+//   ① 内部 tab 顺序：侧栏版本 scan 第一位且默认选中；设置页版本不含 scan（bs-tab-test D/E 也有，
+//      这里从"扫描面板"角度再钉一次顺序数组与面板落点）；
+//   ② 扫描目标优先级：已选自定义本地目录 ⇒ **只扫它**（/custom-dir）；未选 ⇒ 只扫本地 WE 库
+//      （/steam-inventory）——桩 fetch 记录 URL 断言取数来源，两边都扫 = 旧错误实现必红；
+//   ③ 扫描→展示→点选应用：进入即扫（kickScan）→ 网格墙（缩略图走 mpwThumbChildren 同一候选链）
+//      → 点选走与设置页同一条 mpwApplyWallFromList 管线（持久化逐键同形）；
+//   ④ 懒加载无门槛：首屏挂载 < 库总数；**没有「继续展开」按钮**；滚到底（续页到稳定）=
+//      全部结果可达；空态/错误态明确 + 重扫入口。
 // 变异自证（期望红集 == 实际红集，逐条相等）：
-//   M-order  order 5→60（不再是第一位）⇒ O2、O3 必红
-//   M-empty  删掉空态分支 ⇒ E1 必红
-//   M-lazy   每页 24→1000（懒加载失效）⇒ S2b 必红
-//   M-apply  点选应用断链（applyItem 变空操作）⇒ S3 必红
+//   M-order    内部 tab 顺序改错（scan 不在首位）⇒ O2 必红
+//   M-priority 优先级打掉（始终扫 WE 库）⇒ P1、P2 必红
+//   M-empty    删掉空态分支 ⇒ E1 必红
+//   M-lazy     每页 24→1000（懒加载失效）⇒ S2b 必红
+//   M-scroll   续页断链（每次 +0）⇒ S4 必红
+//   M-apply    点选应用断链 ⇒ S3 必红
 // 复现: node tools/bs-scan-test.mjs
 import fs from 'node:fs';
 import os from 'node:os';
@@ -30,16 +37,15 @@ process.on('exit', () => { for (const d of TMP_DIRS) { try { fs.rmSync(d, { recu
 
 const { loadPlugin, cancelWorldTimers } = await import('./_stub.mjs');
 const CLEAR = ['__mpwClientLoaded', '__mpwRegistered', '__mpwBsVerAt', '__mpwGlobalWired',
-  '__mpwInlineWatcher', '__mpwStyleWatch', '__mpwBuildCss', '__mpwAppliedOnce', '__mpwBsTabState', '__mpwBsScanKick'];
+  '__mpwInlineWatcher', '__mpwStyleWatch', '__mpwBuildCss', '__mpwAppliedOnce', '__mpwBsTabState', '__mpwBsScanKick', '__mpwBsScanMore'];
 const reset = () => { for (const k of CLEAR) { try { delete globalThis[k]; } catch {} } };
 
-const SCAN_ID = 'mpkg-wallpaper:scan';
 const WALL_ID = 'mpkg-wallpaper';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-/** fake better-sidebar 服务（同 bs-tab-test 手法；可预置"内置"tab 供排序判据） */
-function makeBsWorld(preseed) {
-  const state = { calls: 0, registered: new Map(), lastDescriptor: null, descriptors: [], openTabLog: [] };
+/** fake better-sidebar 服务（同 bs-tab-test 手法） */
+function makeBsWorld() {
+  const state = { calls: 0, registered: new Map(), lastDescriptor: null, descriptors: [] };
   const svc = {
     version: '0.28.0',
     features: ['badge', 'tabLifecycle'],
@@ -52,16 +58,12 @@ function makeBsWorld(preseed) {
       state.registered.set(d.id, disp);
       return disp;
     },
-    openTab(seed) { state.openTabLog.push(seed && seed.type); },
   };
-  if (preseed) for (const p of preseed) svc.registerTab(p);
-  const effectLog = [];
-  const fiberDisposers = [];
   const decorate = (ctx) => {
-    ctx.effect = (fn, name) => { effectLog.push(String(name || '')); const d = fn(); if (typeof d === 'function') fiberDisposers.push(d); return d; };
+    ctx.effect = (fn, name) => { const d = fn(); return d; };
     ctx.get = (n) => (n === 'betterSidebar' ? svc : undefined);
   };
-  return { svc, state, effectLog, decorate };
+  return { svc, state, decorate };
 }
 
 /** 树工具：执行函数组件（深度≤6）+ 收集节点 */
@@ -92,77 +94,147 @@ function collectNodes(tree) {
 const steamLib = (n) => ({ ok: true, installDir: '/steam', wallpapers: Array.from({ length: n }, (_, i) => ({
   ltoken: 'lt' + i, title: 'Wall ' + i, type: 'video', media: 'videos/bg' + i + '.mp4', preview: 'preview.jpg',
 })) });
+/** 40 项自定义目录夹具（/custom-dir 应答） */
+const customLib = (n) => ({ ok: true, files: Array.from({ length: n }, (_, i) => ({
+  name: 'clip' + i + '.mp4', type: 'video', media: 'clip' + i + '.mp4', preview: '',
+})) });
 const fetchFor = (payload) => async (url) => {
   const u = String(url);
   if (u.indexOf('/steam-inventory') >= 0) return { ok: true, status: 200, json: async () => (payload && payload.steam !== undefined) ? payload.steam : steamLib(30) };
-  if (u.indexOf('/custom-dir') >= 0) return { ok: true, status: 200, json: async () => (payload && payload.custom !== undefined) ? payload.custom : { ok: false, error: 'no-dir' } };
+  if (u.indexOf('/custom-dir') >= 0) return { ok: true, status: 200, json: async () => (payload && payload.custom !== undefined) ? payload.custom : customLib(40) };
   return { ok: false, status: 404, json: async () => ({}) };
 };
 
-/** 渲染扫描页签：返回 { r, tree, nodes, strings, kick, d }（stub effect 不跑 ⇒ 扫描用 kick 驱动） */
-function renderScan(world, opts2 = {}) {
+/** 渲染侧栏「壁纸」页签（内含内部 scan 面板）：返回 render()/kick()/more() 读数。
+ *  桩 effect 不跑 ⇒ 扫描用 kick 驱动、续页用 more 驱动（与生产同一函数：__mpwBsScanMore）。 */
+function renderWall(world, opts2 = {}) {
   reset();
   const w = world || makeBsWorld();
   const opts = { quiet: true, ctxDecorate: (ctx) => { w.decorate(ctx); ctx.locale.bind = () => (k) => ((w.dicts && w.dicts.zh && w.dicts.zh[k] !== undefined) ? w.dicts.zh[k] : k); } };
   if (opts2.fetch) opts.fetch = opts2.fetch;
   if (opts2.settings) opts.settings = opts2.settings;
   const r = loadPlugin(opts);
-  const d = w.state.descriptors.find((x) => x.id === SCAN_ID);
+  w.dicts = r.localeDicts;
+  const d = w.state.descriptors.find((x) => x.id === WALL_ID);
   if (!d) return { r, w, crashed: true };
   const render = () => {
     let tree = null;
-    try { tree = d.component({ ctx: r.ctx, store: {}, scope: { sessionId: 's1' }, tab: { id: 't1', type: SCAN_ID }, visible: true }); }
+    try { tree = d.component({ ctx: r.ctx, store: {}, scope: { sessionId: 's1' }, tab: { id: 't1', type: WALL_ID }, visible: true }); }
     catch (e) { return { crashed: true }; }
     const c = collectNodes(tree);
     return { tree, nodes: c.nodes, strings: c.strings };
   };
-  w.dicts = r.localeDicts;
   const first = render();
-  return Object.assign({ r, w, d, render, kick: globalThis.__mpwBsScanKick, crashed: !!first.crashed }, first);
+  const items = () => first.nodes.length >= 0 ? null : null; // 占位（读数走每次 render 的返回值）
+  return Object.assign({ r, w, d, render, kick: globalThis.__mpwBsScanKick, more: globalThis.__mpwBsScanMore, crashed: !!first.crashed, items }, first);
 }
+/** 数当前树里挂载的扫描结果项 */
+const countItems = (t) => t.nodes.filter((p) => p && typeof p['data-mpw-scan-item'] === 'string');
 
-console.log('\n== O. 排序：扫描页签 order 最小（侧栏第一位）==');
+console.log('\n== O. 内部 tab 顺序：scan 第一位（侧栏版本）+ 设置页不含 scan ==');
 {
   reset();
-  const w = makeBsWorld([
-    { id: 'editor', title: () => 'editor', order: 10, component: () => null },
-    { id: 'git', title: () => 'git', order: 20, component: () => null },
-  ]);
-  loadPlugin({ quiet: true, ctxDecorate: w.decorate });
-  const ds = w.state.descriptors;
-  const scanD = ds.find((x) => x.id === SCAN_ID);
-  const wallD = ds.find((x) => x.id === WALL_ID);
-  ok('O1 扫描页签已注册且 order 数值', !!scanD && typeof scanD.order === 'number', scanD ? 'order=' + scanD.order : 'd=null');
-  ok('O2 扫描 order < 壁纸 order（插件内第一位）',
-    !!scanD && !!wallD && scanD.order < wallD.order, 'scan=' + (scanD && scanD.order) + ' wall=' + (wallD && wallD.order));
-  const all = [{ id: 'editor', order: 10 }, { id: 'git', order: 20 }].concat(ds.map((d) => ({ id: d.id, order: d.order })));
-  const sorted = all.slice().sort((a, b) => a.order - b.order);
-  ok('O3 全部注册 tab（含内置 editor=10/git=20）按 order 排序后第一位是扫描页签',
-    sorted[0] && sorted[0].id === SCAN_ID, JSON.stringify(sorted.slice(0, 3)));
+  const w = makeBsWorld();
+  const r = loadPlugin({ quiet: true, ctxDecorate: (ctx) => { w.decorate(ctx); ctx.locale.bind = () => (k) => ((w.dicts && w.dicts.zh && w.dicts.zh[k] !== undefined) ? w.dicts.zh[k] : k); } });
+  w.dicts = r.localeDicts;
+  const zhDicts = r.localeDicts.zh;
+  const d = w.state.descriptors.find((x) => x.id === WALL_ID);
+  let tree = null;
+  try { tree = d.component({ ctx: r.ctx, store: {}, scope: { sessionId: 's1' }, tab: { id: 't1', type: WALL_ID }, visible: true }); } catch (e) {}
+  // tab 栏按钮序：data-mpw-tabbar 的按钮 kids（scan 按钮带 data-mpw-tab-scan；其余按标签文本）
+  const bar = (() => { let hit = null; const f = (n, dd) => { if (hit || n == null || typeof n !== 'object' || dd > 8) return; if (Array.isArray(n)) { n.forEach((x) => f(x, dd)); return; } if (n.props && n.props['data-mpw-tabbar'] !== undefined) { hit = n; return; } if (n.kids) f(n.kids, dd); }; f(tree, 0); return hit; })();
+  const labelOf = (b) => (b.props && b.props['data-mpw-tab-scan'] !== undefined) ? 'scan' : (b.kids && typeof b.kids[0] === 'string' ? b.kids[0] : '?');
+  const tabKeys = bar && Array.isArray(bar.kids) ? bar.kids.filter(Boolean).map(labelOf) : [];
+  const row = (() => { let hit = null; const f = (n, dd) => { if (hit || n == null || typeof n !== 'object' || dd > 9) return; if (Array.isArray(n)) { n.forEach((x) => f(x, dd)); return; } if (n.props && n.props.className === 'mpw_tabRow') { hit = n; return; } if (n.kids) f(n.kids, dd); }; f(tree, 0); return hit; })();
+  const panelKeys = row && Array.isArray(row.kids) ? row.kids.filter(Boolean).map((p) => p.props && p.props['data-mpw-tabkey']) : [];
+  const EXPECT_LABELS = ['scan', zhDicts['sec.source'], zhDicts['sec.wallpaper'], zhDicts['sec.appearance'], zhDicts['sec.unify'], zhDicts['sec.blur'], zhDicts['sec.other'], zhDicts['sec.liquid']];
+  const EXPECT_KEYS = ['scan', 'source', 'wallpaper', 'appearance', 'unify', 'blur', 'other', 'liquid'];
+  ok('O1 内部 tab 栏按钮顺序数组首项 == scan（判据断言顺序数组）',
+    JSON.stringify(tabKeys) === JSON.stringify(EXPECT_LABELS),
+    'tabs=' + JSON.stringify(tabKeys));
+  ok('O2 内容面板键序同源同序（首项 scan + 扫描面板体在树）',
+    JSON.stringify(panelKeys) === JSON.stringify(EXPECT_KEYS)
+      && collectNodes(tree).nodes.some((p) => p && p['data-mpw-bs-scan'] !== undefined), 'panels=' + JSON.stringify(panelKeys));
+
+  reset();
+  const b0tree = loadPlugin({ quiet: true, settings: { enabled: true } }).sectionComp({ t: (k) => k, close: () => {} });   // 设置页（无 bs world）
+  const rowS = (() => { let hit = null; const f = (n, dd) => { if (hit || n == null || typeof n !== 'object' || dd > 9) return; if (Array.isArray(n)) { n.forEach((x) => f(x, dd)); return; } if (n.props && n.props.className === 'mpw_tabRow') { hit = n; return; } if (n.kids) f(n.kids, dd); }; f(b0tree, 0); return hit; })();
+  const panelKeysS = rowS && Array.isArray(rowS.kids) ? rowS.kids.filter(Boolean).map((p) => p.props && p.props['data-mpw-tabkey']) : [];
+  ok('O3 设置页内部 tab 列表 == 原 7 项（不含 scan）',
+    JSON.stringify(panelKeysS) === JSON.stringify(['source', 'wallpaper', 'appearance', 'unify', 'blur', 'other', 'liquid']),
+    'panels=' + JSON.stringify(panelKeysS));
 }
 
-console.log('\n== S. 扫描→展示→点选应用（桩环境全链路）==');
+console.log('\n== P. 扫描目标优先级：已选自定义目录 ⇒ 只扫它；未选 ⇒ 只扫 WE 库（桩断言取数来源）==');
 {
-  const s = renderScan(null, { fetch: fetchFor(null), settings: { enabled: true, customDirPath: '' } });
+  // P1/P2：已选自定义目录（customDirPath 非空）⇒ fetch 只打 /custom-dir，绝不打 /steam-inventory
+  const urls = [];
+  const s1 = renderWall(null, {
+    fetch: async (url, o) => { urls.push(String(url)); const body = (o && o.body) ? JSON.parse(o.body) : {}; return { ok: true, status: 200, json: async () => (String(url).indexOf('/custom-dir') >= 0) ? customLib(40) : steamLib(30) }; },
+    settings: { enabled: true, customDirPath: '/data/wallpapers' },
+  });
+  try { s1.kick(); } catch (e) {}
+  await sleep(120);
+  const t1 = s1.render();
+  const items1 = countItems(t1);
+  ok('P1 已选自定义目录 ⇒ 扫描取数只来自 /custom-dir（40 项全部入列）',
+    urls.some((u) => u.indexOf('/custom-dir') >= 0) && items1.length > 0 && items1[0]['data-mpw-scan-item'] === 'custom|clip0.mp4'
+      && items1.length === 24,
+    'urls=' + JSON.stringify(urls) + ' items=' + items1.length + ' first=' + (items1[0] && items1[0]['data-mpw-scan-item']));
+  ok('P2 已选自定义目录 ⇒ 绝不扫 /steam-inventory（旧"两边都扫"实现在此必红）',
+    urls.every((u) => u.indexOf('/steam-inventory') < 0), 'urls=' + JSON.stringify(urls));
+
+  // P3：未选自定义目录 ⇒ 只扫 /steam-inventory
+  const urls3 = [];
+  const s3 = renderWall(null, {
+    fetch: async (url) => { urls3.push(String(url)); return { ok: true, status: 200, json: async () => steamLib(30) }; },
+    settings: { enabled: true, customDirPath: '' },
+  });
+  try { s3.kick(); } catch (e) {}
+  await sleep(120);
+  const t3 = s3.render();
+  ok('P3 未选自定义目录 ⇒ 只扫 WE 库（/steam-inventory；且不空跑 /custom-dir）',
+    urls3.some((u) => u.indexOf('/steam-inventory') >= 0) && urls3.every((u) => u.indexOf('/custom-dir') < 0)
+      && countItems(t3).length === 24 && countItems(t3)[0]['data-mpw-scan-item'] === 'steam|lt0',
+    'urls=' + JSON.stringify(urls3));
+
+  // P4：自定义目录不可读 ⇒ 明确错误态 + 重扫入口（不静默失败）
+  const s4 = renderWall(null, {
+    fetch: fetchFor({ custom: { ok: false, error: 'no-such-dir' } }),
+    settings: { enabled: true, customDirPath: '/not/readable' },
+  });
+  try { s4.kick(); } catch (e) {}
+  await sleep(120);
+  const t4 = s4.render();
+  ok('P4 目录不可读 ⇒ 明确错误态（data-mpw-scan-err + 文案）且重扫入口仍在',
+    t4.nodes.some((p) => p && p['data-mpw-scan-err'] !== undefined)
+      && (t4.strings || []).some((x) => String(x).indexOf(s4.r.localeDicts.zh['bsScan.err']) >= 0)
+      && t4.nodes.some((p) => p && p['data-mpw-scan-rescan'] !== undefined),
+    'err=' + t4.nodes.some((p) => p && p['data-mpw-scan-err'] !== undefined));
+}
+
+console.log('\n== S. 扫描→展示→点选应用（桩环境全链路；经侧栏「壁纸」页签渲染）==');
+{
+  const s = renderWall(null, { fetch: fetchFor(null), settings: { enabled: true, customDirPath: '' } });
   const zh = s.r.localeDicts.zh;
   ok('S1 未扫描：重扫按钮在树（进入即扫由 visible 驱动，桩里用 kick）',
     !s.crashed && s.nodes.some((p) => p && p['data-mpw-scan-rescan'] !== undefined && typeof p.onClick === 'function'),
     s.crashed ? 'crashed' : 'ok');
-  ok('S1b 骨架/标题在树', (s.strings || []).some((x) => String(x).indexOf(zh['bsScan.title']) >= 0), (s.strings || []).slice(0, 60).join('|').slice(0, 80));
+  ok('S1b 标题/内部 tab 标签在树', (s.strings || []).some((x) => String(x).indexOf(zh['bsScan.title']) >= 0), (s.strings || []).slice(0, 60).join('|').slice(0, 80));
 
-  console.log('  -- S2 kickScan ⇒ 大容器网格（首屏 24 < 库 30，懒加载生效）--');
+  console.log('  -- S2 kickScan ⇒ 网格墙（首屏 24 < 库 30，懒加载生效）--');
   let kicked = false;
   try { s.kick(); kicked = true; } catch (e) {}
   await sleep(120);
   const t2 = s.render();
-  const items = t2.nodes.filter((p) => p && typeof p['data-mpw-scan-item'] === 'string');
+  const items = countItems(t2);
   ok('S2 扫描完成：30 项库在网格里出前 24 项（每项带 key 标记）',
     kicked && !t2.crashed && items.length === 24 && items[0]['data-mpw-scan-item'] === 'steam|lt0',
     'items=' + items.length + ' first=' + (items[0] && items[0]['data-mpw-scan-item']));
-  ok('S2b 懒加载：首屏挂载节点数(24) < 库总数(30)，且「继续展开」按钮在树（含剩余数）',
-    items.length < 30 && (t2.nodes || []).some((p) => p && p['data-mpw-scan-more'] !== undefined)
-      && (t2.strings || []).some((x) => String(x).indexOf('（6）') >= 0),
-    'mounted=' + items.length);
+  ok('S2b 懒加载：首屏挂载节点数(24) < 库总数(30)，且**没有「继续展开」按钮**、续页哨兵在树',
+    items.length < 30 && !(t2.nodes || []).some((p) => p && p['data-mpw-scan-more'] !== undefined)
+      && (t2.nodes || []).some((p) => p && p['data-mpw-scan-sentinel'] !== undefined),
+    'mounted=' + items.length + ' moreBtn=' + (t2.nodes || []).some((p) => p && p['data-mpw-scan-more'] !== undefined));
   ok('S2c 缩略图走同一候选链（每项都有 data-mpw-thumb-box）',
     t2.nodes.filter((p) => p && p['data-mpw-thumb-box'] !== undefined).length >= 24,
     'thumbs=' + t2.nodes.filter((p) => p && p['data-mpw-thumb-box'] !== undefined).length);
@@ -176,18 +248,21 @@ console.log('\n== S. 扫描→展示→点选应用（桩环境全链路）==');
     stored.mpkgKey === 'library|lt0' && stored.converted === 'mp4' && String(stored.image || '').indexOf('host:?ltoken=lt0&file=') === 0,
     'mpkgKey=' + stored.mpkgKey + ' converted=' + stored.converted + ' image=' + String(stored.image || '').slice(0, 60));
 
-  console.log('  -- S4 「继续展开」⇒ 余量挂载（分页真实可翻）--');
-  const moreBtn = t2.nodes.find((p) => p && p['data-mpw-scan-more'] !== undefined && typeof p.onClick === 'function');
-  try { moreBtn.onClick(); } catch (e) {}
+  console.log('  -- S4 滚到底 ⇒ 续页到稳定后全部结果可达（无按钮门槛）--');
+  const more = globalThis.__mpwBsScanMore;
+  let guard = 0;
+  try { for (;;) { guard++; if (guard > 20) break; const before = countItems(s.render()).length; more(); await sleep(1); const after = countItems(s.render()).length; if (after >= 30) break; if (after === before) break; } } catch (e) {}
   const t4 = s.render();
-  const items4 = t4.nodes.filter((p) => p && typeof p['data-mpw-scan-item'] === 'string');
-  ok('S4 展开后 30 项全挂且「继续展开」退场', items4.length === 30 && !t4.nodes.some((p) => p && p['data-mpw-scan-more'] !== undefined),
+  const items4 = countItems(t4);
+  ok('S4 续页到稳定后 30 项全部挂载（滚到底 = 全部结果可达）、哨兵退场、无「继续展开」',
+    items4.length === 30 && !t4.nodes.some((p) => p && p['data-mpw-scan-more'] !== undefined)
+      && !t4.nodes.some((p) => p && p['data-mpw-scan-sentinel'] !== undefined),
     'items=' + items4.length);
 }
 
-console.log('\n== E. 空态 / 错误态 ==');
+console.log('\n== E. 空态 / 错误态（WE 库分支）==');
 {
-  const e1 = renderScan(null, { fetch: fetchFor({ steam: { ok: true, wallpapers: [] } }), settings: { enabled: true, customDirPath: '' } });
+  const e1 = renderWall(null, { fetch: fetchFor({ steam: { ok: true, wallpapers: [] } }), settings: { enabled: true, customDirPath: '' } });
   try { e1.kick(); } catch (err) {}
   await sleep(80);
   const t1 = e1.render();
@@ -196,7 +271,7 @@ console.log('\n== E. 空态 / 错误态 ==');
       && (t1.strings || []).some((x) => String(x).indexOf(e1.r.localeDicts.zh['bsScan.empty']) >= 0),
     (t1.strings || []).slice(0, 80).join('|').slice(0, 100));
 
-  const e2 = renderScan(null, { fetch: async () => { throw new Error('host down'); }, settings: { enabled: true, customDirPath: '' } });
+  const e2 = renderWall(null, { fetch: async () => { throw new Error('host down'); }, settings: { enabled: true, customDirPath: '' } });
   try { e2.kick(); } catch (err) {}
   await sleep(80);
   const t2e = e2.render();
@@ -209,7 +284,7 @@ console.log('\n== E. 空态 / 错误态 ==');
 
 console.log('\n== W. 网页壁纸确认（点选 web 项 ⇒ 先确认再落盘）==');
 {
-  const s = renderScan(null, { fetch: fetchFor({ steam: { ok: true, wallpapers: [
+  const s = renderWall(null, { fetch: fetchFor({ steam: { ok: true, wallpapers: [
     { ltoken: 'w1', title: 'Webby', type: 'web', media: 'index.html', webHeavy: false, webExternal: false },
   ] } }), settings: { enabled: true, customDirPath: '' } });
   try { s.kick(); } catch (e) {}
@@ -230,24 +305,24 @@ console.log('\n== W. 网页壁纸确认（点选 web 项 ⇒ 先确认再落盘�
     'webUrl=' + String(stored.webUrl || '').slice(0, 80));
 }
 
-console.log('\n== I. i18n（zh/en 两表 bsScan.* 键集逐键相等 + 渲染期取词）==');
+console.log('\n== I. i18n（zh/en 两表 bsScan.* 键集逐键相等 + bsTab 存留键）==');
 {
   reset();
   const w = makeBsWorld();
   const r = loadPlugin({ quiet: true, ctxDecorate: w.decorate });
   const dicts = r.localeDicts;
-  const KEYS = ['bsScan.title', 'bsScan.desc', 'bsScan.rescan', 'bsScan.scanning', 'bsScan.count', 'bsScan.empty',
+  const KEYS = ['bsScan.title', 'bsScan.rescan', 'bsScan.scanning', 'bsScan.count', 'bsScan.empty',
     'bsScan.err', 'bsScan.applied', 'bsScan.webConfirm', 'bsScan.webGo', 'bsScan.webGoCompat', 'bsScan.webCancel'];
   const missZh = KEYS.filter((k) => !dicts || !dicts.zh || typeof dicts.zh[k] !== 'string' || !dicts.zh[k]);
   const missEn = KEYS.filter((k) => !dicts || !dicts.en || typeof dicts.en[k] !== 'string' || !dicts.en[k]);
-  ok('I1 zh 表 12 个 bsScan.* 键全部非空', missZh.length === 0, JSON.stringify(missZh));
-  ok('I2 en 表 12 个 bsScan.* 键全部非空', missEn.length === 0, JSON.stringify(missEn));
+  ok('I1 zh 表 11 个 bsScan.* 键全部非空', missZh.length === 0, JSON.stringify(missZh));
+  ok('I2 en 表 11 个 bsScan.* 键全部非空', missEn.length === 0, JSON.stringify(missEn));
   ok('I3 zh/en 键集逐键相等（一边漏键必红）', missZh.length === 0 && missEn.length === 0
     && KEYS.every((k) => dicts.zh[k] !== undefined && dicts.en[k] !== undefined), '');
-  const scanD = w.state.descriptors.find((x) => x.id === SCAN_ID);
-  ok('I4 描述符 title()/description() 渲染期按词典取词',
-    !!scanD && scanD.title() === dicts.zh['bsScan.title'] && scanD.description() === dicts.zh['bsScan.desc'],
-    scanD ? 'title=' + scanD.title() : 'd=null');
+  ok('I4 已删的 bsScan.desc（独立页签描述符专用）零残留',
+    dicts && dicts.zh && dicts.en && dicts.zh['bsScan.desc'] === undefined && dicts.en['bsScan.desc'] === undefined, '');
+  ok('I5 bsTab.title/desc 存留（「壁纸」页签描述符要用）',
+    dicts && typeof dicts.zh['bsTab.title'] === 'string' && typeof dicts.zh['bsTab.desc'] === 'string', '');
 }
 
 /* ---------- 变异自证（隔离副本；锚点必须恰好替换一次且旧串不再存在 —— R2） ---------- */
@@ -279,20 +354,59 @@ async function withMutant(id, what, pairs, expectRed, runGroup) {
 
 console.log('\n== M. 变异自证（期望红集 == 实际红集，逐条相等）==');
 
-// M-order：order 5→60 ⇒ 不再小于内置 editor(10)/壁纸(50) ⇒ O2、O3 红
-await withMutant('M-order', 'order 5→60（扫描页签不再第一位）',
-  [['const MPW_BS_SCAN_ORDER = 5;', 'const MPW_BS_SCAN_ORDER = 60; /* M-order */']], ['O2', 'O3'],
+// 共享：变异副本上渲染侧栏页签的小工具。**必须先 render 一次**再返回 ——
+// kick/more 出口（window.__mpwBsScanKick/__mpwBsScanMore）在面板渲染时才登记；
+// 不先渲染的话 kick 是 undefined，变异组会因"没扫描"而假红（R1：红也要红对原因）。
+async function renderOn(f, opts2 = {}) {
+  reset();
+  const w = makeBsWorld();
+  const opts = { quiet: true, clientPath: f, ctxDecorate: w.decorate };
+  if (opts2.fetch) opts.fetch = opts2.fetch;
+  if (opts2.settings) opts.settings = opts2.settings;
+  const r = loadPlugin(opts);
+  const d = w.state.descriptors.find((x) => x.id === WALL_ID);
+  const render = () => { try { return collectNodes(d.component({ ctx: r.ctx, store: {}, scope: { sessionId: 's1' }, tab: { id: 't1', type: WALL_ID }, visible: true })); } catch (e) { return { nodes: [], strings: [] }; } };
+  render();
+  return { r, w, render };
+}
+
+// M-order：内部 tab 顺序改错（scan 的按钮排到 source 之后）⇒ O1 红（按钮序数组首项 != scan）
+await withMutant('M-order', '内部 tab 顺序改错（scan 按钮不在首位）',
+  [[`\t\t\tif (scanTabOn) tabBtns.push(h("button", { key: "tab-scan", className: "mpw_tab" + (settingsTab === "scan" ? " mpw_tabActive" : ""), type: "button", "data-mpw-tab-scan": "", onClick: () => switchTab("scan") }, t("bsScan.title")));
+\t\t\ttabBtns.push(h("button", { className: "mpw_tab" + (settingsTab === "source" ? " mpw_tabActive" : ""), type: "button", onClick: () => switchTab("source") }, t("sec.source")));`,
+    `\t\t\ttabBtns.push(h("button", { className: "mpw_tab" + (settingsTab === "source" ? " mpw_tabActive" : ""), type: "button", onClick: () => switchTab("source") }, t("sec.source"))); /* M-order */
+\t\t\tif (scanTabOn) tabBtns.push(h("button", { key: "tab-scan", className: "mpw_tab" + (settingsTab === "scan" ? " mpw_tabActive" : ""), type: "button", "data-mpw-tab-scan": "", onClick: () => switchTab("scan") }, t("bsScan.title")));`]], ['O1'],
   async (f) => {
     const red = [];
-    reset();
-    const w = makeBsWorld([{ id: 'editor', title: () => 'editor', order: 10, component: () => null }]);
-    loadPlugin({ quiet: true, clientPath: f, ctxDecorate: w.decorate });
-    const ds = w.state.descriptors;
-    const scanD = ds.find((x) => x.id === SCAN_ID), wallD = ds.find((x) => x.id === WALL_ID);
-    if (!(!!scanD && !!wallD && scanD.order < wallD.order)) red.push('O2');
-    const all = [{ id: 'editor', order: 10 }].concat(ds.map((d) => ({ id: d.id, order: d.order })));
-    const sorted = all.slice().sort((a, b) => a.order - b.order);
-    if (!(sorted[0] && sorted[0].id === SCAN_ID)) red.push('O3');
+    const { r, w } = await renderOn(f);
+    const d = w.state.descriptors.find((x) => x.id === WALL_ID);
+    let tree = null;
+    try { tree = d.component({ ctx: r.ctx, store: {}, scope: { sessionId: 's1' }, tab: { id: 't1', type: WALL_ID }, visible: true }); } catch (e) {}
+    const bar = (() => { let hit = null; const f2 = (n, dd) => { if (hit || n == null || typeof n !== 'object' || dd > 8) return; if (Array.isArray(n)) { n.forEach((x) => f2(x, dd)); return; } if (n.props && n.props['data-mpw-tabbar'] !== undefined) { hit = n; return; } if (n.kids) f2(n.kids, dd); }; f2(tree, 0); return hit; })();
+    const labelOf = (b) => (b.props && b.props['data-mpw-tab-scan'] !== undefined) ? 'scan' : (b.kids && typeof b.kids[0] === 'string' ? b.kids[0] : '?');
+    const tabKeys = bar && Array.isArray(bar.kids) ? bar.kids.filter(Boolean).map(labelOf) : [];
+    const zh = r.localeDicts.zh;
+    const EXPECT_LABELS = ['scan', zh['sec.source'], zh['sec.wallpaper'], zh['sec.appearance'], zh['sec.unify'], zh['sec.blur'], zh['sec.other'], zh['sec.liquid']];
+    if (!(JSON.stringify(tabKeys) === JSON.stringify(EXPECT_LABELS))) red.push('O1');
+    return red;
+  });
+
+// M-priority：优先级打掉（始终扫 WE 库）⇒ P1（自定义目录没被扫）、P2（steam 反而被扫）红
+await withMutant('M-priority', '扫描优先级打掉（自定义目录分支恒假）',
+  [['\t\t\t\tif (dir) {\n\t\t\t\t\ttry {\n\t\t\t\t\t\tconst d = await mpwScanCustomHost(dir);', '\t\t\t\tif (false) { /* M-priority */\n\t\t\t\t\ttry {\n\t\t\t\t\t\tconst d = await mpwScanCustomHost(dir);']], ['P1', 'P2'],
+  async (f) => {
+    const red = [];
+    const urls = [];
+    const { render } = await renderOn(f, {
+      fetch: async (url) => { urls.push(String(url)); return { ok: true, status: 200, json: async () => (String(url).indexOf('/custom-dir') >= 0) ? customLib(40) : steamLib(30) }; },
+      settings: { enabled: true, customDirPath: '/data/wallpapers' },
+    });
+    try { globalThis.__mpwBsScanKick(); } catch (e) {}
+    await sleep(120);
+    const t = render();
+    const items = countItems(t);
+    if (!(urls.some((u) => u.indexOf('/custom-dir') >= 0) && items.length > 0 && items[0]['data-mpw-scan-item'] === 'custom|clip0.mp4')) red.push('P1');
+    if (!(urls.every((u) => u.indexOf('/steam-inventory') < 0))) red.push('P2');
     return red;
   });
 
@@ -301,11 +415,7 @@ await withMutant('M-empty', '删掉空态分支（空结果没有提示）',
   [['rows.push(h("div", { key: "empty", className: "mpw_hint", "data-mpw-scan-empty": "" }, t("bsScan.empty")));', '/* M-empty */']], ['E1'],
   async (f) => {
     const red = [];
-    reset();
-    const w = makeBsWorld();
-    const r = loadPlugin({ quiet: true, clientPath: f, ctxDecorate: w.decorate, fetch: fetchFor({ steam: { ok: true, wallpapers: [] } }), settings: { enabled: true, customDirPath: '' } });
-    const scanD = w.state.descriptors.find((x) => x.id === SCAN_ID);
-    const render = () => { try { return collectNodes(scanD.component({ ctx: r.ctx, store: {}, scope: { sessionId: 's1' }, tab: { id: 't1', type: SCAN_ID }, visible: true })); } catch (e) { return { nodes: [], strings: [] }; } };
+    const { r, render } = await renderOn(f, { fetch: fetchFor({ steam: { ok: true, wallpapers: [] } }), settings: { enabled: true, customDirPath: '' } });
     try { globalThis.__mpwBsScanKick(); } catch (e) {}
     await sleep(80);
     const t = render();
@@ -319,16 +429,29 @@ await withMutant('M-lazy', '每页 24→1000（懒加载失效、大库全量挂
   [['const MPW_SCAN_PAGE = 24;', 'const MPW_SCAN_PAGE = 1000; /* M-lazy */']], ['S2b'],
   async (f) => {
     const red = [];
-    reset();
-    const w = makeBsWorld();
-    const r = loadPlugin({ quiet: true, clientPath: f, ctxDecorate: w.decorate, fetch: fetchFor(null), settings: { enabled: true, customDirPath: '' } });
-    const scanD = w.state.descriptors.find((x) => x.id === SCAN_ID);
-    const render = () => { try { return collectNodes(scanD.component({ ctx: r.ctx, store: {}, scope: { sessionId: 's1' }, tab: { id: 't1', type: SCAN_ID }, visible: true })); } catch (e) { return { nodes: [], strings: [] }; } };
+    const { render } = await renderOn(f, { fetch: fetchFor(null), settings: { enabled: true, customDirPath: '' } });
     try { globalThis.__mpwBsScanKick(); } catch (e) {}
     await sleep(120);
     const t = render();
-    const items = t.nodes.filter((p) => p && typeof p['data-mpw-scan-item'] === 'string');
-    if (!(items.length < 30 && (t.nodes || []).some((p) => p && p['data-mpw-scan-more'] !== undefined))) red.push('S2b');
+    const items = countItems(t);
+    if (!(items.length < 30 && !(t.nodes || []).some((p) => p && p['data-mpw-scan-more'] !== undefined)
+      && (t.nodes || []).some((p) => p && p['data-mpw-scan-sentinel'] !== undefined))) red.push('S2b');
+    return red;
+  });
+
+// M-scroll：续页断链（每次 +0）⇒ S4 红（滚到底永远到不了全部结果）
+await withMutant('M-scroll', '续页断链（appendMore 每次 +0）',
+  [['const nx = Math.min(items.length, n + MPW_SCAN_PAGE);', 'const nx = Math.min(items.length, n + 0); /* M-scroll */']], ['S4'],
+  async (f) => {
+    const red = [];
+    const { render } = await renderOn(f, { fetch: fetchFor(null), settings: { enabled: true, customDirPath: '' } });
+    try { globalThis.__mpwBsScanKick(); } catch (e) {}
+    await sleep(120);
+    const more = globalThis.__mpwBsScanMore;
+    let guard = 0;
+    try { for (;;) { guard++; if (guard > 20) break; const before = countItems(render()).length; more(); await sleep(1); const after = countItems(render()).length; if (after >= 30) break; if (after === before) break; } } catch (e) {}
+    const t = render();
+    if (!(countItems(t).length === 30 && !t.nodes.some((p) => p && p['data-mpw-scan-sentinel'] !== undefined))) red.push('S4');
     return red;
   });
 
@@ -337,11 +460,7 @@ await withMutant('M-apply', '点选应用断链（applyItem 变空操作）',
   [['try { mpwApplyWallFromList(w, scanUi); } catch (e) { mpwErr("bsScan(apply)", e); }', '/* M-apply */']], ['S3'],
   async (f) => {
     const red = [];
-    reset();
-    const w = makeBsWorld();
-    const r = loadPlugin({ quiet: true, clientPath: f, ctxDecorate: w.decorate, fetch: fetchFor(null), settings: { enabled: true, customDirPath: '' } });
-    const scanD = w.state.descriptors.find((x) => x.id === SCAN_ID);
-    const render = () => { try { return collectNodes(scanD.component({ ctx: r.ctx, store: {}, scope: { sessionId: 's1' }, tab: { id: 't1', type: SCAN_ID }, visible: true })); } catch (e) { return { nodes: [], strings: [] }; } };
+    const { render } = await renderOn(f, { fetch: fetchFor(null), settings: { enabled: true, customDirPath: '' } });
     try { globalThis.__mpwBsScanKick(); } catch (e) {}
     await sleep(120);
     const t = render();
