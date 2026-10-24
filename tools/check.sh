@@ -838,6 +838,11 @@ node tools/bs-tab-test.mjs || fail=1
 #   期望红集 == 实际红集逐条相等（tools/bs-scan-test.mjs 文件头有链路与依据索引）。
 node tools/bs-scan-test.mjs || fail=1
 
+# ①(2026-10-24 任务三) 弹层表面规则不得命中「inline 触发器包装」（侧栏终端"选择 Shell"按钮
+#   背景不一致的修复）：标记判据（打/撤/回归面）/ buildCss 产物排除 / 独立求值器复核选择器语义。
+#   变异自证 M7 删排除 / M8 断标记 —— 期望红集 == 实际红集逐条相等（文件头有证据链 file:line）。
+node tools/pop-ctl-guard-test.mjs || fail=1
+
 
 # ①(2026-09-17 单文件 bundle 轮 / MASTER-TODO §5 第 6 项)「npm + 单文件 bundle 两种装载」的机器门禁：
 #   单文件装载（README 方式四）是**只装宿主端**的降级通道；产物一旦与 lib/*.js 漂移（少一条路由、
