@@ -1,4 +1,4 @@
-// tools/bs-tab-test.mjs —— better-sidebar 侧边栏「壁纸」页签的回归门禁（2026-10-24）
+// tools/bs-tab-test.mjs —— better-sidebar 侧边栏页签 + 设置迁移的回归门禁（2026-10-24 第二批）
 //
 // 为什么需要它：插件向 dsh-better-sidebar 注册侧边栏 tab 有四段链路，任何一段断掉都是
 // "看起来接了、实际没接"的假绿：
@@ -6,14 +6,17 @@
 //   ② 生命周期（必须包 ctx.effect ⇒ fiber 卸载撤销 ⇒ 重激活不抛 already registered）；
 //   ③ 可选依赖降级（better-sidebar 未装/未就绪 ⇒ 有界重试后安全跳过，绝不崩）；
 //   ④ i18n（zh/en 两表键集逐键相等；title/description 是函数 ⇒ guide 列表跟随语言）。
-// 本文件断言（每条都能被"改回坏写法"变红，见文末 M1/M2/M3 变异自证）：
-//   A. 正常注册（服务在 apply 时已就绪）：注册一次 / 字段 / id / effect 包裹 / 卸载重注册
+// 本文件断言（每条都能被"改回坏写法"变红，见文末 M1–M4 变异自证）：
+//   A. 正常注册（服务在 apply 时已就绪）：注册两次（扫描+壁纸）/ 字段 / id / effect 包裹 / 卸载重注册
 //   B. 缺席降级（无服务）：无异常 / 首轮尝试后等待 / 有界超时降级提示 / 服务晚到仍能注册
 //   C. i18n：zh/en 两表 bsTab.* 键集逐键相等 + 描述符 title/description 渲染期取词
-//   D. 组件冒烟：空态 / 有档态 / 错误态 / 播放暂停按钮文案
-//   M1. 去掉 optional 守卫（`if (!bs)` 改恒假）⇒ B1、B3 必红
-//   M2. 去掉 ctx.effect 包裹（内联注册）⇒ A5、A6 必红
+//   D. 组件冒烟：「壁纸」页签 = 整页设置（任务一：主开关/扫描入口在树；旧状态卡已不在）
+//   E. 设置迁移（任务一）：跳转壳只在页签注册后出现 + 跳转真的调 openTab + 配置读写等价
+//      （同一控件从侧栏页签与设置页两条路写出的持久化逐字节相等）
+//   M1. 去掉 optional 守卫（`if (!bs)` 改恒假）⇒ B1、B2、B3 必红
+//   M2. 去掉 ctx.effect 包裹（内联注册）⇒ A5、A6a、A6b 必红
 //   M3. id 改成内置名 subagent（撞内置）⇒ A8 必红
+//   M4. 跳转壳失效（MpkgSectionRoot 恒渲染整页设置）⇒ E2 必红
 // 复现: node tools/bs-tab-test.mjs
 import fs from 'node:fs';
 import os from 'node:os';
@@ -37,15 +40,16 @@ process.on('exit', () => { for (const d of TMP_DIRS) { try { fs.rmSync(d, { recu
 const { loadPlugin, cancelWorldTimers } = await import('./_stub.mjs');
 // 同进程多次 loadPlugin 前必须清的全局守卫（__mpwAppliedOnce = apply 幂等；__mpwBsTabState = 本功能注册状态）
 const CLEAR = ['__mpwClientLoaded', '__mpwRegistered', '__mpwBsVerAt', '__mpwGlobalWired',
-  '__mpwInlineWatcher', '__mpwStyleWatch', '__mpwBuildCss', '__mpwAppliedOnce', '__mpwBsTabState'];
+  '__mpwInlineWatcher', '__mpwStyleWatch', '__mpwBuildCss', '__mpwAppliedOnce', '__mpwBsTabState', '__mpwBsScanKick'];
 const reset = () => { for (const k of CLEAR) { try { delete globalThis[k]; } catch {} } };
 
 /* ---------- fake better-sidebar 服务 + cordis 形状的 effect ---------- */
 // registerTab 的重复 id 语义照抄 dsh-better-sidebar v0.28.0 src/client/service.ts:1064
 // （`tab type "X" already registered`）；effect 像 cordis 一样**持有 disposer**（桩默认丢弃），
 // 这样"包没包 ctx.effect"才有功能性判据（卸载后重注册是否撞车），而不是只数调用。
+// ①(2026-10-24) descriptors 数组记全部注册的描述符；openTabLog 记编程打开（E3 用）。
 function makeBsWorld() {
-  const state = { calls: 0, registered: new Map(), lastDescriptor: null };
+  const state = { calls: 0, registered: new Map(), lastDescriptor: null, descriptors: [], openTabLog: [] };
   const svc = {
     version: '0.28.0',
     features: ['badge', 'tabLifecycle'],
@@ -53,10 +57,12 @@ function makeBsWorld() {
       if (state.registered.has(d.id)) throw new Error('[dsh-better-sidebar] tab type "' + d.id + '" already registered');
       state.calls++;
       state.lastDescriptor = d;
+      state.descriptors.push(d);
       const disp = () => { state.registered.delete(d.id); };
       state.registered.set(d.id, disp);
       return disp;
     },
+    openTab(seed) { state.openTabLog.push(seed && seed.type); },
   };
   const effectLog = [];
   const fiberDisposers = [];
@@ -81,27 +87,70 @@ function decorateLocaleZh(ctx, dicts) {
 }
 
 const BUILTIN_TAB_IDS = ['editor', 'git', 'subagent', 'sidechat', 'terminal-bottom', 'diff'];
+const SCAN_ID = 'mpkg-wallpaper:scan';
+const WALL_ID = 'mpkg-wallpaper';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-console.log('\n== A. 正常注册（服务在 apply 时已就绪）==');
+/** 树工具：执行函数组件（深度≤4，与 panel-smoke 同手法）+ 收集节点/字符串。 */
+function collect(tree, execDepth) {
+  const nodes = [], strings = [];
+  const str = (n) => {
+    if (n == null) return;
+    if (typeof n === 'string') { strings.push(n); return; }
+    if (Array.isArray(n)) { n.forEach(str); return; }
+    if (typeof n === 'object') {
+      if (n.props) { for (const v of Object.values(n.props)) if (typeof v === 'string') strings.push(v); }
+      if (n.kids) str(n.kids);
+    }
+  };
+  const walk = (n, d) => {
+    if (n == null || typeof n !== 'object') return;
+    if (Array.isArray(n)) { n.forEach((x) => walk(x, d)); return; }
+    if (n.props) nodes.push(n.props);
+    if (typeof n.type === 'function' && d < (execDepth || 4)) { try { walk(n.type(Object.assign({ t: (k) => k }, n.props || {})), d + 1); } catch {} return; }
+    if (n.kids) walk(n.kids, d);
+  };
+  walk(tree, 0);
+  str(tree);
+  return { nodes, strings: strings.join(' | ') };
+}
+/** 找第一个 role=switch 的元素（执行函数组件后）：设置页主开关的按钮。 */
+function findFirstSwitch(tree) {
+  let hit = null;
+  const walk = (n, d) => {
+    if (hit || n == null || typeof n !== 'object' || d > 6) return;
+    if (Array.isArray(n)) { n.forEach((x) => walk(x, d)); return; }
+    if (n.props && n.props.role === 'switch' && typeof n.props.onClick === 'function') { hit = n.props; return; }
+    if (typeof n.type === 'function') { try { walk(n.type(Object.assign({ t: (k) => k }, n.props || {})), d + 1); } catch {} return; }
+    if (n.kids) walk(n.kids, d);
+  };
+  walk(tree, 0);
+  return hit;
+}
+
+console.log('\n== A. 正常注册（服务在 apply 时已就绪；①(2026-10-24) 两个页签）==');
 let A = {};
 {
   reset();
   const w = makeBsWorld();
   const a = loadPlugin({ quiet: true, ctxDecorate: w.decorate });
   A = { a, w };
+  const ds = w.state.descriptors;
+  const ids = ds.map((d) => d.id);
+  ok('A1 registerTab 恰好被调 1 次（壁纸页签）', w.state.calls === 1, 'calls=' + w.state.calls);
+  ok('A2a id = mpkg-wallpaper 且与内置不重名', ids.length === 1 && ids[0] === WALL_ID, 'ids=' + JSON.stringify(ids));
+  ok('A2b 不与内置 6 tab 重名', ids.every((i) => !BUILTIN_TAB_IDS.includes(i)), JSON.stringify(ids));
   const d = w.state.lastDescriptor;
-  ok('A1 registerTab 恰好被调 1 次', w.state.calls === 1, 'calls=' + w.state.calls);
-  ok('A2 id = mpkg-wallpaper 且不与内置 6 tab 重名', !!d && d.id === 'mpkg-wallpaper'
-    && !BUILTIN_TAB_IDS.includes(d.id), d ? 'id=' + d.id : 'd=null');
   ok('A3 描述符字段齐全（title/description/icon 为函数、order 数值、single、component）',
     !!d && typeof d.title === 'function' && typeof d.description === 'function'
-    && typeof d.icon === 'function' && typeof d.order === 'number'
-    && d.single === true && typeof d.component === 'function',
+      && typeof d.icon === 'function' && typeof d.order === 'number'
+      && d.single === true && typeof d.component === 'function',
     d ? JSON.stringify({ order: d.order, single: d.single }) : 'd=null');
   ok('A4 注册包在 ctx.effect 里（effect 名登记）',
     w.effectLog.includes('ui-mpkg-wallpaper: better-sidebar tab'), JSON.stringify(w.effectLog));
   ok('A5 apply 全程无异常', (a.applyErrors || []).length === 0, JSON.stringify((a.applyErrors || []).slice(0, 2)));
+  ok('A5b ready 表记录「壁纸」页签成功', (() => { const st = globalThis.__mpwBsTabState; return !!st && !!st.ready && st.ready[WALL_ID] === true; })(),
+    JSON.stringify((globalThis.__mpwBsTabState || {}).ready));
 
   console.log('  -- A6 生命周期：卸载 → 重 apply ⇒ 重注册、不撞 already registered --');
   w.unload();
@@ -168,80 +217,121 @@ console.log('\n== C. i18n（zh/en 两表键集逐键相等 + 渲染期取词）=
   const dicts = A.a.localeDicts;
   const KEYS = ['bsTab.title', 'bsTab.desc', 'bsTab.stateOn', 'bsTab.stateOff',
     'bsTab.kind.image', 'bsTab.kind.video', 'bsTab.kind.web', 'bsTab.kind.mpkg', 'bsTab.kind.scene',
-    'bsTab.empty', 'bsTab.err', 'bsTab.settingsHint', 'bsTab.refresh'];
+    'bsTab.empty', 'bsTab.err', 'bsTab.settingsHint', 'bsTab.refresh',
+    'bsTab.jumpDesc', 'bsTab.jumpOpen', 'bsTab.jumpCur', 'bsTab.jumpFail'];
   ok('C1 词典已随 apply 注册（zh/en 两表都在）', !!dicts && !!dicts.zh && !!dicts.en, dicts ? 'ns=' + A.a.localeNs : 'dicts=null');
   const missZh = KEYS.filter((k) => !dicts || !dicts.zh || typeof dicts.zh[k] !== 'string' || !dicts.zh[k]);
   const missEn = KEYS.filter((k) => !dicts || !dicts.en || typeof dicts.en[k] !== 'string' || !dicts.en[k]);
-  ok('C2 zh 表 13 个 bsTab.* 键全部非空', missZh.length === 0, JSON.stringify(missZh));
-  ok('C3 en 表 13 个 bsTab.* 键全部非空', missEn.length === 0, JSON.stringify(missEn));
+  ok('C2 zh 表 17 个 bsTab.* 键全部非空', missZh.length === 0, JSON.stringify(missZh));
+  ok('C3 en 表 17 个 bsTab.* 键全部非空', missEn.length === 0, JSON.stringify(missEn));
   ok('C4 zh/en 键集逐键相等（一边漏键必红）', missZh.length === 0 && missEn.length === 0
     && KEYS.every((k) => dicts.zh[k] !== undefined && dicts.en[k] !== undefined), '');
-  const d = A.w.state.lastDescriptor;
+  const d = A.w.state.descriptors.find((x) => x.id === WALL_ID);
   ok('C5 title()/description() 渲染期按词典取词（函数式，跟随语言）',
     !!d && d.title() === dicts.zh['bsTab.title'] && d.description() === dicts.zh['bsTab.desc'],
     d ? 'title=' + d.title() : 'd=null');
 }
 
-console.log('\n== D. 组件冒烟（空态 / 有档 / 错误态 / 播放暂停）==');
+console.log('\n== D. 组件冒烟：「壁纸」页签 = 整页设置（任务一）==');
 {
-  const collectStrings = (n, out) => {
-    if (n == null) return out;
-    if (typeof n === 'string') { out.push(n); return out; }
-    if (Array.isArray(n)) { for (const c of n) collectStrings(c, out); return out; }
-    if (typeof n === 'object') {
-      if (n.props) { for (const v of Object.values(n.props)) if (typeof v === 'string') out.push(v); }
-      if (n.kids) collectStrings(n.kids, out);
-    }
-    return out;
-  };
-  const renderTree = (world, seed) => {
+  const mk = () => { const w = makeBsWorld(); w.dicts = A.a.localeDicts; return w; };
+  const renderWall = (seed) => {
     reset();
-    const w = world || makeBsWorld();
+    const w = mk();
     const opts = { quiet: true, ctxDecorate: (ctx) => { w.decorate(ctx); decorateLocaleZh(ctx, w.dicts); } };
     if (seed !== undefined) opts.settings = seed;
     const r = loadPlugin(opts);
-    const d = w.state.lastDescriptor;
-    if (!d) return { r, text: [], nodes: [], crashed: true };
+    const d = w.state.descriptors.find((x) => x.id === WALL_ID);
+    if (!d) return { r, text: '', nodes: [], crashed: true, w };
     let tree = null, crashed = false;
-    try {
-      tree = d.component({ ctx: r.ctx, store: {}, scope: { sessionId: 's1' }, tab: { id: 't1', type: 'mpkg-wallpaper' }, visible: true });
-    } catch (e) { crashed = true; }
-    const nodes = [];
-    const walk = (n) => {
-      if (n == null || typeof n !== 'object') return;
-      if (Array.isArray(n)) { n.forEach(walk); return; }
-      if (n.props) nodes.push(n.props);
-      if (n.kids) walk(n.kids);
-    };
-    if (tree) walk(tree);
-    return { r, text: tree ? collectStrings(tree, []).join(' | ') : '', nodes, crashed };
+    try { tree = d.component({ ctx: r.ctx, store: {}, scope: { sessionId: 's1' }, tab: { id: 't1', type: WALL_ID }, visible: true }); }
+    catch (e) { crashed = true; }
+    const c = collect(tree, 4);
+    return { r, text: c.strings, nodes: c.nodes, crashed, w };
   };
+  const zh = A.a.localeDicts.zh;
 
-  const mk = () => { const w = makeBsWorld(); w.dicts = A.a.localeDicts; return w; };
+  const d1 = renderWall({ enabled: true });
+  ok('D1 「壁纸」页签渲染的是整页设置（主开关 + 扫描入口在树）',
+    d1.text.includes(zh['master']) && d1.text.includes(zh['lib.scan']) && !d1.crashed, d1.text.slice(0, 120));
+  ok('D1b 旧的状态卡已不在本页签（bsTab.empty 文案不再出现 ⇒ 功能迁走不留两处）',
+    !d1.text.includes(zh['bsTab.empty']), d1.text.slice(0, 120));
 
-  const d1 = renderTree(mk(), { enabled: true });
-  ok('D1 空态：未设置壁纸 ⇒ 空态文案出现', d1.text.includes(A.a.localeDicts.zh['bsTab.empty']), d1.text.slice(0, 120));
+  const d2 = renderWall({ enabled: true, image: 'data:image/png;base64,AAA', converted: 'mp4' });
+  ok('D2 有档：当前壁纸卡（缩略图框）+ 启用态在树',
+    d2.nodes.some((p) => p && p['data-mpw-thumb-box'] !== undefined), d2.text.slice(0, 120));
 
-  const d2 = renderTree(mk(), { enabled: true, image: 'data:image/png;base64,AAA', converted: '' });
-  ok('D2 有档：缩略图框 + 启用态出现',
-    d2.nodes.some((p) => p && p['data-mpw-thumb-box'] !== undefined)
-      && d2.text.includes(A.a.localeDicts.zh['bsTab.stateOn']),
-    d2.text.slice(0, 120));
+  const d3 = renderWall({ enabled: "yes", image: 123, npVolume: "abc", mute: "no" });
+  ok('D3 垃圾档防御：非字符串/越型字段不炸且整页设置照常渲染',
+    d3.text.length > 0 && d3.text.includes(zh['master']) && !d3.crashed, d3.text.slice(0, 120));
 
-  const d3 = renderTree(mk(), { enabled: "yes", image: 123, npVolume: "abc", mute: "no" });
-  ok('D3 垃圾档防御：非字符串/越型字段不炸且仍有控制行（错误/空态兜底路径存在）',
-    d3.text.length > 0 && d3.text.includes(A.a.localeDicts.zh['pause.pause'])
-      && !d3.crashed, d3.text.slice(0, 120));
+  const d4 = renderWall({ enabled: true, image: 'data:image/png;base64,AAA', converted: 'mp4' });
+  ok('D4 播放/暂停控件跟随整页设置（mp4 档 ⇒ 暂停壁纸按钮在树）',
+    d4.text.includes(zh['pause.pause']), d4.text.slice(0, 160));
+}
 
-  const d4 = renderTree(mk(), { enabled: true, image: 'data:image/png;base64,AAA' });
-  ok('D4 播放/暂停按钮文案 = 暂停壁纸（未暂停档）', d4.text.includes(A.a.localeDicts.zh['pause.pause']), d4.text.slice(0, 160));
+console.log('\n== E. 设置迁移（任务一：跳转壳 + 跳转 + 配置读写等价）==');
+{
+  const zh = A.a.localeDicts.zh;
+
+  console.log('  -- E1/E2 跳转壳只在页签注册后出现（bs 缺席 ⇒ 整页设置照旧）--');
+  reset();
+  const b0 = loadPlugin({ quiet: true, settings: { enabled: true } });   // 无 bs 服务
+  const t0 = collect(b0.sectionComp({ t: (k) => k, close: () => {} }), 4);
+  ok('E1 bs 缺席：settings.section 渲染整页设置（主开关在树、无跳转壳）',
+    t0.strings.includes('master') && !t0.nodes.some((p) => p && p['data-mpw-bs-jump'] !== undefined),
+    t0.strings.slice(0, 100));
+
+  reset();
+  const w3 = makeBsWorld();
+  const b1 = loadPlugin({ quiet: true, settings: { enabled: true }, ctxDecorate: w3.decorate });
+  const t1 = collect(b1.sectionComp({ t: (k) => k, close: () => {} }), 4);
+  ok('E2 页签已注册：设置页只剩跳转壳（壳在树；被迁走的控件不再出现）',
+    t1.nodes.some((p) => p && p['data-mpw-bs-jump'] !== undefined)
+      && !t1.strings.includes('master') && !t1.strings.includes('lib.scan'),
+    t1.strings.slice(0, 100));
+
+  console.log('  -- E3 跳转按钮真的调 openTab({type:"mpkg-wallpaper"}) --');
+  const jumpBtn = t1.nodes.find((p) => p && p['data-mpw-bs-jump-btn'] !== undefined && typeof p.onClick === 'function');
+  let jumped = false;
+  try { jumpBtn.onClick(); jumped = true; } catch (e) {}
+  ok('E3 点击跳转 ⇒ 服务收到 openTab(type=mpkg-wallpaper)',
+    jumped && w3.state.openTabLog.includes(WALL_ID), JSON.stringify(w3.state.openTabLog));
+
+  console.log('  -- E4 配置读写等价：侧栏页签与设置页两条路写出的持久化逐字节相等 --');
+  const seedStore = { enabled: true, image: 'data:image/png;base64,AAA', converted: 'mp4', sharp: false };
+  // 路 A：从「壁纸」侧栏页签（bs world）里点主开关
+  reset();
+  const wA = makeBsWorld();
+  const storeA = { _m: new Map(), getItem(k) { return this._m.has(k) ? this._m.get(k) : null }, setItem(k, v) { this._m.set(k, String(v)) }, removeItem(k) { this._m.delete(k) } };
+  const ra = loadPlugin({ quiet: true, settings: JSON.parse(JSON.stringify(seedStore)), ctxDecorate: wA.decorate, localStorage: storeA });
+  const dA = wA.state.descriptors.find((x) => x.id === WALL_ID);
+  const treeA = dA.component({ ctx: ra.ctx, store: {}, scope: { sessionId: 's1' }, tab: { id: 't1', type: WALL_ID }, visible: true });
+  const swA = findFirstSwitch(treeA);
+  try { swA.onClick(); } catch (e) {}
+  await sleep(3600);   // 等 boot 收尾闸门（3.5s 世界定时器）放行落盘
+  const jsonA = storeA.getItem('dsh.mpkg-wallpaper.v2');
+  // 路 B：从设置页（无 bs world 的 fallback）点同一个主开关
+  reset();
+  const storeB = { _m: new Map(), getItem(k) { return this._m.has(k) ? this._m.get(k) : null }, setItem(k, v) { this._m.set(k, String(v)) }, removeItem(k) { this._m.delete(k) } };
+  const rb = loadPlugin({ quiet: true, settings: JSON.parse(JSON.stringify(seedStore)), localStorage: storeB });
+  const treeB = rb.sectionComp({ t: (k) => k, close: () => {} });
+  const swB = findFirstSwitch(treeB);
+  try { swB.onClick(); } catch (e) {}
+  await sleep(3600);   // 同上：两条路等同一个闸门 ⇒ 对比的是同一种读数
+  const jsonB = storeB.getItem('dsh.mpkg-wallpaper.v2');
+  const stripStamp = (j) => { try { const o = JSON.parse(j); delete o.__mpwLocalAt; delete o.__mpwHostAt; return JSON.stringify(o) } catch (e) { return j } };
+  ok('E4 两条路的写入逐字段相等（剥时间戳；且确实写入了 ⇒ 判据能失败）',
+    !!swA && !!swB && stripStamp(jsonA) === stripStamp(jsonB) && jsonA !== null && JSON.parse(jsonA).enabled === false,
+    'equal=' + (stripStamp(jsonA) === stripStamp(jsonB)) + ' A=' + String(jsonA).slice(0, 80));
+  ok('E4b 两条路共用同一持久化键（STORE_KEY 未改名）',
+    jsonA !== null && jsonB !== null, 'A=' + (jsonA ? 'set' : 'null') + ' B=' + (jsonB ? 'set' : 'null'));
 }
 
 /* ---------- 变异自证（隔离副本；每个锚点必须恰好替换一次且旧串不再存在 —— R2） ---------- */
 const CLIENT = path.join(ROOT, 'lib', 'client.js');
 const src0 = fs.readFileSync(CLIENT, 'utf8');
 function runChecksOn() {
-  // 每个用例自己的红集收集器：group(id, 条件, 详情) —— 条件为假即记红
   const red = [];
   const detail = {};
   const group = (id, cond, d) => { detail[id] = d || ''; if (!cond) red.push(id); };
@@ -276,8 +366,6 @@ console.log('\n== M. 变异自证（期望红集 == 实际红集，逐条相等�
 
 // M1：去掉 optional 守卫（`if (!bs)` 恒假）⇒ 服务缺席时直闯注册 ⇒ 注册尝试从未发生、
 //    有界重试与降级提示整条链路死掉 ⇒ B1（无异常被打破）、B2（首轮尝试）、B3（到期降级）红。
-//    注意 effect 用**重掷语义**的桩（真实宿主语义；默认桩吞错会把注册失败静默掉 —— 那正是
-//    M1 要暴露的坏写法在真实世界里"看起来没事"的原因）。
 await withMutant('M1', '去掉 optional 守卫（if (!bs) 恒假）', [['if (!bs) {', 'if (false) { /* M1 */']], ['B1', 'B2', 'B3'],
   async (f) => {
     const { group, red, detail } = runChecksOn();
@@ -324,12 +412,27 @@ await withMutant('M2', '去掉 ctx.effect 包裹（内联注册、disposer 丢�
 await withMutant('M3', 'id 改成内置名 subagent',
   [['const MPW_BS_TAB_ID = "mpkg-wallpaper";', 'const MPW_BS_TAB_ID = "subagent"; /* M3 */']], ['A8'],
   async (f) => {
-    const { group, red } = runChecksOn();
+    const { group, red, detail } = runChecksOn();
     reset();
     const w = makeBsWorld();
     loadPlugin({ quiet: true, clientPath: f, ctxDecorate: w.decorate });
     const d = w.state.lastDescriptor;
-    group('A8', !!d && !BUILTIN_TAB_IDS.includes(d.id), d ? 'id=' + d.id : 'd=null');
+    group('A8', !!d && !BUILTIN_TAB_IDS.includes(d.id), d ? d.id : 'd=null');
+    return red;
+  });
+
+// M4：跳转壳失效（MpkgSectionRoot 恒渲染整页设置）⇒ E2 红（页签在时设置页必须只剩跳转壳）
+await withMutant('M4', 'MpkgSectionRoot 恒渲染整页设置（跳转壳失效）',
+  [['return bsReady ? MpwSettingsJumpView(props) : MpkgSection(props);', 'return MpkgSection(props); /* M4 */']], ['E2'],
+  async (f) => {
+    const { group, red, detail } = runChecksOn();
+    reset();
+    const w = makeBsWorld();
+    const b = loadPlugin({ quiet: true, settings: { enabled: true }, clientPath: f, ctxDecorate: w.decorate });
+    const t1 = collect(b.sectionComp({ t: (k) => k, close: () => {} }), 4);
+    group('E2', t1.nodes.some((p) => p && p['data-mpw-bs-jump'] !== undefined)
+      && !t1.strings.includes('master') && !t1.strings.includes('lib.scan'),
+      'jump=' + t1.nodes.some((p) => p && p['data-mpw-bs-jump'] !== undefined) + ' hasMaster=' + t1.strings.includes('master'));
     return red;
   });
 

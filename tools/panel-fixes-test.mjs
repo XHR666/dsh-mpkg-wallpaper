@@ -125,7 +125,11 @@ console.log('\u001b[1m== (a1) 渲染错误边界：出错时必须显示错误�
   if (threw) bad('渲染错误边界可用（出错时给出提示而不是抛错）', String(threw && threw.message))
   else if (text.indexOf('壁纸引擎设置渲染出错: boom-body') >= 0) ok('渲染错误边界可用：显示真实错误内容（真因不再被 h is not defined 吞掉）')
   else bad('错误边界没有显示真实错误', text.slice(0, 120))
-  const boundary = src.slice(src.indexOf('设置页渲染失败'))
+  // ①(2026-10-24) 切片收窄到 MpkgSectionImpl 的结尾（'//  多语言' 段落头）：原实现切到文件尾，
+  //   隐含假设"边界后面没有别的组件代码"——文件增长后，后面合法的 `return h("div"`（h 已在
+  //   各组件内声明，panel-smoke 有同款静态判据）会误伤。收窄后断言对象不变、强度不变。
+  const bi = src.indexOf('设置页渲染失败')
+  const boundary = src.slice(bi, src.indexOf('//  多语言', bi) >= 0 ? src.indexOf('//  多语言', bi) : undefined)
   if (boundary.indexOf('react.createElement("div"') >= 0 && boundary.indexOf('return h("div"') < 0) ok('静态守卫：错误边界改用 react.createElement（不再引用 try 块内的 h）')
   else bad('错误边界仍在引用 try 块内的 h')
 }
