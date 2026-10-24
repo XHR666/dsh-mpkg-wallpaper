@@ -818,6 +818,13 @@ node tools/better-sidebar-compat-test.mjs || fail=1
 #   变异自证：删掉"用户设过就不迁移"、把默认值改回 false、写入口不打标记 ⇒ 三组各自变红。
 node tools/bs-compat-default-test.mjs || fail=1
 
+# ①(2026-10-24 侧边栏 tab) 向 dsh-better-sidebar 注册「壁纸」页签（可选依赖）的四段链路判据：
+#   注册一次/字段/id 唯一（A）· ctx.effect 生命周期：卸载→重 apply 不撞 already registered（A6）·
+#   未装/未就绪 ⇒ 有界重试(250ms×32)后降级跳过（B）· zh/en 键集逐键相等 + 渲染期取词（C）·
+#   组件冒烟（D）。变异自证 M1 去掉 optional 守卫 / M2 去掉 ctx.effect 包裹 / M3 id 撞内置 ——
+#   期望红集 == 实际红集逐条相等（tools/bs-tab-test.mjs 文件头有链路与依据索引）。
+node tools/bs-tab-test.mjs || fail=1
+
 # ①(2026-09-17 单文件 bundle 轮 / MASTER-TODO §5 第 6 项)「npm + 单文件 bundle 两种装载」的机器门禁：
 #   单文件装载（README 方式四）是**只装宿主端**的降级通道；产物一旦与 lib/*.js 漂移（少一条路由、
 #   Range/206 语义变了、ping 键变了、导出面变了），用户侧就是"静默半坏"。本步：

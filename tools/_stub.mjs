@@ -281,6 +281,9 @@ export function loadPlugin(opts = {}) {
   const applyErrors = []
   const origErr = console.error
   console.error = (...a) => { applyErrors.push(a.map((x) => (x && x.message) || String(x)).join(' ')); if (!opts.quiet) origErr.apply(console, a) }
+  /* ①(2026-10-24 侧边栏 tab 判据) 可选钩子：apply 之前让用例往 ctx 上补服务（如
+     reflect/get 桩 better-sidebar 服务）。默认不传 = 行为与从前逐字节一致。 */
+  if (typeof opts.ctxDecorate === 'function') { try { opts.ctxDecorate(ctx) } catch (e) { if (!opts.quiet) console.error('ctxDecorate 失败:', e && e.message) } }
   try { plugin.apply(ctx) } finally { console.error = origErr }
 
   return { src, plugin, sectionComp, ctx, applyErrors, localeDicts, localeNs, ...stubs }

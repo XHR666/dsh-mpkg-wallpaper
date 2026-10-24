@@ -42,7 +42,13 @@
     }
   },
   "peerDependencies": {
-    "react": "^18.2.0"
+    "react": "^18.2.0",
+    "dsh-better-sidebar": ">=0.19.0"
+  },
+  "peerDependenciesMeta": {
+    "dsh-better-sidebar": {
+      "optional": true
+    }
   },
   "license": "MIT",
   "keywords": [

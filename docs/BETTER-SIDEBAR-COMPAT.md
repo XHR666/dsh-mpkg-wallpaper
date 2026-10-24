@@ -370,3 +370,40 @@ F9 全开仍后写优先，外加 3 条**变异对照**（把源码改回旧写�
 ⇒ 不生效且**迁移不发生**；存量用户（无标记 + 旧默认 false）⇒ 迁移生效且**不打标记**；迁移后手动关 ⇒
 持久为关（读回 + 落盘 JSON 带标记 + 用落盘那份 section 当"重启"重放仍是关）。
 变异自证：删掉"用户设过就不迁移" ⇒ ② 红；默认值改回 false ⇒ ① 红；写入口不打标记 ⇒ ③ 红。
+
+---
+
+## 9. 侧边栏「壁纸」页签：经 `ctx.betterSidebar` 注册（2026-10-24）
+
+v0.19.0 起右列完全属于 DSH 原生右侧栏；第三方 tab 经 better-sidebar 的注册表服务
+`ctx.betterSidebar.registerTab(descriptor)` 进入该列（v0.28.0《外部插件接入指南》§2/§3/§4.1；
+内置 6 tab = `editor` / `git` / `subagent` / `sidechat` / `terminal-bottom` / `diff`，id 均不可重名）。
+
+**本插件的接线方式（与既有槽位注册的最大差异 = better-sidebar 是可选依赖）**：
+
+* **不进 `dsh.client.inject`**：inject 缺服务会把整条插件 fiber 钉在 pending（设置面板/壁纸全没）。
+  改走运行时探测 `ctx.get("betterSidebar")`——vendored `@deepseek-ai/cordis` 的 `ctx.get` 是
+  "无 inject 要求"的读取（服务未提供 ⇒ `undefined`）；**属性访问 `ctx.betterSidebar` 缺服务会抛**
+  `cannot get property … without inject`（实测复现），绝不能裸取。
+* **有界重试**：better-sidebar 在自己 `apply()` 开头 `ctx.provide("betterSidebar", service)` ⇒
+  两个插件的激活顺序不确定。`250ms × 32`（≈8s）内拿到就注册；超时降级（`console.info` 一行 +
+  trace `bs-tab:giveup`），设置面板与壁纸功能零影响。elysia395/dsh-wallpaper-engine
+  `src/sidebar-right.js` 对宿主可选服务同款短轮询形态。
+* **注册包 `ctx.effect`**：disposer 由 fiber 持有，卸载（HMR/禁用）自动撤销；插件自己的幂等状态记在
+  `window.__mpwBsTabState`，disposer 执行时清 `registered` ⇒ 重 apply 可重注册、不撞
+  `already registered`。
+* **描述符**：`id="mpkg-wallpaper"`、`order=50`（内置 10–40 之后）、`single: true`、
+  `title`/`description` 为函数（渲染期按 `ui-mpkg-wallpaper` 词典取词 ⇒ 跟随 DSH 语言；
+  guide 列表 ≤4 条时显示 description）。页面 = 当前壁纸（缩略图链 `mpwThumbChildren` + 类型 +
+  启用/关闭态）、播放/暂停（`toggleWallPause` + `mpw:wallpaused` 同步）、静音/音量
+  （既有 `mute`/`npVolume` 设置项 + `npApplyMute`/`npApplyVolume` 真落元素）、指引行。
+  DSH 未提供编程打开设置页的公共 API（`dsh-client-ui-settings-general` 的 `activeId` 是组件局部
+  state）⇒ 以「常用控制前置 + 指引文案」实现，不写宿主 DOM 选择器。
+* **package.json**：`peerDependencies["dsh-better-sidebar"] = ">=0.19.0"` +
+  `peerDependenciesMeta.optional: true`（caret 在 0.x 跨 minor 不成立，用下限区间）。
+
+**判据**：`tools/bs-tab-test.mjs`（门禁第 10 步，26 断言 + 3 变异自证）——
+A 注册一次/字段/id 唯一/effect 包裹/卸载重注册（A1–A8）；B 未装/未就绪降级（B1–B4，含"服务晚到仍注册"
+的启动竞态）；C zh/en `bsTab.*` 键集逐键相等 + 渲染期取词（C1–C5）；D 组件冒烟（空态/有档/垃圾档防御/
+播放暂停文案，D1–D4）。变异自证（期望红集 == 实际红集逐条相等）：M1 去掉 optional 守卫 ⇒ {B1,B2,B3}；
+M2 去掉 ctx.effect 包裹 ⇒ {A5,A6a,A6b}；M3 id 改成内置名 ⇒ {A8}。
