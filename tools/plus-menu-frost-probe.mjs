@@ -12,11 +12,13 @@
  *   卡片内部（截断态）；卡片 blur 被摘（untrunc 标记落地）后壳的 blur 才采样整页（磨砂成立）。
  *
  * 用法（隔离实例，绝不碰用户正在用的 3080/8902/8899）：
- *   DSH_HOME=/tmp/mpw-frost-probe dsh --profile web --port 36317 --no-open &
+ *   DSH_HOME=$TMPDIR/mpw-frost-probe dsh --profile web --port 36317 --no-open &
  *   node tools/hdr-probe-mint-cookie.mjs --authority 127.0.0.1:36317 \
- *     --creds /tmp/mpw-frost-probe/.credentials.yaml --out /tmp/mpw-frost-probe/cookie.json
+ *     --creds "$TMPDIR/mpw-frost-probe/.credentials.yaml" --out "$TMPDIR/mpw-frost-probe/cookie.json"
  *   node tools/plus-menu-frost-probe.mjs --url http://127.0.0.1:36317/ \
- *     --cookie /tmp/mpw-frost-probe/cookie.json --label before
+ *     --cookie "$TMPDIR/mpw-frost-probe/cookie.json" --label before
+ *   （--cookie 缺省读环境变量 MPW_FROST_COOKIE，再缺省落到工作区 tools/probe-out/ 下；
+ *    不写死任何宿主绝对/临时目录 —— 见 tools/cross-platform-test.mjs 的 B1 判据。）
  *
  * 输出：tools/probe-out/plus-frost-<label>.json
  * 纪律：只读页面 + 一次受控点击（开菜单）；单一无头浏览器实例，跑完立刻关闭。
@@ -32,7 +34,7 @@ const ROOT = path.resolve(here, '..')
 const argv = process.argv.slice(2)
 const arg = (n, d) => { const i = argv.indexOf('--' + n); return i >= 0 && argv[i + 1] && !argv[i + 1].startsWith('--') ? argv[i + 1] : d }
 const URL0 = arg('url', 'http://127.0.0.1:36317/')
-const COOKIE_FILE = arg('cookie', '/tmp/mpw-frost-probe/cookie.json')
+const COOKIE_FILE = arg('cookie', process.env.MPW_FROST_COOKIE || path.join(ROOT, 'tools', 'probe-out', 'plus-frost-cookie.json'))
 const OUT_DIR = path.resolve(ROOT, arg('out', 'tools/probe-out'))
 const LABEL = arg('label', 'before')
 const WAIT_MS = Number(arg('wait', '3000'))

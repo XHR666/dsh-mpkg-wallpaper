@@ -88,6 +88,12 @@ const WHITELIST = [
     match: WL('const COOKIE = ', '', "'/tmp/ffprobe/cookie.json'"),
     why: '**文件路径**常量（自签 Cookie 的落盘位置，默认 /tmp/ffprobe/cookie.json），不是 Cookie 值本身；值由 tools/hdr-probe-mint-cookie.mjs 运行时现签、从不入库',
   },
+  {
+    file: 'tools/plus-menu-frost-probe.mjs',
+    pattern: 'assigned-credential-ext',
+    match: WL('const key = ', '', "'dsh.mpkg-wallpaper.v2'"),
+    why: 'localStorage **键名**（探针预置插件设置用的存储键，与 lib/client.js 的 STORE_KEY 同名同值）：值是点分命名的键字符串，不含凭据；①(2026-10-25) 既有红顺手清账（a6a7dce 引入探针时漏登记）',
+  },
 ]
 
 // ── B 段：本机绝对路径门禁 ──
