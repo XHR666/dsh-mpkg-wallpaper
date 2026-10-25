@@ -78,6 +78,7 @@
 | `host:substr-radius-compat` | anchor（整条选择器） | `:where([class*="wrap"], [class*="panel"], [class*="box"], [class*="section"], [class*="container"])` | 第三方插件 UI 圆角兼容（`roundCompat`，默认关）：**故意**匹配任意插件容器子串，但零优先级 `:where` + 只写 `border-radius` ⇒ 不覆盖任何既有样式 | 本表 |
 | `rail:marks` | anchor（**必须带门控**） | `.eGxaPq_*` / `.Y0dWHa_*` / `.qBU-ya*` | 只在 `body[data-mpw-rail-ink]`（对比补偿）/ `data-mpw-traject-clip`（仅几何裁剪）门控下成立 | `TIMELINE-RAIL-TOKEN.md:181`（existing） |
 | `rail:mark-attrs` | anchor（**必须带门控**） | `[class*="qBU-ya"]` / `[class*="_overview"]` | 同上（轨迹总览几何裁剪） | `TIMELINE-RAIL-TOKEN.md:181`（existing） |
+| `third:conv-panel` / `third:conv-panel-sub` | anchor | `.dsh-conv-panel` / `[class*="dsh-conv-panel"]` | dsh-conversation 浮窗：只设层值（60）+ 标题栏内祖先盒解困 + 设置/弹层在场让位（z:auto）；不改宿主 DOM/代码 | 本表 |
 | `host:todo-card` | anchor（**必须带门控**） | `[class*="lXshSW_root"]` / `[data-tool="todo_write"]` | 宿主任务列表卡片：`todoBlur` 只打它，门控在 `body[data-mpw-todo-blur]` | 本表 |
 | `host:substr-root-refine` | refine | `[class$="_root"]` | 复合写法 `[class$="_root"][class*="qBU-ya"]` 的细化 | 本表 |
 | `type:any` | refine | 任意元素选择器 | 只允许作为已锚定选择器里的元素细化（`button`/`header`/`svg`/`img`…） | 本表 |
