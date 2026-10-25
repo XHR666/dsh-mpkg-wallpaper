@@ -9,7 +9,11 @@
 //   T-header-auto（机制核心，在 lib 注释有完整证据链）：面板存在且无弹层时 header 取
 //      z-index:auto（不再自建层叠上下文封顶面板）；其在场性由 T0 的规则计数与 lib 注释佐证，
 //      未单设变异（本文件维持既定三条变异，不扩）
-//   T3 让位：设置/弹层在场（_overlay/_overlayLayer/_modal）⇒ 面板与祖先盒 z:auto（压不过设置/模态）
+//   T3 让位（2026-10-26 真机定案·第2版）：让位只认**真正的模态** ——
+//      html body:has([role="dialog"][aria-modal="true"]) .dsh-conv-panel { z-index:auto !important }
+//      （_overlayLayer/_overlay/_modal 是宿主**常驻**类名，用它做 :has 条件恒真 ⇒ 面板 880 恒被
+//        压回 auto ⇒「大纲被正文压住」；旧三条类名让位已废除）
+//   T3b 反向：产物中不得再出现「类名条件让位」的 .dsh-conv-panel 规则（防倒退回恒真条件）
 //   R  三组比较（对照值来源：宿主包 CSS 与本文件既有档位，证据链记录在 lib/client.js 注释）：
 //      浮窗(880) > 输入框 wSkVaW_composerSeat(7)；
 //      浮窗(880) < 宿主对话框 portal root(1000)；
@@ -67,12 +71,13 @@ const crs = convRules(rs);
   const untrap = crs.find((r) => r.sel.indexOf('.wSkVaW_header :has([class*="dsh-conv-panel"])') >= 0 && !/auto/.test(r.body));
   ok('T2 祖先盒规则在场（header 内祖先盒 relative + z-index:60；独立于面板 880 档）',
     !!untrap && /position\s*:\s*relative/.test(untrap.body) && zOf(untrap) === '60', untrap ? untrap.body.slice(0, 60) : 'missing');
-  for (const ov of ['_overlayLayer', '_overlay', '_modal']) {
-    const y1 = crs.find((r) => r.sel.indexOf(':has([class*="' + ov + '"]) .dsh-conv-panel') >= 0);
-    const y2 = crs.find((r) => r.sel.indexOf(':has([class*="' + ov + '"]) .wSkVaW_header :has([class*="dsh-conv-panel"])') >= 0);
-    ok('T3 让位（' + ov + ' ⇒ 面板 + 祖先盒 z:auto）', !!y1 && zOf(y1) === 'auto' && !!y2 && zOf(y2) === 'auto',
-      y1 ? ('y1=' + zOf(y1) + ' y2=' + (y2 ? zOf(y2) : 'missing')) : 'missing');
-  }
+  const yieldRule = crs.find((r) => r.sel.includes(':has([role="dialog"][aria-modal="true"]) .dsh-conv-panel'));
+  ok('T3 让位：真模态（[role="dialog"][aria-modal="true"]）在场 ⇒ 面板 z:auto',
+    !!yieldRule && zOf(yieldRule) === 'auto' && /!important/.test(yieldRule.body),
+    yieldRule ? ('z=' + zOf(yieldRule)) : 'missing');
+  const classYield = crs.filter((r) => r.sel.includes('.dsh-conv-panel') && /:has\(\[class\*="_(?:overlay|overlayLayer|modal)"\]\)/.test(r.sel) && !/:not\(/.test(r.sel));
+  ok('T3b 反向：不存在类名条件让位（_overlay/_overlayLayer/_modal ⇒ 恒真条件，防回退）',
+    classYield.length === 0, classYield.length ? ('hit=' + classYield[0].sel.slice(0, 80)) : 'clean');
   // 三组比较（数值都是产物/证据常量，变异或对照改动即红）
   const pv = Number(zv);
   ok('R1 浮窗(880) > 输入框 composerSeat(' + HOST_COMPOSER_SEAT_Z + ')', pv > HOST_COMPOSER_SEAT_Z, '');
@@ -119,13 +124,10 @@ const checkReds = (f) => {
   const pv = Number(zOf(panel));
   const untrap = crs2.find((r) => r.sel.indexOf('.wSkVaW_header :has([class*="dsh-conv-panel"])') >= 0 && !/auto/.test(r.body));
   if (!untrap || !(/position\s*:\s*relative/.test(untrap.body) && zOf(untrap) === '60')) red.push('T2');
-  let yieldOk = true;
-  for (const ov of ['_overlayLayer', '_overlay', '_modal']) {
-    const y1 = crs2.find((r) => r.sel.indexOf(':has([class*="' + ov + '"]) .dsh-conv-panel') >= 0);
-    const y2 = crs2.find((r) => r.sel.indexOf(':has([class*="' + ov + '"]) .wSkVaW_header :has([class*="dsh-conv-panel"])') >= 0);
-    if (!y1 || zOf(y1) !== 'auto' || !y2 || zOf(y2) !== 'auto') yieldOk = false;
-  }
-  if (!yieldOk) red.push('T3');
+  const yr = crs2.find((r) => r.sel.includes(':has([role="dialog"][aria-modal="true"]) .dsh-conv-panel'));
+  if (!yr || zOf(yr) !== 'auto' || !/!important/.test(yr.body)) red.push('T3');
+  const cy = crs2.filter((r) => r.sel.includes('.dsh-conv-panel') && /:has\(\[class\*="_(?:overlay|overlayLayer|modal)"\]\)/.test(r.sel) && !/:not\(/.test(r.sel));
+  if (cy.length > 0) red.push('T3b');
   if (!(pv > HOST_COMPOSER_SEAT_Z)) red.push('R1');
   if (!(pv < HOST_DIALOG_PORTAL_Z)) red.push('R2');
   if (!(pv < OUR_MENU_FROST_Z && pv < OUR_POPUP_SURFACE_Z)) red.push('R3');
@@ -139,8 +141,12 @@ await withMutant('M-value', '面板层值 880→9999（盖过模态与弹层）'
 await withMutant('M-untrap', '祖先盒规则删掉（header 内与面板同域的内容不再有 60 档排序）',
   [['html body .wSkVaW_header :has([class*="dsh-conv-panel"]) {\n\tposition: relative;\n\tz-index: 60 !important;\n}', '/* M-untrap */']], ['T2'],
   checkReds);
-await withMutant('M-yield', '让位规则删掉（设置打开不让位）',
-  [['html body:has([class*="_overlayLayer"]) .dsh-conv-panel,\nhtml body:has([class*="_overlay"]) .dsh-conv-panel,\nhtml body:has([class*="_modal"]) .dsh-conv-panel,\nhtml body:has([class*="_overlayLayer"]) .wSkVaW_header :has([class*="dsh-conv-panel"]),\nhtml body:has([class*="_overlay"]) .wSkVaW_header :has([class*="dsh-conv-panel"]),\nhtml body:has([class*="_modal"]) .wSkVaW_header :has([class*="dsh-conv-panel"]) {\n\tz-index: auto !important;\n}', '/* M-yield */']], ['T3'],
+await withMutant('M-yield', '让位规则删掉（真模态打开不让位）',
+  [['html body:has([role="dialog"][aria-modal="true"]) .dsh-conv-panel {\n\t\tz-index: auto !important;\n\t}', '/* M-yield */']], ['T3'],
+  checkReds);
+await withMutant('M-yield-class', '倒退变异：把让位改回类名恒真条件（_modal ⇒ 面板恒压 auto）',
+  [['html body:has([role="dialog"][aria-modal="true"]) .dsh-conv-panel {\n\t\tz-index: auto !important;\n\t}',
+    'html body:has([class*="_modal"]) .dsh-conv-panel {\n\t\tz-index: auto !important;\n\t} /* M-yield-class */']], ['T3', 'T3b'],
   checkReds);
 
 console.log('\n===== ' + pass + ' 通过 / ' + fail + ' 失败 =====');
