@@ -116,13 +116,21 @@ console.log('\n== A. 实底保住标记（§2.1 stickyHead / §2.2 dsh-conv-pane
 
   const cssOn = globalThis.__mpwBuildCss({ image: 'data:image/png;base64,AAA', enabled: true });
   const cssOff = globalThis.__mpwBuildCss({ image: '', webUrl: '', enabled: true });
-  ok('A3 有壁纸：实底规则在（l1/l2 × 亮/暗 = 4 条，值为宿主主题原色 static-neutral-bluish-00/875/850）',
+  /* ①(2026-10-25 任务 4 改向) l2（插件市场顶栏）由「实底」改为「半透明+模糊」且无条件输出
+     （两态观感一致）——A3/A4 相应改写：A3 = l1 实底(00/875) + l2 玻璃(specific-menu+blur)；
+     A4 = 无壁纸时 l1 实底规则不输出（门控语义不变）、l2 玻璃规则在（改向：刻意无条件）。
+     断言没有删，只是随 l2 的观感档演进改写。 */
+  ok('A3 有壁纸：l1 实底规则在（00/875）+ l2 玻璃规则在（specific-menu + menu-backdrop-filter）',
     /\[data-mpw-solid-surface="l1"\]\s*{\s*background-color:\s*var\(--dsw-static-neutral-bluish-00\)/.test(cssOn)
       && /\[data-mpw-solid-surface="l1"\]/.test(cssOn) && cssOn.indexOf('--dsw-static-neutral-bluish-875') >= 0
-      && cssOn.indexOf('data-mpw-solid-surface="l2"') >= 0 && cssOn.indexOf('--dsw-static-neutral-bluish-850') >= 0,
+      && cssOn.indexOf('[data-mpw-solid-surface="l2"]') >= 0
+      && cssOn.indexOf('var(--dsw-specific-menu') >= 0 && cssOn.indexOf('var(--dsw-menu-backdrop-filter') >= 0,
     'has=' + (cssOn.indexOf('data-mpw-solid-surface') >= 0));
-  ok('A4 无壁纸：实底规则不输出（宿主原生表现 ⇒ 两态一致）',
-    cssOff.indexOf('data-mpw-solid-surface') < 0, 'leak=' + (cssOff.indexOf('data-mpw-solid-surface') >= 0));
+  ok('A4 无壁纸：l1 实底规则不输出（浮窗维持门控）+ l2 玻璃规则在（任务 4 改向：两态观感一致）',
+    cssOff.indexOf('data-mpw-solid-surface="l1"') < 0
+      && cssOff.indexOf('[data-mpw-solid-surface="l2"]') >= 0
+      && cssOff.indexOf('var(--dsw-specific-menu') >= 0,
+    'l1leak=' + (cssOff.indexOf('data-mpw-solid-surface="l1"') >= 0) + ' l2glass=' + (cssOff.indexOf('[data-mpw-solid-surface="l2"]') >= 0));
 }
 
 console.log('\n== B. 右栏 guide 条目 hover（§2.3；两态对照）==');

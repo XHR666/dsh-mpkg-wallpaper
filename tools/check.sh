@@ -736,6 +736,10 @@ node tools/preset-test.mjs || fail=1
 #   面板层值 60 / 标题栏内祖先盒解困 / 设置·弹层在场让位 + 三组数值比较（输入框/模态/弹层）
 #   + 3 条变异自证（期望红集 == 实际红集）。约 2s。
 node tools/conv-panel-layer-test.mjs || fail=1
+# ①(2026-10-25 任务 4) 插件市场顶栏半透明磨砂判据（纯 Node：__mpwBuildCss 两态产物解析）：
+#   底色回退 alpha 区间（非纯白/非全透）/ 模糊非 none / 两态同规则 / l1 门控语义不变
+#   + 3 条变异自证（期望红集 == 实际红集）。约 2s。
+node tools/market-topbar-glass-test.mjs || fail=1
 # ①(2026-10-02 门禁提速轮) 门禁自身的判据：输入键的分辨力（lib/**、tools/**、package.json 改一个字节必变）、
 #   绿缓存跳过 / 红缓存不跳过 / --full 必真跑、--list 12 步、并发第二个实例快速失败且无残留锁。
 #   纯 Node + os.tmpdir() 夹具 + 4 次"只抢锁/只列表"的轻量调用（约 4s，不跑任何门禁步骤）。
