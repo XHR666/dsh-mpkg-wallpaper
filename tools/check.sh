@@ -286,6 +286,7 @@ if [ "$GATE_RUN" = 1 ]; then           # ← 缓存命中时整块跳过（SKIP-
 #   （用例自己的 sleep 走全局 setTimeout，不受影响）。这条判据钉住"隔离在位 + 关掉必红（定点 L1/L2/L3）"。
 node tools/world-isolation-test.mjs || fail=1
 node tools/panel-smoke.mjs || fail=1
+node tools/regress-20261026-test.mjs
 # ①(2026-09-24 用户 bug「壁纸配置里 WE 自带的选项只显示一项、展不开」) 官方 user properties
 #   面板回归（离线；真包语料 3509243656：233 条 / 21 组 / condition 与非空/空串都覆盖）：
 #   默认展开（该显示 N 项就 N 项；旧行为 = 0 行、只剩一个「展开全部」按钮）+ 分组头可折叠
