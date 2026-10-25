@@ -724,6 +724,10 @@ node tools/secret-scan-test.mjs || fail=1
 #   （写死的临时目录/宿主绝对路径台账、shell 可移植、文件名、BOM/CRLF）+ 每类合成反例自证 + 两条"改回去必红"变异。
 #   实测：63 通过 / 0 失败（tracked 127 文件；账本 25 条全部反查命中）。不新增步骤编号（integrity-check ⑨b 断言编号自洽）。
 node tools/cross-platform-test.mjs || fail=1
+# ①(2026-10-25 任务 1.2) 扫描页缩略图 OOM 防护调度器判据（纯 Node 桩元素直驱生产函数）：
+#   并发上限/离屏释放/超时推进/LRU 双上限/重试一次/自动降档/非受管不变/scan 装配 8 组契约
+#   + 5 条变异自证（期望红集 == 实际红集）。约 4s。
+node tools/thumb-sched-test.mjs || fail=1
 # ①(2026-10-02 门禁提速轮) 门禁自身的判据：输入键的分辨力（lib/**、tools/**、package.json 改一个字节必变）、
 #   绿缓存跳过 / 红缓存不跳过 / --full 必真跑、--list 12 步、并发第二个实例快速失败且无残留锁。
 #   纯 Node + os.tmpdir() 夹具 + 4 次"只抢锁/只列表"的轻量调用（约 4s，不跑任何门禁步骤）。
