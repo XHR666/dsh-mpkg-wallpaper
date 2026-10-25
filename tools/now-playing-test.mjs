@@ -316,8 +316,11 @@ console.log('\n== B. 开关默认开（DEFAULT_NP_NOW_PLAYING=true）⇒ 默认�
     /const boolFields = \[[^\]]*"npLinkWallpaper"[^\]]*\]/.test(clientSrc))
   ok('B2c ①(NP-4)① npVolume 登记进 numFields（导入净化按数值走，字符串会被拒）',
     /const numFields = \[[^\]]*"npVolume"[^\]]*\]/.test(clientSrc))
-  ok('B3 npNowPlaying 已登记进 BACKUP_FIELDS（随备份导出/导入）',
-    /const BACKUP_FIELDS = \[[\s\S]{0,1400}?"npNowPlaying"/.test(clientSrc))
+  /* ①(2026-10-25 任务 2.4 改向) 「备份与恢复」UI 已删，字段白名单由**预设体系**继承
+     （BACKUP_FIELDS 原样更名为 MPW_PRESET_FIELDS，键名与语义不变）——本条断言改抓新名单，
+     不是删断言：npNowPlaying 仍必须登记在导出/导入白名单里。 */
+  ok('B3 npNowPlaying 已登记进 MPW_PRESET_FIELDS（随预设保存/导入/导出）',
+    /const MPW_PRESET_FIELDS = \[[\s\S]{0,1400}?"npNowPlaying"/.test(clientSrc))
   /* 开关关：控制器一个节点都不建、一个观察者都不装 */
   {
     const doc = makeDoc(); buildSidebar(doc, { width: 280 })
