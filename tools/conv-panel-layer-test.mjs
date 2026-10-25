@@ -1,18 +1,22 @@
-// tools/conv-panel-layer-test.mjs —— dsh-conversation 浮窗（.dsh-conv-panel）层级判据（2026-10-25 任务 3）
+// tools/conv-panel-layer-test.mjs —— dsh-conversation 浮窗（.dsh-conv-panel）层级判据（2026-10-25 任务 3；2026-10-26 契约演进）
 //
 // 契约（lib/client.js buildCss 的「dsh-conv-panel 层级」块；机制与证据链见该块注释）：
-//   T1 面板层值：html body .dsh-conv-panel { z-index: 60 !important }（档位家族 12/40/60/…；
-//      宿主无 --dsw-z-* 令牌 ⇒ 用带依据的常量，不写死 9999）
-//   T2 解困：面板在标题栏内的祖先盒（:has 匹配）position:relative + z-index:60 ——
-//      把面板子树从标题栏磨砂规则制造的 z=1 层叠上下文里解出来（z=1 < 输入框 z=7 ⇒ 被盖的根因）
+//   T1 面板层值：html body .dsh-conv-panel { z-index: 880 !important }
+//      （> 正文 0 / 输入框 7 / 侧栏 1 / 右栏全屏 40；< 菜单磨砂 900 / 模态 portal root 1000 /
+//        本插件弹窗 2000 / 弹层表面 3000。宿主无 --dsw-z-* 令牌 ⇒ 带依据的常量，不写死 9999）
+//   T2 祖先盒规则：面板在标题栏内的祖先盒（:has 匹配）position:relative + z-index:60 ——
+//      标题栏内与面板同域的内容按 60 档排序（该值独立于面板档，面板 880 不改它）
+//   T-header-auto（机制核心，在 lib 注释有完整证据链）：面板存在且无弹层时 header 取
+//      z-index:auto（不再自建层叠上下文封顶面板）；其在场性由 T0 的规则计数与 lib 注释佐证，
+//      未单设变异（本文件维持既定三条变异，不扩）
 //   T3 让位：设置/弹层在场（_overlay/_overlayLayer/_modal）⇒ 面板与祖先盒 z:auto（压不过设置/模态）
 //   R  三组比较（对照值来源：宿主包 CSS 与本文件既有档位，证据链记录在 lib/client.js 注释）：
-//      浮窗(60) > 输入框 wSkVaW_composerSeat(7)；
-//      浮窗(60) < 宿主对话框 portal root(1000)；
-//      浮窗(60) < 菜单磨砂(900) / 弹层表面(3000)
+//      浮窗(880) > 输入框 wSkVaW_composerSeat(7)；
+//      浮窗(880) < 宿主对话框 portal root(1000)；
+//      浮窗(880) < 菜单磨砂(900) / 弹层表面(3000)
 // 变异自证（隔离副本；期望红集 == 实际红集，逐条相等）：
-//   M-value  层值 60→9999 ⇒ R2、R3 红（盖过模态与弹层）
-//   M-untrap 解困规则删掉 ⇒ T2 红（面板仍困在 z=1）
+//   M-value  面板层值 880→9999 ⇒ R2、R3 红（盖过模态与弹层）
+//   M-untrap 祖先盒规则删掉 ⇒ T2 红
 //   M-yield  让位规则删掉 ⇒ T3 红（设置打开时浮窗不让位）
 // 复现: node tools/conv-panel-layer-test.mjs
 import fs from 'node:fs';
@@ -58,10 +62,10 @@ const crs = convRules(rs);
   ok('T0 产物 CSS 里有 conv-panel 规则（≥3 组）', crs.length >= 3, 'n=' + crs.length);
   const panel = crs.find((r) => r.sel === 'html body .dsh-conv-panel' && /z-index/.test(r.body));
   const zv = panel ? zOf(panel) : null;
-  ok('T1 面板层值 = 60（!important；档位家族取值）', panel && zv === '60' && /!important/.test(panel.body), 'z=' + zv);
+  ok('T1 面板层值 = 880（!important；档位家族取值）', panel && zv === '880' && /!important/.test(panel.body), 'z=' + zv);
   ok('T1b 没有写死 9999（任务明令禁止）', crs.every((r) => zOf(r) !== '9999'), '');
   const untrap = crs.find((r) => r.sel.indexOf('.wSkVaW_header :has([class*="dsh-conv-panel"])') >= 0 && !/auto/.test(r.body));
-  ok('T2 解困规则在场（祖先盒 relative + z-index:60）',
+  ok('T2 祖先盒规则在场（header 内祖先盒 relative + z-index:60；独立于面板 880 档）',
     !!untrap && /position\s*:\s*relative/.test(untrap.body) && zOf(untrap) === '60', untrap ? untrap.body.slice(0, 60) : 'missing');
   for (const ov of ['_overlayLayer', '_overlay', '_modal']) {
     const y1 = crs.find((r) => r.sel.indexOf(':has([class*="' + ov + '"]) .dsh-conv-panel') >= 0);
@@ -71,9 +75,9 @@ const crs = convRules(rs);
   }
   // 三组比较（数值都是产物/证据常量，变异或对照改动即红）
   const pv = Number(zv);
-  ok('R1 浮窗(60) > 输入框 composerSeat(' + HOST_COMPOSER_SEAT_Z + ')', pv > HOST_COMPOSER_SEAT_Z, '');
-  ok('R2 浮窗(60) < 宿主对话框 portal root(' + HOST_DIALOG_PORTAL_Z + ')（设置/模态在上）', pv < HOST_DIALOG_PORTAL_Z, '');
-  ok('R3 浮窗(60) < 菜单磨砂(' + OUR_MENU_FROST_Z + ') 且 < 弹层表面(' + OUR_POPUP_SURFACE_Z + ')（我们的弹层在上）',
+  ok('R1 浮窗(880) > 输入框 composerSeat(' + HOST_COMPOSER_SEAT_Z + ')', pv > HOST_COMPOSER_SEAT_Z, '');
+  ok('R2 浮窗(880) < 宿主对话框 portal root(' + HOST_DIALOG_PORTAL_Z + ')（设置/模态在上）', pv < HOST_DIALOG_PORTAL_Z, '');
+  ok('R3 浮窗(880) < 菜单磨砂(' + OUR_MENU_FROST_Z + ') 且 < 弹层表面(' + OUR_POPUP_SURFACE_Z + ')（我们的弹层在上）',
     pv < OUR_MENU_FROST_Z && pv < OUR_POPUP_SURFACE_Z, '');
 }
 
@@ -129,10 +133,10 @@ const checkReds = (f) => {
 };
 
 console.log('\n== M. 变异自证（期望红集 == 实际红集，逐条相等）==');
-await withMutant('M-value', '层值 60→9999（盖过模态与弹层）',
-  [['html body .dsh-conv-panel { z-index: 60 !important; }', 'html body .dsh-conv-panel { z-index: 9999 !important; } /* M-value */']], ['R2', 'R3'],
+await withMutant('M-value', '面板层值 880→9999（盖过模态与弹层）',
+  [['html body .dsh-conv-panel { z-index: 880 !important; }', 'html body .dsh-conv-panel { z-index: 9999 !important; } /* M-value */']], ['R2', 'R3'],
   checkReds);
-await withMutant('M-untrap', '解困规则删掉（面板困回 z=1）',
+await withMutant('M-untrap', '祖先盒规则删掉（header 内与面板同域的内容不再有 60 档排序）',
   [['html body .wSkVaW_header :has([class*="dsh-conv-panel"]) {\n\tposition: relative;\n\tz-index: 60 !important;\n}', '/* M-untrap */']], ['T2'],
   checkReds);
 await withMutant('M-yield', '让位规则删掉（设置打开不让位）',
