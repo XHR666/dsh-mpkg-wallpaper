@@ -165,8 +165,8 @@ await withMutant('M-yield-class', '倒退变异：把让位改回类名恒真条
     'html body:has([class*="_modal"]) .dsh-conv-panel {\n\t\tz-index: auto !important;\n\t} /* M-yield-class */']],
   ['T3', 'T3b', 'N-T3', 'N-T3b']);
 await withMutant('M-noimg', '无壁纸早退路径不再输出 conv 层级块（LAYER2-A 回退）',
-  [['css += __convPanelLayerCss;\n\t\t\treturn emitSurfaceTokens(css + buildUiCss(section, false)) + __npCss;',
-    '/* M-noimg */\n\t\t\treturn emitSurfaceTokens(css + buildUiCss(section, false)) + __npCss;']],
+  [['css += __convPanelLayerCss;\n\t\t\tcss += __rsFloatGeoCss;\n\t\t\treturn emitSurfaceTokens(css + buildUiCss(section, false)) + __npCss;',
+    '/* M-noimg */\n\t\t\tcss += __rsFloatGeoCss;\n\t\t\treturn emitSurfaceTokens(css + buildUiCss(section, false)) + __npCss;']],
   ['N-T0', 'N-T1', 'N-T2', 'N-T3', 'N-R1']);
 
 if (redWith.length || redNo.length) {
