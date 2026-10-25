@@ -24,13 +24,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(here, '..');
 let pass = 0, fail = 0;
 const ok = (n, cond, d) => {
-  if (cond) { pass++; // T4（2026-10-25 回归修复）：面板存在且无弹层时，标题栏链被抬到 100（解 containing block 困局）
-const lift = rs.filter((r) => /header\.wSkVaW_header|header\[class\*="_header_"\]/.test(r.sel) && /z-index\s*:\s*100/.test(r.body) && r.body.indexOf('--mpw-conv-lift') >= 0);
-ok('T4 面板打开时标题栏链抬到 100', lift.length >= 1, `rules=${lift.length}`);
-const liftGuarded = lift.filter((r) => /:not\(:has\(\[class\*="_overlay"\]\)\)/.test(r.sel));
-ok('T4b 抬升受弹层让位约束', liftGuarded.length >= 1, `rules=${liftGuarded.length}`);
-
-console.log('  ✓ ' + n + (d ? '  [' + d + ']' : '')); }
+  if (cond) { pass++; console.log('  ✓ ' + n + (d ? '  [' + d + ']' : '')); }
   else { fail++; console.log('  ✗ ' + n + (d ? '  → ' + d : '')); }
 };
 const { loadPlugin, cancelWorldTimers } = await import('./_stub.mjs');
@@ -47,10 +41,7 @@ function cssOf(clientPath) {
 const strip = (t) => String(t).replace(/\/\*[\s\S]*?\*\//g, '');
 /** 解析规则：选择器(归一空白) → 声明体 */
 const rulesOf = (css) => [...strip(css).matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => ({ sel: m[1].replace(/\s+/g, ' ').trim(), body: m[2] }));
-const convRules = (rs) => rs.filter((r) => r.sel.indexOf('dsh-conv-panel') >= 0
-  // ①(2026-10-25 回归修复) 「标题栏链抬升」块是解 containing-block 困局的独立机制，
-  //   用 --mpw-conv-lift 标记区分，不计入面板自身的层值/让位契约（由 T4 单独钉住）。
-  && r.body.indexOf('--mpw-conv-lift') < 0);
+const convRules = (rs) => rs.filter((r) => r.sel.indexOf('dsh-conv-panel') >= 0);
 const zOf = (r) => { const m = /z-index\s*:\s*([^;!]+)/.exec(r && r.body || ''); return m ? m[1].trim() : null; };
 
 // 对照档位（来源注释：lib/client.js 既有规则 + 宿主包只读证据，详见 lib「dsh-conv-panel 层级」块）
