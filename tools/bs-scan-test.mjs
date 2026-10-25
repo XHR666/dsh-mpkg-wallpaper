@@ -17,6 +17,7 @@
 //   M-lazy     每页 24→1000（懒加载失效）⇒ S2b 必红
 //   M-scroll   续页断链（每次 +0）⇒ S4 必红
 //   M-apply    点选应用断链 ⇒ S3 必红
+//   M-dir      目录记账断链（kickScan 不记录实际取数来源）⇒ D1、D2 必红
 // 复现: node tools/bs-scan-test.mjs
 import fs from 'node:fs';
 import os from 'node:os';
@@ -213,6 +214,79 @@ console.log('\n== P. 扫描目标优先级：已选自定义目录 ⇒ 只扫它
     'err=' + t4.nodes.some((p) => p && p['data-mpw-scan-err'] !== undefined));
 }
 
+console.log('\n== D. 当前目录显示（标题上方；显示值 == 实际取数来源；2026-10-25 任务 1.1）==');
+{
+  // 树里找 data-mpw-scan-dir 行，取路径 span 的文本（走原始元素树——kids 在元素上，不在 props 上）
+  const dirRowOf = (t) => {
+    const tree = t.tree !== undefined ? t.tree : t;
+    let hit = null;
+    const find = (n, dd) => {
+      if (hit || n == null || typeof n !== 'object' || dd > 12) return;
+      if (Array.isArray(n)) { n.forEach((x) => find(x, dd)); return; }
+      if (n.props && n.props['data-mpw-scan-dir'] !== undefined) { hit = n; return; }
+      if (n.kids) find(n.kids, dd + 1);
+    };
+    find(tree, 0);
+    if (!hit || !Array.isArray(hit.kids)) return null;
+    const v = hit.kids.find((k) => k && typeof k === 'object' && k.props && k.props.className === 'mpw_scanDirPath');
+    return v ? { text: typeof v.kids[0] === 'string' ? v.kids[0] : '', title: v.props.title } : null;
+  };
+
+  // D1：已选自定义目录 ⇒ 显示值 == /custom-dir 请求体里的 dir（同一来源，两处各自算必红）
+  const urlsD1 = [];
+  const s1 = renderWall(null, {
+    fetch: async (url, o) => { urlsD1.push({ url: String(url), body: (o && o.body) ? JSON.parse(o.body) : {} }); return { ok: true, status: 200, json: async () => (String(url).indexOf('/custom-dir') >= 0) ? customLib(4) : steamLib(2) }; },
+    settings: { enabled: true, customDirPath: '/data/wallpapers' },
+  });
+  try { s1.kick(); } catch (e) {}
+  await sleep(120);
+  const t1 = s1.render();
+  const row1 = dirRowOf(t1);
+  const reqDir = (urlsD1.find((u) => u.url.indexOf('/custom-dir') >= 0) || {}).body;
+  ok('D1 显示值 == /custom-dir 请求 dir（显示层不另算）',
+    row1 && row1.text === '/data/wallpapers' && reqDir && reqDir.dir === '/data/wallpapers',
+    'row=' + JSON.stringify(row1) + ' req=' + JSON.stringify(reqDir));
+  ok('D1b 长路径有 title 全路径兜底（title 属性 == 显示值）', row1 && row1.title === '/data/wallpapers', 'title=' + (row1 && row1.title));
+
+  // D2：未选自定义目录 ⇒ 显示 /steam-inventory 应答的 installDir（同一份应答，不另推）
+  const s2 = renderWall(null, { fetch: fetchFor({ steam: { ok: true, installDir: '/games/Steam/wallpaper_engine', wallpapers: [] } }), settings: { enabled: true, customDirPath: '' } });
+  try { s2.kick(); } catch (e) {}
+  await sleep(120);
+  const row2 = dirRowOf(s2.render());
+  ok('D2 WE 库分支显示 installDir（与扫描同一应答）',
+    row2 && row2.text === '/games/Steam/wallpaper_engine', 'row=' + JSON.stringify(row2));
+
+  // D3：installDir 为 null ⇒ 明确"未找到"文案（不显示空串/undefined）
+  const s3 = renderWall(null, { fetch: fetchFor({ steam: { ok: true, installDir: null, wallpapers: [] } }), settings: { enabled: true, customDirPath: '' } });
+  try { s3.kick(); } catch (e) {}
+  await sleep(120);
+  const row3 = dirRowOf(s3.render());
+  ok('D3 未发现库目录 ⇒ bsScan.dirNone 文案（不落 undefined）',
+    row3 && row3.text === s3.r.localeDicts.zh['bsScan.dirNone'] && row3.text.indexOf('undefined') < 0, 'row=' + JSON.stringify(row3));
+
+  // D4：目录变更后重开即变（"重开" = 重新加载面板 ⇒ 重读档重扫；桩里 = 新世界各自 seed 自己的档）
+  const fetchD4 = async (url, o) => {
+    const body = (o && o.body) ? JSON.parse(o.body) : {};
+    return { ok: true, status: 200, json: async () => (String(url).indexOf('/custom-dir') >= 0)
+      ? { ok: true, files: [{ name: 'd-' + body.dir + '.mp4', type: 'video', media: 'x.mp4', preview: '' }] }
+      : steamLib(2) };
+  };
+  const s4a = renderWall(null, { fetch: fetchD4, settings: { enabled: true, customDirPath: '/data/first' } });
+  try { s4a.kick(); } catch (e) {}
+  await sleep(100);
+  const first = dirRowOf(s4a.render());
+  const s4b = renderWall(null, { fetch: fetchD4, settings: { enabled: true, customDirPath: '/data/second' } });
+  try { s4b.kick(); } catch (e) {}
+  await sleep(100);
+  const second = dirRowOf(s4b.render());
+  ok('D4 目录变更后重开 ⇒ 显示跟着变（不缓存旧值）',
+    first && first.text === '/data/first' && second && second.text === '/data/second',
+    'first=' + JSON.stringify(first) + ' second=' + JSON.stringify(second));
+
+  // D5：重扫入口/复制按钮在树（复制按钮为可选件，存在即可；不断言剪贴板行为——无浏览器）
+  ok('D5 复制路径按钮在树且带标记', (t1.nodes || []).some((p) => p && p['data-mpw-scan-dir-copy'] !== undefined && typeof p.onClick === 'function'), '');
+}
+
 console.log('\n== S. 扫描→展示→点选应用（桩环境全链路；经侧栏「壁纸」页签渲染）==');
 {
   const s = renderWall(null, { fetch: fetchFor(null), settings: { enabled: true, customDirPath: '' } });
@@ -312,11 +386,12 @@ console.log('\n== I. i18n（zh/en 两表 bsScan.* 键集逐键相等 + bsTab 存
   const r = loadPlugin({ quiet: true, ctxDecorate: w.decorate });
   const dicts = r.localeDicts;
   const KEYS = ['bsScan.title', 'bsScan.rescan', 'bsScan.scanning', 'bsScan.count', 'bsScan.empty',
-    'bsScan.err', 'bsScan.applied', 'bsScan.webConfirm', 'bsScan.webGo', 'bsScan.webGoCompat', 'bsScan.webCancel'];
+    'bsScan.err', 'bsScan.applied', 'bsScan.webConfirm', 'bsScan.webGo', 'bsScan.webGoCompat', 'bsScan.webCancel',
+    'bsScan.dir', 'bsScan.dirNone', 'bsScan.dirCopy', 'bsScan.dirCopied'];
   const missZh = KEYS.filter((k) => !dicts || !dicts.zh || typeof dicts.zh[k] !== 'string' || !dicts.zh[k]);
   const missEn = KEYS.filter((k) => !dicts || !dicts.en || typeof dicts.en[k] !== 'string' || !dicts.en[k]);
-  ok('I1 zh 表 11 个 bsScan.* 键全部非空', missZh.length === 0, JSON.stringify(missZh));
-  ok('I2 en 表 11 个 bsScan.* 键全部非空', missEn.length === 0, JSON.stringify(missEn));
+  ok('I1 zh 表 15 个 bsScan.* 键全部非空', missZh.length === 0, JSON.stringify(missZh));
+  ok('I2 en 表 15 个 bsScan.* 键全部非空', missEn.length === 0, JSON.stringify(missEn));
   ok('I3 zh/en 键集逐键相等（一边漏键必红）', missZh.length === 0 && missEn.length === 0
     && KEYS.every((k) => dicts.zh[k] !== undefined && dicts.en[k] !== undefined), '');
   ok('I4 已删的 bsScan.desc（独立页签描述符专用）零残留',
@@ -365,7 +440,7 @@ async function renderOn(f, opts2 = {}) {
   if (opts2.settings) opts.settings = opts2.settings;
   const r = loadPlugin(opts);
   const d = w.state.descriptors.find((x) => x.id === WALL_ID);
-  const render = () => { try { return collectNodes(d.component({ ctx: r.ctx, store: {}, scope: { sessionId: 's1' }, tab: { id: 't1', type: WALL_ID }, visible: true })); } catch (e) { return { nodes: [], strings: [] }; } };
+  const render = () => { try { const tree = d.component({ ctx: r.ctx, store: {}, scope: { sessionId: 's1' }, tab: { id: 't1', type: WALL_ID }, visible: true }); const c = collectNodes(tree); return { tree, nodes: c.nodes, strings: c.strings }; } catch (e) { return { tree: null, nodes: [], strings: [] }; } };
   render();
   return { r, w, render };
 }
@@ -393,7 +468,7 @@ await withMutant('M-order', '内部 tab 顺序改错（scan 按钮不在首位�
 
 // M-priority：优先级打掉（始终扫 WE 库）⇒ P1（自定义目录没被扫）、P2（steam 反而被扫）红
 await withMutant('M-priority', '扫描优先级打掉（自定义目录分支恒假）',
-  [['\t\t\t\tif (dir) {\n\t\t\t\t\ttry {\n\t\t\t\t\t\tconst d = await mpwScanCustomHost(dir);', '\t\t\t\tif (false) { /* M-priority */\n\t\t\t\t\ttry {\n\t\t\t\t\t\tconst d = await mpwScanCustomHost(dir);']], ['P1', 'P2'],
+  [['\t\t\t\tif (dir) {\n\t\t\t\t\t// ①(2026-10-25 任务 1.1) 显示值 = **实际取数来源**：自定义分支在请求发出前记账\n\t\t\t\t\t//   （就是这条 /custom-dir 请求体里的 dir），禁止显示层另算一份。\n\t\t\t\t\ttry { mpwBsScanStore.srcDir = dir; } catch (e) {}', '\t\t\t\tif (false) { /* M-priority */\n\t\t\t\t\ttry { mpwBsScanStore.srcDir = dir; } catch (e) {}']], ['P1', 'P2'],
   async (f) => {
     const red = [];
     const urls = [];
@@ -469,6 +544,39 @@ await withMutant('M-apply', '点选应用断链（applyItem 变空操作）',
     await sleep(3600);
     const stored = JSON.parse(globalThis.localStorage.getItem('dsh.mpkg-wallpaper.v2') || '{}');
     if (!(stored.mpkgKey === 'library|lt0' && stored.converted === 'mp4')) red.push('S3');
+    return red;
+  });
+
+// M-dir：目录记账断链（kickScan 不再记录实际取数来源）⇒ D1（自定义分支显示空）/ D2（WE 分支显示空）红
+await withMutant('M-dir', '目录记账断链（kickScan 不写 srcDir）',
+  [['try { mpwBsScanStore.srcDir = dir; } catch (e) {}\n\t\t\t\t\ttry { setSrcDir(dir); } catch (e) {}', '/* M-dir custom */'],
+   ['const inst = String((d && d.installDir) || "");', 'const inst = ""; /* M-dir steam */']], ['D1', 'D2'],
+  async (f) => {
+    const red = [];
+    const dirRowOf = (t) => {
+      const tree = t.tree !== undefined ? t.tree : t;
+      let hit = null;
+      const find = (n, dd) => {
+        if (hit || n == null || typeof n !== 'object' || dd > 12) return;
+        if (Array.isArray(n)) { n.forEach((x) => find(x, dd)); return; }
+        if (n.props && n.props['data-mpw-scan-dir'] !== undefined) { hit = n; return; }
+        if (n.kids) find(n.kids, dd + 1);
+      };
+      find(tree, 0);
+      if (!hit || !Array.isArray(hit.kids)) return null;
+      const v = hit.kids.find((k) => k && typeof k === 'object' && k.props && k.props.className === 'mpw_scanDirPath');
+      return v ? { text: typeof v.kids[0] === 'string' ? v.kids[0] : '' } : null;
+    };
+    const a = await renderOn(f, { fetch: fetchFor({ custom: customLib(4) }), settings: { enabled: true, customDirPath: '/data/wallpapers' } });
+    try { globalThis.__mpwBsScanKick(); } catch (e) {}
+    await sleep(120);
+    const ra = dirRowOf(a.render());
+    if (!(ra && ra.text === '/data/wallpapers')) red.push('D1');
+    const b = await renderOn(f, { fetch: fetchFor({ steam: { ok: true, installDir: '/games/Steam/wallpaper_engine', wallpapers: [] } }), settings: { enabled: true, customDirPath: '' } });
+    try { globalThis.__mpwBsScanKick(); } catch (e) {}
+    await sleep(120);
+    const rb = dirRowOf(b.render());
+    if (!(rb && rb.text === '/games/Steam/wallpaper_engine')) red.push('D2');
     return red;
   });
 
