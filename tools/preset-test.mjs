@@ -324,14 +324,127 @@ console.log('== G. i18n（preset.* 成对；backup.* 零残留）==');
   const d = w.r.localeDicts;
   const KEYS = ['preset.title', 'preset.custom', 'preset.builtinName', 'preset.addTip', 'preset.edit', 'preset.export', 'preset.editHint', 'preset.none',
     'preset.del', 'preset.confirmSwitch', 'preset.confirmGo', 'preset.cancel', 'preset.imported', 'preset.importBad',
-    'preset.importTooBig', 'preset.full', 'preset.dropped', 'preset.deleted', 'preset.exported', 'preset.fail'];
+    'preset.importTooBig', 'preset.full', 'preset.dropped', 'preset.deleted', 'preset.exported', 'preset.fail',
+    'preset.newName', 'preset.created', 'preset.restore', 'preset.restoreTip', 'preset.restoreConfirm', 'preset.restoreGo',
+    'preset.restored', 'preset.save', 'preset.saveTip', 'preset.saved', 'preset.import', 'preset.importTip'];
   const missZh = KEYS.filter((k) => typeof d.zh[k] !== 'string' || !d.zh[k]);
   const missEn = KEYS.filter((k) => typeof d.en[k] !== 'string' || !d.en[k]);
-  ok('G1 zh 表 20 个 preset.* 键全部非空', missZh.length === 0, JSON.stringify(missZh));
-  ok('G2 en 表 20 个 preset.* 键全部非空', missEn.length === 0, JSON.stringify(missEn));
+  ok('G1 zh 表 32 个 preset.* 键全部非空', missZh.length === 0, JSON.stringify(missZh));
+  ok('G2 en 表 32 个 preset.* 键全部非空', missEn.length === 0, JSON.stringify(missEn));
   ok('G3 backup.* 9 键 ×2 表零残留（不留死键）',
     ['backup.title', 'backup.desc', 'backup.export', 'backup.import', 'backup.exported', 'backup.imported', 'backup.bad', 'backup.fail', 'backup.fileName']
       .every((k) => d.zh[k] === undefined && d.en[k] === undefined), '');
+}
+
+console.log('== H. 新建 / 保存配置 / 恢复默认（2026-10-27 任务 §1）==');
+/** H 组可参数化驱动（真树打印 + 变异副本静默收红集）。
+ *  口径：配置修改 = 直写 v2 档再 render（组件 useState(readSection()) 每次从档初始化，与生产同源）。 */
+function runH(loadFn, ls, settings, quiet) {
+  const reds = [];
+  const chk = (name, cond, d) => { if (quiet) { if (!cond) reds.push(String(name).split(' ')[0]); } else ok(name, cond, d); };
+  const storeOf = () => { try { return JSON.parse(ls.getItem(PRESET_KEY)) || { presets: [] }; } catch (e) { return { presets: [] }; } };
+  // 生效配置读**缓存视角**（__mpwPersist.read = readSection，与组件/快照同源）：
+  // writeSection 的 localStorage 落盘有 250ms/启动收尾门控（settings-persist-test 的职责），
+  // 直读档会把"落盘时序"混进本判据 ⇒ 不采用。
+  const secOf = () => { try { return globalThis.__mpwPersist.read() || {}; } catch (e) { return {}; } };
+  const writeCfg = (patch) => { const r = globalThis.__mpwSectionTest.write(patch); if (r !== true) throw new Error('write: ' + r); };
+  // 白名单键从被测源码抓取（与实现同源，不复制名单）
+  const src = fs.readFileSync(path.join(ROOT, 'lib', 'client.js'), 'utf8');
+  const mFields = /const MPW_PRESET_FIELDS = \[([\s\S]*?)\];/.exec(src);
+  const FIELDS = mFields ? [...mFields[1].matchAll(/"([A-Za-z0-9]+)"/g)].map((m) => m[1]) : [];
+  /** 逐键比较：FIELDS 并集上 undefined 等价缺失；rotGroups/propEdits JSON 比较。 */
+  const snapEq = (a, b) => {
+    const A = a || {}, B = b || {};
+    for (const k of new Set([...FIELDS.filter((k) => A[k] !== void 0), ...FIELDS.filter((k) => B[k] !== void 0)])) {
+      if (k === 'rotGroups' || k === 'propEdits') { if (JSON.stringify(A[k] ?? null) !== JSON.stringify(B[k] ?? null)) return false; continue; }
+      if ((A[k] === void 0 ? null : A[k]) !== (B[k] === void 0 ? null : B[k])) return false;
+    }
+    return true;
+  };
+  const w = makeWorld2(loadFn, ls, settings);
+  const render = () => w.render();
+  const curId = () => storeOf().active;
+
+  // H1 「+」新建：新预设 snapshot 逐键 == 新建瞬间的当前配置
+  let tree = render();
+  clickNode(tree, 'data-mpw-preset-add');
+  let st = storeOf();
+  const newP = st.presets[st.presets.length - 1];
+  chk('H1 「+」新建 ⇒ snapshot 逐键 == 当前配置 且新预设被选中',
+    st.presets.length === 2 && newP && snapEq(newP.settings, secOf()) && st.active === newP.id,
+    JSON.stringify({ n: st.presets.length, active: st.active, snap: newP && newP.settings }));
+
+  // H2 修改 ⇒ 保存按钮出现；点保存 ⇒ snapshot 逐键 == 修改后配置
+  writeCfg({ opacity: 77 });
+  tree = render();
+  const saveBtn = findNode(tree, (p) => p && p['data-mpw-preset-save'] !== undefined && typeof p.onClick === 'function');
+  chk('H2a 修改当前预设 ⇒ 「保存配置」按钮出现', !!saveBtn, saveBtn ? 'ok' : 'missing');
+  if (saveBtn) { try { saveBtn.props.onClick(); } catch (e) {} }
+  st = storeOf();
+  const savedP = st.presets.find((p) => p.id === curId());
+  chk('H2b 保存 ⇒ snapshot 逐键 == 修改后配置', savedP && snapEq(savedP.settings, secOf()),
+    JSON.stringify(savedP && savedP.settings));
+
+  // H3 未保存修改 + 恢复（二次确认）⇒ 生效配置逐键 == snapshot，且 snapshot 不变
+  writeCfg({ opacity: 33 });
+  tree = render();
+  const restoreBtn = findNode(tree, (p) => p && p['data-mpw-preset-restore'] !== undefined && typeof p.onClick === 'function');
+  chk('H3a 「恢复默认」按钮在（保存后 dirty 清空也不消失）', !!restoreBtn, restoreBtn ? 'ok' : 'missing');
+  if (restoreBtn) { try { restoreBtn.props.onClick(); } catch (e) {} }
+  tree = render();
+  const goBtn = findNode(tree, (p) => p && p['data-mpw-preset-restore-go'] !== undefined);
+  chk('H3b 恢复先出二次确认', !!goBtn, goBtn ? 'ok' : 'missing');
+  if (goBtn) { try { goBtn.props.onClick(); } catch (e) {} }
+  const snapAfter = storeOf().presets.find((p) => p.id === curId());
+  chk('H3c 恢复 ⇒ 生效配置逐键 == snapshot（回到上次保存态 77，非出厂值）',
+    secOf().opacity === 77 && snapEq(secOf(), snapAfter.settings),
+    JSON.stringify({ v2: secOf().opacity, snap: snapAfter && snapAfter.settings.opacity }));
+  chk('H3d snapshot 本身未变（未保存修改不污染快照）', snapAfter && snapAfter.settings.opacity === 77,
+    JSON.stringify(snapAfter && snapAfter.settings.opacity));
+
+  // H4 「自定义」档：恢复/保存按钮都不出现（维持现状；独立世界账本 active=custom）
+  const lsC = { _m: new Map(), getItem(k) { return this._m.has(k) ? this._m.get(k) : null; }, setItem(k, v) { this._m.set(k, String(v)); }, removeItem(k) { this._m.delete(k); } };
+  const wc = makeWorld2(loadFn, lsC, settings);
+  const treeC = wc.render();
+  chk('H4 「自定义」档无恢复/保存按钮',
+    !findNode(treeC, (p) => p && (p['data-mpw-preset-restore'] !== undefined || p['data-mpw-preset-save'] !== undefined)), '');
+  return reds;
+}
+/** 与 makeWorld 同构，但 clientPath 可指变异副本。 */
+function makeWorld2(loadFn, ls, settings) {
+  reset();
+  const r = loadFn(ls, settings);
+  const zh = r.localeDicts.zh;
+  return { r, render: () => { try { return r.sectionComp({ t: (k) => (zh[k] !== undefined ? zh[k] : k), close: () => {} }); } catch (e) { return { __crash: String(e && e.message || e) }; } } };
+}
+{
+  const ls = { _m: new Map(), getItem(k) { return this._m.has(k) ? this._m.get(k) : null; }, setItem(k, v) { this._m.set(k, String(v)); }, removeItem(k) { this._m.delete(k); } };
+  runH((lss, st) => loadPlugin({ quiet: true, localStorage: lss, settings: st || {} }), ls, { enabled: true, opacity: 62, blur: 18 }, false);
+
+  // H5 内置「作者1」同样适用（预置账本 active=builtin 跑同一套 1–3 的核心两步）
+  const ls2 = { _m: new Map(), getItem(k) { return this._m.has(k) ? this._m.get(k) : null; }, setItem(k, v) { this._m.set(k, String(v)); }, removeItem(k) { this._m.delete(k); } };
+  const V2 = 'dsh.mpkg-wallpaper.' + 'v2';
+  ls2.setItem(PRESET_KEY, JSON.stringify({ v: 1, presets: [{ id: 'builtin', name: '作者1', settings: { opacity: 90 } }], customSnapshot: null, active: 'builtin' }));
+  const w = makeWorld({ localStorage: ls2, settings: { enabled: true, opacity: 90 } });
+  let tree = w.render();
+  globalThis.__mpwSectionTest.write({ opacity: 55 });
+  tree = w.render();
+  const saveBtn2 = findNode(tree, (p) => p && p['data-mpw-preset-save'] !== undefined && typeof p.onClick === 'function');
+  ok('H5a 「作者1」修改后同样出现「保存配置」', !!saveBtn2, saveBtn2 ? 'ok' : (saveBtn ? 'was-clean' : 'missing'));
+  if (saveBtn2) { try { saveBtn2.props.onClick(); } catch (e) {} }
+  const snapB = JSON.parse(ls2.getItem(PRESET_KEY)).presets[0];
+  ok('H5b 「作者1」保存 ⇒ snapshot 55', snapB.settings.opacity === 55, JSON.stringify(snapB.settings));
+  globalThis.__mpwSectionTest.write({ opacity: 7 });
+  tree = w.render();
+  const rBtn = findNode(tree, (p) => p && p['data-mpw-preset-restore'] !== undefined && typeof p.onClick === 'function');
+  if (rBtn) { try { rBtn.props.onClick(); } catch (e) {} }
+  tree = w.render();
+  const go = findNode(tree, (p) => p && p['data-mpw-preset-restore-go'] !== undefined);
+  if (go) { try { go.props.onClick(); } catch (e) {} }
+  const stB = globalThis.__mpwPersist.read();
+  const snapB2 = JSON.parse(ls2.getItem(PRESET_KEY)).presets[0];
+  ok('H5c 「作者1」恢复 ⇒ 生效配置回 snapshot（55）且快照不变', stB.opacity === 55 && snapB2.settings.opacity === 55,
+    JSON.stringify({ v2: stB.opacity, snap: snapB2.settings.opacity }));
 }
 
 /* ---------- 变异自证（隔离副本；锚点必须恰好替换一次 —— R2） ---------- */
@@ -408,6 +521,29 @@ await withMutant('M-apply', '切换不应用预设配置（空操作）',
     await new Promise((r2) => setTimeout(r2, 3600));
     const sec = JSON.parse(ls.getItem('dsh.mpkg-wallpaper.v2'));
     if (!(sec.opacity === 90 && JSON.parse(ls.getItem(PRESET_KEY)).active === 'builtin')) red.push('C4');
+    return red;
+  });
+
+// M-restore-overwrite：「恢复默认」先覆盖快照再应用（snapshot 记成"当前配置"）⇒ H3d 红
+await withMutant('M-restore-overwrite', '恢复时把快照覆盖成当前配置（违反"恢复不动快照"）',
+  [['presetApplySettings(activePreset.settings);\n\t\t\t\t\tsetPresetHintT(t("preset.restored"));',
+    '{ try { const so = presetStore; const nextSo = Object.assign({}, so, { presets: so.presets.map((q) => (q && q.id === activePreset.id) ? Object.assign({}, q, { settings: mpwPresetSnapshot() }) : q) }); mpwPresetSave(nextSo); setPresetStore(nextSo); } catch (e) {} }\n\t\t\t\t\tpresetApplySettings(activePreset.settings);\n\t\t\t\t\t/* M-restore-overwrite */setPresetHintT(t("preset.restored"));']], ['H3c', 'H3d'],
+  async (f) => {
+    const red = [];
+    const ls = { _m: new Map(), getItem(k) { return this._m.has(k) ? this._m.get(k) : null; }, setItem(k, v) { this._m.set(k, String(v)); }, removeItem(k) { this._m.delete(k); } };
+    ls.setItem('dsh.mpkg-wallpaper.' + 'v2', JSON.stringify({ enabled: true, opacity: 62 }));
+    red.push(...runH((lss, st) => loadPlugin({ quiet: true, clientPath: f, localStorage: lss, settings: st || {} }), ls, { enabled: true, opacity: 62 }, true));
+    return red;
+  });
+
+// M-restore-factory：「恢复默认」实现成恢复出厂空配置 ⇒ H3c 红（生效配置 != snapshot）
+await withMutant('M-restore-factory', '恢复实现成恢复出厂值（应用空配置）',
+  [['presetApplySettings(activePreset.settings);', 'presetApplySettings({ opacity: 82 }); /* M-restore-factory */']], ['H3c'],
+  async (f) => {
+    const red = [];
+    const ls = { _m: new Map(), getItem(k) { return this._m.has(k) ? this._m.get(k) : null; }, setItem(k, v) { this._m.set(k, String(v)); }, removeItem(k) { this._m.delete(k); } };
+    ls.setItem('dsh.mpkg-wallpaper.' + 'v2', JSON.stringify({ enabled: true, opacity: 62 }));
+    red.push(...runH((lss, st) => loadPlugin({ quiet: true, clientPath: f, localStorage: lss, settings: st || {} }), ls, { enabled: true, opacity: 62 }, true));
     return red;
   });
 
