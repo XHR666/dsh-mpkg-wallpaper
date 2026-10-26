@@ -79,6 +79,8 @@ function contractReds(css, prefix = '') {
   if (!(yr && zOf(yr) === 'auto' && /!important/.test(yr.body))) red.push(prefix + 'T3');
   const cy = crs.filter((r) => r.sel.includes('.dsh-conv-panel') && /:has\(\[class\*="_(?:overlay|overlayLayer|modal)"\]\)/.test(r.sel) && !/:not\(/.test(r.sel));
   if (cy.length > 0) red.push(prefix + 'T3b');
+  const autoR = crs.find((r) => r.sel.includes(':has(.dsh-conv-panel) header.wSkVaW_header') && /auto/.test(r.body));
+  if (!(autoR && autoR.sel.includes(':not(:has([role="dialog"][aria-modal="true"]))') && !autoR.sel.includes('[class*="_overlay'))) red.push(prefix + 'T4');
   const pv = Number(zv);
   if (!(pv > HOST_COMPOSER_SEAT_Z)) red.push(prefix + 'R1');
   if (!(pv < HOST_DIALOG_PORTAL_Z)) red.push(prefix + 'R2');
@@ -104,6 +106,12 @@ function reportGroup(css, label, prefix) {
     !!yr && zOf(yr) === 'auto' && /!important/.test(yr.body), yr ? ('z=' + zOf(yr)) : 'missing');
   ok(`[${label}] T3b 反向：不存在类名条件让位（_overlay/_overlayLayer/_modal ⇒ 恒真条件，防回退）`,
     cy.length === 0, cy.length ? ('hit=' + cy[0].sel.slice(0, 80)) : 'clean');
+  // T4(2026-10-27 任务 §3)：header-auto 交还规则使用**真模态**口径（旧 :has([class*="_overlay…"])
+  // 引用宿主常驻类名 ⇒ 恒不命中 = 死规则）；且不再有 _overlay 系恒真条件残留。
+  const autoRule = crs.find((r) => r.sel.includes(':has(.dsh-conv-panel) header.wSkVaW_header') && /auto/.test(r.body));
+  ok(`[${label}] T4 header-auto 规则在场且条件为 aria-modal 口径`,
+    !!autoRule && autoRule.sel.includes(':not(:has([role="dialog"][aria-modal="true"]))') && !autoRule.sel.includes('[class*="_overlay'),
+    autoRule ? autoRule.sel.slice(0, 100) : 'missing');
   const pv = Number(zv);
   ok(`[${label}] R1 浮窗(880) > 输入框 composerSeat(7)`, pv > HOST_COMPOSER_SEAT_Z, '');
   ok(`[${label}] R2 浮窗(880) < 宿主对话框 portal root(1000)（设置/模态在上）`, pv < HOST_DIALOG_PORTAL_Z, '');
@@ -164,10 +172,14 @@ await withMutant('M-yield-class', '倒退变异：把让位改回类名恒真条
   [['html body:has([role="dialog"][aria-modal="true"]) .dsh-conv-panel {\n\t\tz-index: auto !important;\n\t}',
     'html body:has([class*="_modal"]) .dsh-conv-panel {\n\t\tz-index: auto !important;\n\t} /* M-yield-class */']],
   ['T3', 'T3b', 'N-T3', 'N-T3b']);
+await withMutant('M-auto-dead', 'header-auto 倒退回 _overlay 恒真条件（死规则复活）',
+  [['html body:not(:has([role="dialog"][aria-modal="true"])):has(.dsh-conv-panel) header.wSkVaW_header,\nhtml body:not(:has([role="dialog"][aria-modal="true"])):has(.dsh-conv-panel) header[class*="_header_"] {',
+    'html body:not(:has([class*="_overlay"])):has(.dsh-conv-panel) header.wSkVaW_header,\nhtml body:not(:has([class*="_overlay"])):has(.dsh-conv-panel) header[class*="_header_"] { /* M-auto-dead */']],
+  ['T4', 'N-T4']);
 await withMutant('M-noimg', '无壁纸早退路径不再输出 conv 层级块（LAYER2-A 回退）',
   [['css += __convPanelLayerCss;\n\t\t\tcss += __rsFloatGeoCss;\n\t\t\treturn emitSurfaceTokens(css + buildUiCss(section, false)) + __npCss;',
     '/* M-noimg */\n\t\t\tcss += __rsFloatGeoCss;\n\t\t\treturn emitSurfaceTokens(css + buildUiCss(section, false)) + __npCss;']],
-  ['N-T0', 'N-T1', 'N-T2', 'N-T3', 'N-R1']);
+  ['N-T0', 'N-T1', 'N-T2', 'N-T3', 'N-T4', 'N-R1']);
 
 if (redWith.length || redNo.length) {
   console.log('\n!! 真树两态红集非空：' + JSON.stringify({ redWith, redNo }));
