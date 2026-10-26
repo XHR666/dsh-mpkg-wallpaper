@@ -746,6 +746,11 @@ node tools/market-topbar-glass-test.mjs || fail=1
 #   过渡同参数）/ 拖拽与 reduced-motion 让位 / tooltip 去裁切（打标/摘标/滚动容器反向）
 #   + 4 条变异自证（期望红集 == 实际红集）。约 6s。
 node tools/sidebar-collapse-geo-test.mjs || fail=1
+# ①(2026-10-30 任务书 §1) 标题栏悬浮恢复 + 悬浮三面同族判据（纯 Node：产物 CSS 解析）：
+#   注释配平 + 顶层规则前导合法（55da7a8 注释截断 ⇒ 标题栏规则被浏览器整条丢弃的
+#   事故族，text 级断言探不到）/ 三面规则存活 / 圆角·阴影同令牌单源 / float-off 让位
+#   + 3 条变异自证（期望红集 == 实际红集）。约 5s。
+node tools/float-family-geo-test.mjs || fail=1
 # ①(2026-10-28 任务 §2) 标题栏磨砂首帧判据（纯 Node：真 syncHeaderFrost + 真观察器回调）：
 #   同步快路接线 / 零 containing-block / 切会话换 header 后 t=0 与 t=16/50/100/200ms 采样
 #   全稳 / 关档·空栏反向 / 幂等 + 3 条变异自证（期望红集 == 实际红集）。约 3s。

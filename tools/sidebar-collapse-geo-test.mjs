@@ -189,7 +189,9 @@ console.log('\n== M. 变异自证（隔离副本；期望红集 == 实际红集�
 const MUTANTS = [
   { id: 'M1', what: '展开态圆角改回 20px 硬编码 ⇒ A2 必红', expect: ['A2'],
     patch: (s) => s.replace('body[data-mpw-float] .pI_x6G_sidebarCol {\n\tmargin: 12px;\n\tpadding: 10px 12px 14px;\n\tborder: 1px solid rgba(19,45,83,0.26);\n\tborder-radius: var(--mpw-side-radius);', 'body[data-mpw-float] .pI_x6G_sidebarCol {\n\tmargin: 12px;\n\tpadding: 10px 12px 14px;\n\tborder: 1px solid rgba(19,45,83,0.26);\n\tborder-radius: 20px;'),
-    verify: (s) => s.indexOf('border-radius: 20px;\n\toverflow: hidden;') >= 0 },
+    // ②(2026-10-30) verify 从"下一行是 overflow"改成"值在且唯一"——展开态规则体此后合法新增了
+    //   box-shadow（2026-10-30 §1 三面同族），相邻行断言会误报 MUTANT-INERT。
+    verify: (s) => s.indexOf('border-radius: 20px;') >= 0 && s.split('border-radius: 20px;').length === 2 },
   { id: 'M2', what: '收起态过渡改回 0.18s ease ⇒ A3 必红', expect: ['A3'],
     patch: (s) => s.replace('transition: margin var(--mpw-side-dur) var(--mpw-side-ease), padding var(--mpw-side-dur) var(--mpw-side-ease);\n}', 'transition: margin 0.18s ease, padding 0.18s ease;\n}'),
     verify: (s) => s.indexOf('transition: margin 0.18s ease, padding 0.18s ease;') >= 0 },
