@@ -494,7 +494,8 @@ function checkScenario(sc, r) {
       rm.moCreated === rm.moCreatedBeforeFire)
     t('★ 幂等：任一时刻只有 1 个活着的手动观察器实例（不堆叠）', rm.moLive === 1)
     t('★ 顶栏重建后磨砂层自己回来了（不依赖 3s 保险；本进程里它不存在）', rm.recovered === true)
-    t('★ 由观察器触发补同步（watch.hits ≥ 1）', typeof rm.hits === 'number' && rm.hits >= 1)
+    t('★ 由观察器触发补同步（watch.hits + watchFast ≥ 1；快路在去抖前就把层补上，两个口径都算）',
+      (typeof rm.hits === 'number' && rm.hits >= 1) || (typeof rm.fastHits === 'number' && rm.fastHits >= 1))
     t('★ 恢复很快（< 300ms；去抖 50ms + 一次同步）', typeof rm.recoveredMs === 'number' && rm.recoveredMs < 300)
     t('★ 新顶栏里是**我们注入的层**（.mpw-hdrFrost 是新顶栏的第一个子节点）', rm.newHdrFrostEl === true)
     t('★ 新顶栏被重新标记 data-mpw-hdr-frost=el', rm.newHdrMarked === 'el')
@@ -509,7 +510,7 @@ function checkScenario(sc, r) {
     const rm = r.remount || {}
     t('（对照）修复前：观察器未挂载', !!(rm.watchBefore && rm.watchBefore.armed === false))
     t('（对照）修复前：顶栏重建后磨砂层**没有**回来（证明断言有分辨力）', rm.recovered === false)
-    t('（对照）修复前：没有观察器触发（hits=0）', rm.hits === 0)
+    t('（对照）修复前：没有观察器触发（hits=0 且 fastHits=0）', rm.hits === 0 && rm.fastHits === 0)
   }
 }
 
@@ -882,6 +883,7 @@ async function runChild(sc) {
       moLive: globalThis.__FakeMO.instances.filter((x) => x.targets.length).length,
       recovered: !!T.frostEl(), recoveredMs,
       injected: !!st2.injected, hits: (T.watch() || {}).hits,
+      fastHits: (st2 && st2.watchFast) || 0,
       newHdrFrostEl: !!(hdr2.querySelector(':scope > .mpw-hdrFrost')),
       newHdrTranslucent: hdr2.hasAttribute('data-mpw-hdr-translucent'),
       newHdrMarked: hdr2.getAttribute('data-mpw-hdr-frost'),
