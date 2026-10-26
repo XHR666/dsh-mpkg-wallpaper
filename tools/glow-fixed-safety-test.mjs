@@ -15,10 +15,11 @@
 //   B1 「fixed 后代安全」：四类面各挂一个 position:fixed 后代 + 光晕开启 + 指针在面上移动
 //      ⇒ 面与 fixed 后代祖先链上零 inline transform/filter/perspective（面板恒相对视口定位）
 //   B2 稳定性：指针在标题栏↔左栏间连续移动，每步采样祖先链都干净（等价于浮窗位置不随鼠标变）
-//   B3 光晕层反向断言：body 级、position:fixed、pointer-events:none、z-index:-1、随指针显隐
-//   B4 reduced-motion：光晕不启用（保留自 2026-10-28 判据的演进版）
-//   M1 变异：把 transform 写回 header/侧栏 ⇒ B1 必红
-//   M2 变异：光晕层删除 ⇒ B3 必红
+//   B3 ⑧(2026-10-30 改向) 光晕写在"面上"：四类面带 data-mpw-glow-face 标记 + --mpw-glow-x/y
+//      在面元素上；旧 body 级 [data-mpw-glow] 层零残留（显隐细节由 panel-glow-face-test 覆盖）
+//   B4 float 关 ⇒ 光晕全卸（监听 0、面标记全摘）；B4b reduced-motion ⇒ 不启用
+//   M1 变异：把 transform 写回面 ⇒ B1 必红
+//   M2 变异：面解析恒空（无面被标记）⇒ B3a 必红
 //   M3 变异：float 标题栏规则被改成 transform 实现 ⇒ A3 必红
 //
 // 旧 tilt-glow-test 的断言改向（2026-10-28 → 2026-10-29，不许静默）：
@@ -27,6 +28,13 @@
 //     旧口径漏掉"倾斜元素内部还有 fixed 后代"，正是本次回归的判据缺口）；
 //   · B4/B4b 开关关闭、B5 reduced-motion、B6 光晕显隐：保留（演化为 A2/B3/B4）；
 //   · B0 apply 接线：保留（A2）。
+//
+// ⑧2026-10-30 二次改向（不许静默）：光晕从"body 级 fixed 光斑层"重做为"面内背景层"
+//   （radial-gradient 叠在面上 + JS 写该面 CSS 变量；旧层被内容盖住 = 真机看不见，
+//   2026-10-30 任务书 §0.2）——旧 B3 的"body 层形态/显隐"断言删除，改为 B3a/B3b
+//   （面标记 + 变量在面 + 旧层零残留）；B2b 的"跟随"证据从 glow 层 translate3d 改为
+//   面变量更新；M1/M2 的锚点随实现更新（写入点在 mpwGlowApply / 解析器）。
+//   正向行为判据（四面变量/可见性/淡出/峰值 alpha）在 tools/panel-glow-face-test.mjs。
 //
 // 用法: node tools/glow-fixed-safety-test.mjs
 import fs from 'node:fs'
@@ -99,7 +107,7 @@ function boot({ reduced = false } = {}) {
   const menu = mk('div', ''); menu.setAttribute('data-trigger-menu', '')                 // 就地渲染的加号菜单
   const side = mk('div', 'pI_x6G_sidebarCol')
   const overlay = mk('div', 'VOzbGW_overlay')                                            // 侧栏内 fixed 弹层（在案形态）
-  const right = mk('div', ''); right.setAttribute('data-sidebar-right-panel', '')
+  const right = mk('div', ''); right.setAttribute('data-sidebar-right-panel', 'push')   // ⑧真机形态：push 变体（probe-out/before.float-glow.json）
   const rsPop = mk('div', 'somePop_fixed')
   header.appendChild(panel); composer.appendChild(menu); side.appendChild(overlay); right.appendChild(rsPop)
   doc.body.appendChild(header); doc.body.appendChild(composer); doc.body.appendChild(side); doc.body.appendChild(right)
@@ -116,11 +124,17 @@ const selMatch = (el, sel) => {
   for (const one of String(sel || '').split(',')) {
     const t = one.trim()
     if (!t) continue
+    // ⑧(2026-10-30) 光晕面选择器带 :not([data-code-block-banner]) 形态 ⇒ 本桩支持拆 :not([attr])
+    let base = t, notAttr = null
+    const nm = t.match(/^(.*?):not\(\[([^\]]+)\]\)$/)
+    if (nm) { base = nm[1]; notAttr = nm[2] }
     let hit = false
-    if (/^\[class\*="([^"]+)"\]$/.test(t)) hit = String(el.className || '').indexOf(t.slice(9, -2)) >= 0
-    else if (/^\[[^\]=]+]$/.test(t)) hit = el.hasAttribute(t.slice(1, -1))
-    else if (/^\./.test(t)) hit = String(el.className || '').split(/\s+/).includes(t.slice(1))
-    else if (/^[a-zA-Z][\w-]*$/.test(t)) hit = String(el.tagName).toLowerCase() === t.toLowerCase()
+    if (/^\[class\*="([^"]+)"\]$/.test(base)) hit = String(el.className || '').indexOf(base.slice(9, -2)) >= 0
+    else if (/^\[[^\]=]+\]$/.test(base)) hit = el.hasAttribute(base.slice(1, -1))   // ⑧修正：补收尾 \]（原式缺它 ⇒ attr-only 选择器永不命中）
+    else if (/^\[[^\]=]+=["']?[^"']/.test(base)) { const m = base.match(/^\[([^\]=]+)=["']?([^"']+)["']?\]$/); hit = m && el.getAttribute(m[1]) === m[2] }
+    else if (/^\./.test(base)) hit = String(el.className || '').split(/\s+/).includes(base.slice(1))
+    else if (/^[a-zA-Z][\w-]*$/.test(base)) hit = String(el.tagName).toLowerCase() === base.toLowerCase()
+    if (hit && notAttr && el.hasAttribute(notAttr)) hit = false
     if (hit) return true
   }
   return false
@@ -158,40 +172,40 @@ console.log('\n== B. 行为（fixed 后代安全 + 光晕）==')
   ok('B1 fixed 后代安全：四类面 + 指针移动后，面与 fixed 后代祖先链零 inline transform/filter/perspective',
     b1, b1why || '四链全净')
 
-  /* B2（§3.2 稳定性）：标题栏↔左栏连续移动，每步采样都干净 + 光晕跟随 */
+  /* B2（§3.2 稳定性）：标题栏↔左栏连续移动，每步采样都干净 + 光晕跟随。
+     ②(2026-10-30 改向) 光晕改为面内背景层后，"跟随"的证据从 glow 层 translate3d
+     变为面 --mpw-glow-x/y 随移动变化（层已不存在）。 */
   let b2 = true, b2why = ''
   const seq = [[F.header, F.panel], [F.side, F.overlay], [F.header, F.panel], [F.side, F.overlay]]
-  const glowTf = []
+  const glowFollow = []
   for (let k = 0; k < seq.length; k++) {
     T.move({ target: seq[k][0], clientX: 200 + k * 30, clientY: 60 + k * 10 })
     T.tick()
     const c = chainClean(seq[k][1])
-    glowTf.push(/translate3d\(/.test(String((T.state().glowTransform) || '')))
+    glowFollow.push(!!seq[k][0].style.getPropertyValue('--mpw-glow-x'))
     if (!c.ok) { b2 = false; b2why = c.why + '@step' + k; break }
   }
   ok('B2 稳定性：标题栏↔左栏连续移动，每步祖先链干净（浮窗定位来源不被改写）', b2, b2why || '四步全净')
-  ok('B2b 光晕在移动中跟随（translate3d 更新），且它不在任何面板祖先链上', glowTf.every(Boolean))
+  ok('B2b 光晕在移动中跟随（面上的 --mpw-glow-x 逐面更新；⑧改向：不再有 glow 层 transform）', glowFollow.every(Boolean))
 
-  /* B3：光晕层反向断言 */
-  const g = F.doc.querySelector('[data-mpw-glow]')
-  ok('B3a 光晕层存在且形态正确：body 级、position:fixed、pointer-events:none、z-index:-1、data-plugin 标记',
-    !!g && g.parentElement === F.doc.body
-    && /position:\s*fixed/.test(String(g.style.cssText || ''))
-    && /pointer-events:\s*none/.test(String(g.style.cssText || ''))
-    && /z-index:\s*-1/.test(String(g.style.cssText || ''))
-    && g.getAttribute('data-plugin') === 'dsh-mpkg-wallpaper')
-  T.move({ target: F.header, clientX: 10, clientY: 10 }); T.tick()
-  const opOn = String(g.style.opacity)
-  T.out({ relatedTarget: null })
-  const opOff = String(g.style.opacity)
-  ok('B3b 光晕随指针显隐：move ⇒ opacity=1；离开窗口 ⇒ opacity=0', opOn === '1' && opOff === '0',
-    `on=${opOn} off=${opOff}`)
+  /* B3（⑧2026-10-30 改向）：光晕变量写在"面上"、旧 body 层零残留。
+     旧断言（body 级 fixed 层形态/显隐）随实现删除；显隐（alpha 0↔1）由
+     panel-glow-face-test J3/J6 覆盖。这里保留红线口径：body 不被标记、
+     [data-mpw-glow] 层不存在、四类面被标记且带变量。 */
+  const surfaces2 = [F.header, F.composer, F.side, F.right]
+  for (let i = 0; i < surfaces2.length; i++) { T.move({ target: surfaces2[i], clientX: 20 + i * 10, clientY: 20 }); T.tick() }
+  ok('B3a 光晕写在面上：四类面带 data-mpw-glow-face 标记 + --mpw-glow-x/y 变量在面元素上',
+    surfaces2.every((s) => s.hasAttribute('data-mpw-glow-face')
+      && !!s.style.getPropertyValue('--mpw-glow-x') && !!s.style.getPropertyValue('--mpw-glow-y')))
+  ok('B3b 旧 body 层零残留：无 [data-mpw-glow] 节点、body 无 face 标记',
+    F.doc.querySelector('[data-mpw-glow]') == null && !F.doc.body.hasAttribute('data-mpw-glow-face'))
 
-  /* B4：开关关闭零效果（保留自旧 B4 的演进版） */
+  /* B4：开关关闭零效果（保留自旧 B4 的演进版；⑧改向：节点删除 ⇒ 标记全摘） */
   T.sync(false)
   const st4 = T.state()
-  ok('B4 float 关 ⇒ 光晕全卸（节点删除、监听 0、fade）',
-    st4.on === false && st4.listeners === 0 && !st4.hasGlow && F.doc.querySelector('[data-mpw-glow]') == null)
+  ok('B4 float 关 ⇒ 光晕全卸（监听 0、面标记全摘、无 body 层）',
+    st4.on === false && st4.listeners === 0 && st4.faceCount === 0
+    && F.doc.querySelector('[data-mpw-glow-face]') == null && F.doc.querySelector('[data-mpw-glow]') == null)
   cancelWorldTimers()
 }
 /* B4b：reduced-motion（保留自旧 B5 的演进版） */
@@ -200,19 +214,21 @@ console.log('\n== B. 行为（fixed 后代安全 + 光晕）==')
   const T = F.T
   T.sync(true)
   const st = T.state()
-  ok('B4b reduced-motion ⇒ 光晕不启用（on=false、零监听、无节点）',
-    st.on === false && st.listeners === 0 && !st.hasGlow)
+  ok('B4b reduced-motion ⇒ 光晕不启用（on=false、零监听、无面标记）',
+    st.on === false && st.listeners === 0 && st.faceCount === 0)
   cancelWorldTimers()
 }
 
 console.log('\n== M. 变异自证（隔离副本；期望红集 == 实际红集，逐条相等）==')
 const MUT = [
-  { id: 'M1', what: '把 transform 写回 header/侧栏（倾斜回归复刻）⇒ B1 必红', expect: ['B1'],
-    patch: (s) => s.replace('st.tx = x; st.ty = y;', 'st.tx = x; st.ty = y; try { const s0 = ev && ev.target; const f0 = s0 && s0.closest ? s0.closest(".wSkVaW_header, .pI_x6G_sidebarCol") : null; if (f0) f0.style.transform = "perspective(900px) rotateX(1.6deg)"; } catch (e) {}'),
-    verify: (s) => s.indexOf('if (f0) f0.style.transform = "perspective(900px) rotateX(1.6deg)";') >= 0 },
-  { id: 'M2', what: '光晕层删除（ensure 空转）⇒ B3 必红', expect: ['B3'],
-    patch: (s) => s.replace('function mpwGlowEnsure() {\n\t\t\tconst st = mpwGlowSt;\n\t\t\ttry {', 'function mpwGlowEnsure() {\n\t\t\tconst st = mpwGlowSt;\n\t\t\ttry { return;'),
-    verify: (s) => /function mpwGlowEnsure\(\) \{\n\t\t\tconst st = mpwGlowSt;\n\t\t\ttry \{ return;/.test(s) },
+  { id: 'M1', what: '把 transform 写回面（倾斜回归复刻；⑧改向：写入点在 mpwGlowApply 的面变量之后）⇒ B1 必红', expect: ['B1'],
+    patch: (s) => s.replace('\t\t\t\t\tface.style.setProperty("--mpw-glow-r", rad + "px");',
+      '\t\t\t\t\tface.style.setProperty("--mpw-glow-r", rad + "px");\n\t\t\t\t\ttry { face.style.transform = "perspective(900px) rotateX(1.6deg)" } catch (e) {}'),
+    verify: (s) => s.indexOf('face.style.transform = "perspective(900px) rotateX(1.6deg)"') >= 0 },
+  { id: 'M2', what: '面解析恒空（resolve 失效 = 无面被标记，⑧改向自 M2"ensure 空转"）⇒ B3a 必红', expect: ['B3a'],
+    patch: (s) => s.replace('for (let n = target, k = 0; n && n.nodeType === 1 && k < 12; n = n.parentElement, k++) {',
+      'for (let n = null, k = 0; n && n.nodeType === 1 && k < 12; n = n.parentElement, k++) { /* 变异：解析恒空 */'),
+    verify: (s) => s.indexOf('for (let n = null, k = 0;') >= 0 },
   { id: 'M3', what: 'float 标题栏规则被改成 transform 实现 ⇒ A3 必红', expect: ['A3'],
     patch: (s) => s.replace('body[data-mpw-float] .wSkVaW_header {\n\tmargin: 10px 16px 0;', 'body[data-mpw-float] .wSkVaW_header {\n\ttransform: translateY(-2px);\n\tmargin: 10px 16px 0;'),
     verify: (s) => s.indexOf('body[data-mpw-float] .wSkVaW_header {\n\ttransform: translateY(-2px);') >= 0 },
@@ -243,7 +259,7 @@ function runChecksOn(clientPath) {
     const allEls = () => { const out = []; const walk = (e) => { for (const c of (e.children || [])) { out.push(c); walk(c) } }; try { walk(doc.body) } catch (e) {} return out }
     doc.querySelectorAll = (s) => allEls().filter((el) => selMatch(el, s))
     doc.querySelector = (s) => doc.querySelectorAll(s)[0] || null
-    for (const el of allEls()) {
+    for (const el of allEls().concat([doc.body])) {
       el.matches = (s) => selMatch(el, s)
       el.closest = (s) => { for (let p = el; p; p = p.parentElement) { try { if (p.matches && p.matches(s)) return p } catch (e) {} } return null }
     }
@@ -251,7 +267,10 @@ function runChecksOn(clientPath) {
     T.sync(true)
     T.move({ target: panel, clientX: 120, clientY: 60 }); T.tick()
     r['B1'] = chainClean(panel).ok && !header.style.transform
-    r['B3'] = !!doc.querySelector('[data-mpw-glow]')
+    /* ⑧改向：B3 = 面标记 + 变量写在面上（旧"body 层存在"断言随实现删除） */
+    r['B3a'] = header.hasAttribute('data-mpw-glow-face') && side.hasAttribute('data-mpw-glow-face')
+      && !!header.style.getPropertyValue('--mpw-glow-x') && !!side.style.getPropertyValue('--mpw-glow-x')
+    r['B3b'] = !doc.querySelector('[data-mpw-glow]') && !doc.body.hasAttribute('data-mpw-glow-face')
     cancelWorldTimers()
   } catch (e) { /* 判红即结果 */ }
   return r

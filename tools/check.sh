@@ -761,6 +761,12 @@ node tools/hdr-frost-first-frame-test.mjs || fail=1
 #   光晕层形态与显隐 / reduced-motion + 3 条变异自证（期望红集 == 实际红集）。约 4s。
 #   （取代 2026-10-28 的 tilt-glow-test：倾斜断言随功能删除，光晕断言演进保留，改向见测试文件头。）
 node tools/glow-fixed-safety-test.mjs || fail=1
+# ①(2026-10-30 任务书 §2) 面板内光晕判据（纯 Node：真光晕模块直驱 + 产物解析）：
+#   四面（标题栏/左栏/右栏/输入框卡片）--mpw-glow-x/y 随指针更新 / 面规则在场（radial-gradient
+#   叠在面背景上，峰值 alpha 0.12）/ 可见性（alpha=1 写在面上，旧 body 层零残留）/
+#   红线（面与 fixed 后代祖先链零 transform·filter·perspective·contain）/
+#   开关与 float 同闸 / reduced-motion / 淡出 + 3 条变异自证（期望红集 == 实际红集）。约 5s。
+node tools/panel-glow-face-test.mjs || fail=1
 # ①(2026-10-02 门禁提速轮) 门禁自身的判据：输入键的分辨力（lib/**、tools/**、package.json 改一个字节必变）、
 #   绿缓存跳过 / 红缓存不跳过 / --full 必真跑、--list 12 步、并发第二个实例快速失败且无残留锁。
 #   纯 Node + os.tmpdir() 夹具 + 4 次"只抢锁/只列表"的轻量调用（约 4s，不跑任何门禁步骤）。
