@@ -750,11 +750,12 @@ node tools/sidebar-collapse-geo-test.mjs || fail=1
 #   同步快路接线 / 零 containing-block / 切会话换 header 后 t=0 与 t=16/50/100/200ms 采样
 #   全稳 / 关档·空栏反向 / 幂等 + 3 条变异自证（期望红集 == 实际红集）。约 3s。
 node tools/hdr-frost-first-frame-test.mjs || fail=1
-# ①(2026-10-28 任务 §3) 3D 微倾斜 + 鼠标光晕判据（纯 Node：真引擎直驱）：
-#   白名单恰四类（正文零 transform）/ 祖先链零 transform / 开关关闭零效果 /
-#   reduced-motion 全禁 / 光晕出现与淡出 / 按住判据 / 弹层安全阀
-#   + 3 条变异自证（期望红集 == 实际红集）。约 4s。
-node tools/tilt-glow-test.mjs || fail=1
+# ①(2026-10-29 任务书) 光晕 + 「fixed 后代安全」防线判据（纯 Node：真光晕模块直驱 + 产物解析）：
+#   倾斜本体零残留（2026-10-28 §3 的 3D 倾斜因 transform 困 fixed 后代已移除）/
+#   float 三处悬浮规则在且零 transform / 四类面 + fixed 后代祖先链零 transform·filter·perspective /
+#   光晕层形态与显隐 / reduced-motion + 3 条变异自证（期望红集 == 实际红集）。约 4s。
+#   （取代 2026-10-28 的 tilt-glow-test：倾斜断言随功能删除，光晕断言演进保留，改向见测试文件头。）
+node tools/glow-fixed-safety-test.mjs || fail=1
 # ①(2026-10-02 门禁提速轮) 门禁自身的判据：输入键的分辨力（lib/**、tools/**、package.json 改一个字节必变）、
 #   绿缓存跳过 / 红缓存不跳过 / --full 必真跑、--list 12 步、并发第二个实例快速失败且无残留锁。
 #   纯 Node + os.tmpdir() 夹具 + 4 次"只抢锁/只列表"的轻量调用（约 4s，不跑任何门禁步骤）。
