@@ -117,9 +117,11 @@ function collectMain() {
       if (!rules) continue
       const walk = (list) => {
         for (const r of Array.from(list)) {
-          if (r.cssRules) { walk(r.cssRules); continue }
           const st = String(r.selectorText || '')
           if (st.indexOf('data-mpw-float') >= 0) floatRules.push({ sel: st.slice(0, 220), css: String(r.style ? r.cssText : '').slice(0, 300) })
+          // ②(2026-10-30 修正) Firefox 的 CSSStyleRule 恒有 cssRules（空表）——先收规则再下钻
+          //   （旧写法 `if (r.cssRules) { walk(); continue }` 把每条规则都跳过了 ⇒ 恒报 0 条）。
+          if (r.cssRules && r.cssRules.length && !r.selectorText) walk(r.cssRules)
         }
       }
       walk(rules)
@@ -201,6 +203,60 @@ await page.waitForTimeout(1500)
 const result = { label: LABEL, url: TARGET, wallReady, consoleErrs: consoleErrs.slice(0, 5) }
 result.main = await page.evaluate(collectMain)
 
+/* §2 光晕可见性取证（2026-10-30 任务书 §2 判据读数）：
+   对每个面派发真实坐标的 pointermove（插件监听 document 级 pointermove，合成事件同路），
+   等缓动落地后读：面标记 / 内联变量 / **computed background-image（含 radial-gradient =
+   "面上真的画出来了"）** / 圆角与阴影（§1/§3 顺带）。 */
+result.glowFaces = await page.evaluate(async () => {
+  const sels = ['header/.wSkVaW_header', 'side/[class*="sidebarCol"]', 'composer/[data-composer-card]', 'right/[data-sidebar-right-panel="push"]']
+  const out = []
+  for (const pair of sels) {
+    const idx = pair.indexOf('/')
+    const name = pair.slice(0, idx)
+    const sel = pair.slice(idx + 1)
+    const el = document.querySelector('body[data-mpw-float] ' + sel) || document.querySelector(sel)
+    if (!el) { out.push({ face: name, missing: true }); continue }
+    const r = el.getBoundingClientRect()
+    const cx = r.left + Math.min(60, r.width / 2)
+    const cy = r.top + Math.min(40, Math.max(20, r.height / 2))
+    el.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: cx, clientY: cy, pointerId: 1 }))
+    await new Promise((res) => setTimeout(res, 450))
+    const cs = getComputedStyle(el)
+    out.push({
+      face: name,
+      rect: [Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)],
+      marked: el.hasAttribute('data-mpw-glow-face'),
+      vars: {
+        x: el.style.getPropertyValue('--mpw-glow-x'), y: el.style.getPropertyValue('--mpw-glow-y'),
+        r: el.style.getPropertyValue('--mpw-glow-r'), a: el.style.getPropertyValue('--mpw-glow-alpha'),
+      },
+      computedBgImage: String(cs.backgroundImage || 'none').slice(0, 200),
+      computedRadius: cs.borderRadius,
+      computedMargin: cs.margin,
+      computedBoxShadow: String(cs.boxShadow || 'none').slice(0, 100),
+    })
+  }
+  return out
+})
+// 两态截图（光晕悬停在输入框卡片上时的形态）：浅色 → 深色（body[data-ds-dark-theme] 瞬时打标，探针档案不持久化）
+try {
+  const shot = async (name) => {
+    const el = await page.$('[data-composer-card]') || await page.$('[class*="sidebarCol"]')
+    if (el) {
+      const box = await el.boundingBox()
+      if (box) await page.mouse.move(box.x + Math.min(80, box.width / 2), box.y + Math.min(40, Math.max(20, box.height / 2)))
+    }
+    await page.waitForTimeout(600)
+    await page.screenshot({ path: path.join(OUT_DIR, LABEL + '.glow-' + name + '.png') })
+  }
+  await page.evaluate(() => document.body.removeAttribute('data-ds-dark-theme'))
+  await shot('light')
+  await page.evaluate(() => document.body.setAttribute('data-ds-dark-theme', ''))
+  await shot('dark')
+  await page.evaluate(() => document.body.removeAttribute('data-ds-dark-theme'))
+  result.screenshots = [LABEL + '.glow-light.png', LABEL + '.glow-dark.png']
+} catch (e) { result.screenshots = 'failed: ' + String(e).slice(0, 120) }
+
 // §3 收起态（真实收起按钮；读完还原）
 if (DO_COLLAPSE) {
   const found = await page.evaluate(() => {
@@ -279,6 +335,15 @@ if (result.main.rightSidebar) {
 p('')
 p('-- §2 现有光晕层 --')
 p('  ' + (result.main.glow ? '存在: parent=' + result.main.glow.parent + ' cssText=' + result.main.glow.cssText.slice(0, 200) : '不存在（未触发 pointermove 属正常）'))
+p('')
+p('-- §2 面内光晕取证（指针派发后） --')
+for (const f of (result.glowFaces || [])) {
+  if (f.missing) { p('  [' + f.face + '] 页面上无此面'); continue }
+  p('  [' + f.face + '] 标记=' + f.marked + ' vars=' + JSON.stringify(f.vars))
+  p('    computed bgImage=' + f.computedBgImage.slice(0, 110))
+  p('    radius=' + f.computedRadius + ' | margin=' + f.computedMargin + ' | shadow=' + f.computedBoxShadow.slice(0, 60))
+}
+p('  截图: ' + JSON.stringify(result.screenshots))
 p('')
 if (result.collapsed) {
   p('-- §3 收起态对照 --')

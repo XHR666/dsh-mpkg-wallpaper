@@ -136,6 +136,24 @@ console.log('\n== C. float-off 让位（设置面板打开期间不残留悬浮�
   ok('C1 float-off 左栏重置含 box-shadow: none', !!offSidebar && /box-shadow:\s*none/.test(offSidebar), offSidebar || '规则缺失')
   ok('C2 float-off 标题栏重置含 box-shadow: none', !!offHeader && /box-shadow:\s*none/.test(offHeader), offHeader || '规则缺失')
 }
+console.log('\n== C3. 空栏兜底不压悬浮外壳（⑩：body[data-mpw-hdr-blank] 拆两半）==')
+{
+  // header 本体的空栏兜底：只许压材质（底色/磨砂/最小高），不许再出现 margin/padding/radius/shadow
+  const blankHeader = ruleBody(CSS_ON, '} html body[data-mpw-hdr-blank][data-mpw-hdr-blank] .wSkVaW_header')
+  ok('C3a 空栏兜底（header 本体）保留材质压制（背景透明 + backdrop none + min-height 0）',
+    !!blankHeader && /background-color:\s*transparent !important/.test(blankHeader)
+    && /backdrop-filter:\s*none !important/.test(blankHeader) && /min-height:\s*0 !important/.test(blankHeader),
+    blankHeader || '规则缺失')
+  const eats = ['margin', 'padding', 'border-radius', 'box-shadow', 'border-width']
+    .filter((p) => blankHeader && new RegExp('(^|;)\\s*' + p + '\\s*:').test(blankHeader))
+  ok('C3b 空栏兜底（header 本体）不再压悬浮外壳（无 margin/padding/radius/shadow/border-width 声明）',
+    eats.length === 0, eats.length ? '仍在压=' + eats.join(',') : '外壳放行')
+  // ::before/::after/磨砂子层组的压制原样保留（10-09 细磨砂条根因不回潮）
+  const blankPseudo = ruleBody(CSS_ON, 'html body[data-mpw-hdr-blank][data-mpw-hdr-blank] .wSkVaW_header::before, html body[data-mpw-hdr-blank][data-mpw-hdr-blank] .wSkVaW_header::after, html body[data-mpw-hdr-blank][data-mpw-hdr-blank] .wSkVaW_header:not(:where([data-code-block-banner])) > .mpw-hdrFrost')
+  ok('C3c 空栏兜底（伪元素/磨砂子层）原样保留（含 margin:0 !important 与 background-image:none）',
+    !!blankPseudo && /margin:\s*0 !important/.test(blankPseudo) && /background-image:\s*none !important/.test(blankPseudo),
+    blankPseudo ? blankPseudo.slice(0, 90) : '规则缺失')
+}
 
 console.log('\n== M. 变异自证（隔离副本；期望红集 == 实际红集，逐条相等）==')
 const CLIENT_PATH = path.join(here, '..', 'lib', 'client.js')
@@ -153,6 +171,10 @@ function runChecksOn(clientText, clientPath) {
   r['B4阴影'] = FAM.every((f) => { const b = ruleBody(css, f.sel); return b && /box-shadow:\s*var\(--mpw-float-shadow/.test(b) })
   const offHeader = ruleBody(css, 'body[data-mpw-float-off] body[data-mpw-float] .wSkVaW_header')
   r['C2float-off'] = !!offHeader && /box-shadow:\s*none/.test(offHeader)
+  /* C3（⑩空栏兜底拆两半）：header 本体的空栏兜底不得再压悬浮外壳 */
+  const blankHeader = ruleBody(css, '} html body[data-mpw-hdr-blank][data-mpw-hdr-blank] .wSkVaW_header')
+  r['C3'] = !!blankHeader && /background-color:\s*transparent !important/.test(blankHeader)
+    && !/(^|;)\s*(margin|padding|border-radius|box-shadow|border-width)\s*:/.test(blankHeader)
   return r
 }
 function cssOfPath(clientPath, settings) {
@@ -175,6 +197,10 @@ const MUT = [
     patch: (s) => s.replace('body[data-mpw-float-off] body[data-mpw-float] .wSkVaW_header {\n\tmargin: 0; padding: 0; border: none; border-radius: 0; box-shadow: none;\n}',
       'body[data-mpw-float-off] body[data-mpw-float] .wSkVaW_header {\n\tmargin: 0; padding: 0; border: none; border-radius: 0;\n}'),
     verify: (s) => /body\[data-mpw-float-off\] body\[data-mpw-float\] \.wSkVaW_header \{\n\tmargin: 0; padding: 0; border: none; border-radius: 0;\n\}/.test(s) },
+  { id: 'M4', what: '空栏兜底把 margin:0 !important 塞回 header 本体（回退 ⑩ 拆分）⇒ C3 必红', expect: ['C3'],
+    patch: (s) => s.replace('html body[data-mpw-hdr-blank][data-mpw-hdr-blank] .wSkVaW_header {\n\tbackground-color: transparent !important;',
+      'html body[data-mpw-hdr-blank][data-mpw-hdr-blank] .wSkVaW_header {\n\tmargin: 0 !important;\n\tbackground-color: transparent !important;'),
+    verify: (s) => /html body\[data-mpw-hdr-blank\]\[data-mpw-hdr-blank\] \.wSkVaW_header \{\n\tmargin: 0 !important;/.test(s) },
 ]
 let expectRed = [], actualRed = []
 for (const m of MUT) {
