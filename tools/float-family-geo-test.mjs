@@ -113,10 +113,10 @@ for (const f of FAM) bodies[f.name] = ruleBody(CSS_ON, f.sel)
 {
   const miss = FAM.filter((f) => !bodies[f.name])
   ok('B2 三处规则体可提取', miss.length === 0, miss.length ? '缺失=' + miss.map((f) => f.name).join(',') : '')
-  const noRadius = FAM.filter((f) => f.name !== '右栏push').filter((f) => bodies[f.name] && !/border-radius:\s*var\(--mpw-side-radius\)/.test(bodies[f.name]))
-  // §1 口径：标题栏+左栏同圆角令牌；右栏半径收编进令牌是 §3 的事（届时把上面的排除去掉）
-  ok('B3 标题栏+左栏圆角同令牌（都引用 var(--mpw-side-radius)；右栏 §3 收编）', noRadius.length === 0,
-    noRadius.length ? '偏离=' + noRadius.map((f) => f.name).join(',') : '同源')
+  const noRadius = FAM.filter((f) => bodies[f.name] && !/border-radius:\s*var\(--mpw-side-radius\)/.test(bodies[f.name]))
+  // ⑨(2026-10-30 §3) 右栏 18px 字面量收编进令牌后，三处（标题栏/左栏/右栏push）逐处同令牌
+  ok('B3 三处圆角同令牌（都引用 var(--mpw-side-radius)；§3 起含右栏）', noRadius.length === 0,
+    noRadius.length ? '偏离=' + noRadius.map((f) => f.name).join(',') : '三处同源')
   const noShadow = FAM.filter((f) => bodies[f.name] && !/box-shadow:\s*var\(--mpw-float-shadow/.test(bodies[f.name]))
   ok('B4 三处阴影同令牌（都引用 var(--mpw-float-shadow)）', noShadow.length === 0,
     noShadow.length ? '偏离=' + noShadow.map((f) => f.name).join(',') : '三处同源')

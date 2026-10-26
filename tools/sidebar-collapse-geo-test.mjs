@@ -1,8 +1,10 @@
 // tools/sidebar-collapse-geo-test.mjs —— 2026-10-28 任务书 §1「左栏收起态三问题」判据
 //
-// 三问题与修法（命中清单见交付报告；判据逐条可失败，变异见文末 M1–M4）：
+// 三问题与修法（命中清单见交付报告；判据逐条可失败，变异见文末 M1–M5）：
 //   ① 圆角不一致（展开 20px / 收起 12px）→ 两态 + sidebar 根收敛到同一枚令牌
-//      --mpw-side-radius（宿主 --dsw-alias-radius-l2，缺省 12px），A2 逐键相等。
+//      --mpw-side-radius，A2 逐键相等。⑨(2026-10-30 任务书 §3) 令牌值统一为 18px
+//      （右栏悬浮口径；宿主 --dsw-alias-radius-l2 真机实测为空，不再作来源），
+//      且右栏 push/dockkit 的 18px 字面量也收编进该令牌（A7/A7b 左右栏逐值同源）。
 //   ② 图标抖动/回弹 → 我们的 margin/padding 过渡（旧 0.18s ease）与宿主
 //      .pI_x6G_frame{transition:grid-template-columns var(--ds-transition-duration-slow)
 //      var(--ds-ease-in-out)}（= 0.3s cubic-bezier(.4,0,.2,1)，宿主包实测）两条曲线赛跑；
@@ -58,8 +60,8 @@ console.log('== A. 统一收起/展开几何（buildCss float:on 真产物）=='
 {
   const css = cssFloat()
   const tokenDef = ruleBody(css, 'body[data-mpw-float] {\n\t--mpw-side-radius') || ruleBody(css, '--mpw-side-radius:')
-  ok('A1 统一令牌单点定义：--mpw-side-radius / --mpw-side-dur / --mpw-side-ease 都在 float 块',
-    /--mpw-side-radius:\s*var\(--dsw-alias-radius-l2, 12px\)/.test(css)
+  ok('A1 统一令牌单点定义：--mpw-side-radius（⑨§3 起值为 18px，右栏口径）/ --mpw-side-dur / --mpw-side-ease 都在 float 块',
+    /--mpw-side-radius:\s*18px;/.test(css)
     && /--mpw-side-dur:\s*var\(--ds-transition-duration-slow, 0\.3s\)/.test(css)
     && /--mpw-side-ease:\s*var\(--ds-ease-in-out, cubic-bezier\(0\.4, 0, 0\.2, 1\)\)/.test(css))
 
@@ -89,6 +91,20 @@ console.log('== A. 统一收起/展开几何（buildCss float:on 真产物）=='
     .join(' ')
   ok('A6 反向：侧栏 float 规则的 border-radius 声明里无像素字面量残留（全部走令牌）',
     /\dpx/.test(radiusLiterals) === false, '声明=' + radiusLiterals.trim())
+
+  /* ⑨(2026-10-30 任务书 §3) 左右栏圆角同源：右栏 push 面板 + dockkit pane/strip 也读
+     同一枚 --mpw-side-radius（原 18px 字面量收编）⇒ 左栏两态（+根）与右栏逐值同源。
+     （rs 规则带 !important，decl 原样返回 ⇒ 对照时剥掉。） */
+  const rsPush = ruleBody(css, 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]) [data-sidebar-right-panel="push"] {')
+  const rsDock = ruleBody(css, 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]) [data-dockkit-pane],\nhtml body[data-mpw-float]:not([data-mpw-rightbar-parked]) [data-dockkit-strip] {')
+  const rPush = String(decl(rsPush, 'border-radius') || '').replace(/\s*!important$/, '')
+  const rDock = String(decl(rsDock, 'border-radius') || '').replace(/\s*!important$/, '')
+  ok('A7 §3 左右栏同源：右栏 push/dockkit 的 border-radius 也是 var(--mpw-side-radius)（令牌值 18px）',
+    rPush === 'var(--mpw-side-radius)' && rDock === 'var(--mpw-side-radius)' && /--mpw-side-radius:\s*18px;/.test(css),
+    `push=${rPush} dockkit=${rDock}`)
+  ok('A7b §3 对照表：左栏展开/收起/根 3 组 + 右栏 push/dockkit 2 组 = 五处声明逐值同源（同一 var）',
+    [rExp, rCol, rRoot, rPush, rDock].every((v) => v === 'var(--mpw-side-radius)'),
+    `左展开=${rExp} 左收起=${rCol} 左根=${rRoot} 右push=${rPush} 右dock=${rDock}`)
 }
 
 console.log('\n== B. tooltip 去裁切（行为：真实现 __mpwPopUntruncTest.tipFast/tipSync）==')
@@ -192,6 +208,9 @@ const MUTANTS = [
     // ②(2026-10-30) verify 从"下一行是 overflow"改成"值在且唯一"——展开态规则体此后合法新增了
     //   box-shadow（2026-10-30 §1 三面同族），相邻行断言会误报 MUTANT-INERT。
     verify: (s) => s.indexOf('border-radius: 20px;') >= 0 && s.split('border-radius: 20px;').length === 2 },
+  { id: 'M5', what: '⑨(§3) 右栏 push 圆角改回 18px 字面量（异于令牌）⇒ A7 必红', expect: ['A7'],
+    patch: (s) => s.replace('border-radius: var(--mpw-side-radius) !important;\n\tborder: 1px solid rgba(148,180,220,0.28) !important;\n\toverflow: hidden !important;\n\tbox-shadow: var(--mpw-float-shadow, 0 6px 24px rgba(0,0,0,0.12));', 'border-radius: 18px !important;\n\tborder: 1px solid rgba(148,180,220,0.28) !important;\n\toverflow: hidden !important;\n\tbox-shadow: var(--mpw-float-shadow, 0 6px 24px rgba(0,0,0,0.12));'),
+    verify: (s) => s.indexOf('border-radius: 18px !important;') >= 0 && s.split('border-radius: 18px !important;').length === 2 },
   { id: 'M2', what: '收起态过渡改回 0.18s ease ⇒ A3 必红', expect: ['A3'],
     patch: (s) => s.replace('transition: margin var(--mpw-side-dur) var(--mpw-side-ease), padding var(--mpw-side-dur) var(--mpw-side-ease);\n}', 'transition: margin 0.18s ease, padding 0.18s ease;\n}'),
     verify: (s) => s.indexOf('transition: margin 0.18s ease, padding 0.18s ease;') >= 0 },
@@ -203,7 +222,7 @@ const MUTANTS = [
     verify: (s) => s.indexOf('[data-mpw-tip-unclip][data-mpw-tip-unclip]') < 0 },
 ]
 function runChecks(clientPath) {
-  const r = { A2: false, A3: false, B1b: false, B5: false }
+  const r = { A2: false, A3: false, B1b: false, B5: false, A7: false }
   try {
     reset()
     loadPlugin({ quiet: true, clientPath, settings: { enabled: true, image: 'data:image/png;base64,AAA', float: true } })
@@ -212,6 +231,9 @@ function runChecks(clientPath) {
     const collapsed = ruleBody(css, 'body[data-mpw-float] [data-sidebar-collapsed] .pI_x6G_sidebarCol,')
     r.A2 = decl(expanded, 'border-radius') === 'var(--mpw-side-radius)' && decl(collapsed, 'border-radius') === 'var(--mpw-side-radius)'
       && decl(ruleBody(css, 'body[data-mpw-float] [data-mpw-sidebar-root] {'), 'border-radius') === 'var(--mpw-side-radius)'
+    r.A7 = String(decl(ruleBody(css, 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]) [data-sidebar-right-panel="push"] {'), 'border-radius') || '').replace(/\s*!important$/, '') === 'var(--mpw-side-radius)'
+      && String(decl(ruleBody(css, 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]) [data-dockkit-pane],\nhtml body[data-mpw-float]:not([data-mpw-rightbar-parked]) [data-dockkit-strip] {'), 'border-radius') || '').replace(/\s*!important$/, '') === 'var(--mpw-side-radius)'
+      && /--mpw-side-radius:\s*18px;/.test(css)
     const tExp = decl(expanded, 'transition'), tCol = decl(collapsed, 'transition')
     r.A3 = !!tExp && tExp === tCol && tExp.indexOf('--mpw-side-dur') >= 0
     r.B5 = /\[data-mpw-tip-unclip\]\[data-mpw-tip-unclip\] \{[^}]*overflow:\s*visible !important;/.test(css)
