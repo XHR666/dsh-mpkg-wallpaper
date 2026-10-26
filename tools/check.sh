@@ -741,6 +741,20 @@ node tools/conv-panel-layer-test.mjs || fail=1
 #   底色回退 alpha 区间（非纯白/非全透）/ 模糊非 none / 两态同规则 / l1 门控语义不变
 #   + 3 条变异自证（期望红集 == 实际红集）。约 2s。
 node tools/market-topbar-glass-test.mjs || fail=1
+# ①(2026-10-28 任务 §1) 左栏收起态三问题判据（纯 Node：__mpwBuildCss 产物解析 + 桩行为）：
+#   两态圆角逐键相等（统一 --mpw-side-radius 令牌）/ 两态 transition 逐字一致（与宿主 grid
+#   过渡同参数）/ 拖拽与 reduced-motion 让位 / tooltip 去裁切（打标/摘标/滚动容器反向）
+#   + 4 条变异自证（期望红集 == 实际红集）。约 6s。
+node tools/sidebar-collapse-geo-test.mjs || fail=1
+# ①(2026-10-28 任务 §2) 标题栏磨砂首帧判据（纯 Node：真 syncHeaderFrost + 真观察器回调）：
+#   同步快路接线 / 零 containing-block / 切会话换 header 后 t=0 与 t=16/50/100/200ms 采样
+#   全稳 / 关档·空栏反向 / 幂等 + 3 条变异自证（期望红集 == 实际红集）。约 3s。
+node tools/hdr-frost-first-frame-test.mjs || fail=1
+# ①(2026-10-28 任务 §3) 3D 微倾斜 + 鼠标光晕判据（纯 Node：真引擎直驱）：
+#   白名单恰四类（正文零 transform）/ 祖先链零 transform / 开关关闭零效果 /
+#   reduced-motion 全禁 / 光晕出现与淡出 / 按住判据 / 弹层安全阀
+#   + 3 条变异自证（期望红集 == 实际红集）。约 4s。
+node tools/tilt-glow-test.mjs || fail=1
 # ①(2026-10-02 门禁提速轮) 门禁自身的判据：输入键的分辨力（lib/**、tools/**、package.json 改一个字节必变）、
 #   绿缓存跳过 / 红缓存不跳过 / --full 必真跑、--list 12 步、并发第二个实例快速失败且无残留锁。
 #   纯 Node + os.tmpdir() 夹具 + 4 次"只抢锁/只列表"的轻量调用（约 4s，不跑任何门禁步骤）。
