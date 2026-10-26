@@ -119,7 +119,7 @@ function check(label, patch, css) {
   //    语义（源码 headerFrosted = (headerBlur || unifyTint) && headerBg）：
   //      · 「顶栏」开关(headerBg)是标题栏外观的总闸：关掉就完全不接管标题栏；
   //      · 总闸开时，统一虚化(unifyTint)或标题栏磨砂(headerBlur)任一为开 → 必须有磨砂层。
-  const frost = rules(t).some(([sel, body]) => /\.wSkVaW_header::before/.test(sel) && /backdrop-filter/.test(body) && !/backdrop-filter\s*:\s*none/.test(body))
+  const frost = rules(t).some(([sel, body]) => /\.wSkVaW_header(?::not\(:where\(\[data-code-block-banner\]\)\))?::before/.test(sel) && /backdrop-filter/.test(body) && !/backdrop-filter\s*:\s*none/.test(body))
   if (typeof patch.headerBg === 'boolean' && typeof patch.headerBlur === 'boolean') {
     const wantFrost = (patch.headerBlur || !!patch.unifyTint) && patch.headerBg
     if (wantFrost && !frost) note('[' + label + '] 该有顶栏磨砂但规则缺失（虚化会"没效果"）')

@@ -177,9 +177,12 @@ function buildCases(src) {
 
 /** 简单特异度（够用即可：本判据只比较"表面容器上的底色/磨砂"这一小组声明） */
 function specificity(part) {
-  const ids = (part.match(/#[A-Za-z0-9_-]+/g) || []).length
-  const cls = (part.match(/\.[A-Za-z0-9_\\-]+|\[[^\]]*\]|:(?!:)[a-z-]+(?:\([^)]*\))?/g) || []).length
-  const el = (part.match(/(^|[\s>+~])[a-zA-Z][a-zA-Z0-9-]*/g) || []).length
+  // ①(2026-10-27) :where(...) 对特异性贡献为零（CSS 规范）——先剥掉再计数，
+  //   否则 ":not(:where([attr]))" 这类**零特异性排除**会被多算（banner 收窄引入的误报）。
+  const stripped = String(part).replace(/:not\(:where\([^()]*\)\)/g, '').replace(/:where\([^()]*\)/g, '')
+  const ids = (stripped.match(/#[A-Za-z0-9_-]+/g) || []).length
+  const cls = (stripped.match(/\.[A-Za-z0-9_\\-]+|\[[^\]]*\]|:(?!:)[a-z-]+(?:\([^)]*\))?/g) || []).length
+  const el = (stripped.match(/(^|[\s>+~])[a-zA-Z][a-zA-Z0-9-]*/g) || []).length
   return ids * 10000 + cls * 100 + el
 }
 /** 按"亮/暗上下文"取该上下文的 token 定义表（any 档规则两边都算） */
@@ -415,8 +418,8 @@ if (!NO_MUT) {
     {
       id: 'surface-value-replaced',
       why: '基础规则不再走共享 token，换成一个不同的字面量 —— 生效值变了，A 组必须变红',
-      mut: (s) => s.replace('.wSkVaW_header {\n\tbackground-color: var(--mpw-surface-frost-top) !important;',
-        '.wSkVaW_header {\n\tbackground-color: rgba(9, 9, 9, 0.9) !important;'),
+      mut: (s) => s.replace('.wSkVaW_header:not(:where([data-code-block-banner])) {\n\tbackground-color: var(--mpw-surface-frost-top) !important;',
+        '.wSkVaW_header:not(:where([data-code-block-banner])) {\n\tbackground-color: rgba(9, 9, 9, 0.9) !important;'),
       expect: 'A',
     },
   ]

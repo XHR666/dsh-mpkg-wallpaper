@@ -208,7 +208,7 @@ function headerSelfFilter(css) {
     })
   }).map(([sel]) => sel)
 }
-const HEADER_PSEUDO_GLASS = (css) => CSS_RULES(css).some(([sel, body]) => /\.wSkVaW_header::before/.test(sel) && /backdrop-filter/.test(body) && !/backdrop-filter\s*:\s*none/.test(body))
+const HEADER_PSEUDO_GLASS = (css) => CSS_RULES(css).some(([sel, body]) => /\.wSkVaW_header(?::not\(:where\(\[data-code-block-banner\]\)\))?::before/.test(sel) && /backdrop-filter/.test(body) && !/backdrop-filter\s*:\s*none/.test(body))
 
 /* ── 1a0. sessionFollow（新会话按钮跟随面板不透明度）双向判据 ──
  * 来历：设置页有开关 + 文案 + DEFAULT_SESSION_FOLLOW，但**全仓没有任何地方读 section.sessionFollow**
