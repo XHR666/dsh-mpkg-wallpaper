@@ -120,9 +120,13 @@ console.log('\n== A. 实底保住标记（§2.1 stickyHead / §2.2 dsh-conv-pane
      （两态观感一致）——A3/A4 相应改写：A3 = l1 实底(00/875) + l2 玻璃(specific-menu+blur)；
      A4 = 无壁纸时 l1 实底规则不输出（门控语义不变）、l2 玻璃规则在（改向：刻意无条件）。
      断言没有删，只是随 l2 的观感档演进改写。 */
-  ok('A3 有壁纸：l1 实底规则在（00/875）+ l2 玻璃规则在（specific-menu + menu-backdrop-filter）',
-    /\[data-mpw-solid-surface="l1"\]\s*{\s*background-color:\s*var\(--dsw-static-neutral-bluish-00\)/.test(cssOn)
-      && /\[data-mpw-solid-surface="l1"\]/.test(cssOn) && cssOn.indexOf('--dsw-static-neutral-bluish-875') >= 0
+  /* ①(2026-10-31 任务 §3.2 改向) l1 实底值收敛到单变量 --mpw-conv-panel-bg（默认=宿主原值，
+     供将来「透明度可调」覆盖）⇒ 本断言从"直连 00/875"演进为"消费变量 + 变量定义默认仍是
+     00/875"——语义不变（稳态观感零变化），判据演进留痕（详见 tools/conv-panel-firstframe-test.mjs A 组）。 */
+  ok('A3 有壁纸：l1 实底规则在（消费 --mpw-conv-panel-bg，默认仍 00/875）+ l2 玻璃规则在（specific-menu + menu-backdrop-filter）',
+    /\[data-mpw-solid-surface="l1"\]\s*{[^}]*--mpw-conv-panel-bg:\s*var\(--dsw-static-neutral-bluish-00\)/.test(cssOn)
+      && /background-color:\s*var\(--mpw-conv-panel-bg,\s*var\(--dsw-static-neutral-bluish-00\)\)\s*!important/.test(cssOn)
+      && cssOn.indexOf('--dsw-static-neutral-bluish-875') >= 0
       && cssOn.indexOf('[data-mpw-solid-surface="l2"]') >= 0
       && cssOn.indexOf('var(--dsw-specific-menu') >= 0 && cssOn.indexOf('var(--dsw-menu-backdrop-filter') >= 0,
     'has=' + (cssOn.indexOf('data-mpw-solid-surface') >= 0));
