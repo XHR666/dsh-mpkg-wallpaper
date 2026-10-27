@@ -537,11 +537,19 @@ try {
     ok(iGuard > 0 && iVtex > iGuard,
       'C5 `applyCustomMpkg`：**容器内有 scene.json** 的判定在视频纹理之前 ⇒ 有 scene 就先给渲染器',
       'hasSceneJson@' + iGuard + ' vtex@' + iVtex);
-    const iRender = src.indexOf('const okR = applySceneViaRenderer');
-    const iSceneApply = src.indexOf('applySceneWallpaper({');
-    ok(iRender > 0 && iSceneApply > iRender,
-      'C6 `applyCustomScenePreview`：**先试渲染器**（applySceneViaRenderer）再走 scene-video 快路径',
-      'renderer@' + iRender + ' sceneWallpaper@' + iSceneApply);
+    /* ①(2026-10-30 修复既有红) 旧断言用全文 indexOf 找 `applySceneWallpaper({` 首次出现，
+       而 mpwApplyLibraryWallpaper（本地库场景路径）里也有同形调用、且在文件里更早 ⇒
+       0ce28f0 起本条恒红（与 2026-10-30 wallpaper 三节改动无关；运行时语义未变：
+       mpwApplyCustomScenePreview 内部仍是"先渲染器 → 后快路径"）。修法 = 把序断言收进
+       mpwApplyCustomScenePreview 函数体内测量（意图不变、跨函数耦合移除、仍可失败）。 */
+    const iFn = src.indexOf('function mpwApplyCustomScenePreview')
+    const iNextFn = iFn >= 0 ? src.indexOf('\n\t\tfunction ', iFn + 10) : -1
+    const fnSrc = iFn >= 0 ? src.slice(iFn, iNextFn < 0 ? undefined : iNextFn) : ''
+    const iRender = fnSrc.indexOf('const okR = applySceneViaRenderer')
+    const iSceneApply = fnSrc.indexOf('applySceneWallpaper({')
+    ok(iFn > 0 && iRender > 0 && iSceneApply > iRender,
+      'C6 `applyCustomScenePreview`：**先试渲染器**（applySceneViaRenderer）再走 scene-video 快路径（函数体内测量）',
+      'fn@' + iFn + ' renderer@' + iRender + ' sceneWallpaper@' + iSceneApply);
   }
 } catch (e) {
   ok(false, 'C 段真 client.js 装载/断言未抛异常', String(e && e.message));
