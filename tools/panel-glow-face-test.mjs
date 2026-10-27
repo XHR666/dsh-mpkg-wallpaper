@@ -5,7 +5,8 @@
 //     之上、内容之下）——不占 header ::before/::after（磨砂/高光在用）、不产生层叠上下文、
 //     不产生 fixed containing block、不拦事件、不改布局；
 //   · JS：document 级 pointermove（rAF 节流）从 target 向上解析"面"，懒打 data-mpw-glow-face
-//     标记，写 --mpw-glow-x/y（面内坐标）与 --mpw-glow-r（面长边 30–50%，90–380px 夹取）；
+//     标记，写 --mpw-glow-x/y（面内坐标）与 --mpw-glow-r（⑫2026-10-31 §2：面**短边** 26%，
+//     90–160px 夹取——旧档长边 42%/90–380px 用户实测范围太大，已改小圆档）；
 //     alpha 由 rAF 缓动 0↔1（峰值 0.12 在 CSS calc 乘子，≤0.14）。
 //   改向记录（不许静默）：取代 2026-10-29 的 body 级 position:fixed; z-index:-1 光斑层 ——
 //     它被内容整体盖住 = 真机看不见（2026-10-30 任务书 §0.2 判定"实现存在但看不见"）。
@@ -70,14 +71,24 @@ let CSS_ON = '', CSS_OFF = ''
   const b = ruleBody(CSS_ON, FACE_RULE)
   ok('A1 面规则在场：body[data-mpw-float] [data-mpw-glow-face]', !!b, b ? '' : '规则缺失')
   ok('A2 背景层 = radial-gradient（面内光，不是 body 层）', !!b && /background-image:\s*radial-gradient\(/.test(b))
-  ok('A3 峰值 alpha = 0.12（calc(var(--mpw-glow-alpha, 0) * 0.12)，≤0.14）',
-    !!b && /rgba\(var\(--mpw-glow-rgb, 96 140 255\) \/ calc\(var\(--mpw-glow-alpha, 0\) \* 0\.12\)\)/.test(b))
+  /* ⑫(2026-10-31 §2) 参数改档：白色 + peak 令牌（浅 0.12/深 0.14）+ 32% 中段衰减 + 74% 归零 */
+  ok('A3 峰值 = peak 令牌（白色 calc(var(--mpw-glow-alpha, 0) * var(--mpw-glow-peak, 0.12))，浅/深 0.12/0.14 ≤0.14）',
+    !!b && /rgba\(var\(--mpw-glow-rgb, 255 255 255\) \/ calc\(var\(--mpw-glow-alpha, 0\) \* var\(--mpw-glow-peak, 0\.12\)\)\)/.test(b))
+  ok('A3b 衰减形态：32% 中段（0.4×峰值）+ 74% 归零（70–80% 带内）',
+    !!b && /\* 0\.4\)\) 32%/.test(b) && /\/ 0\) 74%\)/.test(b))
   const light = ruleBody(CSS_ON, 'body[data-mpw-float]') || ''
   const dark = ruleBody(CSS_ON, 'body[data-ds-dark-theme][data-mpw-float]') || ''
-  ok('A4 主题令牌两套（--mpw-glow-rgb 浅/深）',
-    /--mpw-glow-rgb:\s*96 140 255/.test(light) && /--mpw-glow-rgb:\s*168 196 255/.test(dark),
-    'light=' + (/--mpw-glow-rgb:[^;]+/.exec(light) || ['∅'])[0] + ' dark=' + (/--mpw-glow-rgb:[^;]+/.exec(dark) || ['∅'])[0])
+  ok('A4 光色为白（--mpw-glow-rgb: 255 255 255，无主题分色）+ 峰值浅 0.12/深 0.14',
+    /--mpw-glow-rgb:\s*255 255 255/.test(light) && /--mpw-glow-peak:\s*0\.12/.test(light)
+    && /--mpw-glow-peak:\s*0\.14/.test(dark) && !/96 140 255|168 196 255/.test(light + dark),
+    'light=' + (/--mpw-glow-(rgb|peak):[^;]+/.exec(light) || ['∅'])[0] + ' dark=' + (/--mpw-glow-peak:[^;]+/.exec(dark) || ['∅'])[0])
   ok('A5 float:off 产物无面规则（开关同闸）', CSS_OFF.indexOf('[data-mpw-glow-face]') < 0)
+  /* ⑫开关判据：mpwGlowPref 解析（glow 显式优先 / 未设跟随 float 显式值 / 都没设 false）；
+     "悬浮关 ⇒ 强制不生效"由调用方 AND（body[data-mpw-float] 属性）完成 —— 面规则键在该属性上。 */
+  const T0 = globalThis.__mpwGlowTest
+  ok('A6 开关解析：float:on ⇒ 开；glow:false 显式 ⇒ 关；glow 未设跟随 float；glow:true 悬浮未设 ⇒ 档位保留（生效交由 AND）',
+    T0.pref({ float: true }) === true && T0.pref({ float: true, glow: false }) === false
+    && T0.pref({ float: true, glow: true }) === true && T0.pref({ glow: true }) === true && T0.pref({}) === false)
 }
 
 /* ---------- 行为夹具：四类面各挂一个 position:fixed 后代 ---------- */
@@ -179,7 +190,10 @@ console.log('\n== B. 行为（四面变量 / 可见性 / 红线 / 淡出 / 开�
   ok('J3 光可见：alpha=1 写在面上（面内坐标系，非 body 层）',
     parseFloat(hv.a) === 1 && st3.faceAlpha === 1 && !F.doc.body.hasAttribute('data-mpw-glow-face') && !F.doc.querySelector('[data-mpw-glow]'),
     'faceAlpha=' + st3.faceAlpha + ' bodyMarked=' + F.doc.body.hasAttribute('data-mpw-glow-face'))
-  ok('J3b 半径在 90–380px（面长边 30–50% 夹取）', parseFloat(hv.r) >= 90 && parseFloat(hv.r) <= 380, 'r=' + hv.r)
+  /* ⑫半径档位断言：短边 26%，夹取 90–160px（桩面 300×200 ⇒ 短边 200×0.26=52 ⇒ 落 90 下限） */
+  ok('J3b 半径 = 短边 26% 夹取 90–160px（小圆档；桩 300×200 ⇒ 90）',
+    parseFloat(hv.r) === Math.max(90, Math.min(160, Math.round(Math.min(300, 200) * 0.26)))
+    && parseFloat(hv.r) >= 90 && parseFloat(hv.r) <= 160, 'r=' + hv.r + ' consts=' + JSON.stringify(F.T.consts()))
 
   /* J4：红线 —— 指针扫过四类面（含 fixed 后代），面与链零 transform/filter/perspective/contain */
   let j4 = true, j4why = ''
@@ -240,7 +254,16 @@ function behaviorChecks(clientText, clientPath) {
   const css = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({}) : '')
   const b = ruleBody(css, FACE_RULE)
   r['J2'] = !!b && /background-image:\s*radial-gradient\(/.test(b)
-    && /rgba\(var\(--mpw-glow-rgb, 96 140 255\) \/ calc\(var\(--mpw-glow-alpha, 0\) \* 0\.12\)\)/.test(b)
+    && /rgba\(var\(--mpw-glow-rgb, 255 255 255\) \/ calc\(var\(--mpw-glow-alpha, 0\) \* var\(--mpw-glow-peak, 0\.12\)\)\)/.test(b)
+    && /\/ 0\) 74%\)/.test(b)
+  /* ⑫A4/A6（变异 MV4/MV5 的判红键，同一夹具内对变异副本求值） */
+  const lightM = ruleBody(css, 'body[data-mpw-float]') || ''
+  const darkM = ruleBody(css, 'body[data-ds-dark-theme][data-mpw-float]') || ''
+  r['A4'] = /--mpw-glow-rgb:\s*255 255 255/.test(lightM) && /--mpw-glow-peak:\s*0\.12/.test(lightM)
+    && /--mpw-glow-peak:\s*0\.14/.test(darkM) && !/96 140 255|168 196 255/.test(lightM + darkM)
+  const TT = globalThis.__mpwGlowTest
+  r['A6'] = !!TT && TT.pref({ float: true }) === true && TT.pref({ float: true, glow: false }) === false
+    && TT.pref({ float: true, glow: true }) === true && TT.pref({ glow: true }) === true && TT.pref({}) === false
   /* 行为级 J1/J3/J4（夹具同主流程） */
   const mk = (tag, cls) => { const e = doc.createElement(tag); e.className = cls; return e }
   const header = mk('header', 'wSkVaW_header')
@@ -280,9 +303,16 @@ const MUT = [
     patch: (s) => s.replace('\t\t\t\t\tface.style.setProperty("--mpw-glow-r", rad + "px");',
       '\t\t\t\t\tface.style.setProperty("--mpw-glow-r", rad + "px");\n\t\t\t\t\ttry { face.style.transform = "translateZ(0)" } catch (e) {}'),
     verify: (s) => s.indexOf('face.style.transform = "translateZ(0)"') >= 0 },
+  { id: 'MV4', what: '⑫颜色改回蓝色 ⇒ A4 参数断言必红（任务书 §2 变异①）', expect: ['A4'],
+    patch: (s) => s.replace('--mpw-glow-rgb: 255 255 255;', '--mpw-glow-rgb: 96 140 255;'),
+    verify: (s) => s.indexOf('--mpw-glow-rgb: 96 140 255;') >= 0 },
+  { id: 'MV5', what: '⑫开关解析忽略 glow（关了仍当开）⇒ A6 开关断言必红（任务书 §2 变异②）', expect: ['A6'],
+    patch: (s) => s.replace('function mpwGlowPref(section) {\n\t\t\t\ttry { return section && section.glow !== void 0 ? !!section.glow :',
+      'function mpwGlowPref(section) {\n\t\t\t\ttry { return section && false ? !!section.glow :'),
+    verify: (s) => s.indexOf('return section && false ? !!section.glow :') >= 0 },
   { id: 'MV3', what: '面规则删除 ⇒ J2 必红', expect: ['J2'],
-    patch: (s) => s.replace('body[data-mpw-float] [data-mpw-glow-face] {\n\tbackground-image: radial-gradient(var(--mpw-glow-r, 240px) circle at var(--mpw-glow-x, 50%) var(--mpw-glow-y, 50%), rgba(var(--mpw-glow-rgb, 96 140 255) / calc(var(--mpw-glow-alpha, 0) * 0.12)), rgba(var(--mpw-glow-rgb, 96 140 255) / 0) 70%);\n}', '/* 面规则已变异移除 */'),
-    verify: (s) => s.indexOf('radial-gradient(var(--mpw-glow-r, 240px)') < 0 },
+    patch: (s) => s.replace('\tbackground-image: radial-gradient(var(--mpw-glow-r, 120px) circle at var(--mpw-glow-x, 50%) var(--mpw-glow-y, 50%),\n\t\trgba(var(--mpw-glow-rgb, 255 255 255) / calc(var(--mpw-glow-alpha, 0) * var(--mpw-glow-peak, 0.12))),\n\t\trgba(var(--mpw-glow-rgb, 255 255 255) / calc(var(--mpw-glow-alpha, 0) * var(--mpw-glow-peak, 0.12) * 0.4)) 32%,\n\t\trgba(var(--mpw-glow-rgb, 255 255 255) / 0) 74%);', '\t/* 面规则已变异移除 */'),
+    verify: (s) => s.indexOf('radial-gradient(var(--mpw-glow-r, 120px)') < 0 },
 ]
 let expectRed = [], actualRed = []
 for (const m of MUT) {

@@ -53,6 +53,10 @@ const NON_CSS = {
   clockSec: '时钟秒显示：同上（元素内文案）',
   clockDate: '时钟日期显示：同上（元素内文案）',
   powPauseHidden: '省电：页面隐藏时暂停播放，运行时行为（①(NP-5) 起同时是"隐藏即静音"的总闸，见 lib/client.js 的 mpwHiddenAudioBlock）',
+  /* ⑫(2026-10-31 §2) 鼠标光晕开关：纯 JS 门控（监听器挂/撤 + 面标记打/摘），产物 CSS 不随它变 ——
+     面规则键在 body[data-mpw-float] + data-mpw-glow-face（JS 打的标记）上，glow 关 ⇒ 零标记零监听零变量。
+     生效口径 = 悬浮开 ∧ glow 开（mpwGlowPref 解析 + 调用点 AND，lib/client.js 的 mpwGlowSync 调用行）。 */
+  glow: '鼠标光晕：纯运行时门控（pointermove 监听/面标记/CSS 变量写入），不生成 CSS；生效 = 悬浮 ∧ glow（mpwGlowPref）',
   /* ①(NP-5) 卡片的播放/暂停**用户意图**（持久化）：只影响运行时的媒体状态与卡片显示，
      产物 CSS 一个字都不变。读到它的是：npApplyPersistedPause()（刷新/换档后按它落实
      "整体 pause" 或 "只静音音轨"）与 npResolveMedia() 的 playing 派生量（卡片显示暂停态）。 */

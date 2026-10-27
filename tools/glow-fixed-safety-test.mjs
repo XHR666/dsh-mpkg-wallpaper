@@ -61,7 +61,9 @@ ok('A1 倾斜本体零残留：无 MPW_TILT_/mpwTilt 标识、无 data-mpw-tilt�
   && !/\.style\.transform\s*=\s*"perspective\(/.test(CLIENT))
 ok('A2 光晕模块在位：mpwGlowSync 定义 + apply 接线 + __mpwGlowTest 出口',
   CLIENT.includes('function mpwGlowSync(on)')
-  && CLIENT.includes('try { mpwGlowSync(document.body.hasAttribute("data-mpw-float")) } catch {}')
+  /* ⑫(2026-10-31 §2) 接线串更新：光晕开关（外观第 2 项"鼠标光晕"）接入后，同步点变为
+     "悬浮 body 属性 ∧ mpwGlowPref(section)"——悬浮关 ⇒ 光晕强制不生效。 */
+  && CLIENT.includes('try { mpwGlowSync(document.body.hasAttribute("data-mpw-float") && mpwGlowPref(section)) } catch {}')
   && CLIENT.includes('globalThis.__mpwGlowTest'))
 ok('A2b 倾斜安全阀接线已从快路摘除（mpwTagPopoverFast 不再调用 mpwTiltSafetyOnRecords）',
   !CLIENT.includes('try { mpwTiltSafetyOnRecords(records) } catch (e) {}'))
