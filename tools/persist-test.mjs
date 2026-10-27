@@ -134,7 +134,8 @@ console.log('\n== PART 1 阈值口径一致：一处定义 + 与文档表逐字�
   // 图片阈值不许再有写死的字节数：只允许 `const MPW_LS_SPILL_BYTES = 2 * 1024 * 1024;` 这一处
   // （`mpkg` 容器头的 `HEAD_BYTES = 2 * 1024 * 1024` 是**另一个语义**，不算违规）。
   const spillLines = src.split('\n').filter((l) => /2\s*\*\s*1024\s*\*\s*1024/.test(l))
-  const spillBad = spillLines.filter((l) => !/const\s+MPW_LS_SPILL_BYTES\s*=/.test(l) && !/HEAD_BYTES\s*=/.test(l))
+  // ①(2026-10-30) MPW_THUMB_OVERSIZE_PX 是**像素数**阈值（2MP），与字节阈值另一语义（同 HEAD_BYTES 先例），豁免。
+  const spillBad = spillLines.filter((l) => !/const\s+MPW_LS_SPILL_BYTES\s*=/.test(l) && !/HEAD_BYTES\s*=/.test(l) && !/const\s+MPW_THUMB_OVERSIZE_PX\s*=/.test(l))
   eq(spillBad.length, 0, '图片阈值不再有散落的 "2 * 1024 * 1024"（只允许常量定义那一处）',
     '违规行：' + JSON.stringify(spillBad))
   eq((src.match(/storeImage\s*\(/g) || []).length >= 1 && !/if\s*\(dataUrl\.length\s*<=\s*2\s*\*\s*1024/.test(src), true,

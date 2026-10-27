@@ -894,7 +894,7 @@ console.log('\n== P. C2 音频审计（play/volume/muted/Audio/AudioContext + is
      而不是混在泛化的 "audible-playback" 里（后者在设置本来就"不静音"时也会报，指认不了现场）。 */
   ok('P6b **静音设置开着却可听**是独立的可疑判据（trigger=mute-on-but-audible，同时带 `np.mute` 与可听状态两个事实）',
     /const muteOnAudible = !!\(rec\.np && rec\.np\.mute === true && audible\)/.test(src)
-    && /\|\| muteOnAudible/.test(src))
+    && (/\|\|\s*muteOnAudible/.test(src) || /\|\|\s*\(!webaudioExtern && muteOnAudible\)/.test(src)))  /* ①(2026-10-30 修复既有红) 原找裸 `|| muteOnAudible`；960ba3b 细化为 `|| (!webaudioExtern && muteOnAudible)`（外部 AudioContext 降噪）⇒ 本条自那起恒红（0ce28f0 复跑同红，与本轮三节改动无关）。正则接受两种形态（意图不变：muteOnAudible 是 suspicious 的独立分支）。 */
   ok('P6c 审计能装进**同源子帧**（壁纸帧有自己的 HTMLMediaElement.prototype，主窗口打补丁对它完全无效）',
     /function mpwAuditPatchWin\(win\)/.test(src) && /mpwAuditPatchWin\(win\.frames\[i\]\)/.test(src)
     && /win\.__mpwAuditedWin/.test(src) && /setInterval\(mpwAuditScanFrames, 1000\)/.test(src))
