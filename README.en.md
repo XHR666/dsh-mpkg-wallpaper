@@ -125,6 +125,24 @@ To fine-tune, three controls are enough to start: **Wallpaper → Frosted blur**
 
 This section groups features by **what you can perceive** (sources, time variation, blur, appearance, playback, library and rotation, safety, backup) rather than by code module.
 
+**🧭 Scan wallpapers page (right-sidebar variant)**
+- Shows the current scan directory (the custom folder from "Background source"; falls back to the Steam Workshop folder) and refreshes on open
+- Square thumbnail grid whose column count follows the panel width; click a thumbnail to select it
+- The detail block is always visible: name / inner media file / type show "None" and the buttons are disabled until something is selected
+- Selected items keep a highlight ring and a lifted shadow, even after applying; only the grid scrolls
+
+**🖱️ Cursor glow**
+- Second item on the Appearance tab; while enabled, a soft white glow follows the pointer inside the hovered panel
+- Turning it off stops all listeners and variable writes; it also stays off when "floating panels" is disabled
+
+**💾 Presets**
+- Save the current combination as a preset and switch with one click; "Save" updates that preset's snapshot, "Restore" puts the current configuration back to it
+- "+" creates a new preset from the current configuration; in edit mode each preset gets a gray × for deletion
+
+**🧱 Stacking and readability**
+- Code-block banners (sticky headers) are no longer taken over by the header styling rules and stay opaque while scrolling
+- Popovers, menus and tooltips are raised to the correct layer and no longer clipped by their containers
+
 **📦 Wallpaper sources**
 - **Wallpaper Engine `.mpkg`**: the container is parsed in the browser (nothing is uploaded to a third party); video wallpapers play their embedded mp4 / video textures, scene wallpapers have their assets extracted, and **Time Variation** wallpapers pick the material for the current time slot
 - **Steam Workshop folders**: Wallpaper Engine installs are discovered automatically (registry + `libraryfolders.vdf`, non-default drives included) and listed as `video / web / scene`; the **workshop root** (`steamapps/workshop/content/431960`) can also be set as a custom folder — every subfolder is auto-detected as one wallpaper
@@ -194,7 +212,7 @@ This section answers "does my material work, and how well"; the boundary list un
 - Web wallpapers **cannot** reproduce CSS `:hover/:active`, `isTrusted:true`, in-frame `contextmenu` or pointer lock/fullscreen/download popups (inherent limits of synthetic events, `docs/WEB-WALLPAPER.md` §11.4)
 - Assets above 600MB work only in **hybrid mode**; browser-only mode additionally caps video textures at 250MB, images at 200MB and local image files at 100MB
 
-## Settings reference (7 tabs)
+## Settings reference (7 tabs; the right-sidebar variant adds a "Scan wallpapers" tab)
 
 This is the **authoritative table of every setting**: each row = panel label + internal key + default + what it does + how to turn it off. The tab order matches the panel and is fixed: `TAB_ORDER = ["source","wallpaper","appearance","unify","blur","other","liquid"]` (`lib/client.js:10730`), labelled **Background source / Wallpaper / Appearance / Surface unify / UI blur / Other / Liquid Glass (test)**.
 
