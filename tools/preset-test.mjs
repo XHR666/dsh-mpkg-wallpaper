@@ -9,7 +9,8 @@
 //     键名语义不变）；离开自定义前自动快照，切回自定义还原快照。
 //   D 导入安全：只认本插件信封 JSON；大小 ≤256KB；白名单键 + 类型 + 长度校验；
 //     未知键丢弃并记录；__proto__/深嵌套/超大/<script> 全部拒绝或安全降级（纯数据通路）。
-//   E 删除：任意非自定义预设可删（含作者1）；删激活中的预设 ⇒ 还原自定义档；删除持久化。
+//   E 删除：编辑态下每个预设 chip 右上角灰色 × 可删（任意非自定义预设，含作者1）；
+//     删激活中的预设 ⇒ 还原自定义档；删除持久化。（2026-11-01 改版：不再展开列表删除）
 //   F 导出：导出**自定义档** JSON（Blob 下载，文件名含插件名与时间戳）。
 //   G i18n：preset.* zh/en 成对；backup.* 两表零残留（不留死键）。
 // 变异自证（隔离副本；期望红集 == 实际红集，逐条相等）：
@@ -31,6 +32,9 @@ const ok = (n, cond, d) => {
   if (cond) { pass++; console.log('  ✓ ' + n + (d ? '  [' + d + ']' : '')); }
   else { fail++; console.log('  ✗ ' + n + (d ? '  → ' + d : '')); }
 };
+/** ①(2026-11-01) 预设 chip 现包进 .mpw_presetChipWrap ⇒ 必须递归收集（保持 DOM 顺序）。 */
+const chipsOf = (row) => { const out=[]; const walk=(n)=>{ if(n==null||typeof n!=="object")return; if(Array.isArray(n)){n.forEach(walk);return} if(n.props&&typeof n.props["data-mpw-preset-chip"]==="string")out.push(n); if(n.kids)walk(n.kids) }; if(row&&row.kids)walk(row.kids); return out };
+const chipElsOf = (row) => { const out=[]; const walk=(n)=>{ if(n==null||typeof n!=="object")return; if(Array.isArray(n)){n.forEach(walk);return} if(n.props&&(typeof n.props["data-mpw-preset-chip"]==="string"||n.props["data-mpw-preset-add"]!==undefined))out.push(n); if(n.kids)walk(n.kids) }; if(row&&row.kids)walk(row.kids); return out };
 const { loadPlugin, cancelWorldTimers } = await import('./_stub.mjs');
 const CLEAR = ['__mpwClientLoaded', '__mpwRegistered', '__mpwGlobalWired', '__mpwThumbSched',
   '__mpwInlineWatcher', '__mpwStyleWatch', '__mpwBuildCss', '__mpwAppliedOnce', '__mpwBsTabState', '__mpwBsScanKick', '__mpwBsScanMore'];
@@ -81,7 +85,7 @@ console.log('== A. 初始化与持久化 ==');
 {
   const w1 = makeWorld({ settings: { enabled: true, opacity: 62, blur: 18 } });
   const row = findNode(w1.first, (p) => p && p['data-mpw-preset-row'] !== undefined);
-  const chips = row && row.kids ? row.kids.filter((k) => k && typeof k === 'object' && k.props && typeof k.props['data-mpw-preset-chip'] === 'string') : [];
+  const chips = chipsOf(row);
   ok('A1 首次加载 chips = [自定义, 作者1]（+ 与文件输入不计入）',
     chips.length === 2 && chips[0].props['data-mpw-preset-chip'] === 'custom' && chips[1].props['data-mpw-preset-chip'] === 'builtin'
       && chips[1].kids[0] === '作者1',
@@ -92,7 +96,7 @@ console.log('== A. 初始化与持久化 ==');
   ok('A3 「作者1」= 当前工作配置快照（opacity/blur 逐键相等）',
     builtinSettings.opacity === 62 && builtinSettings.blur === 18, JSON.stringify({ opacity: builtinSettings.opacity, blur: builtinSettings.blur }));
   ok('A4 「+」在所有 chip 的最后一位（隐藏文件输入不算）',
-    (() => { const chipEls = row.kids.filter((k) => k && typeof k === 'object' && k.props && (typeof k.props['data-mpw-preset-chip'] === 'string' || k.props['data-mpw-preset-add'] !== undefined));
+    (() => { const chipEls = chipElsOf(row);
       return chipEls.length >= 3 && chipEls[chipEls.length - 1].props['data-mpw-preset-add'] !== undefined; })(),
     '');
 
@@ -104,14 +108,14 @@ console.log('== A. 初始化与持久化 ==');
   ], customSnapshot: null, active: 'custom' }));
   const w2 = makeWorld({ localStorage: ls });
   const row2 = findNode(w2.first, (p) => p && p['data-mpw-preset-row'] !== undefined);
-  const chips2 = row2.kids.filter((k) => k && typeof k === 'object' && k.props && typeof k.props['data-mpw-preset-chip'] === 'string');
+  const chips2 = chipsOf(row2);
   ok('A5 重启后导入的预设仍在（持久化）', chips2.length === 3 && chips2[2].props['data-mpw-preset-chip'] === 'imp-x', JSON.stringify(chips2.map((c) => c.props['data-mpw-preset-chip'])));
 
   // 坏账本 ⇒ 安全重建（不崩、回到默认两枚 chips）
   ls.setItem(PRESET_KEY, '{broken json');
   const w3 = makeWorld({ localStorage: ls });
   const row3 = findNode(w3.first, (p) => p && p['data-mpw-preset-row'] !== undefined);
-  const chips3 = row3 ? row3.kids.filter((k) => k && typeof k === 'object' && k.props && typeof k.props['data-mpw-preset-chip'] === 'string') : [];
+  const chips3 = chipsOf(row3);
   ok('A6 坏账本 ⇒ 安全重建（不崩、回到 [自定义, 作者1]）', chips3.length === 2, JSON.stringify(chips3 && chips3.map((c) => c.props['data-mpw-preset-chip'])));
 
   // 被删预设的激活指针 ⇒ 归位 custom（不复活）
@@ -252,17 +256,9 @@ console.log('== D. 导入安全（恶意样例逐条）==');
   const t7 = w7.render();
   clickNode(t7, 'data-mpw-preset-edit');
   const t7b = w7.render();
-  const delBtn = findNode(t7b, (p) => p && typeof p['data-mpw-preset-del'] === 'string');
-  // vdom 元素没有 parentElement 指针 ⇒ 找"包含删除按钮的那一行"再收文本
-  let rowEl = null;
-  const findRow = (n, d) => {
-    if (rowEl || n == null || typeof n !== 'object' || d > 16) return;
-    if (Array.isArray(n)) { n.forEach((x) => findRow(x, d + 1)); return; }
-    if (n.kids && Array.isArray(n.kids) && n.kids.some((k) => k && typeof k === 'object' && k.props && typeof k.props['data-mpw-preset-del'] === 'string')) { rowEl = n; return; }
-    if (n.kids) findRow(n.kids, d + 1);
-  };
-  findRow(t7b, 0);
-  const nameText = rowEl ? collectStrings(rowEl.kids).join('') : '';
+    // ①(2026-11-01) 编辑态无删除列表 ⇒ 恶意名看 chip（递归）文本
+    const evilChip = findNode(t7b, (p) => p && p['data-mpw-preset-chip'] === 'evil');
+    const nameText = evilChip ? (function () { const out=[]; const walk=(n)=>{ if(n==null)return; if(Array.isArray(n)){n.forEach(walk);return} if(typeof n==='string'){out.push(n);return} if(n.kids)walk(n.kids) }; walk(evilChip.kids); return out.join('') })() : '';
   ok('E7 恶意名（<script>）在树里是纯文本子节点', nameText.indexOf('<script>alert(1)</script>') >= 0, nameText.slice(0, 60));
   // E7b 静态：预设 UI 代码里没有 innerHTML/dangerouslySetInnerHTML/javascript: URL 通路
   const src0 = fs.readFileSync(path.join(ROOT, 'lib', 'client.js'), 'utf8');
@@ -280,8 +276,17 @@ console.log('== F. 删除与导出 ==');
   let tree = w.render();
   clickNode(tree, 'data-mpw-preset-edit');
   tree = w.render();
-  const del = findNode(tree, (p) => p && p['data-mpw-preset-del'] === 'builtin');
-  ok('F1 编辑面板列出删除按钮（作者1 可删）', !!del && typeof del.props.onClick === 'function', '');
+    // ①(2026-11-01 用户要求) 编辑态：预设 chip 右上角灰色 ×（不再展开删除列表）
+    const editBtn1 = findNode(tree, (p) => p && p['data-mpw-preset-edit'] !== undefined);
+    const editLabel = editBtn1 && Array.isArray(editBtn1.kids) ? editBtn1.kids.filter((k) => typeof k === 'string').join('') : '';
+    ok('F1a 编辑态「编辑」按钮变为「退出编辑」', editLabel.indexOf('退出编辑') >= 0, editLabel);
+    const del = findNode(tree, (p) => p && p['data-mpw-preset-x'] === 'builtin');
+    ok('F1b 编辑态预设 chip 出现删除 ×（作者1 可删）', !!del && typeof del.props.onClick === 'function', '');
+    ok('F1c 编辑面板不再展开删除列表（旧按钮已移除）',
+      !findNode(tree, (p) => p && p['data-mpw-preset-del'] !== undefined), '');
+    { const cs = chipsOf(findNode(tree, (p) => p && p['data-mpw-preset-row'] !== undefined));
+      const xs = []; const walk = (n) => { if (n == null || typeof n !== 'object') return; if (Array.isArray(n)) { n.forEach(walk); return } if (n.props && typeof n.props['data-mpw-preset-x'] === 'string') xs.push(n.props['data-mpw-preset-x']); if (n.kids) walk(n.kids) }; walk(tree);
+      ok('F1d 每个预设 chip 各有一个 ×（自定义虚拟档除外）', cs.filter((c) => c.props['data-mpw-preset-chip'] !== 'custom').length === xs.length && xs.length >= 1, JSON.stringify({ chips: cs.map((c) => c.props['data-mpw-preset-chip']), x: xs })); }
   // 删激活中的预设 ⇒ 还原自定义档 + active 归位
   try { del.props.onClick(); } catch (e) {}
   await sleep(3600);
@@ -293,11 +298,17 @@ console.log('== F. 删除与导出 ==');
   // 重启 ⇒ 已删的内置预设不复活
   const w2 = makeWorld({ localStorage: ls });
   const row2 = findNode(w2.first, (p) => p && p['data-mpw-preset-row'] !== undefined);
-  const chips2 = row2.kids.filter((k) => k && typeof k === 'object' && k.props && typeof k.props['data-mpw-preset-chip'] === 'string');
+  const chips2 = chipsOf(row2);
   ok('F3 已删预设重启后不复活（只有「自定义」）', chips2.length === 1 && chips2[0].props['data-mpw-preset-chip'] === 'custom', JSON.stringify(chips2.map((c) => c.props['data-mpw-preset-chip'])));
   // E4 自定义没有删除入口（编辑面板里只有 presets 列表，custom 不在其中）
-  ok('F4 「自定义」无删除入口（data-mpw-preset-del=custom 不存在）',
-    !findNode(tree, (p) => p && p['data-mpw-preset-del'] === 'custom'), '');
+    ok('F4 「自定义」无删除 ×（data-mpw-preset-x=custom 不存在）',
+      !findNode(tree, (p) => p && p['data-mpw-preset-x'] === 'custom'), '');
+    { const btn = findNode(tree, (p) => p && p['data-mpw-preset-edit'] !== undefined);
+      if (btn && typeof btn.props.onClick === 'function') { try { btn.props.onClick(); } catch (e) {} }
+      const t2 = w.render();
+      const lab = (function () { const b = findNode(t2, (p) => p && p['data-mpw-preset-edit'] !== undefined); return b && Array.isArray(b.kids) ? b.kids.filter((k) => typeof k === 'string').join('') : '' })();
+      ok('F4b 退出编辑后 × 消失、按钮回到「编辑」',
+        !findNode(t2, (p) => p && p['data-mpw-preset-x'] !== undefined) && lab.indexOf('退出编辑') < 0, lab); }
 
   // 导出：捕获 Blob 内容与下载名
   if (!globalThis.URL.createObjectURL) { try { globalThis.URL.createObjectURL = () => 'blob:mock'; globalThis.URL.revokeObjectURL = () => {}; } catch (e) {} }
@@ -497,7 +508,7 @@ await withMutant('M-init', '首次初始化不创建内置预设',
     const ls = { _m: new Map(), getItem(k) { return this._m.has(k) ? this._m.get(k) : null; }, setItem(k, v) { this._m.set(k, String(v)); }, removeItem(k) { this._m.delete(k); } };
     const w = worldOn(f, ls, { enabled: true });
     const row = findNode(w.render(), (p) => p && p['data-mpw-preset-row'] !== undefined);
-    const chips = row ? row.kids.filter((k) => k && typeof k === 'object' && k.props && typeof k.props['data-mpw-preset-chip'] === 'string') : [];
+    const chips = chipsOf(row);
     if (!(chips.length === 2 && chips[1] && chips[1].props['data-mpw-preset-chip'] === 'builtin' && chips[1].kids[0] === '作者1')) red.push('A1');
     return red;
   });
@@ -602,11 +613,11 @@ await withMutant('M-delete', '删除预设不落账本',
     let tree = w.render();
     findNode(tree, (p) => p && p['data-mpw-preset-edit'] !== undefined).props.onClick();
     tree = w.render();
-    findNode(tree, (p) => p && p['data-mpw-preset-del'] === 'builtin').props.onClick();
+    findNode(tree, (p) => p && p['data-mpw-preset-x'] === 'builtin').props.onClick();
     const storeAfter = JSON.parse(ls.getItem(PRESET_KEY));
     const w2 = worldOn(f, ls);
     const row2 = findNode(w2.render(), (p) => p && p['data-mpw-preset-row'] !== undefined);
-    const chips2 = row2.kids.filter((k) => k && typeof k === 'object' && k.props && typeof k.props['data-mpw-preset-chip'] === 'string');
+    const chips2 = chipsOf(row2);
     if (!(storeAfter.presets.length === 0 && chips2.length === 1)) red.push('E3');
     return red;
   });
