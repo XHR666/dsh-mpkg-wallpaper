@@ -284,7 +284,7 @@ console.log('\n== D. 当前目录显示（标题上方；显示值 == 实际取�
     'first=' + JSON.stringify(first) + ' second=' + JSON.stringify(second));
 
   // D5：重扫入口/复制按钮在树（复制按钮为可选件，存在即可；不断言剪贴板行为——无浏览器）
-  ok('D5 复制路径按钮在树且带标记', (t1.nodes || []).some((p) => p && p['data-mpw-scan-dir-copy'] !== undefined && typeof p.onClick === 'function'), '');
+  ok('D5 目录行不再有「复制路径」按钮（2026-11-01 用户要求移除）', !(t1.nodes || []).some((p) => p && p['data-mpw-scan-dir-copy'] !== undefined), '');
 }
 
 console.log('\n== S. 扫描→展示→点选应用（桩环境全链路；经侧栏「壁纸」页签渲染）==');
@@ -314,9 +314,12 @@ console.log('\n== S. 扫描→展示→点选应用（桩环境全链路；经�
     'thumbs=' + t2.nodes.filter((p) => p && p['data-mpw-thumb-box'] !== undefined).length);
 
   console.log('  -- S3 点选应用 ⇒ 走统一应用管线（持久化逐键同形）--');
-  const useBtn = t2.nodes.find((p) => p && typeof p['data-mpw-scan-use'] === 'string' && typeof p.onClick === 'function');
-  try { useBtn.onClick(); } catch (e) {}
-  await sleep(3600);   // 等 boot 收尾闸门（3.5s）放行落盘
+    // ①(2026-11-01 改版) 网格项改「点选选中」⇒ 先点第一项，再点详情里的应用按钮
+    { const c0 = t2.nodes.find((p) => p && p['data-mpw-scan-item'] !== undefined); try { globalThis.__mpwBsScan.setSelected(c0['data-mpw-scan-item']); } catch (e) {} }
+    const t2b = s.render();
+    const useBtn = t2b.nodes.find((p) => p && typeof p['data-mpw-scan-use'] === 'string' && typeof p.onClick === 'function');
+    try { useBtn.onClick(); } catch (e) {}
+    await sleep(3600);
   const stored = JSON.parse(s.r.ctx ? (globalThis.localStorage.getItem('dsh.mpkg-wallpaper.v2') || '{}') : '{}');
   ok('S3 应用后持久化 = 库项身份（mpkgKey=library|<ltoken>、converted=mp4、image=host:?ltoken=…）',
     stored.mpkgKey === 'library|lt0' && stored.converted === 'mp4' && String(stored.image || '').indexOf('host:?ltoken=lt0&file=') === 0,
@@ -364,13 +367,17 @@ console.log('\n== W. 网页壁纸确认（点选 web 项 ⇒ 先确认再落盘�
   try { s.kick(); } catch (e) {}
   await sleep(120);
   const t = s.render();
-  const useBtn = t.nodes.find((p) => p && typeof p['data-mpw-scan-use'] === 'string' && typeof p.onClick === 'function');
-  try { useBtn.onClick(); } catch (e) {}
-  const t2 = s.render();
+    // ①(2026-11-01 改版) 先点缩略图选中，再点详情里的应用按钮
+    { const c0 = t.nodes.find((p) => p && p['data-mpw-scan-item'] !== undefined); try { globalThis.__mpwBsScan.setSelected(c0['data-mpw-scan-item']); } catch (e) {} }
+    const tSel = s.render();
+    const useBtn = tSel.nodes.find((p) => p && typeof p['data-mpw-scan-use'] === 'string' && typeof p.onClick === 'function');
+    try { useBtn.onClick(); } catch (e) {}
+    const t2 = s.render();
   const confirm = t2.nodes.some((p) => p && p['data-mpw-scan-webconfirm'] !== undefined);
   ok('W1 点 web 项 ⇒ 先出确认面板（不直接落盘）',
     confirm, 'confirm=' + confirm);
-  const goBtn2 = (t2.nodes.find((p) => p && p.className === 'mpw_button' && typeof p.onClick === 'function'));
+    // ①(2026-11-01 改版) 详情区「应用此壁纸」也是 mpw_button ⇒ 用稳定标记定位确认面板的 go
+    const goBtn2 = (t2.nodes.find((p) => p && p['data-mpw-scan-webgo'] !== undefined && typeof p.onClick === 'function'));
   try { goBtn2.onClick(); } catch (e) {}
   await sleep(3600);
   const stored = JSON.parse(globalThis.localStorage.getItem('dsh.mpkg-wallpaper.v2') || '{}');
@@ -387,11 +394,11 @@ console.log('\n== I. i18n（zh/en 两表 bsScan.* 键集逐键相等 + bsTab 存
   const dicts = r.localeDicts;
   const KEYS = ['bsScan.title', 'bsScan.rescan', 'bsScan.scanning', 'bsScan.count', 'bsScan.empty',
     'bsScan.err', 'bsScan.applied', 'bsScan.webConfirm', 'bsScan.webGo', 'bsScan.webGoCompat', 'bsScan.webCancel',
-    'bsScan.dir', 'bsScan.dirNone', 'bsScan.dirCopy', 'bsScan.dirCopied'];
+    'bsScan.dir', 'bsScan.dirNone'];
   const missZh = KEYS.filter((k) => !dicts || !dicts.zh || typeof dicts.zh[k] !== 'string' || !dicts.zh[k]);
   const missEn = KEYS.filter((k) => !dicts || !dicts.en || typeof dicts.en[k] !== 'string' || !dicts.en[k]);
-  ok('I1 zh 表 15 个 bsScan.* 键全部非空', missZh.length === 0, JSON.stringify(missZh));
-  ok('I2 en 表 15 个 bsScan.* 键全部非空', missEn.length === 0, JSON.stringify(missEn));
+  ok('I1 zh 表 bsScan.* 键全部非空', missZh.length === 0, JSON.stringify(missZh));
+  ok('I2 en 表 bsScan.* 键全部非空', missEn.length === 0, JSON.stringify(missEn));
   ok('I3 zh/en 键集逐键相等（一边漏键必红）', missZh.length === 0 && missEn.length === 0
     && KEYS.every((k) => dicts.zh[k] !== undefined && dicts.en[k] !== undefined), '');
   ok('I4 已删的 bsScan.desc（独立页签描述符专用）零残留',
