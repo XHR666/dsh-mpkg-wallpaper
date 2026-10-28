@@ -44,6 +44,7 @@
  * ⚠ 真机探针**不进** check.sh 常驻门禁（秒级门禁不该依赖用户 DSH 在不在），门禁只跑 `--selftest`。
  */
 import fs from 'node:fs'
+import { withAudioMute } from './_audio-mute.mjs'   // ①(P-225) 探针浏览器一律静音（用户实测幽灵声音）
 import os from 'node:os'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -340,7 +341,6 @@ print(json.dumps({"meanAbsDiff":round(sum(st.mean)/3.0,3),"maxDiff":max(st.extre
     } catch (e) { return { err: 'shot:' + String((e && e.message) || e).slice(0, 80) } }
     const py = `
 import json,sys
-import { withAudioMute } from './_audio-mute.mjs'   // ①(P-225) 探针浏览器一律静音（用户实测幽灵声音）
 from PIL import Image, ImageStat
 im=Image.open(sys.argv[1]).convert('RGB'); W,H=im.size
 def col(x0,x1):
