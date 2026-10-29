@@ -23,6 +23,17 @@
 //   · A1 由"注册 2 次（扫描+壁纸）"改写为"注册恰好 1 次"——独立扫描页签按任务要求删除；
 //   · E2 由"设置页只剩跳转壳"反转——设置页恢复整页设置，跳转壳本身成为必须不存在的回归项；
 //   · C 组键集由 17 个 bsTab.* 收缩为 title/desc 两个存留键 + 已删键零残留。
+// 契约沿革（2026-11-02，tab 切换机制演进，留痕）：
+//   · D3 由"translateX(-0%) 内容位移为 0"演进为"激活标记 data-mpw-tabactive 恰好一个且在
+//     scan 面板上"。原因：根治"切设置页后界面整体左移"（真机探针读数 frame.scrollLeft=156，
+//     根因 = tab 行 N×100% 超宽 + translateX 切换撑破布局根）；实现改为 grid 同格堆叠
+//     （.mpw_tabRow 块 ⑩a 注：任一时刻只有激活面板可见，行宽恒等容器宽，不再写 transform）。
+//   · 新增 D8：CSS 产物堆叠规则（grid-area:1/1 + visibility:hidden；激活面板 visible）+
+//     源码零残留（无 translateX 行切换写法、无 flex:"0 0 100%" 超宽面板）。
+//     注：任务书草案写 position:absolute 堆叠，落地选 grid 同格叠放（任务书 §高度"二选一选
+//     简单可靠者"的后者）——absolute 面板不给父容器高度需另补，grid 天然取最大高度且无
+//     定位基准问题；两条不变量相同（行宽恒等容器宽 + 激活项唯一可见）。
+//   · 其余行为断言（index/顺序/数量/默认激活项/滚动位置语义：面板始终挂载不改）全部保留。
 // 复现: node tools/bs-tab-test.mjs
 import fs from 'node:fs';
 import os from 'node:os';
@@ -300,9 +311,10 @@ console.log('\n== D. 侧栏「壁纸」页签 = 整页设置 + 内部 tab 栏 8 
     !!info1 && info1.tabs.length === 8 && info1.tabs[0].scan === true
     && info1.panelKeys.length === 8 && JSON.stringify(info1.panelKeys) === JSON.stringify(EXPECT_TABS),
     info1 ? 'panels=' + JSON.stringify(info1.panelKeys) : 'no-bar');
-  ok('D3 scan 默认选中（tab 激活态在 scan 上、内容位移为 0）',
+  ok('D3 scan 默认选中（tab 激活态在 scan 上；2026-11-02 演进：激活标记 data-mpw-tabactive 恰好一个）',
     !!info1 && info1.tabs[0].active === true
-    && d1.nodes.some((p) => p && p.className === 'mpw_tabRow' && String(p.style && p.style.transform || '') === 'translateX(-0%)'),
+    && d1.nodes.filter((p) => p && p['data-mpw-tabactive'] !== undefined).length === 1
+    && d1.nodes.some((p) => p && p['data-mpw-tabkey'] === 'scan' && p['data-mpw-tabactive'] !== undefined),
     info1 ? 'active0=' + info1.tabs[0].active : 'no-bar');
   ok('D4 内容面板 scan 在树（data-mpw-tabkey=scan + 扫描网格标记）',
     d1.nodes.some((p) => p && p['data-mpw-tabkey'] === 'scan') && d1.nodes.some((p) => p && p['data-mpw-bs-scan'] !== undefined),
@@ -319,6 +331,30 @@ console.log('\n== D. 侧栏「壁纸」页签 = 整页设置 + 内部 tab 栏 8 
   const d4 = renderWall({ enabled: true, image: 'data:image/png;base64,AAA', converted: 'mp4' });
   ok('D7 播放/暂停控件跟随整页设置（mp4 档 ⇒ 暂停壁纸按钮在树）',
     d4.text.includes(zh['pause.pause']), d4.text.slice(0, 160));
+}
+
+console.log('\n== D8. tab 同格堆叠（2026-11-02 左移根治）的产物与源码断言 ==');
+{
+  reset();
+  loadPlugin({ quiet: true });
+  const css = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({}) : '');
+  cancelWorldTimers();
+  const iRow = css.indexOf('.mpw_tabBody > .mpw_tabRow > * {');
+  const rowBody = iRow >= 0 ? css.slice(css.indexOf('{', iRow) + 1, css.indexOf('}', iRow)) : '';
+  ok('D8a CSS 产物含同格堆叠规则（grid-area:1/1 + visibility:hidden + min-width:0）',
+    iRow >= 0 && rowBody.indexOf('grid-area: 1 / 1;') >= 0
+    && rowBody.indexOf('visibility: hidden;') >= 0 && rowBody.indexOf('min-width: 0;') >= 0,
+    rowBody.trim().slice(0, 100));
+  const iAct = css.indexOf('.mpw_tabBody > .mpw_tabRow > [data-mpw-tabactive] {');
+  const actBody = iAct >= 0 ? css.slice(css.indexOf('{', iAct) + 1, css.indexOf('}', iAct)) : '';
+  ok('D8b 激活面板唯一可见（data-mpw-tabactive ⇒ visibility:visible）',
+    iAct >= 0 && actBody.indexOf('visibility: visible;') >= 0, actBody.trim().slice(0, 80));
+  const rowRule = (css.match(/\.mpw_tabRow \{([^}]*)\}/) || [])[1] || '';
+  ok('D8c tabRow 基础规则不再含 transform/transition（切换零位移、祖先链零 transform）',
+    rowRule.length > 0 && rowRule.indexOf('transform') < 0 && rowRule.indexOf('transition') < 0, rowRule.trim().slice(0, 80));
+  const src = fs.readFileSync(path.join(ROOT, 'lib', 'client.js'), 'utf8');
+  ok('D8d 源码零残留：无 translateX 行切换写法、无 flex:"0 0 100%" 超宽面板',
+    src.indexOf('"translateX(-" + Math.max(0') < 0 && src.indexOf('flex: "0 0 100%"') < 0, '');
 }
 
 console.log('\n== E. 设置页恢复整页设置（7 项内部 tab；无 scan、无跳转壳）+ 两入口同一份配置 ==');
@@ -523,6 +559,39 @@ await withMutant('M5', 'MpwBsTabView 不传 scanTab（内部 scan tab 消失）'
     const c = tree ? collect(tree, 4) : { nodes: [] };
     group('D2', !!info && info.panelKeys.length === 8 && info.panelKeys[0] === 'scan', info ? JSON.stringify(info.panelKeys) : 'no-bar');
     group('D4', c.nodes.some((p) => p && p['data-mpw-tabkey'] === 'scan'), 'scan-panel=' + c.nodes.some((p) => p && p['data-mpw-tabkey'] === 'scan'));
+    return red;
+  });
+
+// M6：同格堆叠被拆（visibility:hidden 移除 ⇒ 全部面板同时参与布局 = 超宽行回归路径）⇒ D8a 红
+await withMutant('M6', '同格堆叠规则被拆（visibility:hidden 移除）',
+  [['\tgrid-area: 1 / 1; visibility: hidden; min-width: 0;', '\tgrid-area: 1 / 1; min-width: 0; /* M6 */']], ['D8a'],
+  async (f) => {
+    const { group, red } = runChecksOn();
+    reset();
+    loadPlugin({ quiet: true, clientPath: f });
+    const css = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({}) : '');
+    cancelWorldTimers();
+    const iRow = css.indexOf('.mpw_tabBody > .mpw_tabRow > * {');
+    const rowBody = iRow >= 0 ? css.slice(css.indexOf('{', iRow) + 1, css.indexOf('}', iRow)) : '';
+    group('D8a', iRow >= 0 && rowBody.indexOf('grid-area: 1 / 1;') >= 0
+      && rowBody.indexOf('visibility: hidden;') >= 0 && rowBody.indexOf('min-width: 0;') >= 0, rowBody.trim().slice(0, 80));
+    return red;
+  });
+
+// M7：scan 面板激活标记丢失 ⇒ D3（激活标记恰好一个且在 scan 上）红
+await withMutant('M7', 'scan 面板 data-mpw-tabactive 丢失',
+  [['"data-mpw-tabactive": tabSafe === "scan" ? "" : undefined, ', '']], ['D3'],
+  async (f) => {
+    const { group, red } = runChecksOn();
+    reset();
+    const w = makeBsWorld();
+    const r = loadPlugin({ quiet: true, clientPath: f, ctxDecorate: w.decorate });
+    const d = w.state.descriptors.find((x) => x.id === WALL_ID);
+    let tree = null;
+    try { tree = d.component({ ctx: r.ctx, store: {}, scope: { sessionId: 's1' }, tab: { id: 't1', type: WALL_ID }, visible: true }); } catch (e) {}
+    const c = tree ? collect(tree, 4) : { nodes: [] };
+    const actives = c.nodes.filter((p) => p && p['data-mpw-tabactive'] !== undefined);
+    group('D3', actives.length === 1 && actives.some((p) => p['data-mpw-tabkey'] === 'scan'), 'actives=' + actives.length);
     return red;
   });
 

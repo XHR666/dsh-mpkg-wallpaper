@@ -40,8 +40,12 @@
 //   E 组 变异自证：把关键判断改坏 ⇒ 对应组必红（真源零改动）
 //   F 组 独立性/归属：不跟随不接管；跟随档四表面逐字一致；*UserSet 只让**那一项**独立；
 //       `mpwMarkUserSet()` 是标记唯一落点（含"未被接管的字段不许打标记"）
-//   F7 组 透明度 = 0 ⇒ 完全不覆盖宿主（f470590）：chrome token/选择器/左栏表层 0 处、左栏规则 ≤ 2 条、
+//   F7 组 透明度 = 0 ⇒ 完全不覆盖宿主（f470590）：chrome token/选择器/左栏表层 0 处、左栏规则 ≤ 3 条、
 //       45 ⇒ 规则恢复、标题栏行为（交还宿主 vs 正常注入）、以及 `chromeInert` 判据的变异自证
+//       F7b 演进（2026-11-02，留痕）：上限 2→3、白名单加入 float 门控族。原因：任务②给悬浮外壳
+//       三面加 corner-shape（@supports (corner-shape: squircle) 包裹的静态外观规则，属于悬浮
+//       特性的外观面，与既有白名单里的 [data-sidebar-collapsed] 收起规则同族）。语义保持：透明度
+//       模型自身仍然零注入 —— 白名单枚举的仍只有"用户显式特性"的门控选择器，第 4 条即红。
 //
 // 卫生：变异副本落 mkdtemp，退出即删（仓库铁律：不写固定 /tmp 路径）。
 // 用法: node tools/fog-model-test.mjs
@@ -664,14 +668,15 @@ const F7A_HOLDS = (css) => {
     unifyTok === 0 && unifySel === 0 && frost === 0, JSON.stringify({ unifyTok, unifySel, frost }))
 }
 {
-  /* F7b 透明度 0 ⇒ 左栏规则数**显著下降**（真机 8→2）。剩下的 2 条不是本模型产出的，而是
-     用户显式特性：收起/悬浮 float（`[data-sidebar-collapsed]` 下让内层 root 透出）与
-     主题色（`body[data-mpw-theme]` 的 `--mpw-theme-color` wash）—— 阈值就卡在"≤ 2 条"，
-     且这 2 条必须真的是那两个特性的门控选择器（多出第 3 条 = 覆盖规则漏出来了）。 */
+  /* F7b 透明度 0 ⇒ 左栏规则数**显著下降**（真机 8→2）。剩下的不是本模型产出的，而是
+     用户显式特性：悬浮 float 族（`[data-sidebar-collapsed]` 收起让内层 root 透出 +
+     `body[data-mpw-float]` 悬浮外壳三面的 corner-shape 连续圆角，见 2026-11-02 演进）与
+     主题色（`body[data-mpw-theme]` 的 `--mpw-theme-color` wash）—— 阈值就卡在"≤ 3 条"，
+     且这些必须真的是那些特性的门控选择器（多出第 4 条 = 覆盖规则漏出来了）。 */
   const side = SIDE_RULES(boot(INERT_ST))
   const rest = side.map(([sel]) => sel.replace(/\s+/g, ' '))
-  ok('F7b 透明度 0 ⇒ 左栏（pI_x6G_sidebarCol）规则 **≤ 2 条**；剩下的只许是用户显式特性：悬浮 float（[data-sidebar-collapsed]）与主题色（body[data-mpw-theme]），不属于本模型',
-    side.length <= 2 && rest.every((x) => /data-sidebar-collapsed|data-mpw-theme/.test(x)),
+  ok('F7b 透明度 0 ⇒ 左栏（pI_x6G_sidebarCol）规则 **≤ 3 条**；剩下的只许是用户显式特性：悬浮 float（[data-sidebar-collapsed] 收起 + [data-mpw-float] 外壳 corner-shape）与主题色（body[data-mpw-theme]），不属于本模型',
+    side.length <= 3 && rest.every((x) => /data-sidebar-collapsed|data-mpw-theme|data-mpw-float/.test(x)),
     JSON.stringify({ count: side.length, rest }))
 }
 {

@@ -753,6 +753,11 @@ node tools/market-topbar-glass-test.mjs || fail=1
 #   过渡同参数）/ 拖拽与 reduced-motion 让位 / tooltip 去裁切（打标/摘标/滚动容器反向）
 #   + 4 条变异自证（期望红集 == 实际红集）。约 6s。
 node tools/sidebar-collapse-geo-test.mjs || fail=1
+# ①(2026-11-02 任务①) 侧栏收起态悬浮回归判据（纯 Node：__mpwBuildCss 产物解析）：
+#   收起态悬浮三件套在位（margin/令牌圆角/阴影，无 !important 清零）/ 展开态零变化 /
+#   c1a55a6 的"has([data-sidebar-collapsed]) + sidebarCol 整类清零"回归模式不得复活 /
+#   外壳规则必须带 body[data-mpw-float] 专属门控 + 2 条变异自证（期望红集 == 实际红集）。
+node tools/sidebar-collapsed-float-test.mjs || fail=1
 # ①(2026-10-30 任务书 §1) 标题栏悬浮恢复 + 悬浮三面同族判据（纯 Node：产物 CSS 解析）：
 #   注释配平 + 顶层规则前导合法（55da7a8 注释截断 ⇒ 标题栏规则被浏览器整条丢弃的
 #   事故族，text 级断言探不到）/ 三面规则存活 / 圆角·阴影同令牌单源 / float-off 让位
@@ -947,6 +952,13 @@ gate_begin 12
 if [ "$GATE_RUN" = 1 ]; then           # ← 缓存命中时整块跳过（SKIP-CACHED）
 node tools/style-scope-guard.mjs || fail=1
 node tools/token-namespace-test.mjs || fail=1
+
+# ①(2026-11-02 任务②③) 连续圆角 + 内外同心判据（纯 Node：__mpwBuildCss 两态产物解析 + 源码级）：
+#   半径族 token（--mpw-r-lg/md/sm）单点定义 / corner-shape 全部包在 @supports 内 /
+#   token 化选择器逐值等于旧字面量 / 内外同心契约（容器 --mpw-r-outer/--mpw-gap + 内层
+#   max(0px, calc(outer-gap))，padding 同读 gap，硬编码内半径即红）/ 字面量圆角值例外登记
+#   双向防腐 / 产物零 clip-path·mask（回退层不做，红线）+ 4 条变异自证（期望红集 == 实际红集）。
+node tools/corner-continuity-test.mjs || fail=1
 
 # ①(2026-10-24 视图一致性轮) 「标题栏浮层面板」（智能体团队 [data-team-panel] /
 #   Token 用量 [class*=bRhRbq_panel]）表面与主界面菜单面板族统一的机器判据：
