@@ -64,7 +64,7 @@ let bare = stripComments(css)
   const tokenBody = ruleBody(css, 'body {\n\t--mpw-r-lg')
   ok('A1 半径族 + 曲率档位单点定义（--mpw-r-lg/md/sm = 16/10/6px + --mpw-corner-shape: superellipse(4)）',
     decl(tokenBody, '--mpw-r-lg') === '16px' && decl(tokenBody, '--mpw-r-md') === '10px'
-    && decl(tokenBody, '--mpw-r-sm') === '6px' && decl(tokenBody, '--mpw-corner-shape') === 'superellipse',
+    && decl(tokenBody, '--mpw-r-sm') === '6px' && decl(tokenBody, '--mpw-corner-shape') === 'superellipse(4)',
     JSON.stringify(tokenBody && tokenBody.replace(/\s+/g, ' ').slice(0, 120)))
 
   const supIdx = bare.indexOf('@supports (corner-shape: superellipse(4))')
