@@ -55,3 +55,16 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+═══════════════════════════════════════════════════════════════════
+
+修改声明（GPLv3 §5a）与归属
+
+内置渲染器组件（renderer/**）来自 wallpaper-engine-web-loader 项目，
+本包内这份副本**有修改**（为内置托管与 iframe/postMessage 调用所做的增量改动，
+不改变其渲染语义）。修改清单与日期见 renderer/MODIFICATIONS.md。
+
+版权归属：
+- lib/**（MIT 部分）：Copyright (c) 2026 dsh-mpkg-wallpaper contributors
+- renderer/**（GPL-3.0-or-later 部分）：Copyright (c) 2026 the wallpaper-engine-web-loader project
+  及 renderer/THIRD-PARTY.md 中登记的第三方组件作者
