@@ -1,0 +1,22 @@
+To: Adam Borowski <kilobyte@angband.pl>
+From: tobias benjamin köhler <tbk@uncia.at>
+Message-ID: <bc02032d-b85f-afd9-c2cb-10a2ce43310b@uncia.at>
+Date: Sun, 11 Feb 2018 21:24:12 +0100
+In-Reply-To: <20180207010340.3je6otx3znbsue4w@angband.pl>
+Subject: Re: license for your font "monofur"
+
+
+Am 2018-02-07 um 02:03 schrieb Adam Borowski:
+
+> To proceed, I'd need to get permission from you to distribute with a
+> license that's acceptable in Debian.  It'd be nice to have it within 1-2
+> weeks, if you'd want to be included in Ubuntu 18.04 (LTS).
+
+I thought I had given you before.
+
+"These fonts are licensed under SIL Open Font License version 1.1.
+I would enjoy it if you notify me at unci@unci.de when you use them
+commercially or redistribute them on a server. I always like seeing or getting
+examples of the fonts in use."
+
+greetings, tobias

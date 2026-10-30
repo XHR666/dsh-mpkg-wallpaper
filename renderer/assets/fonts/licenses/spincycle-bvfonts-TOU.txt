@@ -1,0 +1,67 @@
+Spin Cycle 3D — author's Terms of Use (verbatim snapshot)
+================================================================================
+Font:      Spin Cycle 3D  (spincycle_3d_ot.otf, OpenType build from the author's zip)
+Author:    Jess Latham  (formerly "Blue Vinyl Fonts" / "BV Fonts")  —  https://www.bvfonts.com/
+Snapshot:  https://www.bvfonts.com/tou.php
+Fetched:   2026-09-15 (UTC), HTTP 200, 5432 bytes
+Body SHA-256 of the fetched page: 46b8adfc72583bc6d003f272fd377ff14c76fd07dd5e4f96be56506f80434fc9
+Related pages (same fetch date):
+  https://www.bvfonts.com/fonts/details.php?id=44  (HTTP 200, 7057 B,
+      body sha256 3eefab6af4e156ad3ff3173fcd66597fcf528308436e6b3e0a04097136e56cff)
+      -> "Spin Cycle 3D", Release Date September 18, 2005, Price: Free
+  https://www.bvfonts.com/faq.php                   (HTTP 200, 8266 B,
+      body sha256 187c14ad1e822d3da05af01f77b853ccc92f0f94437e0c3e097dd396d523acd8)
+  https://www.bvfonts.com/fonts/files/spin_cycle_threed.zip  (HTTP 200, 59635 B,
+      sha256 5236d90d54dc0d7904aeba55bfcb16a122ebbd05a753a6bb732d6a377ba91c56)
+      contains: Open Type/spincycle_3d_ot.otf, True Type/spincycle_3d_tt.ttf, README.TXT
+
+NOTE ON WHY THIS SNAPSHOT EXISTS
+  The author writes: "Jess Latham reserves the right to make changes to this
+  license at any time."  This file records the terms exactly as they stood on the
+  date above, so that the conditions under which this project redistributes the
+  font remain auditable.  The live page is the authoritative version.
+
+
+TERMS OF USE (verbatim, https://www.bvfonts.com/tou.php, fetched 2026-09-15)
+--------------------------------------------------------------------------------
+All free fonts at bvfonts.com are freeware. You may use them in personal or
+commercial work. If you've downloaded a Jess Latham (fka Blue Vinyl Fonts) free
+font from an archive site and that font is not available here or dafont.com,
+please ask permission before using it. Sometimes retail fonts make it to
+freeware sites. Read the Read Me file located in each font zip file for a
+complete description of the freeware license.
+
+It's always a good idea to download the latest version from bvfonts.com,
+archive sites don't always update their files.
+
+Please do not include these fonts on any CD-Roms. These fonts are not to be
+recompiled and sold. Have more questions? Try the FAQ or email me. I will be
+happy to help you out.
+
+
+FAQ (verbatim excerpts, https://www.bvfonts.com/faq.php, fetched 2026-09-15)
+--------------------------------------------------------------------------------
+All forms of web embedding is allowed for the freeware fonts.
+
+Freeware can now be used for apps/ebooks as long as the software is not
+creation software.
+
+A license is no longer required to use the freeware for commercial use.
+
+Can I put your freeware font files up for download on my font archive site?
+Well, not all of them, 20% of the total amount of freeware fonts I have is
+fair. ... Please link me if you do!
+
+
+HOW THIS PROJECT COMPLIES (summary — full mapping in ../../THIRD-PARTY.md §4.6)
+--------------------------------------------------------------------------------
+1. Allowed to use and redistribute (commercial use permitted, no fee).
+2. NOT placed on any CD-ROM / compilation disc: we ship it inside a single
+   free, MIT-licensed source repository, not as a font collection or a
+   physical/distributable media compilation, and it is not sold.
+3. NOT resold, NOT remarketed, NOT recompiled: the file is the author's own
+   OpenType build, byte-for-byte as it came out of the author's zip
+   (no renaming, no format conversion, no re-compilation).
+4. Credited with a link back to https://www.bvfonts.com/ in ../../THIRD-PARTY.md,
+   in ../README.md (the directory that holds the font) and in the renderer's
+   font-source log line in demo.html.

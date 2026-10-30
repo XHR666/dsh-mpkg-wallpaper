@@ -1,0 +1,54 @@
+{
+  "name": "@shaderfrog/glsl-parser",
+  "engines": {
+    "node": ">=16"
+  },
+  "version": "7.0.1",
+  "type": "module",
+  "description": "A GLSL ES 1.0 and 3.0 parser and preprocessor that can preserve whitespace and comments",
+  "scripts": {
+    "prepare": "npm run build && ./prepublish.sh",
+    "postpublish": "./postbuild.sh",
+    "build": "./build.sh",
+    "watch-test": "vitest --watch",
+    "test": "vitest",
+    "test-publish": "./test-publish.sh"
+  },
+  "files": [
+    "ast",
+    "index.d.ts",
+    "index.js",
+    "error.js",
+    "parser",
+    "preprocessor"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ShaderFrog/glsl-parser.git"
+  },
+  "keywords": [
+    "glsl",
+    "parser",
+    "shaderfrog"
+  ],
+  "author": "Andrew Ray",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ShaderFrog/glsl-parser/issues"
+  },
+  "homepage": "https://github.com/ShaderFrog/glsl-parser#readme",
+  "devDependencies": {
+    "@babel/core": "^7.15.5",
+    "@babel/preset-env": "^7.15.6",
+    "@babel/preset-typescript": "^7.15.0",
+    "@swc/core": "^1.4.11",
+    "@swc/jest": "^0.2.36",
+    "@types/node": "^24.3.0",
+    "peggy": "^1.2.0",
+    "prettier": "^2.1.2",
+    "ts-jest": "^29.1.2",
+    "ts-jest-resolver": "^2.0.1",
+    "typescript": "^5.5.3",
+    "vitest": "^3.2.4"
+  }
+}

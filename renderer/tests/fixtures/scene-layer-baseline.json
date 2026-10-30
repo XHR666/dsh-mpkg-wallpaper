@@ -1,0 +1,114 @@
+{
+ "note": "逐层基线夹具：由 tests/scene-layer-baseline-test.mjs --update 生成；改数前先确认变化是有意的",
+ "records": {
+  "3326873240": {
+   "total": 62,
+   "visible": 30,
+   "renderError": null,
+   "skinHidden": 0,
+   "skinDrawn": 0,
+   "skinTotal": 0,
+   "texturedVisible": [
+    "day",
+    "dusk",
+    "morning",
+    "night",
+    "鼠标指针"
+   ],
+   "texturedVisibleCount": 5,
+   "framesDrawn": [
+    120,
+    60,
+    60
+   ],
+   "audioArt": [
+    {
+     "name": "Audio Bars",
+     "vis": 1
+    }
+   ],
+   "chromeVisible": []
+  },
+  "3544152633": {
+   "total": 70,
+   "visible": 24,
+   "renderError": null,
+   "skinHidden": 0,
+   "skinDrawn": 1,
+   "skinTotal": 1,
+   "texturedVisible": [
+    "butterfly.many1",
+    "cat",
+    "girl",
+    "hosuevorhang2",
+    "houseback",
+    "housebasic",
+    "housevorhang"
+   ],
+   "texturedVisibleCount": 7,
+   "framesDrawn": [
+    116,
+    58,
+    58
+   ],
+   "audioArt": [
+    {
+     "name": "Audio bar",
+     "vis": 1
+    }
+   ],
+   "chromeVisible": []
+  },
+  "3719111841": {
+   "total": 43,
+   "visible": 29,
+   "renderError": null,
+   "skinHidden": 0,
+   "skinDrawn": 5,
+   "skinTotal": 5,
+   "texturedVisible": [
+    "主体",
+    "右侧发",
+    "右眼上眼睑",
+    "右耳朵",
+    "后发1",
+    "后发2",
+    "左侧发1",
+    "左侧发2"
+   ],
+   "texturedVisibleCount": 22,
+   "framesDrawn": [
+    126,
+    63,
+    63
+   ],
+   "audioArt": [
+    {
+     "name": "音频线Audio Spectrum Visualizer",
+     "vis": 1
+    }
+   ],
+   "chromeVisible": []
+  },
+  "sample-synthetic": {
+   "total": 5,
+   "visible": 5,
+   "renderError": null,
+   "skinHidden": 0,
+   "skinDrawn": 0,
+   "skinTotal": 0,
+   "texturedVisible": [
+    "background",
+    "orb"
+   ],
+   "texturedVisibleCount": 2,
+   "framesDrawn": [
+    8,
+    4,
+    4
+   ],
+   "audioArt": [],
+   "chromeVisible": []
+  }
+ }
+}

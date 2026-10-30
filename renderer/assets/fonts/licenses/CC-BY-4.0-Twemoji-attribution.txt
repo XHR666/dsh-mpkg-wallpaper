@@ -1,0 +1,56 @@
+Twemoji Mozilla (Twemoji.Mozilla.ttf) — CC-BY-4.0 attribution statement
+================================================================================
+File bundled:   assets/fonts/Twemoji.Mozilla.ttf
+Upstream:       https://github.com/mozilla/twemoji-colr
+                release asset v0.7.0 "Twemoji.Mozilla.ttf"
+                https://github.com/mozilla/twemoji-colr/releases/download/v0.7.0/Twemoji.Mozilla.ttf
+Obtained:       2026-09-15 (UTC), HTTP 200, 1474284 bytes
+SHA-256:        6d90152ee0d29e82fe2a87793af5aa4b7ad13e6538360889e141e81ed299ee8e
+
+The bundled font is a COLR font: the *code* that builds it is Apache-2.0
+(Copyright 2016-2018, Mozilla Foundation) and the *emoji artwork* it embeds is
+CC-BY-4.0 (Twemoji).  The upstream LICENSE.md is reproduced verbatim in
+licenses/Twemoji-Mozilla-LICENSE.md, and the full Apache-2.0 text is in
+licenses/Apache-2.0.txt.  This file is the CC-BY-4.0 attribution notice that
+the license requires to travel with the artwork.
+
+ATTRIBUTION (CC-BY-4.0 §3(a)(1))
+--------------------------------------------------------------------------------
+  Emoji artwork: "Twemoji" by Twitter, Inc. and other contributors
+                 https://github.com/twitter/twemoji
+                 licensed under CC-BY-4.0
+  Font packaging / COLR build code: Copyright 2016-2018, Mozilla Foundation
+                 https://github.com/mozilla/twemoji-colr
+                 licensed under the Apache License, Version 2.0
+
+  Redistributed by: this project (we-scene WebGL2 scene renderer),
+                    https://github.com/elysia395/dsh-wallpaper-engine
+                    as part of the free/MIT-licensed renderer repository.
+
+LICENSE LINKS (CC-BY-4.0 §3(a)(1)(2))
+--------------------------------------------------------------------------------
+  Human-readable: https://creativecommons.org/licenses/by/4.0/
+  Legal code:     https://creativecommons.org/licenses/by/4.0/legalcode
+  Apache-2.0:     http://www.apache.org/licenses/LICENSE-2.0
+
+MODIFICATIONS (CC-BY-4.0 §3(a)(1)(B))
+--------------------------------------------------------------------------------
+  NONE.  The file is redistributed unmodified, byte-for-byte as published in the
+  upstream release v0.7.0 (see the SHA-256 above).  We did not edit, subset,
+  recompile or convert it.  The only change relative to a plain upstream
+  download is that the file name kept by Wallpaper Engine, `TwemojiMozilla.ttf`,
+  is mapped to this upstream file name at load time by the renderer's font
+  source table (demo.html: `REPO_FONT_ALIASES`); the font itself is untouched
+  (file renaming is not a modification of the work, and we ship the upstream
+  name verbatim).
+
+NO ENDORSEMENT
+--------------------------------------------------------------------------------
+  This attribution does not suggest that Twitter/X, Twemoji or Mozilla sponsor
+  or endorse this project.
+
+NOTE ON TRADEMARKS / THIRD-PARTY EMOJI
+--------------------------------------------------------------------------------
+  The emoji artwork may depict characters that are trademarks of their
+  respective owners; CC-BY-4.0 grants copyright permissions only, not trademark
+  or personality rights.

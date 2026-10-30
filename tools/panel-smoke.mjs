@@ -360,9 +360,16 @@ try {
   // 脚本生成的 JSON（渲染器在线数据源）
   // ①(P-101 2026-09-16 渲染器仓库目录再整理) 该 JSON 随站点外壳进了 `web/`；这里两个落点都认，
   //   免得插件侧被渲染器仓库的内部布局绑死（旧检出/新检出都能跑）。
-  const jsonPath = [path.join(here, '..', '..', 'we-scene-demo', 'web', 'diag-flags.json'),
-    path.join(here, '..', '..', 'we-scene-demo', 'diag-flags.json')].find((p) => fs.existsSync(p))
-    || path.join(here, '..', '..', 'we-scene-demo', 'web', 'diag-flags.json')
+  // ②(2026-10-30 渲染器并入本工作区，路径固化处理) 本目录里渲染器开发树叫 `renderer/`
+  //   （原兄弟仓 `we-scene-demo/` 的拷贝），所以查找顺序加 `../renderer/web|根`；
+  //   环境变量 MPW_RENDERER_DIR 可显式指定渲染器根；旧兄弟仓名保留为最后回退（原仓检出仍可跑）。
+  const jsonPath = [process.env.MPW_RENDERER_DIR && path.join(process.env.MPW_RENDERER_DIR, 'web', 'diag-flags.json'),
+    process.env.MPW_RENDERER_DIR && path.join(process.env.MPW_RENDERER_DIR, 'diag-flags.json'),
+    path.join(here, '..', '..', 'renderer', 'web', 'diag-flags.json'),
+    path.join(here, '..', '..', 'renderer', 'diag-flags.json'),
+    path.join(here, '..', '..', 'we-scene-demo', 'web', 'diag-flags.json'),
+    path.join(here, '..', '..', 'we-scene-demo', 'diag-flags.json')].find((p) => p && fs.existsSync(p))
+    || path.join(here, '..', '..', 'renderer', 'web', 'diag-flags.json')
   let jsonNames = []
   try {
     const dj = JSON.parse(fs.readFileSync(jsonPath, 'utf8'))

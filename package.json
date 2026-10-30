@@ -17,7 +17,9 @@
     "README.md",
     "README.en.md",
     "THIRD-PARTY.md",
-    "LICENSE"
+    "LICENSE",
+    "LICENSES",
+    "renderer"
   ],
   "exports": {
     ".": "./lib/index.js",
@@ -50,7 +52,7 @@
       "optional": true
     }
   },
-  "license": "MIT",
+  "license": "SEE LICENSE IN LICENSE",
   "keywords": [
     "dsh",
     "dsh-plugin",

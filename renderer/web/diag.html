@@ -1,0 +1,16 @@
+<!doctype html><meta charset="utf-8"><title>GPU 诊断</title><pre id=o>检测中…</pre>
+<script>
+const o = document.getElementById('o');
+const lines = [];
+lines.push('UA: ' + navigator.userAgent);
+lines.push('webgl2: ' + !!(document.createElement('canvas').getContext('webgl2')));
+lines.push('webgpu: ' + !!(navigator.gpu));
+lines.push('hardwareConcurrency: ' + (navigator.hardwareConcurrency||'?'));
+try { const gl = document.createElement('canvas').getContext('webgl2'); if (gl) {
+  lines.push('GL: ' + gl.getParameter(gl.VERSION));
+  const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+  lines.push('Renderer: ' + (dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)));
+}} catch(e){ lines.push('webgl err: ' + e.message); }
+if (navigator.gpu) { navigator.gpu.requestAdapter().then(a => { lines.push('GPU adapter: ' + (a ? a.info.vendor + ' / ' + a.info.architecture + ' / ' + a.info.device : 'null')); o.textContent = lines.join('\n'); }).catch(e => { lines.push('adapter err: ' + e.message); o.textContent = lines.join('\n'); }); }
+else o.textContent = lines.join('\n');
+</script>

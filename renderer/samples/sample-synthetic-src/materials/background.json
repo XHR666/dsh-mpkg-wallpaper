@@ -1,0 +1,16 @@
+{
+  "passes": [
+    {
+      "alphawriting": "default",
+      "blending": "translucent",
+      "combos": {},
+      "cullmode": "normal",
+      "depthtest": "disabled",
+      "depthwrite": "disabled",
+      "shader": "genericimage4",
+      "textures": [
+        "background"
+      ]
+    }
+  ]
+}

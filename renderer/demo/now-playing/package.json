@@ -1,0 +1,20 @@
+{
+  "name": "now-playing-demo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "①(P-138) Bencho「Now playing」移植件（NowPlaying）的独立演示页：组件 + 纯函数模块 + esbuild 打包产物。本目录是演示件，不随 npm 发布。",
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node ../../tests/now-playing-test.mjs"
+  },
+  "dependencies": {
+    "lucide-react": "1.47.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}

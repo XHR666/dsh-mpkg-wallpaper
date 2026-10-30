@@ -1,0 +1,98 @@
+{
+  "name": "wallpaper-engine-web-loader",
+  "version": "0.5.20",
+  "description": "WEwebLoader（浏览器端 Wallpaper Engine 壁纸渲染器）：不装 WE、不装 Windows 依赖，一个静态服务器 + WebGL2 就能实时渲染 scene.pkg / .mpkg 场景壁纸（含离线 PWA、逐层调试与对账门禁）。本仓库不分发任何真实壁纸。",
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/XHR666/wallpaper-engine-web-loader.git"
+  },
+  "homepage": "https://xhr666.github.io/wallpaper-engine-web-loader/",
+  "bugs": {
+    "url": "https://github.com/XHR666/wallpaper-engine-web-loader/issues"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./core/we-scene.mjs",
+  "exports": {
+    ".": "./core/we-scene.mjs",
+    "./bundle": "./core/we-scene-bundle.js",
+    "./server": "./server/we-scene-demo-server.mjs",
+    "./hlsl2glsl": "./vendor/hlsl2glsl/hlsl2glsl.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "LICENSE",
+    "THIRD-PARTY.md",
+    "docs/PACKAGING.md",
+    "docs/README-PUBLIC.md",
+    "docs/README-PUBLIC.en.md",
+    "docs/RENDERER-ARCHITECTURE.md",
+    "docs/UNTOUCHED-AREAS.md",
+    "docs/DATA-LIMITS.md",
+    "core/we-scene.mjs",
+    "core/we-scene-bundle.js",
+    "core/scene-project-json.mjs",
+    "core/attach-transform.mjs",
+    "core/baseline-metrics.mjs",
+    "core/web-frame-geometry.mjs",
+    "core/audio-band-array.mjs",
+    "core/web-frame-host.mjs",
+    "core/we-web-shim.mjs",
+    "core/puppet-skin.js",
+    "core/we-pointer-source.mjs",
+    "core/we-particle-pointer.mjs",
+    "core/we-animation.mjs",
+    "core/web-precheck.mjs",
+    "core/renderer-adapter.mjs",
+    "server/we-scene-demo-server.mjs",
+    "server/we-scene-demo-server-8902.mjs",
+    "server/pack-dir.mjs",
+    "server/pkg-entry-index.mjs",
+    "server/upload-policy.mjs",
+    "server/web-store.mjs",
+    "index.html",
+    "demo.html",
+    "web/diag.html",
+    "web/manifest.webmanifest",
+    "web/sw.js",
+    "web/sw-policy.mjs",
+    "web/pwa-inject.mjs",
+    "web/icons/",
+    "shaders/",
+    "start-demo.sh",
+    "elysia/",
+    "vendor/hlsl2glsl/",
+    "assets/fonts/",
+    "samples/"
+  ],
+  "scripts": {
+    "start": "bash start-demo.sh",
+    "test": "bash tests/run-all-tests.sh",
+    "test:fast": "bash tests/run-all-tests.sh --fast",
+    "check": "bash check.sh",
+    "check:fast": "bash check.sh --fast",
+    "check:docs": "node tests/docs-check.mjs",
+    "check:publish": "node tests/publish-check.mjs",
+    "check:diag": "node tests/diag-flag-check.mjs",
+    "pack:dry": "npm pack --dry-run",
+    "build:pages": "node build-pages.mjs"
+  },
+  "keywords": [
+    "wewebloader",
+    "we-web-loader",
+    "wallpaper-engine",
+    "wallpaper-engine-web-loader",
+    "webgl2",
+    "scene-renderer",
+    "scene-pkg",
+    "we-scene",
+    "壁纸渲染器"
+  ],
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "typescript": "^7.0.2"
+  }
+}

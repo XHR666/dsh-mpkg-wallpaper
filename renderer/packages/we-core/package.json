@@ -1,0 +1,40 @@
+{
+  "name": "@xferoni66/we-core",
+  "version": "0.1.0",
+  "description": "Wallpaper Engine binary format core (PKG container, TEX container/mip payloads, format constants, row-major mat4) — format-level only, no rendering, no GL, no DOM",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "exports": {
+    ".": "./src/index.js",
+    "./pkg": "./src/pkg.js",
+    "./tex": "./src/tex.js",
+    "./pixels": "./src/pixels.js",
+    "./mat4": "./src/mat4.js",
+    "./format": "./src/format.js",
+    "./lz4": "./src/lz4.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src/",
+    "test/",
+    "LICENSE",
+    "README.md",
+    "PROVENANCE.md"
+  ],
+  "sideEffects": false,
+  "dependencies": {},
+  "scripts": {
+    "test": "node --test test/"
+  },
+  "keywords": [
+    "wallpaper-engine",
+    "pkg",
+    "tex",
+    "dxt",
+    "lz4",
+    "mat4"
+  ]
+}

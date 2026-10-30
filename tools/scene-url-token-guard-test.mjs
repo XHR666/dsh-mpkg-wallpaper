@@ -7,8 +7,8 @@
 //   跨源写设置已被 P-204 的写闸门堵死；本闸门是**消费侧**那一层：只允许 http(s) 回环 / 显式白名单。
 //
 // 本文件判据（对着 F6 的三条验收）：
-//   A 回环目标 ⇒ 用该 base 且 **带 st**（默认档零回归；渲染器主链路靠它）。
-//   B 跨源（非白名单）⇒ 一律拒绝使用（回落默认回环 base，URL 里 0 处攻击者源）+ 记账 + 明确日志；
+//   A 回环/同源目标 ⇒ 用该 base 且 **带 st**（默认档零回归；渲染器主链路靠它）。
+//   B 跨源（非白名单）⇒ 一律拒绝使用（回落默认安全 base，URL 里 0 处攻击者源）+ 记账 + 明确日志；
 //     `sceneExtUrl` 同样被拦（不拼 `&extbase=`）。
 //   C 白名单放行档（设置项 `sceneUrlWhitelist`）⇒ 用该 base 且**带 st**（显式回退口有效）。
 //   D "与页面同主机且页面主机是字面 IP/localhost" 放行（手机/局域网不误伤）；**域名不算**（DNS 重绑定仍拒）。
@@ -16,6 +16,11 @@
 //   F 纯函数矩阵：回环变体 / 白名单解析（逗号、空白、整条 URL、垃圾条目）/ 目标 kind+reason。
 //   G 变异自证（子进程 + 源码注入）：去掉目标闸门 / 去掉 st 闸门 / 白名单退化成任意放行 /
 //     同主机判定恒真 ⇒ A–D 段对应断言必红。
+//
+// ②(2026-10-30 任务单 P2 判据演进，留痕) 默认渲染器地址由 `http://127.0.0.1:8902/webloader/` 改为
+//   **同源路径** `/webloader/`（插件内置渲染器同源托管）。安全语义不变：默认回落落点从"回环"变成
+//   "同源"（同源路径不可能把令牌/绝对路径送出本源，权限面只小不大）；跨源拒绝 / 白名单放行 /
+//   bad-scheme 记账 / 变异自证全部保持原断言形状。A3 的默认档记账 kind 由 loopback 变为 same-origin。
 //
 // 用法: node tools/scene-url-token-guard-test.mjs
 // 纯 Node，无浏览器、**无网络**（fetch 全是桩）、无 ffmpeg；变异只写 os.tmpdir() 副本。
@@ -40,7 +45,8 @@ const ok = (cond, name, detail) => {
 const eq = (a, b, name) => ok(a === b, name, a === b ? '' : `got=${JSON.stringify(a)} want=${JSON.stringify(b)}`)
 const flush = () => new Promise((r) => setTimeout(r, 15))
 
-const DEFAULT_BASE = 'http://127.0.0.1:8902/webloader/'
+/* ②(2026-10-30 任务单 P2) 默认 base = 同源路径（历史默认 `http://127.0.0.1:8902/webloader/` 仍是合法的显式覆盖）。 */
+const DEFAULT_BASE = '/webloader/'
 const EVIL_BASE = 'https://evil.example/webloader/'
 const EVIL_EXT = 'https://evil.example/ext/'
 const LAN_BASE = 'http://192.168.77.9:8902/webloader/'
@@ -88,14 +94,14 @@ const rejectedWarn = (warns) => warns.filter((w) => /目标不在回环\/白名�
 console.log('\n== A. 回环渲染器（默认 / 显式 127.0.0.1）⇒ 使用该 base 且**带 st** ==')
 {
   const { S, SB, diagEvents, warns, restore } = world({})
-  eq(S.defaultBase(), DEFAULT_BASE, 'A0 默认 base 仍是 127.0.0.1:8902/webloader/（与改动前一致）')
+  eq(S.defaultBase(), DEFAULT_BASE, 'A0 默认 base = 同源 /webloader/（任务单 P2；历史默认 :8902 仍可显式覆盖）')
   await mountScene(S, null, SB)
   const ev = lastIframe(diagEvents)
   ok(!!ev && ev.url.indexOf(DEFAULT_BASE) === 0, 'A1 场景 iframe 指向默认回环 base', ev ? String(ev.url).slice(0, 70) : 'no-diag')
   ok(!!ev && /[?&]st=TK\.test(&|$)/.test(ev.url) === false && decodeURIComponent(ev.url).indexOf('st=TK.test') >= 0, 'A2 回环目标**带 st**（宿主签发的场景 token 照旧下发）')
   const g = S.urlGuard()
   eq(g.rejected, 0, 'A3 回环目标 0 次拒绝')
-  ok(g.allowed >= 1 && g.lastAllow.kind === 'loopback', 'A3 台账记 allow/loopback（生效目标也记账）', 'kind=' + (g.lastAllow && g.lastAllow.kind))
+  ok(g.allowed >= 1 && g.lastAllow.kind === 'same-origin', 'A3 台账记 allow/same-origin（默认同源档的生效目标也记账）', 'kind=' + (g.lastAllow && g.lastAllow.kind))
   eq(rejectedWarn(warns), 0, 'A4 回环目标不打"被拒"日志')
   restore()
 }

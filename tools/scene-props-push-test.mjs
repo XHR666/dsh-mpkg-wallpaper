@@ -81,8 +81,10 @@ function runAll(SRC) {
   ok('A6 只认**我们那个帧**的回执（`f.contentWindow === ev.source`）', /f\.contentWindow === ev\.source/.test(S))
   ok('A7 回退口读 `sceneDebugParams` 里的同一个旗标名 `proppush`',
     /proppush/.test(S) && /sceneDebugParams/.test(S) && /mpwScenePropsLegacy/.test(S))
+  /* ①(2026-10-30 判据演进，留痕) 原断言钉"proppush 是数组**末项**"；任务单 P4/P6 往白名单追加了
+     `propscompat`/`noui`（同一机制带进帧 URL）⇒ 改为"在数组内任意位置"，语义不变。 */
   ok('A7b `proppush` 进了 `MPW_SCENE_DEBUG_KEYS`（同一旗标会被带进渲染器帧 URL ⇒ 两端一起关）',
-    /const MPW_SCENE_DEBUG_KEYS = \[[^\]]*"proppush"\]/.test(SRC))
+    /const MPW_SCENE_DEBUG_KEYS = \[[^\]]*"proppush"[^\]]*\]/.test(SRC))
   ok('A8 退避重试**有上限**（`MPW_SCENE_PROPS_MAX_ATTEMPTS` + `retry-exhausted`）',
     /MPW_SCENE_PROPS_MAX_ATTEMPTS = \d+/.test(S) && /retry-exhausted/.test(S) && /attempts > MPW_SCENE_PROPS_MAX_ATTEMPTS/.test(S))
   ok('A9 台账 `window.__mpwRendererPropsPush`（`n`/`last`/`log`/`skipped`）',

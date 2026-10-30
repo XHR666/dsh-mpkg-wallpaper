@@ -1,0 +1,89 @@
+# GitHub Pages —— 发布在线 demo（P-93；形态口径见 docs/ONLINE-DEMO.md）
+#
+# 为什么是"构建产物"而不是"直接从仓库根发布"：上游静态产物里写死了站点路径的绝对形状
+# `/wallpaper-engine-webgl/renderer/index.html`（iframe src，3 处）、
+# `/wallpaper-engine-webgl/default-wallpaper/index.html`（渲染器页内兜底壁纸）与 `/wallpaper-engine-webgl/sw.js`，
+# 而 Pages 只能从仓库根发布 ⇒ 产物里必须同时存在 `/demo/`（规范入口）与
+# `/WEwebLoader/`（站点路径名 = 产品名，P-127；喂给那几条写死路径），
+# 旧路径 `/wallpaper-engine-webgl/` 只放**极小重定向页**（不 404、不留第二份真源）。
+# 见 build-pages.mjs（口名单一真源 tools/site-paths.mjs）与 docs/ONLINE-DEMO.md §2.1。
+#
+# 关键约束：**不联网安装依赖**。构建只用 Node 内置模块（node build-pages.mjs），
+# 不跑 pnpm install / npm ci / vite build —— 本机与 CI 都不需要它们。
+name: pages
+
+on:
+  workflow_dispatch:            # 手动触发（首次发布用这个）
+  push:
+    branches: [main]            # 推送 main 自动重发；只想手动发就删掉这 3 行
+    paths-ignore:               # 纯文档/测试改动不重发（要重发就手动 dispatch）
+      - '**/*.md'
+      - 'reports/**'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      # 纯静态产物：零依赖、不联网（不要在这里加 pnpm install）
+      - name: Build static site (no network installs)
+        run: node build-pages.mjs --out _site --json
+      - name: Sanity check the artifact
+        run: |
+          set -eu
+          test -f _site/index.html
+          test -f _site/demo/index.html
+          test -f _site/demo/bench-patch.js
+          # ①(P-127 2026-09-19 站点路径改名 /wallpaper-engine-webgl/ → /WEwebLoader/)
+          test -f _site/WEwebLoader/index.html
+          test -f _site/WEwebLoader/bench-patch.js
+          test -f _site/WEwebLoader/renderer/index.html
+          test -f _site/samples/sample-synthetic/scene.pkg
+          test -f _site/.nojekyll
+          # 旧路径**只允许**有重定向页：三张页在（旧链接不 404）、且旧路径下没有第二份真源
+          for rel in index.html renderer/index.html default-wallpaper/index.html; do
+            test -f "_site/wallpaper-engine-webgl/$rel"
+            grep -q 'name="robots" content="noindex,nofollow"' "_site/wallpaper-engine-webgl/$rel"
+            grep -q 'http-equiv="refresh"' "_site/wallpaper-engine-webgl/$rel"
+            grep -q 'location.replace(' "_site/wallpaper-engine-webgl/$rel"
+          done
+          if find _site/wallpaper-engine-webgl -type f \
+               | grep -vE '^_site/wallpaper-engine-webgl/(index\.html|renderer/index\.html|default-wallpaper/index\.html)$' ; then
+            echo '✗ 旧路径下出现了非重定向页文件（不许第二份真源）' >&2; exit 1
+          fi
+          test ! -f _site/wallpaper-engine-webgl/bench-patch.js
+          # ①(2026-09-16 CI 回归修复，run 35015130033) 这里曾有一行 `rm -f _site/<两个服务端文件>`：
+          #   那是**事后补救** —— 白名单仍把它们拷进 _site ⇒ 本地产物 ≠ CI 产物，谁删掉这行谁红。
+          #   现已在 build-pages.mjs 的 PAGES_DENY_FILES 里显式排除，并由构建自带的隐私闸门把关；
+          #   本步骤只做**独立复核**（同口径的第二双眼睛，防止构建脚本被改坏）。
+          if grep -rInE --exclude='*.map' '\/root\/(Desktop|\.dsh-mpkg-wallpaper)\/|\/mnt\/sdcard\/' _site \
+               | grep -vE 'process\.env\.[A-Z_]+ \|\||MPW_[A-Z_]+ \|\||去个人化' ; then
+            echo '✗ 产物里出现个人绝对路径' >&2; exit 1
+          fi
+          echo "✓ 产物自检通过：$(find _site -type f | wc -l) 个文件"
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

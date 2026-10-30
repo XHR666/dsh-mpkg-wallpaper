@@ -1,0 +1,223 @@
+{
+ "$note": [
+  "known-issues.json — 机器可读的「已知差异」清单（任务书 C2 / W11 平价基线白名单）。",
+  "消费方：parity-check.mjs（白名单排除，避免噪音）；新会话「别踩」速查表。",
+  "kind 取值：official-semantics=官方本来如此 | fallback=回退/兜底行为 | hack=场景限定补丁 | measurement=测量/基线口径限制（C 会话扩展值）。",
+  "affects 取值：rect=绘制矩形口径 | px=中心像素口径（parity-check 判越界时按此豁免）；结构性条目的 affects 必须为空（分类 ≠ 豁免）。",
+  "纪律：① 每条必须有证据出处（上报文件名/代码行/PATCHES 编号），字段 id/kind/scene/layer/affects/reason/evidence/owner/since 必填；② 新增条目追加，不改旧条目语义；③ **豁免必须仍然命中**（防腐烂，与两仓白名单同一纪律，判据见 tests/known-ledger-audit.mjs）：`scene` 必须是**可复算的场景身份**（`*` 或工坊 id 形态），不许用文件内容哈希；对账过的场景里某条 0 命中 ⇒ 判红；④ rect 口径**不允许全局豁免**（`scene:'*'` + `layer:'*'` + affects 含 rect = 把严格路径整个关掉 ⇒ 判红）；⑤ 只想记录「按什么结构分类/为什么不参与对账」而不豁免任何东西 ⇒ 用 `scope:'structural'` + `classify:{rule,…}` + `affects:[]`（结构判据的 rule 必须被消费方实现，否则判红）。"
+ ],
+ "issues": [
+  {
+   "id": "KI-1",
+   "scene": "3719111841",
+   "layer": "背景正常",
+   "kind": "measurement",
+   "affects": [
+    "rect",
+    "px"
+   ],
+   "reason": "旧版上报的台账矩形是「效果链拷贝趟」的 FBO 空间坐标（rd=[1431,2133,4245,2547]，看似画到屏外），且其中心像素是被钳位到画布边缘后读到的清屏灰 (178,178,178)——都是测量伪影，不是真绘错位。demo.html 的 onLayerDraw 已加「只记绑定默认帧缓冲（上屏趟）」守卫；含伪影的旧上报仍留在 reports/ 里，parity 对账时豁免。",
+   "evidence": [
+    "we-scene-demo/demo.html onLayerDraw 注释：「旧实现取第一次 → 背景层的台账矩形是 FBO 空间坐标（[1431,2133,…] 看似画到屏外）」",
+    "reports/r1789233372320.json layerLedger[0] rd 与该注释引用数字逐位一致；同报 [bg帧] 行 ox=1914 oy=1065（origin 正确）",
+    "we-scene-demo/PATCHES.md P-32 §layerLedger、P-36（drawGuard/守卫批次）"
+   ],
+   "owner": "A",
+   "since": "2026-09-13"
+  },
+  {
+   "id": "KI-2",
+   "scene": "3326873240",
+   "layer": "*",
+   "kind": "official-semantics",
+   "affects": [
+    "px"
+   ],
+   "reason": "日月循环：t=0 附近存在官方过渡帧白场（脚本驱动的日夜状态机），设备上报采样在 t≈10s+ 而 CPU 预览定格 t=0，两端像素天然不同；另有多条 authored 整屏白层（myLayer/193/组件/1054/893/1297271）官方语义即不显示（P-34 ② 已改透明兜底，rect 侧 parity 记 soft(size0)）。",
+   "evidence": [
+    "ZCODE-MERGED-5-RENDERER-DEEP.md W9（第 3 层遮挡 morning 的取证路径）",
+    "we-scene-demo/PATCHES.md P-34 ②（tex=white 整屏层清单与透明兜底）",
+    "reports/r1789233487520.json（该场景首份含台账上报）"
+   ],
+   "owner": "A",
+   "since": "2026-09-13"
+  },
+  {
+   "id": "KI-3",
+   "scene": "3544152633",
+   "layer": "cat|housebasic",
+   "kind": "official-semantics",
+   "affects": [
+    "px"
+   ],
+   "reason": "Girl cat：人物/猫本就是窗前逆光剪影（近黑是官方观感，CPU 基线 preview.mjs 构图同样近黑）；housebasic 的 PNG 在窗口区是透明洞（底下是 houseback），台账中心采到的是底图深色——都不是「渲染黑块」bug。houseback 的真黑曾归 P-36（位图超 4096 上限静默失败）。",
+   "evidence": [
+    "we-scene-demo/PATCHES.md P-37（W2 定案全文）",
+    "reports/r1789233181211.json layerLedger（cat/housebasic 中心深色值）"
+   ],
+   "owner": "A",
+   "since": "2026-09-13"
+  },
+  {
+   "id": "KI-4",
+   "scene": "*",
+   "layer": "光束*|*角",
+   "kind": "fallback",
+   "affects": [
+    "px"
+   ],
+   "reason": "无纹理名（tn=0）的灯光/组件层（如「光束 - 角」）在设备端走 white/transp 兜底（P-34 ② 后缺纹理默认透明），CPU 预览按纯色 quad 绘制——矩形一致、中心像素口径不同属预期。texMissing 已按 tn=1 过滤，不再误报（P-40 ②）。",
+   "evidence": [
+    "we-scene-demo/PATCHES.md P-40 ②（texMissing 只统计 tn=1）",
+    "we-scene-demo/README-DIAGNOSTICS.md whitefallback 行（默认透明、?whitefallback=1 切回白块对照）"
+   ],
+   "owner": "A",
+   "since": "2026-09-13"
+  },
+  {
+   "id": "KI-5",
+   "scene": "3719111841",
+   "layer": "眼睛组合",
+   "kind": "official-semantics",
+   "affects": [
+    "rect",
+    "px"
+   ],
+   "reason": "「眼睛组合」是单个 puppet 网格层（带自有蒙皮），不可按子层拆分——要拆需渲染器加 __subMeshOnly（W8 待办）。其 79px 标定残差已定案为「标定条目不可达（眨眼相位）」，非渲染误差；且蒙皮层不走 compositeLayer 台账路径。",
+   "evidence": [
+    "ZCODE-MERGED-5-RENDERER-DEEP.md W8（容器层 vs 网格层判定）",
+    "we-scene-demo/PATCHES.md P-30（79px 残差定案）",
+    "we-scene-demo/POSITION-FINDINGS.md §2（眼睛组合行）"
+   ],
+   "owner": "A",
+   "since": "2026-09-13"
+  },
+  {
+   "id": "KI-6",
+   "scene": "3719111841",
+   "layer": "眼睛组合|左眼皮|右眼上眼睑",
+   "kind": "hack",
+   "affects": [
+    "rect"
+   ],
+   "reason": "凯尔希长条眼窗 hack：眼睛组合 uvRect 横带 [0.04,0.30,0.96,0.70] + quad 强制 405×120（authored 是 584×759），仅为该场景 3/4 侧脸标定。EYE_HACK_SCENES=['3719111841'] 白名单限定；?eyehack=1/0 可强制开/关。CPU 侧 applyRenderConfig({sceneId}) 同样应用 → parity 两端一致；此条用于 --strict 审计与人读，防止把 405×120 当 auth 尺寸错位。",
+   "evidence": [
+    "we-scene-demo/PATCHES.md P-38（W3 白名单定案）",
+    "we-scene-demo/CALIBRATION-3719111841.md（标定过程）",
+    "core/we-scene-bundle.js applyRenderConfig EYE_HACK_SCENES（实测 post-config size=[405,120] scale=[1,1]）"
+   ],
+   "owner": "A",
+   "since": "2026-09-13"
+  },
+  {
+   "id": "KI-7",
+   "scope": "structural",
+   "classify": {
+    "rule": "video-wallpaper",
+    "entryAbsent": "scene.pkg",
+    "entryPresent": "wallpaper.mp4",
+    "consequence": "not-a-scene-parity-subject"
+   },
+   "scene": "*",
+   "layer": "*",
+   "kind": "official-semantics",
+   "affects": [],
+   "reason": "砂狼白子02_08 是视频壁纸：mpkg 内 project.json 写 type=scene，实际是 wallpaper.mp4（3840×2160 h264）+ 一份 scene.json（脚本驱动时钟文本层）。按视频壁纸播放是既定链路；「视频作底层 + 场景文本叠加」不存在（待产品决策）。parity 对它无 scene.pkg 本地路径 → 自动 SKIP。①(2026-09-24 可移植性审计 PA-34) 本条**不再是豁免条目**：旧写法是 `scene = <mpkg 内容哈希>` + `layer:'*'` + `affects:['rect','px']` ⇒ 用一份文件的内容指纹豁免**整张包**的 rect+px 对账。哈希不是可复算的场景身份（重新打包就换哈希 ⇒ 豁免静默失效、无人知），且 knownFor() 只在命中时豁免、不命中不报错。现在改成**结构性判据**：容器「无 scene.pkg 且有 wallpaper.mp4」⇒ 按视频壁纸分类、不参与 scene 对账（parity-check 的 SKIP 路径会打印命中的判据名与证据）。`affects: []` ⇒ knownFor() 永不据此豁免任何一层：豁免面 = 0，**分类 ≠ 豁免**。",
+   "evidence": [
+    "we-scene-demo/PATCHES.md P-33 §砂狼白子那张的性质",
+    "$MPW_PLUGIN_CACHE/d5007a52866682e2210d9d855d170c80.mpkg（容器本体）",
+    "we-scene-demo/tests/parity-check.mjs classifyNoLocalScene()：结构性判据的实现点（rule=video-wallpaper）",
+    "we-scene-demo/tests/known-ledger-audit.mjs：台账防腐烂判据（内容哈希键 / 全局 rect 豁免 / 条目 0 命中 一律判红）"
+   ],
+   "owner": "B",
+   "since": "2026-09-13",
+   "revised": "2026-09-24 PA-34：内容哈希 scene 键 + 整包豁免 → 结构性判据（affects 置空；由 parity-check 的 SKIP 路径按 rule 名判定）"
+  },
+  {
+   "id": "KI-8",
+   "scene": "*",
+   "layer": "*",
+   "kind": "measurement",
+   "affects": [
+    "px"
+   ],
+   "reason": "蒙皮/网格层的中心像素只做软比对（soft）：CPU 预览不跑 GPU 蒙皮（网格层按 quad 近似绘制），设备画的是 skinned mesh，两者中心像素可比性有限；矩形对账不受影响（台账也不记 mesh 趟）。",
+   "evidence": [
+    "we-scene-demo/TESTING.md preview.mjs 行（无 GPU 依赖）与 headless-shot.mjs 行（局限：无蒙皮网格/效果链）",
+    "reports/r1789233372320.json subsystems.meshDraws=200（设备端确在画 mesh）"
+   ],
+   "owner": "C",
+   "since": "2026-09-13"
+  },
+  {
+   "id": "KI-9",
+   "scene": "*",
+   "layer": "*",
+   "kind": "measurement",
+   "affects": [
+    "px"
+   ],
+   "reason": "时间相位差：设备上报采样在页面运行 t≈10s+（脚本/骨骼动画已推进），CPU 基线定格 t=0（preview 不跑脚本）。像素口径的两端差异属预期（此条豁免）。**矩形**口径不由本条豁免：脚本/文本驱动的位置改写由 parity-check 的 soft(text)/soft(scripted) 分类承担（原始 scene.json 里对象自身/属性值带脚本、或为文本层即自动识别），纯几何错误仍会判 FAIL——历史三大事故（附件锚点/脚本 origin 覆盖/ownSizes）全是非文本层，均在该严格路径上。",
+   "evidence": [
+    "we-scene-demo/PATCHES.md P-30（79px=眨眼相位、蒙皮 bbox 随帧 ±数十 px）",
+    "we-scene-demo/preview.mjs（t=0、不跑脚本，文件头注释）"
+   ],
+   "owner": "C",
+   "since": "2026-09-13"
+  },
+  {
+   "id": "KI-10",
+   "scene": "3719111841",
+   "layer": "主体|长发3|左耳朵1",
+   "kind": "measurement",
+   "affects": [
+    "rect"
+   ],
+   "reason": "蒙皮/网格回退路径的矩形**口径分叉**（用户第4项）：这三层走 fallback-tex(mesh)+skin=1 兜底绘制，设备侧矩形（= 网格原始包围盒 × layer.scale）与 parity 的 CPU 基线（= layer.size × scale 的四边形框）显著不同：主体 gl=[1268,252,1398,2072] vs cpu=[1133.1,118.9,1668.7,2243.8] Δwh=271,172；长发3 Δwh=343,198；左耳朵1 gl/cpu=0.51。旧描述（P-58 前）判为「已知待修的真实渲染缺陷」，**P-58 复核后订正为测量口径**：①官方标定 refrender-3719111841.json 的这三层矩形与 gl 侧逐位吻合（Δc ≤1.0px / Δwh ≤1.4px：主体 ref=[1268.18,251.97,1399.80,2073.37]、长发3 ref=[245.46,718.00,1986.05,1619.47]、左耳朵1 ref=[1777.93,77.98,444.89,394.99]）；②5 个 puppet 层实测「不透明像素落在网格 UV 框外」计数全为 0（纹理留白全透明：主体不透明仅 34.8%、左耳朵1 9.7%），故网格框与 size 框的**可见像素相同**，比值差来自留白；③官方运行时不消费 cropoffset（REVERSE-FINDINGS-4 RE-02：双 exe 字节级 0 命中 + 解析器逐键核对 + 3 个参考实现零实现）。真机 A/B 入口 = `?meshsize=1`（P-58；默认关，改按 size 框缩放/定位）；--strict 下仍计失败以便真机确认后再决定翻默认或改 parity 的网格层基线。",
+   "evidence": [
+    "reports/parity-3719111841.json（verdict=FAIL 明细）",
+    "reports/r17893*.json（真机上报，?id=3719111841）",
+    "we-scene-demo/refrender-3719111841.json（官方标定矩形；gl 侧与它 ≤1.4px 吻合）",
+    "we-scene-demo/meshsize-test.mjs（P-58：A 段钉住 gl=官方/比值 0.838/0.853/0.528；B 段钉住 ?meshsize=1 → 1.0±0.05；C 段钉住 crop 位移 +852.7/−300.5px）",
+    "we-scene-demo/PATCHES.md P-58（H1：留白实测 + 官方标定对账 + 反证记录）",
+    "REVERSE-FINDINGS-4.md RE-02（cropoffset 运行时不消费）"
+   ],
+   "owner": "主会话",
+   "since": "2026-09-14",
+   "revised": "2026-09-14 P-58（kind: fallback→measurement；理由见 reason 内订正段）"
+  },
+  {
+   "id": "KI-11",
+   "scene": "3554161528",
+   "layer": "人物",
+   "kind": "fallback",
+   "affects": [
+    "rect"
+   ],
+   "reason": "第1项 hina 的「人物」层矩形与 CPU 基线大幅分叉（实测 Δc=381.3px、Δwh=447,806，gl/cpu 尺寸比 0.64 标 ⚑ownSizes 嫌疑），走 skin+fallback-tex(mesh) 蒙皮兜底路径。这正是用户反馈「第12层人物扭曲/配件乱飘」的量化证据，属**待修真实缺陷**（见 TASK-RENDERER-QUEUE 第1项 H2/H4），登记以免掩盖其它新差异；--strict 下仍计失败。",
+   "evidence": [
+    "reports/parity-3554161528.json",
+    "reports/r1789318880678.json（真机上报 ?id=3554161528）",
+    "docs/HINA-LAYERS-EVIDENCE.md"
+   ],
+   "owner": "主会话",
+   "since": "2026-09-14"
+  },
+  {
+   "id": "KI-12",
+   "scene": "3544152633",
+   "layer": "girl",
+   "kind": "fallback",
+   "affects": [
+    "rect"
+   ],
+   "reason": "girl 层矩形小分叉（Δc=1.3px、Δwh=54,46）走 skin+fx+fallback-tex(mesh) 兜底路径；中心几乎命中、尺寸差为蒙皮 bbox 口径差，登记为已知回退类差异（--strict 仍失败）。",
+   "evidence": [
+    "reports/parity-3544152633.json",
+    "reports/r1789318273987.json"
+   ],
+   "owner": "主会话",
+   "since": "2026-09-14"
+  }
+ ]
+}

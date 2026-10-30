@@ -1,0 +1,64 @@
+NOTICE — third-party licence for the inline icons in `demo/bench-patch.js`
+=========================================================================
+
+What this covers
+----------------
+`demo/bench-patch.js`（本测试台的运行期补丁）**内联**了 7 个线条图标的几何数据
+（`<path d=…>` / `<circle …>`），用在第七批的「选择文件夹 / 选择文件」弹窗里
+（其中 6 个真的落在弹窗 DOM 上，`search` 是登记在工厂里的备用件、当前未落点）：
+
+  folder, file, house, check, x   ← 取自 Lucide v0.545.0 同名图标（路径数据逐字节相同）
+  arrow-up, search                ← 取自本项目的 `docs/SVG-ICONS.md`（用户提供，同一套 Lucide/Feather 几何）
+
+Upstream
+--------
+  Project:  Lucide — https://github.com/lucide-icons/lucide
+  Package:  lucide-static@0.545.0（npm），文件 `icons/<name>.svg`
+  Licence:  ISC；其中源自 Feather 的部分为 MIT
+  核对：    2026-09-17，逐条把 `d` / `cx,cy,r` 与
+            https://cdn.jsdelivr.net/npm/lucide-static@0.545.0/icons/<name>.svg 对齐（folder/file/house/check/x 五条实测相同）
+
+没有别的 Lucide 内容被 vendored：**不加依赖、不带图标字体、不引外部样式表**。
+台账：`docs/COPYING-RULES.md` §4；仓库侧说明：`docs/ICONS-NEEDED.md`。
+
+--- upstream LICENSE (lucide-static@0.545.0) — verbatim below ---
+
+ISC License
+
+Copyright (c) for portions of Lucide are held by Cole Bemis 2013-2023 as part of Feather (MIT). All other copyright (c) for Lucide are held by Lucide Contributors 2025.
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+---
+
+The MIT License (MIT) (for portions derived from Feather)
+
+Copyright (c) 2013-2023 Cole Bemis
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

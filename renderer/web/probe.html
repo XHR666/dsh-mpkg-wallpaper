@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>GL 探针</title></head>
+<body>
+<pre id="log">GL 探针…</pre>
+<script>
+const log = (m) => { try { document.getElementById('log').textContent += '\n' + m } catch {} };
+const L = [];
+const addLog = (m) => { L.push(m); log(m) };
+window.addEventListener('error', (e) => addLog('页面错误: ' + e.message));
+(async () => {
+  addLog('WebGL2: ' + (function(){ const c=document.createElement('canvas'); const g=c.getContext('webgl2'); return g? 'OK':'NO'; })());
+  const gl = document.createElement('canvas').getContext('webgl2', { antialias: false });
+  if (!gl) { addLog('无 WebGL2'); return; }
+  const chk = (tag) => { const e = gl.getError(); addLog(tag + ' → 0x' + e.toString(16) + (e===gl.NO_ERROR?' ✓':' ⚠')); return e; };
+  addLog('MAX_TEXTURE_SIZE=' + gl.getParameter(gl.MAX_TEXTURE_SIZE));
+
+  // 步骤1: 建 RGBA8 纹理（null 数据）
+  const t1 = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t1);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1024, 1024, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+  chk('S1 texImage2D null 1024x1024');
+
+  // 步骤2: 参数
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  chk('S2 参数设置');
+
+  // 步骤3: FBO 挂载
+  const fbo = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t1, 0);
+  chk('S3 framebufferTexture2D');
+  addLog('S3b status=0x' + gl.checkFramebufferStatus(gl.FRAMEBUFFER).toString(16));
+  gl.viewport(0, 0, 1024, 1024);
+
+  // 步骤4: 极简着色器画到 FBO
+  const vs = '#version 300 es\nlayout(location=0) in vec2 p; void main(){ gl_Position=vec4(p,0,1);}';
+  const fs = '#version 300 es\nprecision mediump float; out vec4 o; uniform sampler2D uT; void main(){ o=vec4(1,0,1,1);}';
+  const mk = (t,s) => { const g=gl.createShader(t); gl.shaderSource(g,s); gl.compileShader(g); addLog('编译 '+(t===35633?'VS':'FS')+' ok='+gl.getShaderParameter(g,gl.COMPILE_STATUS)); if(!gl.getShaderParameter(g,gl.COMPILE_STATUS)) addLog('  ' + gl.getShaderInfoLog(g)); return g; };
+  const prog = gl.createProgram();
+  gl.attachShader(prog, mk(gl.VERTEX_SHADER, vs));
+  gl.attachShader(prog, mk(gl.FRAGMENT_SHADER, fs));
+  gl.linkProgram(prog);
+  addLog('链接 ok=' + gl.getProgramParameter(prog, gl.LINK_STATUS) + (gl.getProgramParameter(prog, gl.LINK_STATUS)? '' : ' ' + gl.getProgramInfoLog(prog)));
+  chk('S4 program');
+  const quad = new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]);
+  const vao = gl.createVertexArray();
+  gl.bindVertexArray(vao);
+  const vb = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vb);
+  gl.bufferData(gl.ARRAY_BUFFER, quad, gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(0);
+  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+  chk('S5 vao/buffer/attrib');
+  gl.useProgram(prog);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+  chk('S6 draw 到 FBO');
+
+  // 步骤7: 采样回读
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, t1);
+  chk('S7 bind fbo纹理 采样');
+
+  // 步骤8: 长度不匹配测试（RG88 类：w*h*2 字节 → 声明 RGBA）
+  try {
+    const bad = new Uint8Array(1024*1024*2);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1024, 1024, 0, gl.RGBA, gl.UNSIGNED_BYTE, bad);
+    chk('S8 texImage2D 长度=2N 声明RGBA');
+  } catch (e) { addLog('S8 抛错: ' + e.message); }
+
+  // 步骤9: uniform 类型错配（vec4 location 给 uniform1f 等）
+  const uloc = gl.getUniformLocation(prog, 'uT');
+  if (uloc) { gl.uniform1f(uloc, 1.0); chk('S9 uniform1f→sampler'); }
+
+  // 步骤10: 解绑/再次采样
+  gl.clearColor(0,0,0,1); gl.clear(gl.COLOR_BUFFER_BIT);
+  chk('S10 clear');
+
+  // 步骤11: 3840x2260 FBO（场景级尺寸）
+  const t2 = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t2);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 3840, 2260, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  const fbo2 = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fbo2);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t2, 0);
+  addLog('S11 status=0x' + gl.checkFramebufferStatus(gl.FRAMEBUFFER).toString(16));
+  gl.viewport(0,0,3840,2260);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+  chk('S11 场景尺寸 FBO+draw');
+
+  // 步骤12: uniformMatrix4fv 传普通 Array（长度16）
+  const mloc = gl.getUniformLocation(prog, 'uM');
+  // 无 uM uniform——换用新程序
+  const fs2 = '#version 300 es\nprecision mediump float; out vec4 o; uniform mat4 uM; void main(){ o = vec4(uM[0].x, 0.0, 1.0, 1.0); }';
+  const prog2 = gl.createProgram();
+  gl.attachShader(prog2, mk(gl.VERTEX_SHADER, vs));
+  gl.attachShader(prog2, mk(gl.FRAGMENT_SHADER, fs2));
+  gl.linkProgram(prog2);
+  const ml = gl.getUniformLocation(prog2, 'uM');
+  if (ml) {
+    gl.useProgram(prog2);
+    gl.uniformMatrix4fv(ml, false, new Float32Array(16).fill(0.5));
+    chk('S12a mat4 Float32Array');
+    gl.uniformMatrix4fv(ml, false, [0.5,0,0,0, 0,0.5,0,0, 0,0,0.5,0, 0,0,0,0.5]);
+    chk('S12b mat4 普通Array(16)');
+    gl.uniformMatrix4fv(ml, false, new Float32Array(15));
+    chk('S12c mat4 长度15(非法)');
+  } else { addLog('S12 跳过(无uM)'); }
+
+  // 步骤13: 8 个纹理单元同时绑定 + 绘制（模拟 maxTex=8 路径）
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.clearColor(0.2,0.2,0.2,1); gl.clear(gl.COLOR_BUFFER_BIT);
+  for (let u=0;u<8;u++){ gl.activeTexture(gl.TEXTURE0+u); gl.bindTexture(gl.TEXTURE_2D, t1); }
+  chk('S13 绑定8单元');
+  gl.useProgram(prog);
+  gl.bindVertexArray(vao);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+  chk('S13b 8单元+draw');
+  for (let u=0;u<8;u++){ gl.activeTexture(gl.TEXTURE0+u); gl.bindTexture(gl.TEXTURE_2D, null); }
+
+  // 步骤14: 反馈环（采样=绘制目标纹理）→ 预期 0x502
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, t1);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+  chk('S14a 挂载fbo前');
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+  chk('S14b 反馈采样绘制(预期502)');
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+  // 步骤15: canvas 上传路径（视频帧替代）
+  try {
+    const cv = document.createElement('canvas'); cv.width=1280; cv.height=720;
+    const cctx = cv.getContext('2d'); cctx.fillStyle='#336'; cctx.fillRect(0,0,1280,720);
+    gl.bindTexture(gl.TEXTURE_2D, t1);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cv);
+    chk('S15 canvas->texImage2D');
+  } catch(e){ addLog('S15 抛错: '+e.message); }
+
+  // 步骤16: 真·waterflow 复现（服务器转译后的原版着色器 + 管线式绑定）
+  try {
+    const vSrc = await (await fetch('/transpiled/3554161528/shaders/effects/waterflow.vert')).text();
+    const fSrc = await (await fetch('/transpiled/3554161528/shaders/effects/waterflow.frag')).text();
+    addLog('S16 转译源: vert=' + vSrc.length + ' frag=' + fSrc.length);
+    const pw = gl.createProgram();
+    gl.attachShader(pw, mk(gl.VERTEX_SHADER, vSrc));
+    gl.attachShader(pw, mk(gl.FRAGMENT_SHADER, fSrc));
+    gl.linkProgram(pw);
+    addLog('S16 链接 ok=' + gl.getProgramParameter(pw, gl.LINK_STATUS) + (gl.getProgramParameter(pw, gl.LINK_STATUS) ? '' : ' ' + gl.getProgramInfoLog(pw)));
+    chk('S16a 链接');
+    // 属性位置与绑定（模拟管线：vec3 pos + vec2 uv, stride 20）
+    const pl = gl.getAttribLocation(pw, 'a_Position');
+    const tl = gl.getAttribLocation(pw, 'a_TexCoord');
+    addLog('S16 属性位置 pos=' + pl + ' uv=' + tl);
+    // 绑定三个采样器纹理
+    gl.useProgram(pw);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, t1);
+    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, t2);
+    gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, t2);
+    const setU = (name, fn) => { const l = gl.getUniformLocation(pw, name); if (l !== null) fn(l); };
+    setU('g_Texture0', (l) => gl.uniform1i(l, 0));
+    setU('g_Texture1', (l) => gl.uniform1i(l, 1));
+    setU('g_Texture2', (l) => gl.uniform1i(l, 2));
+    setU('g_Texture1Resolution', (l) => gl.uniform4f(l, 32, 32, 32, 32));
+    setU('g_Time', (l) => gl.uniform1f(l, 1.2));
+    setU('g_FlowSpeed', (l) => gl.uniform1f(l, 1));
+    setU('g_FlowAmp', (l) => gl.uniform1f(l, 1));
+    setU('g_FlowPhaseScale', (l) => gl.uniform1f(l, 2));
+    setU('g_PhaseFeather', (l) => gl.uniform1f(l, 0.4));
+    setU('g_ModelViewProjectionMatrix', (l) => gl.uniformMatrix4fv(l, false, new Float32Array([2,0,0,0, 0,2,0,0, 0,0,1,0, -1,-1,0,1])));
+    chk('S16b uniform 设置');
+    const pwVao = gl.createVertexArray(); gl.bindVertexArray(pwVao);
+    const pwVb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, pwVb);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([ -1,1,0,0,1, -1,-1,0,0,0, 1,1,0,1,1, 1,1,0,1,1, -1,-1,0,0,0, 1,-1,0,1,0 ]), gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(0);
+    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 20, 0);
+    gl.enableVertexAttribArray(1);
+    gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 20, 12);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+    gl.viewport(0, 0, 1024, 1024);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    chk('S16c 真waterflow绘制');
+    // 逐步去减: 去掉 T2 采样（再画一次不同变体）
+    // 步骤17: NPOT 采样验证（FBO 纹理=3840x2260 非2幂！）
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+    gl.viewport(0, 0, 1024, 1024);
+    // T0 换成 1024(POT) 再画一次 → 若 0x0 则 NPOT 为真凶
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, t1);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    chk('S17a POT-T0 绘制');
+    // T0 换回 NPOT 3840x2260
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, t2);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    chk('S17b NPOT-T0 绘制');
+    // 步骤18: 摘离后采样验证（t1 从 fbo 脱下再被 waterflow 采样）
+    try {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, null, 0);
+      addLog('S18 已摘离 t1, status=0x' + gl.checkFramebufferStatus(gl.FRAMEBUFFER).toString(16));
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+      gl.viewport(0, 0, 1024, 1024);
+      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, t1);
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+      chk('S18 摘离后采样绘制');
+    } catch (e) { addLog('S18 抛错: ' + e.message); }
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  } catch (e) { addLog('S16 抛错: ' + e.message); }
+
+  addLog('\n== 探针完成 ==');
+})();
+</script>
+</body>
+</html>

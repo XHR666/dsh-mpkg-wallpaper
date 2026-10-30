@@ -1,0 +1,3228 @@
+{
+  "generatedAt": "2026-10-29T18:08:15.493Z",
+  "generator": "node diag-flag-check.mjs（脚本自动生成，勿手改）",
+  "codeBasis": [
+    "core/we-scene-bundle.js",
+    "demo.html",
+    "demo/bench-patch.js",
+    "elysia/buffer.js",
+    "elysia/demo-elysia.js",
+    "elysia/font-render.js",
+    "elysia/inflate.js",
+    "elysia/media-host.js",
+    "elysia/media-lyrics.js",
+    "elysia/multi-instance.js",
+    "elysia/nsl.js",
+    "elysia/path.js",
+    "elysia/scene-script-apis.js",
+    "elysia/scene-scripts.js",
+    "elysia/vendor/@shaderfrog/glsl-parser/ast/ast-types.js",
+    "elysia/vendor/@shaderfrog/glsl-parser/ast/ast.js",
+    "elysia/vendor/@shaderfrog/glsl-parser/ast/index.js",
+    "elysia/vendor/@shaderfrog/glsl-parser/ast/visit.js",
+    "elysia/vendor/@shaderfrog/glsl-parser/error.js",
+    "elysia/vendor/@shaderfrog/glsl-parser/index.js",
+    "elysia/vendor/@shaderfrog/glsl-parser/parser/generator.js",
+    "elysia/vendor/@shaderfrog/glsl-parser/parser/grammar.js",
+    "elysia/vendor/@shaderfrog/glsl-parser/parser/index.js",
+    "elysia/vendor/@shaderfrog/glsl-parser/parser/parser.js",
+    "elysia/vendor/@shaderfrog/glsl-parser/parser/scope.js",
+    "elysia/vendor/@shaderfrog/glsl-parser/parser/utils.js",
+    "elysia/vendor/@shaderfrog/glsl-parser/preprocessor/generator.js",
+    "elysia/vendor/@shaderfrog/glsl-parser/preprocessor/index.js",
+    "elysia/vendor/@shaderfrog/glsl-parser/preprocessor/preprocessor-node.js",
+    "elysia/vendor/@shaderfrog/glsl-parser/preprocessor/preprocessor-parser.js",
+    "elysia/vendor/@shaderfrog/glsl-parser/preprocessor/preprocessor.js",
+    "elysia/we-renderer/bloom.js",
+    "elysia/we-renderer/camera.js",
+    "elysia/we-renderer/canvas.js",
+    "elysia/we-renderer/core.js",
+    "elysia/we-renderer/effects/blend.js",
+    "elysia/we-renderer/effects/blur.js",
+    "elysia/we-renderer/effects/blurradial.js",
+    "elysia/we-renderer/effects/cloudmotion.js",
+    "elysia/we-renderer/effects/clouds.js",
+    "elysia/we-renderer/effects/depthparallax.js",
+    "elysia/we-renderer/effects/filmgrain.js",
+    "elysia/we-renderer/effects/foliagesway.js",
+    "elysia/we-renderer/effects/glitter.js",
+    "elysia/we-renderer/effects/godrays.js",
+    "elysia/we-renderer/effects/iris.js",
+    "elysia/we-renderer/effects/lightshafts.js",
+    "elysia/we-renderer/effects/opacity.js",
+    "elysia/we-renderer/effects/pulse.js",
+    "elysia/we-renderer/effects/scroll.js",
+    "elysia/we-renderer/effects/shake.js",
+    "elysia/we-renderer/effects/shimmer.js",
+    "elysia/we-renderer/effects/skew.js",
+    "elysia/we-renderer/effects/swing.js",
+    "elysia/we-renderer/effects/tint.js",
+    "elysia/we-renderer/effects/watercaustics.js",
+    "elysia/we-renderer/effects/waterflow.js",
+    "elysia/we-renderer/effects/waterripple.js",
+    "elysia/we-renderer/effects/waterwaves.js",
+    "elysia/we-renderer/effects.js",
+    "elysia/we-renderer/glsl/executor.js",
+    "elysia/we-renderer/glsl/integration.js",
+    "elysia/we-renderer/glsl/preprocess.js",
+    "elysia/we-renderer/glsl/runtime.js",
+    "elysia/we-renderer/glsl/transpile.js",
+    "elysia/we-renderer/image.js",
+    "elysia/we-renderer/jpeg.js",
+    "elysia/we-renderer/math.js",
+    "elysia/we-renderer/mdl.js",
+    "elysia/we-renderer/model.js",
+    "elysia/we-renderer/particles.js",
+    "elysia/we-renderer/puppet.js",
+    "elysia/we-renderer/text.js",
+    "elysia/we-renderer/textures.js",
+    "dsh-mpkg-wallpaper/lib/client.js"
+  ],
+  "rule": "URLSearchParams(new URLSearchParams/new URL + location.*) 的 get/has/getAll、正则 [?&]name=、白名单 localStorage 键",
+  "common": [
+    {
+      "name": "att",
+      "usage": "att=legacy"
+    },
+    {
+      "name": "mcc",
+      "usage": "mcc=1"
+    },
+    {
+      "name": "piv",
+      "usage": "piv=1"
+    },
+    {
+      "name": "align",
+      "usage": "align=0"
+    },
+    {
+      "name": "parallax",
+      "usage": "parallax=legacy"
+    },
+    {
+      "name": "gyro",
+      "usage": "gyro=1"
+    },
+    {
+      "name": "audio",
+      "usage": "audio=1"
+    },
+    {
+      "name": "whitefallback",
+      "usage": "whitefallback=0"
+    },
+    {
+      "name": "hier",
+      "usage": "hier=0"
+    },
+    {
+      "name": "isolate",
+      "usage": "isolate=<层名>"
+    },
+    {
+      "name": "audit",
+      "usage": "audit=3"
+    }
+  ],
+  "flags": [
+    {
+      "name": "aa",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 11494,
+          "pattern": "searchParams.get('aa')"
+        }
+      ]
+    },
+    {
+      "name": "align",
+      "common": true,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 8829,
+          "pattern": "searchParams.get('align')"
+        },
+        {
+          "file": "demo.html",
+          "line": 9049,
+          "pattern": "searchParams.get('align')"
+        },
+        {
+          "file": "demo.html",
+          "line": 9201,
+          "pattern": "searchParams.get('align')"
+        }
+      ]
+    },
+    {
+      "name": "anim",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 3661,
+          "pattern": "searchParams.get('anim')"
+        },
+        {
+          "file": "demo.html",
+          "line": 5345,
+          "pattern": "searchParams.get('anim')"
+        },
+        {
+          "file": "demo.html",
+          "line": 5354,
+          "pattern": "searchParams.has('anim')"
+        }
+      ]
+    },
+    {
+      "name": "animloop",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 5348,
+          "pattern": "searchParams.get('animloop')"
+        }
+      ]
+    },
+    {
+      "name": "animoff",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 5344,
+          "pattern": "searchParams.has('animoff')"
+        }
+      ]
+    },
+    {
+      "name": "att",
+      "common": true,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 5330,
+          "pattern": "searchParams.get('att')"
+        }
+      ]
+    },
+    {
+      "name": "audio",
+      "common": true,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 6231,
+          "pattern": "regex [?&]audio="
+        },
+        {
+          "file": "demo.html",
+          "line": 6663,
+          "pattern": "searchParams.get('audio')"
+        }
+      ]
+    },
+    {
+      "name": "audioart",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 8011,
+          "pattern": "searchParams.get('audioart')"
+        }
+      ]
+    },
+    {
+      "name": "audioemit",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 5561,
+          "pattern": "searchParams.get('audioemit')"
+        }
+      ]
+    },
+    {
+      "name": "audit",
+      "common": true,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 9239,
+          "pattern": "searchParams.get('audit')"
+        }
+      ]
+    },
+    {
+      "name": "autocap",
+      "common": false,
+      "sites": [
+        {
+          "file": "dsh-mpkg-wallpaper/lib/client.js",
+          "line": 17361,
+          "pattern": "searchParams.get('autocap')"
+        }
+      ]
+    },
+    {
+      "name": "autorun",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 3059,
+          "pattern": "searchParams.has('autorun')"
+        }
+      ]
+    },
+    {
+      "name": "autorundone",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 4722,
+          "pattern": "searchParams.has('autorundone')"
+        }
+      ]
+    },
+    {
+      "name": "ay",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 5538,
+          "pattern": "searchParams.has('ay')"
+        },
+        {
+          "file": "demo.html",
+          "line": 8957,
+          "pattern": "searchParams.has('ay')"
+        }
+      ]
+    },
+    {
+      "name": "bandfeed",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 6764,
+          "pattern": "searchParams.get('bandfeed')"
+        },
+        {
+          "file": "demo/bench-patch.js",
+          "line": 11457,
+          "pattern": "regex [?&]bandfeed="
+        }
+      ]
+    },
+    {
+      "name": "bars",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 8007,
+          "pattern": "searchParams.has('bars')"
+        },
+        {
+          "file": "demo.html",
+          "line": 9286,
+          "pattern": "searchParams.has('bars')"
+        }
+      ]
+    },
+    {
+      "name": "baseline",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 3564,
+          "pattern": "regex [?&]baseline="
+        }
+      ]
+    },
+    {
+      "name": "baselinedur",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 3564,
+          "pattern": "regex [?&]baselinedur="
+        }
+      ]
+    },
+    {
+      "name": "baselineswap",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 3564,
+          "pattern": "regex [?&]baselineswap="
+        }
+      ]
+    },
+    {
+      "name": "bgfx",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 8006,
+          "pattern": "searchParams.has('bgfx')"
+        },
+        {
+          "file": "demo.html",
+          "line": 9218,
+          "pattern": "searchParams.has('bgfx')"
+        }
+      ]
+    },
+    {
+      "name": "bgwrapfix",
+      "common": false,
+      "sites": [
+        {
+          "file": "dsh-mpkg-wallpaper/lib/client.js",
+          "line": 5285,
+          "pattern": "searchParams.get('bgwrapfix')"
+        }
+      ]
+    },
+    {
+      "name": "bindorder",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 12641,
+          "pattern": "searchParams.get('bindorder')"
+        },
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 12646,
+          "pattern": "searchParams.get('bindorder')"
+        },
+        {
+          "file": "demo.html",
+          "line": 5336,
+          "pattern": "searchParams.get('bindorder')"
+        }
+      ]
+    },
+    {
+      "name": "blinkty",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 12605,
+          "pattern": "searchParams.get('blinkty')"
+        }
+      ]
+    },
+    {
+      "name": "bloomcap",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 19277,
+          "pattern": "searchParams.get('bloomcap')"
+        }
+      ]
+    },
+    {
+      "name": "bones",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 12630,
+          "pattern": "searchParams.get('bones')"
+        }
+      ]
+    },
+    {
+      "name": "bright",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 2733,
+          "pattern": "regex [?&]bright="
+        }
+      ]
+    },
+    {
+      "name": "cam",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 9204,
+          "pattern": "searchParams.get('cam')"
+        }
+      ]
+    },
+    {
+      "name": "camera",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 8670,
+          "pattern": "searchParams.get('camera')"
+        }
+      ]
+    },
+    {
+      "name": "camerashake",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 15827,
+          "pattern": "searchParams.get('camerashake')"
+        },
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 15835,
+          "pattern": "searchParams.get('camerashake')"
+        }
+      ]
+    },
+    {
+      "name": "campose",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 9627,
+          "pattern": "searchParams.get('campose')"
+        },
+        {
+          "file": "demo.html",
+          "line": 10342,
+          "pattern": "searchParams.get('campose')"
+        }
+      ]
+    },
+    {
+      "name": "canvasbox",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 627,
+          "pattern": "searchParams.get('canvasbox')"
+        }
+      ]
+    },
+    {
+      "name": "charfit",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 9665,
+          "pattern": "searchParams.get('charfit')"
+        }
+      ]
+    },
+    {
+      "name": "children",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 12102,
+          "pattern": "searchParams.get('children')"
+        }
+      ]
+    },
+    {
+      "name": "clampuvs",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 18604,
+          "pattern": "searchParams.get('clampuvs')"
+        }
+      ]
+    },
+    {
+      "name": "clearfx",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 3638,
+          "pattern": "searchParams.get('clearfx')"
+        }
+      ]
+    },
+    {
+      "name": "cmpint",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 8214,
+          "pattern": "searchParams.get('cmpint')"
+        }
+      ]
+    },
+    {
+      "name": "coloropts",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 2733,
+          "pattern": "regex [?&]coloropts="
+        }
+      ]
+    },
+    {
+      "name": "composfx",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 3649,
+          "pattern": "searchParams.get('composfx')"
+        }
+      ]
+    },
+    {
+      "name": "composite",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 13954,
+          "pattern": "searchParams.get('composite')"
+        }
+      ]
+    },
+    {
+      "name": "constglobal",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 8203,
+          "pattern": "searchParams.get('constglobal')"
+        }
+      ]
+    },
+    {
+      "name": "contrast",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 2733,
+          "pattern": "regex [?&]contrast="
+        }
+      ]
+    },
+    {
+      "name": "copybg",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 9212,
+          "pattern": "searchParams.has('copybg')"
+        }
+      ]
+    },
+    {
+      "name": "copybginput",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 8149,
+          "pattern": "searchParams.get('copybginput')"
+        }
+      ]
+    },
+    {
+      "name": "csz",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 6142,
+          "pattern": "searchParams.get('csz')"
+        }
+      ]
+    },
+    {
+      "name": "cuiliuti",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 4834,
+          "pattern": "searchParams.get('cuiliuti')"
+        }
+      ]
+    },
+    {
+      "name": "cursor",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 12352,
+          "pattern": "searchParams.get('cursor')"
+        }
+      ]
+    },
+    {
+      "name": "dbgred",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 7816,
+          "pattern": "searchParams.has('dbgred')"
+        },
+        {
+          "file": "demo.html",
+          "line": 8005,
+          "pattern": "searchParams.has('dbgred')"
+        }
+      ]
+    },
+    {
+      "name": "display",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 161,
+          "pattern": "searchParams.get('display')"
+        },
+        {
+          "file": "demo.html",
+          "line": 2733,
+          "pattern": "regex [?&]display="
+        }
+      ]
+    },
+    {
+      "name": "embed",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 702,
+          "pattern": "searchParams.has('embed')"
+        },
+        {
+          "file": "demo.html",
+          "line": 702,
+          "pattern": "searchParams.get('embed')"
+        },
+        {
+          "file": "demo.html",
+          "line": 4808,
+          "pattern": "searchParams.has('embed')"
+        },
+        {
+          "file": "demo.html",
+          "line": 4808,
+          "pattern": "searchParams.get('embed')"
+        },
+        {
+          "file": "demo.html",
+          "line": 6503,
+          "pattern": "searchParams.has('embed')"
+        },
+        {
+          "file": "demo.html",
+          "line": 6503,
+          "pattern": "searchParams.get('embed')"
+        },
+        {
+          "file": "demo.html",
+          "line": 8275,
+          "pattern": "searchParams.has('embed')"
+        },
+        {
+          "file": "demo.html",
+          "line": 8275,
+          "pattern": "searchParams.get('embed')"
+        }
+      ]
+    },
+    {
+      "name": "extany",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 1728,
+          "pattern": "searchParams.get('extany')"
+        }
+      ]
+    },
+    {
+      "name": "extbase",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 6188,
+          "pattern": "searchParams.get('extbase')"
+        }
+      ]
+    },
+    {
+      "name": "exthooks",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 6201,
+          "pattern": "searchParams.get('exthooks')"
+        }
+      ]
+    },
+    {
+      "name": "eyedy",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 8657,
+          "pattern": "searchParams.get('eyedy')"
+        }
+      ]
+    },
+    {
+      "name": "eyehack",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 3764,
+          "pattern": "searchParams.get('eyehack')"
+        },
+        {
+          "file": "demo.html",
+          "line": 7992,
+          "pattern": "searchParams.get('eyehack')"
+        }
+      ]
+    },
+    {
+      "name": "fbocap",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 11608,
+          "pattern": "searchParams.get('fbocap')"
+        }
+      ]
+    },
+    {
+      "name": "fbodesc",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 8160,
+          "pattern": "searchParams.get('fbodesc')"
+        }
+      ]
+    },
+    {
+      "name": "fit",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 8754,
+          "pattern": "searchParams.get('fit')"
+        }
+      ]
+    },
+    {
+      "name": "fliph",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 2733,
+          "pattern": "regex [?&]fliph="
+        }
+      ]
+    },
+    {
+      "name": "fog",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 18914,
+          "pattern": "searchParams.get('fog')"
+        }
+      ]
+    },
+    {
+      "name": "fovoverride",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 9846,
+          "pattern": "searchParams.get('fovoverride')"
+        }
+      ]
+    },
+    {
+      "name": "fps",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 2030,
+          "pattern": "searchParams.has('fps')"
+        },
+        {
+          "file": "demo.html",
+          "line": 2030,
+          "pattern": "searchParams.get('fps')"
+        },
+        {
+          "file": "elysia/demo-elysia.js",
+          "line": 72,
+          "pattern": "searchParams.get('fps')"
+        }
+      ]
+    },
+    {
+      "name": "frame",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 1965,
+          "pattern": "searchParams.get('frame')"
+        }
+      ]
+    },
+    {
+      "name": "framefit",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 4853,
+          "pattern": "searchParams.get('framefit')"
+        }
+      ]
+    },
+    {
+      "name": "framegeom",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 58,
+          "pattern": "searchParams.get('framegeom')"
+        },
+        {
+          "file": "demo.html",
+          "line": 4754,
+          "pattern": "searchParams.get('framegeom')"
+        }
+      ]
+    },
+    {
+      "name": "fx",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 16243,
+          "pattern": "searchParams.get('fx')"
+        }
+      ]
+    },
+    {
+      "name": "fxcomposite",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 8171,
+          "pattern": "searchParams.get('fxcomposite')"
+        }
+      ]
+    },
+    {
+      "name": "fxpassthrough",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 4474,
+          "pattern": "searchParams.get('fxpassthrough')"
+        }
+      ]
+    },
+    {
+      "name": "gyro",
+      "common": true,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 3545,
+          "pattern": "searchParams.get('gyro')"
+        },
+        {
+          "file": "demo.html",
+          "line": 3547,
+          "pattern": "searchParams.get('gyro')"
+        }
+      ]
+    },
+    {
+      "name": "h",
+      "common": false,
+      "sites": [
+        {
+          "file": "elysia/demo-elysia.js",
+          "line": 71,
+          "pattern": "searchParams.get('h')"
+        }
+      ]
+    },
+    {
+      "name": "hdr",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 9209,
+          "pattern": "searchParams.get('hdr')"
+        }
+      ]
+    },
+    {
+      "name": "hdrblur",
+      "common": false,
+      "sites": [
+        {
+          "file": "dsh-mpkg-wallpaper/lib/client.js",
+          "line": 8718,
+          "pattern": "searchParams.get('hdrblur')"
+        },
+        {
+          "file": "dsh-mpkg-wallpaper/lib/client.js",
+          "line": 9418,
+          "pattern": "searchParams.get('hdrblur')"
+        },
+        {
+          "file": "dsh-mpkg-wallpaper/lib/client.js",
+          "line": 9617,
+          "pattern": "searchParams.get('hdrblur')"
+        }
+      ]
+    },
+    {
+      "name": "hdrfrost",
+      "common": false,
+      "sites": [
+        {
+          "file": "dsh-mpkg-wallpaper/lib/client.js",
+          "line": 8607,
+          "pattern": "searchParams.get('hdrfrost')"
+        }
+      ]
+    },
+    {
+      "name": "hdrfrostwatch",
+      "common": false,
+      "sites": [
+        {
+          "file": "dsh-mpkg-wallpaper/lib/client.js",
+          "line": 8409,
+          "pattern": "searchParams.get('hdrfrostwatch')"
+        }
+      ]
+    },
+    {
+      "name": "hiddengate",
+      "common": false,
+      "sites": [
+        {
+          "file": "dsh-mpkg-wallpaper/lib/client.js",
+          "line": 6418,
+          "pattern": "searchParams.get('hiddengate')"
+        }
+      ]
+    },
+    {
+      "name": "hide",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo/bench-patch.js",
+          "line": 7444,
+          "pattern": "searchParams.get('hide')"
+        },
+        {
+          "file": "demo/bench-patch.js",
+          "line": 7878,
+          "pattern": "searchParams.get('hide')"
+        }
+      ]
+    },
+    {
+      "name": "hier",
+      "common": true,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 5850,
+          "pattern": "searchParams.get('hier')"
+        },
+        {
+          "file": "demo.html",
+          "line": 7837,
+          "pattern": "searchParams.get('hier')"
+        }
+      ]
+    },
+    {
+      "name": "hour",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 8020,
+          "pattern": "searchParams.get('hour')"
+        },
+        {
+          "file": "demo.html",
+          "line": 8060,
+          "pattern": "searchParams.get('hour')"
+        }
+      ]
+    },
+    {
+      "name": "hue",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 2733,
+          "pattern": "regex [?&]hue="
+        }
+      ]
+    },
+    {
+      "name": "hybrid",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 2804,
+          "pattern": "searchParams.get('hybrid')"
+        }
+      ]
+    },
+    {
+      "name": "id",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 2982,
+          "pattern": "searchParams.get('id')"
+        },
+        {
+          "file": "demo.html",
+          "line": 3055,
+          "pattern": "searchParams.get('id')"
+        },
+        {
+          "file": "demo.html",
+          "line": 5192,
+          "pattern": "searchParams.has('id')"
+        },
+        {
+          "file": "demo.html",
+          "line": 11042,
+          "pattern": "searchParams.get('id')"
+        }
+      ]
+    },
+    {
+      "name": "ids",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 2703,
+          "pattern": "regex [?&]ids="
+        }
+      ]
+    },
+    {
+      "name": "inactive",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 2703,
+          "pattern": "regex [?&]inactive="
+        }
+      ]
+    },
+    {
+      "name": "inlinefrost",
+      "common": false,
+      "sites": [
+        {
+          "file": "dsh-mpkg-wallpaper/lib/client.js",
+          "line": 10234,
+          "pattern": "regex [?&]inlinefrost="
+        }
+      ]
+    },
+    {
+      "name": "instfps",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 2703,
+          "pattern": "regex [?&]instfps="
+        }
+      ]
+    },
+    {
+      "name": "instlog",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 2703,
+          "pattern": "regex [?&]instlog="
+        }
+      ]
+    },
+    {
+      "name": "intpromo",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 8229,
+          "pattern": "searchParams.get('intpromo')"
+        }
+      ]
+    },
+    {
+      "name": "io",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 11858,
+          "pattern": "searchParams.get('io')"
+        }
+      ]
+    },
+    {
+      "name": "iocount",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 3672,
+          "pattern": "searchParams.get('iocount')"
+        }
+      ]
+    },
+    {
+      "name": "isolate",
+      "common": true,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 8459,
+          "pattern": "searchParams.get('isolate')"
+        }
+      ]
+    },
+    {
+      "name": "layout",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 2703,
+          "pattern": "regex [?&]layout="
+        }
+      ]
+    },
+    {
+      "name": "lgcss",
+      "common": false,
+      "sites": [
+        {
+          "file": "dsh-mpkg-wallpaper/lib/client.js",
+          "line": 18239,
+          "pattern": "searchParams.get('lgcss')"
+        }
+      ]
+    },
+    {
+      "name": "lights",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 18829,
+          "pattern": "searchParams.get('lights')"
+        }
+      ]
+    },
+    {
+      "name": "ln",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 8484,
+          "pattern": "searchParams.get('ln')"
+        }
+      ]
+    },
+    {
+      "name": "lowmem",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 11811,
+          "pattern": "searchParams.has('lowmem')"
+        },
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 11811,
+          "pattern": "searchParams.get('lowmem')"
+        }
+      ]
+    },
+    {
+      "name": "lyrics",
+      "common": false,
+      "sites": [
+        {
+          "file": "elysia/media-lyrics.js",
+          "line": 119,
+          "pattern": "regex [?&]lyrics="
+        }
+      ]
+    },
+    {
+      "name": "macrocomment",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 8192,
+          "pattern": "searchParams.get('macrocomment')"
+        }
+      ]
+    },
+    {
+      "name": "maxinst",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 2703,
+          "pattern": "regex [?&]maxinst="
+        }
+      ]
+    },
+    {
+      "name": "maxtex",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 11869,
+          "pattern": "searchParams.get('maxtex')"
+        }
+      ]
+    },
+    {
+      "name": "mcc",
+      "common": true,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 9605,
+          "pattern": "regex [?&]mcc="
+        }
+      ]
+    },
+    {
+      "name": "mdlquad",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 3830,
+          "pattern": "regex [?&]mdlquad="
+        }
+      ]
+    },
+    {
+      "name": "mdls",
+      "common": false,
+      "sites": [
+        {
+          "file": "elysia/we-renderer/puppet.js",
+          "line": 733,
+          "pattern": "regex [?&]mdls="
+        }
+      ]
+    },
+    {
+      "name": "media",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 11441,
+          "pattern": "regex [?&]media="
+        }
+      ]
+    },
+    {
+      "name": "mediaslot",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 16228,
+          "pattern": "searchParams.get('mediaslot')"
+        }
+      ]
+    },
+    {
+      "name": "meshsize",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 8726,
+          "pattern": "searchParams.get('meshsize')"
+        }
+      ]
+    },
+    {
+      "name": "miprt",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 8273,
+          "pattern": "searchParams.get('miprt')"
+        }
+      ]
+    },
+    {
+      "name": "mipsel",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 3930,
+          "pattern": "searchParams.get('mipsel')"
+        }
+      ]
+    },
+    {
+      "name": "mode",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 2696,
+          "pattern": "searchParams.get('mode')"
+        }
+      ]
+    },
+    {
+      "name": "modellayer",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 3787,
+          "pattern": "searchParams.get('modellayer')"
+        },
+        {
+          "file": "demo.html",
+          "line": 3798,
+          "pattern": "searchParams.get('modellayer')"
+        },
+        {
+          "file": "demo.html",
+          "line": 3839,
+          "pattern": "searchParams.get('modellayer')"
+        }
+      ]
+    },
+    {
+      "name": "modelmeshmb",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 3840,
+          "pattern": "searchParams.get('modelmeshmb')"
+        }
+      ]
+    },
+    {
+      "name": "mpwdiag",
+      "common": false,
+      "sites": [
+        {
+          "file": "dsh-mpkg-wallpaper/lib/client.js",
+          "line": 43,
+          "pattern": "localStorage('mpwdiag')"
+        },
+        {
+          "file": "dsh-mpkg-wallpaper/lib/client.js",
+          "line": 76,
+          "pattern": "localStorage('mpwdiag')"
+        },
+        {
+          "file": "dsh-mpkg-wallpaper/lib/client.js",
+          "line": 10026,
+          "pattern": "localStorage('mpwdiag')"
+        },
+        {
+          "file": "dsh-mpkg-wallpaper/lib/client.js",
+          "line": 10047,
+          "pattern": "localStorage('mpwdiag')"
+        }
+      ]
+    },
+    {
+      "name": "mpwhardmute",
+      "common": false,
+      "sites": [
+        {
+          "file": "dsh-mpkg-wallpaper/lib/client.js",
+          "line": 14156,
+          "pattern": "regex [?&]mpwhardmute="
+        }
+      ]
+    },
+    {
+      "name": "mpwinteract",
+      "common": false,
+      "sites": [
+        {
+          "file": "dsh-mpkg-wallpaper/lib/client.js",
+          "line": 7041,
+          "pattern": "searchParams.get('mpwinteract')"
+        },
+        {
+          "file": "dsh-mpkg-wallpaper/lib/client.js",
+          "line": 7240,
+          "pattern": "searchParams.get('mpwinteract')"
+        }
+      ]
+    },
+    {
+      "name": "mpwperf",
+      "common": false,
+      "sites": [
+        {
+          "file": "dsh-mpkg-wallpaper/lib/client.js",
+          "line": 27348,
+          "pattern": "searchParams.get('mpwperf')"
+        }
+      ]
+    },
+    {
+      "name": "mpwpersist",
+      "common": false,
+      "sites": [
+        {
+          "file": "dsh-mpkg-wallpaper/lib/client.js",
+          "line": 306,
+          "pattern": "regex [?&]mpwpersist="
+        }
+      ]
+    },
+    {
+      "name": "mpwsandbox",
+      "common": false,
+      "sites": [
+        {
+          "file": "dsh-mpkg-wallpaper/lib/client.js",
+          "line": 5083,
+          "pattern": "searchParams.get('mpwsandbox')"
+        }
+      ]
+    },
+    {
+      "name": "mpwshim",
+      "common": false,
+      "sites": [
+        {
+          "file": "dsh-mpkg-wallpaper/lib/client.js",
+          "line": 4693,
+          "pattern": "regex [?&]mpwshim="
+        }
+      ]
+    },
+    {
+      "name": "mpwtranscode",
+      "common": false,
+      "sites": [
+        {
+          "file": "dsh-mpkg-wallpaper/lib/client.js",
+          "line": 4171,
+          "pattern": "searchParams.get('mpwtranscode')"
+        }
+      ]
+    },
+    {
+      "name": "mvpi",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 13723,
+          "pattern": "searchParams.get('mvpi')"
+        }
+      ]
+    },
+    {
+      "name": "navicon",
+      "common": false,
+      "sites": [
+        {
+          "file": "dsh-mpkg-wallpaper/lib/client.js",
+          "line": 29297,
+          "pattern": "searchParams.get('navicon')"
+        }
+      ]
+    },
+    {
+      "name": "nobg",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 8473,
+          "pattern": "searchParams.has('nobg')"
+        }
+      ]
+    },
+    {
+      "name": "nodebug",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 10768,
+          "pattern": "searchParams.has('nodebug')"
+        }
+      ]
+    },
+    {
+      "name": "nodiag",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 9585,
+          "pattern": "searchParams.has('nodiag')"
+        }
+      ]
+    },
+    {
+      "name": "nofx",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 16220,
+          "pattern": "searchParams.has('nofx')"
+        }
+      ]
+    },
+    {
+      "name": "nofxfb",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 16257,
+          "pattern": "searchParams.has('nofxfb')"
+        }
+      ]
+    },
+    {
+      "name": "nooverlaybase",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 5980,
+          "pattern": "searchParams.has('nooverlaybase')"
+        }
+      ]
+    },
+    {
+      "name": "nopanel",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 8165,
+          "pattern": "searchParams.has('nopanel')"
+        },
+        {
+          "file": "demo.html",
+          "line": 8328,
+          "pattern": "searchParams.has('nopanel')"
+        }
+      ]
+    },
+    {
+      "name": "noparticles",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 8004,
+          "pattern": "searchParams.has('noparticles')"
+        },
+        {
+          "file": "demo.html",
+          "line": 9223,
+          "pattern": "searchParams.has('noparticles')"
+        }
+      ]
+    },
+    {
+      "name": "noreport",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 9667,
+          "pattern": "searchParams.has('noreport')"
+        }
+      ]
+    },
+    {
+      "name": "noscript",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 7005,
+          "pattern": "searchParams.has('noscript')"
+        }
+      ]
+    },
+    {
+      "name": "noui",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 1890,
+          "pattern": "searchParams.get('noui')"
+        }
+      ]
+    },
+    {
+      "name": "nouserprops",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 7034,
+          "pattern": "searchParams.has('nouserprops')"
+        }
+      ]
+    },
+    {
+      "name": "novideo",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 5942,
+          "pattern": "searchParams.has('novideo')"
+        }
+      ]
+    },
+    {
+      "name": "np",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 8004,
+          "pattern": "searchParams.has('np')"
+        },
+        {
+          "file": "demo.html",
+          "line": 9223,
+          "pattern": "searchParams.has('np')"
+        }
+      ]
+    },
+    {
+      "name": "npaudit",
+      "common": false,
+      "sites": [
+        {
+          "file": "dsh-mpkg-wallpaper/lib/client.js",
+          "line": 12834,
+          "pattern": "searchParams.get('npaudit')"
+        }
+      ]
+    },
+    {
+      "name": "npvoice",
+      "common": false,
+      "sites": [
+        {
+          "file": "dsh-mpkg-wallpaper/lib/client.js",
+          "line": 10677,
+          "pattern": "searchParams.get('npvoice')"
+        }
+      ]
+    },
+    {
+      "name": "oldschool",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 5226,
+          "pattern": "searchParams.get('oldschool')"
+        }
+      ]
+    },
+    {
+      "name": "online",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo/bench-patch.js",
+          "line": 7940,
+          "pattern": "regex [?&]online="
+        }
+      ]
+    },
+    {
+      "name": "overbright",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 12118,
+          "pattern": "regex [?&]overbright="
+        }
+      ]
+    },
+    {
+      "name": "overlaybase",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 472,
+          "pattern": "searchParams.get('overlaybase')"
+        },
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 475,
+          "pattern": "searchParams.get('overlaybase')"
+        }
+      ]
+    },
+    {
+      "name": "ownsize",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 8700,
+          "pattern": "searchParams.get('ownsize')"
+        }
+      ]
+    },
+    {
+      "name": "parallax",
+      "common": true,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 9191,
+          "pattern": "searchParams.get('parallax')"
+        },
+        {
+          "file": "demo.html",
+          "line": 9199,
+          "pattern": "searchParams.get('parallax')"
+        },
+        {
+          "file": "demo/bench-patch.js",
+          "line": 11563,
+          "pattern": "searchParams.get('parallax')"
+        }
+      ]
+    },
+    {
+      "name": "parclamp",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 9865,
+          "pattern": "searchParams.get('parclamp')"
+        }
+      ]
+    },
+    {
+      "name": "parenty",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 5062,
+          "pattern": "searchParams.get('parenty')"
+        }
+      ]
+    },
+    {
+      "name": "paroff",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 9870,
+          "pattern": "regex [?&]paroff="
+        }
+      ]
+    },
+    {
+      "name": "parpos",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 9882,
+          "pattern": "regex [?&]parpos="
+        }
+      ]
+    },
+    {
+      "name": "parspace",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 9821,
+          "pattern": "regex [?&]parspace="
+        }
+      ]
+    },
+    {
+      "name": "pcolor",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 12026,
+          "pattern": "searchParams.get('pcolor')"
+        }
+      ]
+    },
+    {
+      "name": "perf",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 11575,
+          "pattern": "searchParams.get('perf')"
+        },
+        {
+          "file": "demo.html",
+          "line": 3687,
+          "pattern": "searchParams.get('perf')"
+        },
+        {
+          "file": "demo.html",
+          "line": 3732,
+          "pattern": "searchParams.get('perf')"
+        },
+        {
+          "file": "demo.html",
+          "line": 10669,
+          "pattern": "searchParams.get('perf')"
+        }
+      ]
+    },
+    {
+      "name": "perfreport",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 10716,
+          "pattern": "searchParams.has('perfreport')"
+        }
+      ]
+    },
+    {
+      "name": "pexp",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 11931,
+          "pattern": "searchParams.get('pexp')"
+        }
+      ]
+    },
+    {
+      "name": "pforce",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 12008,
+          "pattern": "searchParams.get('pforce')"
+        }
+      ]
+    },
+    {
+      "name": "pframe",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 11963,
+          "pattern": "searchParams.get('pframe')"
+        }
+      ]
+    },
+    {
+      "name": "piv",
+      "common": true,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 5543,
+          "pattern": "searchParams.get('piv')"
+        }
+      ]
+    },
+    {
+      "name": "pkgpath",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 5127,
+          "pattern": "searchParams.get('pkgpath')"
+        },
+        {
+          "file": "demo.html",
+          "line": 11042,
+          "pattern": "searchParams.get('pkgpath')"
+        }
+      ]
+    },
+    {
+      "name": "pkgurl",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 5127,
+          "pattern": "searchParams.get('pkgurl')"
+        },
+        {
+          "file": "demo.html",
+          "line": 11042,
+          "pattern": "searchParams.get('pkgurl')"
+        },
+        {
+          "file": "dsh-mpkg-wallpaper/lib/client.js",
+          "line": 4632,
+          "pattern": "searchParams.get('pkgurl')"
+        }
+      ]
+    },
+    {
+      "name": "pmax",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 11812,
+          "pattern": "searchParams.get('pmax')"
+        }
+      ]
+    },
+    {
+      "name": "pops",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 11983,
+          "pattern": "searchParams.get('pops')"
+        }
+      ]
+    },
+    {
+      "name": "pp",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 9890,
+          "pattern": "regex [?&]pp="
+        },
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 11335,
+          "pattern": "regex [?&]pp="
+        },
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 11495,
+          "pattern": "searchParams.get('pp')"
+        }
+      ]
+    },
+    {
+      "name": "pquad",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 11915,
+          "pattern": "searchParams.get('pquad')"
+        }
+      ]
+    },
+    {
+      "name": "proj",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 7905,
+          "pattern": "searchParams.get('proj')"
+        }
+      ]
+    },
+    {
+      "name": "projmode",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 9697,
+          "pattern": "searchParams.get('projmode')"
+        }
+      ]
+    },
+    {
+      "name": "projy",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 5062,
+          "pattern": "searchParams.get('projy')"
+        }
+      ]
+    },
+    {
+      "name": "propimg",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo/bench-patch.js",
+          "line": 5250,
+          "pattern": "searchParams.get('propimg')"
+        },
+        {
+          "file": "demo/bench-patch.js",
+          "line": 5254,
+          "pattern": "searchParams.get('propimg')"
+        }
+      ]
+    },
+    {
+      "name": "proppush",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 1885,
+          "pattern": "searchParams.get('proppush')"
+        }
+      ]
+    },
+    {
+      "name": "props",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 7936,
+          "pattern": "searchParams.get('props')"
+        },
+        {
+          "file": "demo.html",
+          "line": 7945,
+          "pattern": "searchParams.get('props')"
+        },
+        {
+          "file": "demo.html",
+          "line": 8139,
+          "pattern": "searchParams.get('props')"
+        }
+      ]
+    },
+    {
+      "name": "propscompat",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 9706,
+          "pattern": "searchParams.get('propscompat')"
+        }
+      ]
+    },
+    {
+      "name": "prot",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 11898,
+          "pattern": "searchParams.get('prot')"
+        }
+      ]
+    },
+    {
+      "name": "psim",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 17351,
+          "pattern": "searchParams.get('psim')"
+        }
+      ]
+    },
+    {
+      "name": "psize",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 11846,
+          "pattern": "searchParams.get('psize')"
+        }
+      ]
+    },
+    {
+      "name": "pspeed",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 11945,
+          "pattern": "searchParams.get('pspeed')"
+        }
+      ]
+    },
+    {
+      "name": "psph",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 12063,
+          "pattern": "searchParams.get('psph')"
+        }
+      ]
+    },
+    {
+      "name": "ptrfx",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 13564,
+          "pattern": "searchParams.get('ptrfx')"
+        }
+      ]
+    },
+    {
+      "name": "ptrwiring",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 13491,
+          "pattern": "searchParams.get('ptrwiring')"
+        }
+      ]
+    },
+    {
+      "name": "pts",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 7377,
+          "pattern": "searchParams.get('pts')"
+        },
+        {
+          "file": "demo.html",
+          "line": 7515,
+          "pattern": "searchParams.get('pts')"
+        }
+      ]
+    },
+    {
+      "name": "pturb",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 12045,
+          "pattern": "searchParams.get('pturb')"
+        }
+      ]
+    },
+    {
+      "name": "pvortex",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 12085,
+          "pattern": "searchParams.get('pvortex')"
+        }
+      ]
+    },
+    {
+      "name": "q",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 11493,
+          "pattern": "searchParams.get('q')"
+        }
+      ]
+    },
+    {
+      "name": "qflip",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 12311,
+          "pattern": "searchParams.get('qflip')"
+        }
+      ]
+    },
+    {
+      "name": "quad3d",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 13977,
+          "pattern": "regex [?&]quad3d="
+        }
+      ]
+    },
+    {
+      "name": "railink",
+      "common": false,
+      "sites": [
+        {
+          "file": "dsh-mpkg-wallpaper/lib/client.js",
+          "line": 12181,
+          "pattern": "searchParams.get('railink')"
+        }
+      ]
+    },
+    {
+      "name": "rate",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 2733,
+          "pattern": "regex [?&]rate="
+        }
+      ]
+    },
+    {
+      "name": "repofonts",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 7406,
+          "pattern": "searchParams.get('repofonts')"
+        }
+      ]
+    },
+    {
+      "name": "report",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 9668,
+          "pattern": "searchParams.get('report')"
+        }
+      ]
+    },
+    {
+      "name": "res",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 11604,
+          "pattern": "searchParams.get('res')"
+        },
+        {
+          "file": "demo.html",
+          "line": 9385,
+          "pattern": "searchParams.get('res')"
+        },
+        {
+          "file": "demo.html",
+          "line": 9419,
+          "pattern": "searchParams.get('res')"
+        }
+      ]
+    },
+    {
+      "name": "reszw",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 16230,
+          "pattern": "searchParams.get('reszw')"
+        }
+      ]
+    },
+    {
+      "name": "sample",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo/bench-patch.js",
+          "line": 12217,
+          "pattern": "regex [?&]sample="
+        },
+        {
+          "file": "demo/bench-patch.js",
+          "line": 12264,
+          "pattern": "regex [?&]sample="
+        }
+      ]
+    },
+    {
+      "name": "sandbox",
+      "common": false,
+      "sites": [
+        {
+          "file": "dsh-mpkg-wallpaper/lib/client.js",
+          "line": 4891,
+          "pattern": "regex [?&]sandbox="
+        },
+        {
+          "file": "dsh-mpkg-wallpaper/lib/client.js",
+          "line": 5636,
+          "pattern": "regex [?&]sandbox="
+        }
+      ]
+    },
+    {
+      "name": "satur",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 2733,
+          "pattern": "regex [?&]satur="
+        }
+      ]
+    },
+    {
+      "name": "sbfill",
+      "common": false,
+      "sites": [
+        {
+          "file": "dsh-mpkg-wallpaper/lib/client.js",
+          "line": 17725,
+          "pattern": "searchParams.get('sbfill')"
+        }
+      ]
+    },
+    {
+      "name": "sblurscope",
+      "common": false,
+      "sites": [
+        {
+          "file": "dsh-mpkg-wallpaper/lib/client.js",
+          "line": 27425,
+          "pattern": "regex [?&]sblurscope="
+        }
+      ]
+    },
+    {
+      "name": "scenefit",
+      "common": false,
+      "sites": [
+        {
+          "file": "dsh-mpkg-wallpaper/lib/client.js",
+          "line": 8011,
+          "pattern": "searchParams.get('scenefit')"
+        }
+      ]
+    },
+    {
+      "name": "scriptcache",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 6095,
+          "pattern": "searchParams.get('scriptcache')"
+        }
+      ]
+    },
+    {
+      "name": "scripthz",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 6164,
+          "pattern": "searchParams.get('scripthz')"
+        }
+      ]
+    },
+    {
+      "name": "scriptstore",
+      "common": false,
+      "sites": [
+        {
+          "file": "elysia/scene-scripts.js",
+          "line": 1983,
+          "pattern": "regex [?&]scriptstore="
+        }
+      ]
+    },
+    {
+      "name": "scriptsync",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 6100,
+          "pattern": "searchParams.get('scriptsync')"
+        }
+      ]
+    },
+    {
+      "name": "scriptvec",
+      "common": false,
+      "sites": [
+        {
+          "file": "elysia/scene-scripts.js",
+          "line": 831,
+          "pattern": "searchParams.get('scriptvec')"
+        }
+      ]
+    },
+    {
+      "name": "scrorigin",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 19524,
+          "pattern": "searchParams.get('scrorigin')"
+        }
+      ]
+    },
+    {
+      "name": "selfcheck",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 10609,
+          "pattern": "searchParams.has('selfcheck')"
+        }
+      ]
+    },
+    {
+      "name": "shadows",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 18991,
+          "pattern": "searchParams.get('shadows')"
+        }
+      ]
+    },
+    {
+      "name": "shape",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 14591,
+          "pattern": "searchParams.get('shape')"
+        }
+      ]
+    },
+    {
+      "name": "shell",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo/bench-patch.js",
+          "line": 9003,
+          "pattern": "regex [?&]shell="
+        },
+        {
+          "file": "demo/bench-patch.js",
+          "line": 10655,
+          "pattern": "regex [?&]shell="
+        }
+      ]
+    },
+    {
+      "name": "showclock",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 7996,
+          "pattern": "searchParams.get('showclock')"
+        },
+        {
+          "file": "demo.html",
+          "line": 9906,
+          "pattern": "searchParams.get('showclock')"
+        }
+      ]
+    },
+    {
+      "name": "showdate",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 7997,
+          "pattern": "searchParams.get('showdate')"
+        },
+        {
+          "file": "demo.html",
+          "line": 9907,
+          "pattern": "searchParams.get('showdate')"
+        }
+      ]
+    },
+    {
+      "name": "showfps",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 7999,
+          "pattern": "searchParams.get('showfps')"
+        },
+        {
+          "file": "demo.html",
+          "line": 9909,
+          "pattern": "searchParams.get('showfps')"
+        }
+      ]
+    },
+    {
+      "name": "showui",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 7995,
+          "pattern": "searchParams.has('showui')"
+        }
+      ]
+    },
+    {
+      "name": "showweekday",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 7998,
+          "pattern": "searchParams.get('showweekday')"
+        },
+        {
+          "file": "demo.html",
+          "line": 9908,
+          "pattern": "searchParams.get('showweekday')"
+        }
+      ]
+    },
+    {
+      "name": "simplefx",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 7811,
+          "pattern": "searchParams.has('simplefx')"
+        }
+      ]
+    },
+    {
+      "name": "skin0",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 4539,
+          "pattern": "searchParams.has('skin0')"
+        },
+        {
+          "file": "demo.html",
+          "line": 7153,
+          "pattern": "searchParams.has('skin0')"
+        }
+      ]
+    },
+    {
+      "name": "skiny",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 128,
+          "pattern": "searchParams.get('skiny')"
+        },
+        {
+          "file": "demo.html",
+          "line": 9039,
+          "pattern": "searchParams.get('skiny')"
+        }
+      ]
+    },
+    {
+      "name": "skipintro",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 2816,
+          "pattern": "searchParams.get('skipintro')"
+        }
+      ]
+    },
+    {
+      "name": "sky3d",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 12659,
+          "pattern": "regex [?&]sky3d="
+        },
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 12660,
+          "pattern": "regex [?&]sky3d="
+        }
+      ]
+    },
+    {
+      "name": "skyfirst",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 13962,
+          "pattern": "regex [?&]skyfirst="
+        }
+      ]
+    },
+    {
+      "name": "spacing",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 7624,
+          "pattern": "searchParams.get('spacing')"
+        }
+      ]
+    },
+    {
+      "name": "spriteauto",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 16223,
+          "pattern": "searchParams.get('spriteauto')"
+        }
+      ]
+    },
+    {
+      "name": "src",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 4800,
+          "pattern": "searchParams.get('src')"
+        }
+      ]
+    },
+    {
+      "name": "subbase",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 12717,
+          "pattern": "regex [?&]subbase="
+        }
+      ]
+    },
+    {
+      "name": "submesh",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 12694,
+          "pattern": "searchParams.get('submesh')"
+        }
+      ]
+    },
+    {
+      "name": "subtri",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 12702,
+          "pattern": "searchParams.get('subtri')"
+        }
+      ]
+    },
+    {
+      "name": "t",
+      "common": false,
+      "sites": [
+        {
+          "file": "elysia/demo-elysia.js",
+          "line": 73,
+          "pattern": "searchParams.get('t')"
+        }
+      ]
+    },
+    {
+      "name": "tex5",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 9858,
+          "pattern": "searchParams.get('tex5')"
+        }
+      ]
+    },
+    {
+      "name": "texcap",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 3050,
+          "pattern": "searchParams.get('texcap')"
+        }
+      ]
+    },
+    {
+      "name": "texcon",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 3756,
+          "pattern": "searchParams.get('texcon')"
+        }
+      ]
+    },
+    {
+      "name": "texjson",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 16233,
+          "pattern": "searchParams.get('texjson')"
+        }
+      ]
+    },
+    {
+      "name": "texmip",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 19252,
+          "pattern": "searchParams.get('texmip')"
+        }
+      ]
+    },
+    {
+      "name": "texplane",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 9862,
+          "pattern": "searchParams.get('texplane')"
+        }
+      ]
+    },
+    {
+      "name": "texwrap",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 18490,
+          "pattern": "searchParams.get('texwrap')"
+        }
+      ]
+    },
+    {
+      "name": "thumbpost",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 11011,
+          "pattern": "searchParams.get('thumbpost')"
+        }
+      ]
+    },
+    {
+      "name": "thumbpostany",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 1727,
+          "pattern": "searchParams.get('thumbpostany')"
+        }
+      ]
+    },
+    {
+      "name": "time",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 8023,
+          "pattern": "searchParams.get('time')"
+        },
+        {
+          "file": "demo.html",
+          "line": 8061,
+          "pattern": "searchParams.get('time')"
+        }
+      ]
+    },
+    {
+      "name": "trace",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 16206,
+          "pattern": "searchParams.has('trace')"
+        },
+        {
+          "file": "demo.html",
+          "line": 9187,
+          "pattern": "searchParams.has('trace')"
+        }
+      ]
+    },
+    {
+      "name": "trail",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 11829,
+          "pattern": "searchParams.get('trail')"
+        }
+      ]
+    },
+    {
+      "name": "type",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 5087,
+          "pattern": "searchParams.get('type')"
+        }
+      ]
+    },
+    {
+      "name": "usertex",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 16225,
+          "pattern": "searchParams.get('usertex')"
+        }
+      ]
+    },
+    {
+      "name": "varyinglink",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 8240,
+          "pattern": "searchParams.get('varyinglink')"
+        }
+      ]
+    },
+    {
+      "name": "vflip",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 12297,
+          "pattern": "searchParams.has('vflip')"
+        }
+      ]
+    },
+    {
+      "name": "video",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 5092,
+          "pattern": "searchParams.get('video')"
+        }
+      ]
+    },
+    {
+      "name": "view",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 8732,
+          "pattern": "searchParams.get('view')"
+        }
+      ]
+    },
+    {
+      "name": "viscascade",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 10801,
+          "pattern": "searchParams.get('viscascade')"
+        }
+      ]
+    },
+    {
+      "name": "vthrottle",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 11606,
+          "pattern": "searchParams.get('vthrottle')"
+        }
+      ]
+    },
+    {
+      "name": "vy",
+      "common": false,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 11879,
+          "pattern": "searchParams.get('vy')"
+        }
+      ]
+    },
+    {
+      "name": "w",
+      "common": false,
+      "sites": [
+        {
+          "file": "elysia/demo-elysia.js",
+          "line": 70,
+          "pattern": "searchParams.get('w')"
+        }
+      ]
+    },
+    {
+      "name": "weassist",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 4287,
+          "pattern": "regex [?&]weassist="
+        }
+      ]
+    },
+    {
+      "name": "web",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 4800,
+          "pattern": "searchParams.get('web')"
+        }
+      ]
+    },
+    {
+      "name": "webframe",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 4809,
+          "pattern": "searchParams.get('webframe')"
+        }
+      ]
+    },
+    {
+      "name": "webpause",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 5031,
+          "pattern": "searchParams.get('webpause')"
+        }
+      ]
+    },
+    {
+      "name": "webres",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 4877,
+          "pattern": "searchParams.get('webres')"
+        }
+      ]
+    },
+    {
+      "name": "webshim",
+      "common": false,
+      "sites": [
+        {
+          "file": "demo.html",
+          "line": 4810,
+          "pattern": "searchParams.get('webshim')"
+        }
+      ]
+    },
+    {
+      "name": "whitefallback",
+      "common": true,
+      "sites": [
+        {
+          "file": "core/we-scene-bundle.js",
+          "line": 9901,
+          "pattern": "regex [?&]whitefallback="
+        }
+      ]
+    }
+  ]
+}
