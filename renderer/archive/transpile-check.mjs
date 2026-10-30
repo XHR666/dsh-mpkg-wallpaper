@@ -3,22 +3,23 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 
-const BUNDLE = '/root/Desktop/DSHarea/we-scene-demo/we-scene-bundle.js'
+const BUNDLE = process.env.MPW_BUNDLE || path.join(process.env.MPW_ROOT || path.resolve('.', '..'), 'we-scene-demo', 'we-scene-bundle.js') /* ①(2026-11-03 可移植性) */
 const SCENES = [
   ['3554161528', 'Hina'],
   ['3544152633', 'GirlCat'],
   ['3327063360', 'Shiroko'],
 ]
-const SCENE_ROOT = '/root/Desktop/DSHarea/allwallpaper/dd'
+const SCENE_ROOT = process.env.MPW_SCENES || path.join(process.env.MPW_ROOT || path.resolve('.', '..'), 'allwallpaper', 'dd') /* ①(2026-11-03 可移植性) */
 
 const { parsePkg, getEntry, hlsl2glsl } = await import(pathToFileURL(BUNDLE).href)
 
 // includeResolver：模拟 demo 服务器 common.h / common_blending.h
-const commonH = fs.readFileSync('/root/Desktop/DSHarea/we-scene-demo/common.h', 'utf8')
-const blendH = fs.readFileSync('/root/Desktop/DSHarea/we-scene-demo/common_blending.h', 'utf8')
+const WS = process.env.MPW_ROOT || path.resolve('.', '..') /* ①(2026-11-03 可移植性) */
+const commonH = fs.readFileSync(path.join(WS, 'we-scene-demo', 'common.h'), 'utf8')
+const blendH = fs.readFileSync(path.join(WS, 'we-scene-demo', 'common_blending.h'), 'utf8')
 const resolver = (name) => {
   const n = name.replace(/^["']|["']$/g, '')
-  const base = '/root/Desktop/DSHarea/we-scene-demo/'
+  const base = path.join(process.env.MPW_ROOT || path.resolve('.', '..'), 'we-scene-demo') + '/' /* ①(2026-11-03 可移植性) */
   if (n === 'common.h' || n.endsWith('/common.h')) return commonH
   if (n === 'common_blending.h') return blendH
   for (const f of ['common_blur.h', 'common_perspective.h', 'common_composite.h']) {

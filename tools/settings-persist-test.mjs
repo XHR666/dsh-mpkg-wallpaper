@@ -129,7 +129,8 @@ const USER_APPEARANCE = {
   //   仓库 = <DSHAREA>/dsh-mpkg-wallpaper ⇒ <DSHAREA> = repoRoot/..；可用 MPW_ROOT 覆盖。
   customDirPath: path.join(process.env.MPW_ROOT || path.resolve(repoRoot, '..'), 'allwallpaper', 'dd'),
   brightness: 100, float: false, thinkBg: false, enabled: true, mute: true, fpsCap: 0, resMax: 0,
-  bsCompat: false, bsCompatUserSet: true, npNowPlaying: true, fontColorGray: false,
+  // ①(2026-11-03 #2) 原 bsCompat/bsCompatUserSet 夹具键已随适配退役移除（导入净化会丢弃未知键）。
+  npNowPlaying: true, fontColorGray: false,
 }
 const USER_VIDEO_SRC = {
   image: 'host:?custom=1&folder=3582362359&file=' + encodeURIComponent('Mid-Autumn Hoshino.mp4'),

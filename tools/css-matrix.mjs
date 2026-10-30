@@ -100,7 +100,12 @@ function check(label, patch, css) {
       if (ovf && /^hidden/.test(ovf)) note('[' + label + '] 顶栏 overflow:hidden → 会裁掉浮层: ' + sel.slice(0, 60))
     }
     // 4) 回归：浮层不许被改 position（会把它拉进普通流 → 顶栏被撑高）
-    if (/(_menu|_popover|_dropdown|role="menu"|QsffPG_menu|_denseList)/.test(sel) && bodyHas(body, 'position')) {
+    //    ①(2026-11-03 演进留痕 #Bug5) 放行 ::before/::after 伪元素规则：弹层磨砂已从"本体
+    //    backdrop-filter"迁到"::before + position:absolute;inset:0"（fixed 后代包含块家族修复，
+    //    见 lib/client.js G 块/弹层表面块注释）。伪元素的定位不改变浮层本体在普通流/顶栏里的
+    //    位置——本条要守的回归（浮层本体被拉进普通流、撑高顶栏）只对**元素本体**规则有意义，
+    //    故仅当选择器不是伪元素时才判。本体规则的判据语义不变。
+    if (!/::(before|after)/.test(sel) && /(_menu|_popover|_dropdown|role="menu"|QsffPG_menu|_denseList)/.test(sel) && bodyHas(body, 'position')) {
       note('[' + label + '] 浮层被改 position（会撑高顶栏）: ' + sel.slice(0, 70) + ' → ' + bodyVal(body, 'position'))
     }
     // 5) 回归：悬浮态右侧导航条不许被改尺寸（曾把 38px 压成 28px）

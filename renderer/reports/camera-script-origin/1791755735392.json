@@ -4,8 +4,8 @@
  "generatedAt": "2026-10-11T21:55:35.392Z",
  "epochMs": 1791755735392,
  "env": {
-  "mpwRoot": "/root/Desktop/DSHarea",
-  "repoRoot": "/root/Desktop/DSHarea/we-scene-demo",
+  "mpwRoot": "~/DSHarea",
+  "repoRoot": "~/DSHarea/we-scene-demo",
   "node": "v24.19.0",
   "canvas": [
    3840,
@@ -40,7 +40,7 @@
    {
     "name": "① 语料枚举非空（包容器 205 / 散装 scene.json 171）",
     "ok": true,
-    "detail": "语料根 /root/Desktop/DSHarea"
+    "detail": "语料根 ~/DSHarea"
    },
    {
     "name": "② 没有读不动的包（读不了会打印是哪个包，并退 1）",

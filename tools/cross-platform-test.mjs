@@ -184,8 +184,7 @@ const LI = (file, rule, parts, why) => ({ file, rule, match: parts.join(''), why
 const LEDGER = [
   // ── B1 临时目录前缀：存量 18 处，全部是"手工探针的 CLI 默认落点"或"测试夹具/门禁元数据的字符串" ──
   LI('tools/audio-source-hunt-live-probe.mjs', 'code-tmp-literal', ["arg('out', '", TMP, "/np-live')"], '手工真机探针的 CLI 默认落点（--out 可覆盖）：不是运行时/门禁写死的目录'),
-  LI('tools/bs-bottom-panel-probe.mjs', 'code-tmp-literal', ["arg('cookie', '", TMP, "/ffprobe/cookie.json')"], '手工真机探针的 CLI 默认落点（--cookie 可覆盖）'),
-  LI('tools/bs-compat-probe.mjs', 'code-tmp-literal', ["arg('cookie', '", TMP, "/ffprobe/cookie.json')"], '手工真机探针的 CLI 默认落点（--cookie 可覆盖）'),
+  /* ①(2026-11-03 #2) bs-bottom-panel-probe / bs-compat-probe 已随 better-sidebar 适配退役删除（含其临时目录台账行）。 */
   LI('tools/diag-subsystem-test.mjs', 'code-tmp-literal', ["file: '", TMP, "/fake/diag-123.json'"], '被测代码解析的**宿主响应夹具字符串**（假文件名），测试自己不用它落盘'),
   LI('tools/dir-picker-probe.mjs', 'code-tmp-literal', ["const COOKIE = '", TMP, "/ffprobe/cookie.json'"], '手工探针的只读 Cookie 路径常量（与 hdr-probe 系列同一份；进程只读不写）'),
   LI('tools/dir-picker-probe.mjs', 'code-tmp-literal', ["arg('before-client', '", TMP, "/dirpick-before-client.js')"], '手工真机探针的 CLI 默认落点（--before-client 可覆盖）'),

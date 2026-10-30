@@ -11,7 +11,7 @@
    "rel": "wallpaperE/砂狼白子/砂狼白子11_03.mpkg",
    "why": "补扫：59.8MB 视频条目（70 个里最大的一档）",
    "off": {
-    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子11_03.mpkg",
+    "abs": "~/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子11_03.mpkg",
     "exists": true,
     "mb": 61,
     "magic": "PKGM0014",
@@ -251,7 +251,7 @@
    "rel": "wallpaperE/佩丽卡/佩丽卡1_06.mpkg",
    "why": "补扫：59.7MB",
    "off": {
-    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_06.mpkg",
+    "abs": "~/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_06.mpkg",
     "exists": true,
     "mb": 60.6,
     "magic": "PKGM0014",
@@ -306,7 +306,7 @@
      "❌ ⚠ 7s 内没有首帧，但 module 已启动（`window.__mpwModuleStarted=1`）= \"到了但某个 await 没回\"这一类：最后一行日志 =   ℹ 精灵表 particle/fog/fog3：64 帧 8x8 帧UV=0.1250x0.1250 rate=1.000（对照 docs/RENDER-BUGS-20260918.md §1.4 判据表；P-135 起每"
     ],
     "logKey": [
-     "容器: /root/Desktop/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_06.mpkg",
+     "容器: ~/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_06.mpkg",
      "容器: PKGM0014 条目 4 个",
      "scene.json 解析: 13 layers"
     ]
@@ -446,7 +446,7 @@
    "rel": "wallpaperE/白洲梓/白洲梓_09.mpkg",
    "why": "补扫：59.0MB",
    "off": {
-    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓_09.mpkg",
+    "abs": "~/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓_09.mpkg",
     "exists": true,
     "mb": 60,
     "magic": "PKGM0014",
@@ -687,7 +687,7 @@
    "rel": "wallpaperE/洛茜/洛茜_07.mpkg",
    "why": "补扫：58.8MB",
    "off": {
-    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_07.mpkg",
+    "abs": "~/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_07.mpkg",
     "exists": true,
     "mb": 59.5,
     "magic": "PKGM0014",
@@ -927,7 +927,7 @@
    "rel": "wallpaperE/蔚蓝档案/蔚蓝档案_06.mpkg",
    "why": "补扫：58.8MB",
    "off": {
-    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_06.mpkg",
+    "abs": "~/DSHarea/allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_06.mpkg",
     "exists": true,
     "mb": 59.7,
     "magic": "PKGM0014",
@@ -1167,7 +1167,7 @@
    "rel": "wallpaperE/佩丽卡/佩丽卡1_09.mpkg",
    "why": "补扫：58.6MB",
    "off": {
-    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_09.mpkg",
+    "abs": "~/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_09.mpkg",
     "exists": true,
     "mb": 59.5,
     "magic": "PKGM0014",
@@ -1408,7 +1408,7 @@
    "rel": "wallpaperE/芙宁娜/芙宁娜1_04.mpkg",
    "why": "补扫：58.4MB（NSL 类脚本包的对照）",
    "off": {
-    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/芙宁娜/芙宁娜1_04.mpkg",
+    "abs": "~/DSHarea/allwallpaper/wallpaperE/芙宁娜/芙宁娜1_04.mpkg",
     "exists": true,
     "mb": 58.9,
     "magic": "PKGM0014",
@@ -1648,7 +1648,7 @@
    "rel": "wallpaperE/遐蝶/遐蝶_09.mpkg",
    "why": "补扫：58.1MB",
    "off": {
-    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/遐蝶/遐蝶_09.mpkg",
+    "abs": "~/DSHarea/allwallpaper/wallpaperE/遐蝶/遐蝶_09.mpkg",
     "exists": true,
     "mb": 59.1,
     "magic": "PKGM0014",

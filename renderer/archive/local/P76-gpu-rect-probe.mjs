@@ -7,7 +7,7 @@ import * as lib from './we-scene-bundle.js'
 import { installPuppet } from './elysia/we-renderer/puppet.js'
 
 const id = process.argv[2] || '3719111841'
-const DIR = '/root/Desktop/DSHarea/allwallpaper/dd'
+const DIR = process.env.MPW_SCENES || path.join(process.env.MPW_ROOT || path.resolve('.', '..'), 'allwallpaper', 'dd') /* ①(2026-11-03 可移植性) */
 const dec = new TextDecoder()
 
 // ---- mock GL ----

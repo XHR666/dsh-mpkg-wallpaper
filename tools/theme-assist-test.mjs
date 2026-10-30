@@ -333,9 +333,13 @@ console.log('== A 组：纯函数 / 静态接线 ==')
 }
 ok('A2 默认值：外框适配 = auto（true）、输入框磨砂 = false；两个常量都在源码里',
   /const DEFAULT_THEME_ASSIST = true;/.test(CONSTS) && /const DEFAULT_COMPOSER_BLUR = false;/.test(CONSTS))
-ok('A3 输入框 CSS：选择器双写 `[class*=composerSeat][class*=composerSeat]`（压过宿主 (0,3,0) 基规则）+ 作用域挂 html[data-mpw-composer]',
+// ①(2026-11-03 演进留痕 #Bug5) 卡片磨砂从"本体 backdrop-filter"迁到"::before 伪元素"
+//   （fixed 后代包含块家族修复，见 MPW_COMPOSER_BLUR_CSS 注释）——断言随形态更新：
+//   本体只留 relative+none，磨砂（同半径 16px）在 ::before 上，观感等价、不再困就地弹层。
+ok('A3 输入框 CSS：选择器双写 `[class*=composerSeat][class*=composerSeat]`（压过宿主 (0,3,0) 基规则）+ 作用域挂 html[data-mpw-composer] + 磨砂在 ::before（本体禁 backdrop）',
   /html\[data-mpw-composer="blur"\] \[class\*="composerSeat"\]\[class\*="composerSeat"\]\{background:none\}/.test(CSS_TXT)
-  && /\[class\*="_card"\]\{backdrop-filter:blur\(16px\)/.test(CSS_TXT))
+  && /\[class\*="_card"\]\{position:relative;backdrop-filter:none/.test(CSS_TXT)
+  && /\[class\*="_card"\]::before\{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;border-radius:inherit;backdrop-filter:blur\(16px\)/.test(CSS_TXT))
 ok('A4 设置行 + i18n 都接了（zh/en 各两条；字段名 themeAssist / composerBlur；磨砂那行显示**生效值**）',
   /toggleRow\(t\("themeAssist"\), t\("themeAssist\.desc"\), "themeAssist", DEFAULT_THEME_ASSIST\)/.test(SRC)
   && /toggleRow\(t\("composerBlur"\), t\("composerBlur\.desc"\), "composerBlur", DEFAULT_COMPOSER_BLUR, false, false, composerBlurShown\)/.test(SRC)

@@ -219,7 +219,7 @@
    },
    "probe": {
     "ok": false,
-    "err": "/root/Desktop/DSHarea/we-scene-demo/reports/.tmp-video/v0.json: Invalid data found when processing input"
+    "err": "~/DSHarea/we-scene-demo/reports/.tmp-video/v0.json: Invalid data found when processing input"
    }
   },
   {

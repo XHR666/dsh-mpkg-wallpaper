@@ -287,6 +287,55 @@ console.log('\n== D. 当前目录显示（标题上方；显示值 == 实际取�
   ok('D5 目录行不再有「复制路径」按钮（2026-11-01 用户要求移除）', !(t1.nodes || []).some((p) => p && p['data-mpw-scan-dir-copy'] !== undefined), '');
 }
 
+console.log('\n== K. 「已应用」回填（#1 2026-11-03：背景来源选中 ⇒ 扫描页识别/高亮）==');
+//   判据口径：扫描页 apply 的记忆（store.appliedKey）**或** section.mpkgKey（背景来源写入）
+//   命中扫描项身份（视频 = w.key）⇒ 网格 cell 带 mpw_scanCellApplied + 详情按钮 = 已应用；
+//   身份不匹配 ⇒ 零高亮、按钮 = 应用此壁纸。变异 M-applied 打在 mpwScanAppliedMatch 上。
+{
+  const appliedCellsOf = (t) => (t.nodes || []).filter((p) => p && typeof p['data-mpw-scan-item'] === 'string'
+    && String(p.className || '').indexOf('mpw_scanCellApplied') >= 0);
+  const detailBtnOf = (t) => (t.nodes || []).find((p) => p && p['data-mpw-scan-apply'] === 'custom|clip1.mp4' && typeof p['data-mpw-scan-apply'] === 'string');
+  // K1：背景来源已选 clip1（section.mpkgKey == 扫描项 key）⇒ 恰好一个 cell 高亮
+  const s1 = renderWall(null, { fetch: fetchFor(null), settings: { enabled: true, customDirPath: '/data/wallpapers', mpkgKey: 'custom|clip1.mp4' } });
+  try { s1.kick(); } catch (e) {}
+  await sleep(120);
+  const t1 = s1.render();
+  const cells1 = appliedCellsOf(t1);
+  ok('K1 背景来源选中（section.mpkgKey）⇒ 恰好一个扫描 cell 带 mpw_scanCellApplied',
+    cells1.length === 1 && cells1[0]['data-mpw-scan-item'] === 'custom|clip1.mp4',
+    'cells=' + JSON.stringify(cells1.map((c) => c['data-mpw-scan-item'])));
+  // K2：选中该项 ⇒ 详情按钮显示「已应用」（按钮文案从树字符串断言：应用此壁纸消失、已应用出现）
+  { try { globalThis.__mpwBsScan.setSelected('custom|clip1.mp4'); } catch (e) {} }
+  const t2 = s1.render();
+  const btn2 = detailBtnOf(t2);
+  const zh2 = s1.r.localeDicts.zh;
+  ok('K2 选中已应用项 ⇒ 详情按钮 = bsScan.applied',
+    !!btn2 && (t2.strings || []).some((x) => String(x) === zh2['bsScan.applied'])
+      && !(t2.strings || []).some((x) => String(x) === zh2['bsScan.apply']),
+    'strings-hit=' + (t2.strings || []).filter((x) => x === zh2['bsScan.applied'] || x === zh2['bsScan.apply']).join('|'));
+  // K3：身份不匹配 ⇒ 零高亮 + 按钮 = 应用此壁纸
+  const s3 = renderWall(null, { fetch: fetchFor(null), settings: { enabled: true, customDirPath: '/data/wallpapers', mpkgKey: 'unrelated-key' } });
+  try { s3.kick(); } catch (e) {}
+  await sleep(120);
+  const t3 = s3.render();
+  ok('K3 不匹配 ⇒ 零高亮（不错把别的高亮成已应用）', appliedCellsOf(t3).length === 0,
+    'cells=' + JSON.stringify(appliedCellsOf(t3).map((c) => c['data-mpw-scan-item'])));
+  { try { globalThis.__mpwBsScan.setSelected('custom|clip1.mp4'); } catch (e) {} }
+  const t3b = s3.render();
+  const zh3 = s3.r.localeDicts.zh;
+  ok('K3b 不匹配项的详情按钮 = 应用此壁纸',
+    (t3b.strings || []).some((x) => String(x) === zh3['bsScan.apply'])
+      && !(t3b.strings || []).some((x) => String(x) === zh3['bsScan.applied']),
+    'strings-hit=' + (t3b.strings || []).filter((x) => x === zh3['bsScan.applied'] || x === zh3['bsScan.apply']).join('|'));
+  // K4：steam 项身份（library|ltoken，经 mpwScanItemSection 派生）也回填
+  const s4 = renderWall(null, { fetch: fetchFor({ custom: { ok: true, files: [] }, steam: { ok: true, installDir: '/games/Steam', wallpapers: [{ key: 'lib1', ltoken: 'tokA', name: 'Lib One', type: 'video', media: 'a.mp4', preview: '' }] } }), settings: { enabled: true, customDirPath: '', mpkgKey: 'library|tokA' } });
+  try { s4.kick(); } catch (e) {}
+  await sleep(120);
+  const t4 = s4.render();
+  ok('K4 steam 项（library|ltoken 身份）也回填高亮', appliedCellsOf(t4).length === 1,
+    'cells=' + JSON.stringify(appliedCellsOf(t4).map((c) => c['data-mpw-scan-item'])));
+}
+
 console.log('\n== S. 扫描→展示→点选应用（桩环境全链路；经侧栏「壁纸」页签渲染）==');
 {
   const s = renderWall(null, { fetch: fetchFor(null), settings: { enabled: true, customDirPath: '' } });
@@ -584,6 +633,28 @@ await withMutant('M-dir', '目录记账断链（kickScan 不写 srcDir）',
     await sleep(120);
     const rb = dirRowOf(b.render());
     if (!(rb && rb.text === '/games/Steam/wallpaper_engine')) red.push('D2');
+    return red;
+  });
+
+// M-applied：回填匹配打掉（mpwScanAppliedMatch 恒 false）⇒ K1/K2 红（背景来源选中不被识别）
+await withMutant('M-applied', '回填匹配打掉（mpwScanAppliedMatch 恒 false）',
+  [['if (!eff || !w) return false;', 'if (true) return false; /* M-applied */']], ['K1', 'K2'],
+  async (f) => {
+    const red = [];
+    const s = await renderOn(f, { fetch: fetchFor(null), settings: { enabled: true, customDirPath: '/data/wallpapers', mpkgKey: 'custom|clip1.mp4' } });
+    try { globalThis.__mpwBsScanKick(); } catch (e) {}
+    await sleep(120);
+    const t = s.render();
+    const cells = (t.nodes || []).filter((p) => p && typeof p['data-mpw-scan-item'] === 'string'
+      && String(p.className || '').indexOf('mpw_scanCellApplied') >= 0);
+    if (cells.length !== 1) red.push('K1');
+    { try { globalThis.__mpwBsScan.setSelected('custom|clip1.mp4'); } catch (e) {} }
+    const t2 = s.render();
+    // 与 K2 同语义（正向）：按钮必须显示「已应用」且不是「应用此壁纸」——变异下回填丢失 ⇒ 必红
+    const zh = s.r.localeDicts.zh;
+    const okApplied = (t2.strings || []).some((x) => String(x) === zh['bsScan.applied'])
+      && !(t2.strings || []).some((x) => String(x) === zh['bsScan.apply']);
+    if (!okApplied) red.push('K2');
     return red;
   });
 

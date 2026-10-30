@@ -11,7 +11,7 @@
    "rel": "wallpaperE/洛茜/洛茜_11.mpkg",
    "why": "wallpaperE 新名字（29.2MB，PKGM0014，scene.json 57KB 最大）",
    "off": {
-    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_11.mpkg",
+    "abs": "~/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_11.mpkg",
     "exists": true,
     "mb": 29.2,
     "magic": "PKGM0014",
@@ -265,7 +265,7 @@
    "rel": "wallpaperE/蔚蓝档案/蔚蓝档案_04.mpkg",
    "why": "wallpaperE 新名字（41.8MB，PKGM0014）",
    "off": {
-    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_04.mpkg",
+    "abs": "~/DSHarea/allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_04.mpkg",
     "exists": true,
     "mb": 41.8,
     "magic": "PKGM0014",
@@ -519,7 +519,7 @@
    "rel": "wallpaperE/陈千语/陈千语_01.mpkg",
    "why": "**唯一**带 scene.json 的 `*_01.mpkg`（58.7MB，PKGM0014）",
    "off": {
-    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/陈千语/陈千语_01.mpkg",
+    "abs": "~/DSHarea/allwallpaper/wallpaperE/陈千语/陈千语_01.mpkg",
     "exists": true,
     "mb": 58.7,
     "magic": "PKGM0014",
@@ -773,7 +773,7 @@
    "rel": "wallpaperE/卡提希娅/卡提希娅_09.mpkg",
    "why": "对照：**无 scene.json**（9.2MB，3 条目 = preview+project.json+mp4）",
    "off": {
-    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/卡提希娅/卡提希娅_09.mpkg",
+    "abs": "~/DSHarea/allwallpaper/wallpaperE/卡提希娅/卡提希娅_09.mpkg",
     "exists": true,
     "mb": 9.2,
     "magic": "PKGM0014",
@@ -811,12 +811,12 @@
      "GPU: llvmpipe, or similar",
      "① 宿主 API 已发布（window.__wp）：真能力 pause/resume/release/setFilter/setRenderDpr/setVolume/pushPointer/capture；明确降级 setFit/setSceneFps/updateWebProps/loadSceneFile/pushWheel/restore/setWallpaper（读数见 window._",
      "加载场景 mpkg-sweep…",
-     "加载本地容器: /root/Desktop/DSHarea/allwallpaper/wallpaperE/卡提希娅/卡提希娅_09.mpkg",
+     "加载本地容器: ~/DSHarea/allwallpaper/wallpaperE/卡提希娅/卡提希娅_09.mpkg",
      "容器: PKGM0014 条目 3 个",
      "❌ 启动失败: TextDecoder.decode: Argument 1 could not be converted to any of: ArrayBufferView, ArrayBuffer."
     ],
     "logKey": [
-     "容器: /root/Desktop/DSHarea/allwallpaper/wallpaperE/卡提希娅/卡提希娅_09.mpkg",
+     "容器: ~/DSHarea/allwallpaper/wallpaperE/卡提希娅/卡提希娅_09.mpkg",
      "容器: PKGM0014 条目 3 个",
      "启动失败: TextDecoder.decode: Argument 1 could not be converted to any of: ArrayBufferView, ArrayBuffer."
     ]
@@ -911,7 +911,7 @@
    "rel": "wallpaperE/佩丽卡/佩丽卡1_01.mpkg",
    "why": "对照：**无 scene.json**（10.6MB，3 条目）",
    "off": {
-    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_01.mpkg",
+    "abs": "~/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_01.mpkg",
     "exists": true,
     "mb": 10.6,
     "magic": "PKGM0014",
@@ -949,12 +949,12 @@
      "GPU: llvmpipe, or similar",
      "① 宿主 API 已发布（window.__wp）：真能力 pause/resume/release/setFilter/setRenderDpr/setVolume/pushPointer/capture；明确降级 setFit/setSceneFps/updateWebProps/loadSceneFile/pushWheel/restore/setWallpaper（读数见 window._",
      "加载场景 mpkg-sweep…",
-     "加载本地容器: /root/Desktop/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_01.mpkg",
+     "加载本地容器: ~/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_01.mpkg",
      "容器: PKGM0014 条目 3 个",
      "❌ 启动失败: TextDecoder.decode: Argument 1 could not be converted to any of: ArrayBufferView, ArrayBuffer."
     ],
     "logKey": [
-     "容器: /root/Desktop/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_01.mpkg",
+     "容器: ~/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_01.mpkg",
      "容器: PKGM0014 条目 3 个",
      "启动失败: TextDecoder.decode: Argument 1 could not be converted to any of: ArrayBufferView, ArrayBuffer."
     ]
@@ -1049,7 +1049,7 @@
    "rel": "wallpaperE/白洲梓/白洲梓1_07.mpkg",
    "why": "对照：**无 scene.json**（11.8MB，3 条目）",
    "off": {
-    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓1_07.mpkg",
+    "abs": "~/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓1_07.mpkg",
     "exists": true,
     "mb": 11.8,
     "magic": "PKGM0014",
@@ -1087,12 +1087,12 @@
      "GPU: llvmpipe, or similar",
      "① 宿主 API 已发布（window.__wp）：真能力 pause/resume/release/setFilter/setRenderDpr/setVolume/pushPointer/capture；明确降级 setFit/setSceneFps/updateWebProps/loadSceneFile/pushWheel/restore/setWallpaper（读数见 window._",
      "加载场景 mpkg-sweep…",
-     "加载本地容器: /root/Desktop/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓1_07.mpkg",
+     "加载本地容器: ~/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓1_07.mpkg",
      "容器: PKGM0014 条目 3 个",
      "❌ 启动失败: TextDecoder.decode: Argument 1 could not be converted to any of: ArrayBufferView, ArrayBuffer."
     ],
     "logKey": [
-     "容器: /root/Desktop/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓1_07.mpkg",
+     "容器: ~/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓1_07.mpkg",
      "容器: PKGM0014 条目 3 个",
      "启动失败: TextDecoder.decode: Argument 1 could not be converted to any of: ArrayBufferView, ArrayBuffer."
     ]

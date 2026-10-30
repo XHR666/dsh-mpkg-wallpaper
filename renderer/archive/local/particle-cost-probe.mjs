@@ -6,8 +6,8 @@ import fs from 'node:fs'
 import { createRenderer } from './we-scene-bundle.js'
 import * as lib from './we-scene-bundle.js'
 
-const DIR = '/root/Desktop/DSHarea/allwallpaper/dd'
-const WE_ASSETS = '/root/Desktop/DSHarea/wallpaper_engine/assets'
+const DIR = process.env.MPW_SCENES || path.join(process.env.MPW_ROOT || path.resolve('.', '..'), 'allwallpaper', 'dd') /* ①(2026-11-03 可移植性) */
+const WE_ASSETS = process.env.MPW_WE_ASSETS || path.join(process.env.MPW_ROOT || path.resolve('.', '..'), 'wallpaper_engine', 'assets') /* ①(2026-11-03 可移植性) */
 const args = process.argv.slice(2)
 const id = args.find((a) => !a.startsWith('-')) || '3554161528'
 const mode = args.includes('--mode') ? args[args.indexOf('--mode') + 1] : 'incr'

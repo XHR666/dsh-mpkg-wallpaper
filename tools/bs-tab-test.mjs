@@ -355,6 +355,14 @@ console.log('\n== D8. tab 同格堆叠（2026-11-02 左移根治）的产物与�
   const src = fs.readFileSync(path.join(ROOT, 'lib', 'client.js'), 'utf8');
   ok('D8d 源码零残留：无 translateX 行切换写法、无 flex:"0 0 100%" 超宽面板',
     src.indexOf('"translateX(-" + Math.max(0') < 0 && src.indexOf('flex: "0 0 100%"') < 0, '');
+  // ①(2026-11-03 #13 A4) switchTab 本体零样式写入（防"JS 位移"改法复活：切换只准 setState，
+  //   可见性由 data-mpw-tabactive 的 CSS 驱动）。变异 M6 注回 translateX ⇒ 本条必红。
+  const iSw = src.indexOf('const switchTab = (id) => {');
+  const iEnd = iSw >= 0 ? src.indexOf('};', iSw) : -1;
+  const swBody = iSw >= 0 && iEnd > iSw ? src.slice(iSw, iEnd) : '';
+  ok('D8e switchTab 本体零 style/transform 写入（只 setState；A4 #13 回归锁）',
+    swBody.length > 0 && swBody.indexOf('.style') < 0 && swBody.indexOf('transform') < 0,
+    swBody.trim().slice(0, 80));
 }
 
 console.log('\n== E. 设置页恢复整页设置（7 项内部 tab；无 scan、无跳转壳）+ 两入口同一份配置 ==');
@@ -592,6 +600,22 @@ await withMutant('M7', 'scan 面板 data-mpw-tabactive 丢失',
     const c = tree ? collect(tree, 4) : { nodes: [] };
     const actives = c.nodes.filter((p) => p && p['data-mpw-tabactive'] !== undefined);
     group('D3', actives.length === 1 && actives.some((p) => p['data-mpw-tabkey'] === 'scan'), 'actives=' + actives.length);
+    return red;
+  });
+
+// M8：switchTab 被"改回 JS 位移"（注回 translateX 写入）⇒ D8e 红（2026-11-03 #13 A4 回归锁）
+await withMutant('M8', 'switchTab 注回 translateX（JS 位移复活）',
+  [['const switchTab = (id) => {\n\t\t\t\tif (id === settingsTab) return;\n\t\t\t\tsetSettingsTab(id);',
+    'const switchTab = (id) => {\n\t\t\t\tif (id === settingsTab) return;\n\t\t\t\ttry { const r = document.querySelector(".mpw_tabRow"); if (r) r.style.transform = "translateX(-720px)"; } catch (e) {} /* M8 */\n\t\t\t\tsetSettingsTab(id);']],
+  ['D8e'],
+  async (f) => {
+    const { group, red } = runChecksOn();
+    reset();
+    const src = fs.readFileSync(f, 'utf8');
+    const iSw = src.indexOf('const switchTab = (id) => {');
+    const iEnd = iSw >= 0 ? src.indexOf('};', iSw) : -1;
+    const swBody = iSw >= 0 && iEnd > iSw ? src.slice(iSw, iEnd) : '';
+    group('D8e', swBody.length > 0 && swBody.indexOf('.style') < 0 && swBody.indexOf('transform') < 0, swBody.trim().slice(0, 80));
     return red;
   });
 

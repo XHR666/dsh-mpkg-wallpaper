@@ -61,7 +61,7 @@
 ## 3. 验证输出（逐字粘贴）
 
 ```
-$ cd /root/Desktop/DSHarea/we-scene-demo
+$ cd ~/DSHarea/we-scene-demo
 $ node --check we-scene-demo-server.mjs
   OK
 

@@ -733,6 +733,9 @@ node tools/thumb-sched-test.mjs || fail=1
 #   初始化/持久化/位置两入口/切换确认与快照还原/导入安全（恶意样例逐条）/删除/导出/i18n 8 组
 #   + 5 条变异自证（期望红集 == 实际红集）。约 12s（含两轮 3.5s 落盘闸门等待）。
 node tools/preset-test.mjs || fail=1
+# ①(2026-11-03 #7) 更新检测"模拟新版本"调试路径判据（纯 Node）：?updcheck=fake 闸在真请求前 /
+#   fake 读数形状（hasUpdate/contentDiff/9.9.9）/ 徽标与确认弹窗接线 + 2 条变异自证。约 1s。
+node tools/update-fake-test.mjs || fail=1
 # ①(2026-10-25 任务 3) dsh-conversation 浮窗层级判据（纯 Node：__mpwBuildCss 产物解析）：
 #   面板层值 60 / 标题栏内祖先盒解困 / 设置·弹层在场让位 + 三组数值比较（输入框/模态/弹层）
 #   + 3 条变异自证（期望红集 == 实际红集）。约 2s。
@@ -753,6 +756,10 @@ node tools/market-topbar-glass-test.mjs || fail=1
 #   过渡同参数）/ 拖拽与 reduced-motion 让位 / tooltip 去裁切（打标/摘标/滚动容器反向）
 #   + 4 条变异自证（期望红集 == 实际红集）。约 6s。
 node tools/sidebar-collapse-geo-test.mjs || fail=1
+# ①(2026-11-03 #Bug4) tooltip-unclip 布局位移判据（纯 Node）：unclip 默认关（兜底开关在）/
+#   兜底开时 body/[class*="frame"]/滚动容器永不碰 / 放开前后 scrollHeight·clientHeight 变化
+#   ≥1px ⇒ 立即回滚 + 拉黑 / 3 条变异自证（期望红集 == 实际红集）。约 4s。
+node tools/tip-no-layout-shift-test.mjs || fail=1
 # ①(2026-11-02 任务①) 侧栏收起态悬浮回归判据（纯 Node：__mpwBuildCss 产物解析）：
 #   收起态悬浮三件套在位（margin/令牌圆角/阴影，无 !important 清零）/ 展开态零变化 /
 #   c1a55a6 的"has([data-sidebar-collapsed]) + sidebarCol 整类清零"回归模式不得复活 /
@@ -859,25 +866,20 @@ gate_begin 9
 if [ "$GATE_RUN" = 1 ]; then           # ← 缓存命中时整块跳过（SKIP-CACHED）
 node tools/header-rail-replica.mjs --both || fail=1
 
-# ①(2026-09-17 第 1 项「壁纸插件对 better-sidebar 的适配」) 两段链路都曾**静默失效**：
-#   ① host /ping 的 betterSidebarVersion 恒 null（局部变量遮蔽同名函数，见 lib/index.js:70 注释）；
-#   ② 客户端只在"设置页组件"的 effect 里探测版本 ⇒ 不打开设置页时 body 上永远没有
-#      data-mpw-bs-version ⇒ 版本门控 CSS 一条都不生效。
-#   本步断言：/ping 返回磁盘上真实版本（含"多 profile 里只有一个装了"的场景）/ 把函数名改回
-#   同名后同断言必须变红（变异用例，防假绿）/ apply() 页面加载路径即写 body 属性（桩 DOM 属性表）/
-#   浮窗规则必须带 0.16 版本门控 / 已装版本的产物里我们依赖的 DOM 锚点仍在（金丝雀）。
-#   真机 DOM 证据（0.19.1 真页面）：node tools/bs-compat-probe.mjs（见 docs/BETTER-SIDEBAR-COMPAT.md）
+# ①(2026-11-03 #2) better-sidebar 适配已整体退役（第三方插件被 DSH 原生右栏取代）：
+#   适配块/设置键/i18n/版本门控链/host 检测与两个旧判据（better-sidebar-compat-test /
+#   bs-compat-default-test / bs-compat-probe / bs-bottom-panel-probe）一并删除；
+#   本步第 9 步仅保留历史注释，「壁纸」页签注册链路（走宿主 betterSidebar 服务）在第 10 步守护。
 fi                                     # ← 第 9 步结束
 gate_end 9
-step "10/12 better-sidebar 适配（/ping 版本链路 + 页面加载期版本门控 + 锚点金丝雀）"
+step "10/12 better-sidebar 适配退役断言 + 「壁纸」页签注册链路（宿主服务）"
 gate_begin 10
 if [ "$GATE_RUN" = 1 ]; then           # ← 缓存命中时整块跳过（SKIP-CACHED）
-node tools/better-sidebar-compat-test.mjs || fail=1
-# ①(2026-09-18 用户裁定) bsCompat 总开关**默认改为开**（底部面板悬浮适配已真机定案，默认关 = 没人看得见），
-#   并且**只迁移"从没显式设过"的存量用户**、用户手动关过的绝不覆盖（写入口打 bsCompatUserSet 标记；
-#   迁移不打标记）。判据双向：默认档生效 / 显式关过不生效且迁移不发生 / 迁移后手动关持久生效（含"重启"重放）；
-#   变异自证：删掉"用户设过就不迁移"、把默认值改回 false、写入口不打标记 ⇒ 三组各自变红。
-node tools/bs-compat-default-test.mjs || fail=1
+# ①(2026-11-03 #2) 适配退役的常驻断言：client/index 侧适配代码零残留（设置键/标记/CSS/插值）/
+#   版本门控链零残留 / /ping 不再返回 betterSidebar 字段 / zh/en 词典零残留；
+#   同时守护**没被误伤**的活链路：壁纸页签注册（mpwBsService 三级解析 + registerTab）。
+#   变异自证：写回一条 [data-dsh-better-sidebar] 规则 ⇒ A1 红；/ping 加回字段 ⇒ A3 红。
+node tools/bs-compat-removed-test.mjs || fail=1
 
 # ①(2026-10-24 侧边栏 tab) 向 dsh-better-sidebar 注册「壁纸」页签（可选依赖）的四段链路判据：
 #   注册恰好一次/字段/id 唯一（A）· ctx.effect 生命周期：卸载→重 apply 不撞 already registered（A6）·

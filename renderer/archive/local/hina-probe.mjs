@@ -9,7 +9,7 @@ const out = process.argv[3] || '/tmp/hina-probe.png'
 const waitMs = Number(process.argv[4] || 8000)
 const W = Number(process.argv[5] || 640)
 const H = Number(process.argv[6] || 360)
-const PW = '/root/Desktop/DSHarea/dsh-mpkg-wallpaper/node_modules/playwright/index.mjs'
+const PW = process.env.MPW_PW || path.join(process.env.MPW_ROOT || path.resolve('.', '..'), 'dsh-mpkg-wallpaper', 'node_modules', 'playwright', 'index.mjs') /* ①(2026-11-03 可移植性) */
 
 const { chromium } = await import(PW)
 const args = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist',

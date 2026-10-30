@@ -5,7 +5,7 @@
  "epochMs": 1789684013356,
  "env": {
   "mpwRoot": "/tmp/csprobe/empty",
-  "repoRoot": "/root/Desktop/DSHarea/we-scene-demo",
+  "repoRoot": "~/DSHarea/we-scene-demo",
   "node": "v24.19.0",
   "canvas": [
    3840,

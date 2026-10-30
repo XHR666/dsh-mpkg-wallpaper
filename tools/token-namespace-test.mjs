@@ -179,7 +179,12 @@ function buildCases(src) {
 function specificity(part) {
   // ①(2026-10-27) :where(...) 对特异性贡献为零（CSS 规范）——先剥掉再计数，
   //   否则 ":not(:where([attr]))" 这类**零特异性排除**会被多算（banner 收窄引入的误报）。
-  const stripped = String(part).replace(/:not\(:where\([^()]*\)\)/g, '').replace(/:where\([^()]*\)/g, '')
+  // ①(2026-11-03 演进留痕 #Bug2/3/5) 伪元素 ::before/::after 不计入类权重（CSS 规范：
+  //   伪元素不计入 class/伪类档）。原实现里 ":before" 被伪类正则从第二个冒号起匹配成
+  //   ":before" 多算 +100 —— 磨砂从"表面本体"迁到"::before"（fixed 后代包含块家族修复）
+  //   后，同一位置的同族规则会因此凭空压过本体规则，把"机制搬迁"误判成"生效值漂移"。
+  //   修正确保 before↔after 的层叠模型仍然自洽（变异自证不变，M 组照旧能打红）。
+  const stripped = String(part).replace(/:not\(:where\([^()]*\)\)/g, '').replace(/:where\([^()]*\)/g, '').replace(/::(before|after)\b/g, '')
   const ids = (stripped.match(/#[A-Za-z0-9_-]+/g) || []).length
   const cls = (stripped.match(/\.[A-Za-z0-9_\\-]+|\[[^\]]*\]|:(?!:)[a-z-]+(?:\([^)]*\))?/g) || []).length
   const el = (stripped.match(/(^|[\s>+~])[a-zA-Z][a-zA-Z0-9-]*/g) || []).length

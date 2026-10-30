@@ -1,6 +1,6 @@
 # 官方鼠标视差对齐（RE-24 静态逆向 → 本仓落地）— 2026-09-24
 
-工作目录 `/root/Desktop/DSHarea/we-scene-demo`（渲染器仓库根）。本轮**只写**四个文件：
+工作目录 `~/DSHarea/we-scene-demo`（渲染器仓库根）。本轮**只写**四个文件：
 
 | 文件 | 动作 |
 |---|---|
@@ -327,7 +327,7 @@ $ node tests/docs-check.mjs
 ## 8. 复算命令（可原样重跑）
 
 ```bash
-cd /root/Desktop/DSHarea/we-scene-demo
+cd ~/DSHarea/we-scene-demo
 node tests/official-parallax-formula-test.mjs                 # 官方算式 + 逐位回归 + 6 组变异（~1s）
 node tests/parallax-live-test.mjs --offline                   # 20 通过（含 3 组旧变异锚点）
 node tests/p76-parallax-eye-test.mjs                          # 111 通过（对象级视差零回归）
@@ -335,8 +335,8 @@ bash tests/run-all-tests.sh --only official-parallax-formula parallax-live p76-p
 node tests/docs-check.mjs
 
 # 逆向依据（只读；工作区根）
-sed -n '200,340p' /root/Desktop/DSHarea/docs/<工作区>/docs/OFFICIAL-PARALLAX-RE-20260924.md   # §A.2/§A.3
-sed -n '673,730p' /root/Desktop/DSHarea/docs/<工作区>/docs/OFFICIAL-PARALLAX-RE-20260924.md   # §B-4 桌面
-sed -n '817,852p' /root/Desktop/DSHarea/docs/<工作区>/docs/OFFICIAL-PARALLAX-RE-20260924.md   # 对照表
-sed -n '1,80p'    /root/Desktop/DSHarea/docs/_official-extract/parallax/desktop/C2_disasm_perlayer_weight_wallpaper64.txt
+sed -n '200,340p' ~/DSHarea/docs/<工作区>/docs/OFFICIAL-PARALLAX-RE-20260924.md   # §A.2/§A.3
+sed -n '673,730p' ~/DSHarea/docs/<工作区>/docs/OFFICIAL-PARALLAX-RE-20260924.md   # §B-4 桌面
+sed -n '817,852p' ~/DSHarea/docs/<工作区>/docs/OFFICIAL-PARALLAX-RE-20260924.md   # 对照表
+sed -n '1,80p'    ~/DSHarea/docs/_official-extract/parallax/desktop/C2_disasm_perlayer_weight_wallpaper64.txt
 ```

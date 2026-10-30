@@ -21,7 +21,7 @@ import fs from 'node:fs'
 import { createRenderer } from '../core/we-scene-bundle.js'
 import * as lib from '../core/we-scene-bundle.js'
 
-const MPW_WS = process.env.MPW_ROOT || '/root/Desktop/DSHarea'
+const MPW_WS = process.env.MPW_ROOT || '~/DSHarea'
 const DIR = `${MPW_WS}/allwallpaper/dd`
 const WE_ASSETS = `${MPW_WS}/wallpaper_engine/assets`
 const argv = process.argv.slice(2)

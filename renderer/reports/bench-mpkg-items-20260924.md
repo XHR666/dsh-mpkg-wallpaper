@@ -1,6 +1,6 @@
 # `.mpkg` 成为测试台**一等库项**（用户"壁纸都启动失败 / PKG HTTP404"的根因那一半）—— 2026-09-24
 
-工作目录 `/root/Desktop/DSHarea/we-scene-demo`（渲染器仓库根）。基线 = `HEAD` `6b90af1`（`git status` 动手前干净）。
+工作目录 `~/DSHarea/we-scene-demo`（渲染器仓库根）。基线 = `HEAD` `6b90af1`（`git status` 动手前干净）。
 
 本轮**只碰**这五个文件：
 
@@ -225,7 +225,7 @@ function libItemResolve(root, id)       // 词法前缀 + 真身（realpath）�
 ### 3.1 库根切到 `wallpaperE`（`:8902`，新代码）
 
 ```
-POST /api/library-dir {"dir":"/root/Desktop/DSHarea/allwallpaper/wallpaperE"}
+POST /api/library-dir {"dir":"~/DSHarea/allwallpaper/wallpaperE"}
 → {ok:true, dir:…/wallpaperE, source:"user", selected:true}
 
 GET /api/library
@@ -344,10 +344,10 @@ window.__mpwNoScene = {"path":"video","entry":"[Arknights Endfield] Rossi relax 
 ### 3.4 复原读数
 
 ```
-✅ POST /api/library-dir {"reset":true} → {ok:true, dir:"/root/Desktop/DSHarea/allwallpaper/dd", reset:true, source:"default", selected:false}
+✅ POST /api/library-dir {"reset":true} → {ok:true, dir:"~/DSHarea/allwallpaper/dd", reset:true, source:"default", selected:false}
 GET /api/library-source →
-  {"dir":"/root/Desktop/DSHarea/allwallpaper/dd","source":"default","selected":false,"explicit":false,
-   "configuredDir":"/root/Desktop/DSHarea/allwallpaper/dd","exists":true,
+  {"dir":"~/DSHarea/allwallpaper/dd","source":"default","selected":false,"explicit":false,
+   "configuredDir":"~/DSHarea/allwallpaper/dd","exists":true,
    "reason":"**没有人选过**：按候选顺序探测后采用 …/allwallpaper/dd（工作区语料布局 <MPW_ROOT>/allwallpaper/dd（不是产品默认，只是第一条候选））…"}
 GET /api/library → count=22  source=default  kinds={"scene":11,"video":4,"web":7,"mpkg":0,"unknown":0}
                   itemRoles={file:0, dir:22}      ← 老布局**一条文件条都不多**（零回归）

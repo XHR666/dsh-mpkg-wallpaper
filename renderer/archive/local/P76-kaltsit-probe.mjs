@@ -9,7 +9,7 @@ import { installPuppet } from './elysia/we-renderer/puppet.js'
 globalThis.location = globalThis.location || { search: '', href: 'http://localhost/' }
 const lib = await import('./we-scene-bundle.js')
 
-const ROOT = process.env.MPW_ROOT || '/root/Desktop/DSHarea'
+const ROOT = process.env.MPW_ROOT || path.resolve('.', '..') /* ①(2026-11-03 可移植性) 工作区根 = <DSHAREA>；本文件在 <DSHAREA>/dsh-mpkg-wallpaper/renderer/archive/local/ 下 */
 const DD = process.env.MPW_SCENE_ROOT || path.join(ROOT, 'allwallpaper', 'dd')
 const SCENE = '3719111841'
 const PKG = path.join(DD, SCENE, 'scene.pkg')

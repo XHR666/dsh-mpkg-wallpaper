@@ -3,8 +3,11 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 
-const BUNDLE = '/root/Desktop/DSHarea/we-scene-demo/we-scene-bundle.js'
-const SCENE_ROOT = '/root/Desktop/DSHarea/allwallpaper/dd'
+// ①(2026-11-03 可移植性修正) 本机绝对路径不许进 tracked 文件（cross-platform / integrity 判据）。
+//   默认按"仓库 = <DSHAREA>/dsh-mpkg-wallpaper"推导工作区根，可用 MPW_ROOT / MPW_BUNDLE / MPW_SCENES 覆盖。
+const WORKSPACE = path.resolve(process.env.MPW_ROOT || path.join(path.resolve('.'), '..'), '')
+const BUNDLE = process.env.MPW_BUNDLE || path.join(WORKSPACE, 'we-scene-demo', 'we-scene-bundle.js')
+const SCENE_ROOT = process.env.MPW_SCENES || path.join(WORKSPACE, 'allwallpaper', 'dd')
 const { parsePkg, getEntry } = await import(pathToFileURL(BUNDLE).href)
 
 const dirs = fs.readdirSync(SCENE_ROOT).filter((d) => /^\d+$/.test(d))

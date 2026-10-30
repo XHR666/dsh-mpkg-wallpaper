@@ -293,8 +293,11 @@ const CF = new Function(physFn + '\n' + preFn + '\nreturn { mpwPhysicalWidth, mp
   ok('C7 UI 一行档位（沿用既有 mpw_reset 按钮风格）+ setter 写 section.preScale 并重放',
     /t\("preScale"\)/.test(clientSrc) && /onClick: \(\) => setPreScale\(o\.v\)/.test(clientSrc)
     && /const setPreScale = \(v\) => \{ commit\(\{ preScale: v \}, true\); try \{ applyFromStorage\(\); \} catch \{\} \};/.test(clientSrc));
+  // ①(2026-11-03 演进留痕 #2) 原第三子句锚定 numFields 的 `"preScale", "bsRevealAlpha"` 尾部；
+  //   bsRevealAlpha 随 better-sidebar 适配退役移出 numFields，锚点消失 ⇒ 收窄到三元组（preScale
+  //   的接线判据语义不变：允许键 + 数值净化两处在场）。
   ok('C8 四处接线：preScale 进"允许键 / 数值净化 / 备份字段"（与 fpsCap、resMax 同款）',
-    (clientSrc.match(/"preScale"/g) || []).length >= 2 && /"fpsCap", "resMax", "preScale"/.test(clientSrc) && /"fpsCap", "resMax", "preScale", "bsRevealAlpha"/.test(clientSrc));
+    (clientSrc.match(/"preScale"/g) || []).length >= 2 && /"fpsCap", "resMax", "preScale"/.test(clientSrc));
   const zh = /"preScale": "([^"]*)"/.exec(clientSrc);
   const enKeys = clientSrc.slice(clientSrc.lastIndexOf('"preScale"'));
   ok('C9 中英两套字典都有该档（P-66 另有键集合对齐断言）',

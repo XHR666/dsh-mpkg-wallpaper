@@ -11,7 +11,7 @@
    "rel": "delete/wallpapertest1/wallpapertest1_红鸾樱落.mpkg",
    "why": "wallpapertest1_* 最小（9.4MB/PKGM0018，149 条目）",
    "off": {
-    "abs": "/root/Desktop/DSHarea/allwallpaper/delete/wallpapertest1/wallpapertest1_红鸾樱落.mpkg",
+    "abs": "~/DSHarea/allwallpaper/delete/wallpapertest1/wallpapertest1_红鸾樱落.mpkg",
     "exists": true,
     "mb": 9.4,
     "magic": "PKGM0018",
@@ -224,7 +224,7 @@
    "rel": "wallpaperE/佩丽卡/佩丽卡1_10.mpkg",
    "why": "wallpaperE 新名字（14.3MB，PKGM0014 视频+scene.json 型）",
    "off": {
-    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_10.mpkg",
+    "abs": "~/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_10.mpkg",
     "exists": true,
     "mb": 14.3,
     "magic": "PKGM0014",
@@ -465,7 +465,7 @@
    "rel": "wallpaperE/庄方宜/庄方宜_7.mpkg",
    "why": "wallpaperE 新名字（19.9MB，PKGM0014）",
    "off": {
-    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/庄方宜/庄方宜_7.mpkg",
+    "abs": "~/DSHarea/allwallpaper/wallpaperE/庄方宜/庄方宜_7.mpkg",
     "exists": true,
     "mb": 19.9,
     "magic": "PKGM0014",
@@ -706,7 +706,7 @@
    "rel": "wallpaperE/小鸟游星野/小鸟游星野11_10.mpkg",
    "why": "wallpaperE 新名字（21.0MB，PKGM0014）",
    "off": {
-    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/小鸟游星野/小鸟游星野11_10.mpkg",
+    "abs": "~/DSHarea/allwallpaper/wallpaperE/小鸟游星野/小鸟游星野11_10.mpkg",
     "exists": true,
     "mb": 21,
     "magic": "PKGM0014",
@@ -947,7 +947,7 @@
    "rel": "wallpaperE/白洲梓/白洲梓1_10.mpkg",
    "why": "wallpaperE 新名字（21.8MB，PKGM0014）",
    "off": {
-    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓1_10.mpkg",
+    "abs": "~/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓1_10.mpkg",
     "exists": true,
     "mb": 21.8,
     "magic": "PKGM0014",
@@ -1188,7 +1188,7 @@
    "rel": "wallpaperE/白洲梓/白洲梓1_05.mpkg",
    "why": "wallpaperE 新名字（22.5MB，PKGM0014）",
    "off": {
-    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓1_05.mpkg",
+    "abs": "~/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓1_05.mpkg",
     "exists": true,
     "mb": 22.5,
     "magic": "PKGM0014",
@@ -1428,7 +1428,7 @@
    "rel": "wallpaperE/洁尔佩塔/洁尔佩塔_4.mpkg",
    "why": "wallpaperE 新名字（27.6MB，PKGM0014，preview.gif 型）",
    "off": {
-    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洁尔佩塔/洁尔佩塔_4.mpkg",
+    "abs": "~/DSHarea/allwallpaper/wallpaperE/洁尔佩塔/洁尔佩塔_4.mpkg",
     "exists": true,
     "mb": 27.6,
     "magic": "PKGM0014",

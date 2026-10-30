@@ -33,7 +33,7 @@ const cases = [
 ]
 const tiles = []
 for (const c of cases) {
-  const pkg = lib.parsePkg(new Uint8Array(fs.readFileSync(`/root/Desktop/DSHarea/allwallpaper/dd/${c.id}/scene.pkg`)))
+  const pkg = lib.parsePkg(new Uint8Array(fs.readFileSync(`~/DSHarea/allwallpaper/dd/${c.id}/scene.pkg`)))
   const scene = lib.parseScene(JSON.parse(dec.decode(lib.getEntry(pkg, 'scene.json')).replace(/^\uFEFF/, '')))
   const layer = scene.layers.find((l) => l.__text && (l.name === c.name || !c.name) && l.__text.text)
   if (!layer) { console.log(`✗ ${c.id}/${c.name}: 找不到文本层`); continue }

@@ -298,7 +298,9 @@ const idxSrc = fs.readFileSync(IDX, 'utf8')
 
 /* 非包内白名单（每条**带理由**，且必须仍然命中 —— 与 client.js 那套同一纪律：台账不腐烂）。 */
 const HOST_NONPKG_RULES = [
-  { id: 'index-other-plugin-meta', why: '探测**别的插件**（dsh-better-sidebar）在 dsh profile 里的 package.json 版本号：第三方宿主元数据，不是 WE 包', test: (s) => /better-sidebar|detectBetterSidebarVersion|profilesDir/.test(s.arg + ' ' + s.ctx) },
+  /* ①(2026-11-03 #2 演进留痕) 原 `index-other-plugin-meta` 条目（探测 dsh-better-sidebar 的
+     package.json 版本号）随 better-sidebar 适配退役删除：lib/index.js 里那段代码已不存在
+     （/ping 不再返回 betterSidebar/betterSidebarVersion），台账条目一并退场。 */
   { id: 'index-plugin-meta', why: '本插件自己的 package.json / 线上 fetch 回来的 package.json（宿主插件元数据，不是 WE 包）', test: (s) => /package\.json|fetchRaw\(|JSON\.parse\(pkg\)/.test(s.arg + ' ' + s.ctx) },
   { id: 'index-host-state', why: '本插件自己在你机上的状态（DATA_DIR 下的 custom-dir.json / settings.json / web-store.json / media-audio.json）—— 宿主设置"读失败 ≠ 没存过"，宽容会把损坏糊成"能读"', test: (s) => /DATA_DIR|settings\.json|custom-dir|web-store\.json|media-audio\.json|readJsonFile/.test(s.arg + ' ' + s.ctx) },
   { id: 'index-request-body', why: 'HTTP 请求体（`body` / `raw`）：客户端发坏 JSON 必须 400，宽容会把客户端 bug 糊成"服务端读懂了"', test: (s) => /JSON\.parse\(\s*(body|raw)\b/.test('JSON.parse(' + s.arg) || /\b(body|raw)\b/.test(s.arg) },

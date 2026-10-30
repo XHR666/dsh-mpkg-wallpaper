@@ -1,6 +1,6 @@
 # 官方**视差默认值**对齐 + 测试台开关进诊断表 —— 2026-09-24
 
-工作目录 `/root/Desktop/DSHarea/we-scene-demo`（渲染器仓库根）。本轮**只写**这五个文件（`git status` 原样）：
+工作目录 `~/DSHarea/we-scene-demo`（渲染器仓库根）。本轮**只写**这五个文件（`git status` 原样）：
 
 | 文件 | 动作 | 任务 |
 |---|---|---|
@@ -304,7 +304,7 @@ $ node tests/gyro-parallax-test.mjs                → ===== gyro-parallax: 33 �
 ## 9. 复算命令（可原样重跑）
 
 ```bash
-cd /root/Desktop/DSHarea/we-scene-demo
+cd ~/DSHarea/we-scene-demo
 node tests/official-parallax-formula-test.mjs        # 37 判据 + 10 组变异（~2s）
 node tests/diag-flag-check.mjs                       # 双向 0 差异（183 == 183）/ common=11
 bash tests/run-all-tests.sh --only official-parallax-formula parallax-live p76-parallax-eye ptrfx-uniform diag-flags docs-check

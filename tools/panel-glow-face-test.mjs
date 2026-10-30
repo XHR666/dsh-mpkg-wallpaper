@@ -72,8 +72,10 @@ let CSS_ON = '', CSS_OFF = ''
   ok('A1 面规则在场：body[data-mpw-float] [data-mpw-glow-face]', !!b, b ? '' : '规则缺失')
   ok('A2 背景层 = radial-gradient（面内光，不是 body 层）', !!b && /background-image:\s*radial-gradient\(/.test(b))
   /* ⑫(2026-10-31 §2) 参数改档：白色 + peak 令牌（浅 0.12/深 0.14）+ 32% 中段衰减 + 74% 归零 */
-  ok('A3 峰值 = peak 令牌（白色 calc(var(--mpw-glow-alpha, 0) * var(--mpw-glow-peak, 0.12))，浅/深 0.12/0.14 ≤0.14）',
-    !!b && /rgba\(var\(--mpw-glow-rgb, 255 255 255\) \/ calc\(var\(--mpw-glow-alpha, 0\) \* var\(--mpw-glow-peak, 0\.12\)\)\)/.test(b))
+  // ①(2026-11-03 演进留痕 #4) 峰值 calc 链新增亮度缩放因子 var(--mpw-glow-peak-scale, 1)
+  //   （默认 1 = 行为不变；用户档 JS 写 body 内联覆盖）。断言随公式更新，峰值档位语义不变。
+  ok('A3 峰值 = peak 令牌（白色 calc(var(--mpw-glow-alpha, 0) * var(--mpw-glow-peak, 0.12) * var(--mpw-glow-peak-scale, 1))，浅/深 0.12/0.14 ≤0.14）',
+    !!b && /rgba\(var\(--mpw-glow-rgb, 255 255 255\) \/ calc\(var\(--mpw-glow-alpha, 0\) \* var\(--mpw-glow-peak, 0\.12\) \* var\(--mpw-glow-peak-scale, 1\)\)\)/.test(b))
   ok('A3b 衰减形态：32% 中段（0.4×峰值）+ 74% 归零（70–80% 带内）',
     !!b && /\* 0\.4\)\) 32%/.test(b) && /\/ 0\) 74%\)/.test(b))
   const light = ruleBody(CSS_ON, 'body[data-mpw-float]') || ''
@@ -254,7 +256,7 @@ function behaviorChecks(clientText, clientPath) {
   const css = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({}) : '')
   const b = ruleBody(css, FACE_RULE)
   r['J2'] = !!b && /background-image:\s*radial-gradient\(/.test(b)
-    && /rgba\(var\(--mpw-glow-rgb, 255 255 255\) \/ calc\(var\(--mpw-glow-alpha, 0\) \* var\(--mpw-glow-peak, 0\.12\)\)\)/.test(b)
+    && /rgba\(var\(--mpw-glow-rgb, 255 255 255\) \/ calc\(var\(--mpw-glow-alpha, 0\) \* var\(--mpw-glow-peak, 0\.12\) \* var\(--mpw-glow-peak-scale, 1\)\)\)/.test(b)
     && /\/ 0\) 74%\)/.test(b)
   /* ⑫A4/A6（变异 MV4/MV5 的判红键，同一夹具内对变异副本求值） */
   const lightM = ruleBody(css, 'body[data-mpw-float]') || ''
@@ -311,7 +313,7 @@ const MUT = [
       'function mpwGlowPref(section) {\n\t\t\t\ttry { return section && false ? !!section.glow :'),
     verify: (s) => s.indexOf('return section && false ? !!section.glow :') >= 0 },
   { id: 'MV3', what: '面规则删除 ⇒ J2 必红', expect: ['J2'],
-    patch: (s) => s.replace('\tbackground-image: radial-gradient(var(--mpw-glow-r, 120px) circle at var(--mpw-glow-x, 50%) var(--mpw-glow-y, 50%),\n\t\trgba(var(--mpw-glow-rgb, 255 255 255) / calc(var(--mpw-glow-alpha, 0) * var(--mpw-glow-peak, 0.12))),\n\t\trgba(var(--mpw-glow-rgb, 255 255 255) / calc(var(--mpw-glow-alpha, 0) * var(--mpw-glow-peak, 0.12) * 0.4)) 32%,\n\t\trgba(var(--mpw-glow-rgb, 255 255 255) / 0) 74%);', '\t/* 面规则已变异移除 */'),
+    patch: (s) => s.replace('\tbackground-image: radial-gradient(var(--mpw-glow-r, 120px) circle at var(--mpw-glow-x, 50%) var(--mpw-glow-y, 50%),\n\t\trgba(var(--mpw-glow-rgb, 255 255 255) / calc(var(--mpw-glow-alpha, 0) * var(--mpw-glow-peak, 0.12) * var(--mpw-glow-peak-scale, 1))),\n\t\trgba(var(--mpw-glow-rgb, 255 255 255) / calc(var(--mpw-glow-alpha, 0) * var(--mpw-glow-peak, 0.12) * var(--mpw-glow-peak-scale, 1) * 0.4)) 32%,\n\t\trgba(var(--mpw-glow-rgb, 255 255 255) / 0) 74%);', '\t/* 面规则已变异移除 */'),
     verify: (s) => s.indexOf('radial-gradient(var(--mpw-glow-r, 120px)') < 0 },
 ]
 let expectRed = [], actualRed = []

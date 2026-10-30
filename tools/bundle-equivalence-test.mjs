@@ -290,7 +290,9 @@ const mut = (name, repl) => {
   return p;
 };
 const mRoute = mut('route', (s) => s.replace("path: BASE + '/raw'", "path: BASE + '/raw-x'"));
-const mPayload = mut('payload', (s) => s.replace('{ ok: true, version, betterSidebar, betterSidebarVersion }', '{ ok: false, version, betterSidebar }'));
+// ①(2026-11-03 演进留痕 #2) 原 payload 变异锚定 /ping 的旧应答形状（含 betterSidebar/betterSidebarVersion）；
+//   适配退役后应答收窄为 { ok: true, version }，变异随之改为"ok 翻假"（对拍面不变：ping JSON 形状）。
+const mPayload = mut('payload', (s) => s.replace('{ ok: true, version }', '{ ok: false, version }'));
 /* ①(2026-09-21 跨平台轮) 这条变异原来把导出面的**名字逐名写死**（`__mpwTest, apply, inject`）：入口
    每加一个导出（本轮加了 steamProbeDirs）模板就失配 ⇒ 变异段自己抛"模板失配"、整步假红。
    改成"从产物**实际**导出面里去掉最后一个名字"——判据不变（源码 n 名 ↔ 产物 n-1 名 ⇒ --check 必红），

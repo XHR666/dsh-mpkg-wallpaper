@@ -60,8 +60,11 @@ console.log('== A. 统一收起/展开几何（buildCss float:on 真产物）=='
 {
   const css = cssFloat()
   const tokenDef = ruleBody(css, 'body[data-mpw-float] {\n\t--mpw-side-radius') || ruleBody(css, '--mpw-side-radius:')
-  ok('A1 统一令牌单点定义：--mpw-side-radius（⑨§3 起值为 18px，右栏口径）/ --mpw-side-dur / --mpw-side-ease 都在 float 块',
-    /--mpw-side-radius:\s*18px;/.test(css)
+  // ①(2026-11-03 演进留痕) 半径口径随 2026-11-02 两笔提交演进（18→22→跟随宿主
+  //   --dsw-radius-panel 档/回落 26px，见 lib client.js float 块注释与 commit e99fabb/6e5ef63）；
+  //   本判据从"字面量 18px"改判"令牌单点定义 + 跟随宿主 panel 档"，语义不降（单点 + 同源仍锁死）。
+  ok('A1 统一令牌单点定义：--mpw-side-radius（2026-11-02 起跟随宿主 --dsw-radius-panel）/ --mpw-side-dur / --mpw-side-ease 都在 float 块',
+    /--mpw-side-radius:\s*var\(--dsw-radius-panel,\s*26px\);/.test(css)
     && /--mpw-side-dur:\s*var\(--ds-transition-duration-slow, 0\.3s\)/.test(css)
     && /--mpw-side-ease:\s*var\(--ds-ease-in-out, cubic-bezier\(0\.4, 0, 0\.2, 1\)\)/.test(css))
 
@@ -99,8 +102,9 @@ console.log('== A. 统一收起/展开几何（buildCss float:on 真产物）=='
   const rsDock = ruleBody(css, 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]) [data-dockkit-pane],\nhtml body[data-mpw-float]:not([data-mpw-rightbar-parked]) [data-dockkit-strip] {')
   const rPush = String(decl(rsPush, 'border-radius') || '').replace(/\s*!important$/, '')
   const rDock = String(decl(rsDock, 'border-radius') || '').replace(/\s*!important$/, '')
-  ok('A7 §3 左右栏同源：右栏 push/dockkit 的 border-radius 也是 var(--mpw-side-radius)（令牌值 18px）',
-    rPush === 'var(--mpw-side-radius)' && rDock === 'var(--mpw-side-radius)' && /--mpw-side-radius:\s*18px;/.test(css),
+  // ①(2026-11-03 演进留痕) 同 A1：令牌定义从"18px 字面量"演进为"跟随宿主 --dsw-radius-panel 档"
+  ok('A7 §3 左右栏同源：右栏 push/dockkit 的 border-radius 也是 var(--mpw-side-radius)（令牌跟随宿主 panel 档）',
+    rPush === 'var(--mpw-side-radius)' && rDock === 'var(--mpw-side-radius)' && /--mpw-side-radius:\s*var\(--dsw-radius-panel,\s*26px\);/.test(css),
     `push=${rPush} dockkit=${rDock}`)
   ok('A7b §3 对照表：左栏展开/收起/根 3 组 + 右栏 push/dockkit 2 组 = 五处声明逐值同源（同一 var）',
     [rExp, rCol, rRoot, rPush, rDock].every((v) => v === 'var(--mpw-side-radius)'),
@@ -165,6 +169,14 @@ function buildShell({ overflow = 'hidden' } = {}) {
   const T = globalThis.__mpwPopUntruncTest
   ok('B0 判据出口在（tipFast/tipSync/tipClips）', !!T && typeof T.tipFast === 'function' && typeof T.tipSync === 'function' && typeof T.tipClips === 'function')
 
+  /* ①(#Bug4 2026-11-03 演进留痕) unclip 机制默认关闭（悬停发送键页面震荡的根因链；
+     磨砂迁伪元素后 tooltip 不再被裁，历史补丁只剩风险）。B 组打标断言改在**兜底开关打开**
+     的状态下跑（机制本身还在，开关语义由 tip-no-layout-shift-test 的 A/M 组守）。 */
+  const f0 = buildShell({})
+  const n0 = T.tipFast(f0.tip)
+  ok('B0b #Bug4 默认关：未开兜底开关 ⇒ tipFast 不打标（布局零改动）', n0 === 0 && !f0.shell.hasAttribute('data-mpw-tip-unclip'), 'n=' + n0)
+  globalThis.__mpwTipUnclip = true
+
   /* B1：气泡插入帧 ⇒ 裁切祖先同帧打标（= 打标后真实浏览器里该祖先 overflow 变 visible，
      tooltip 的 rect 不再被裁剪 —— 结构前提与 CSS 放开规则成对断言，见 B5） */
   const f1 = buildShell({})
@@ -198,6 +210,7 @@ function buildShell({ overflow = 'hidden' } = {}) {
 
   ok('B5 CSS 放开规则在（!important，与打标成对）：[data-mpw-tip-unclip] ⇒ overflow visible',
     /\[data-mpw-tip-unclip\]\[data-mpw-tip-unclip\] \{[^}]*overflow:\s*visible !important;/.test(CLIENT))
+  globalThis.__mpwTipUnclip = undefined   // 复位兜底开关（不泄漏到后续用例）
   cancelWorldTimers()
 }
 

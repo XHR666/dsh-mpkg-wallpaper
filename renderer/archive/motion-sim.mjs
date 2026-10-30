@@ -2,7 +2,11 @@
 // 复刻 demo.html 的 MDAT/MDLS/MDLA sample() 与附件偏移公式，
 // 打印每附件在若干帧的偏移值，并报告 32 帧内的最大逐帧步进（验证"随时间变化、无跳变"）。
 // 用法: node motion-sim.mjs <id=3719111841> [pkgPath]
-import * as lib from '/root/Desktop/DSHarea/we-scene-demo/we-scene-bundle.js'
+import { pathToFileURL } from 'node:url'
+/* ①(2026-11-03 可移植性) 绝对路径改环境推导 */
+const WS0 = process.env.MPW_ROOT || path.resolve('.', '..')
+const BUNDLE_URL = pathToFileURL(process.env.MPW_BUNDLE || path.join(WS0, 'we-scene-demo', 'we-scene-bundle.js')).href
+const lib = await import(BUNDLE_URL)
 import fs from 'node:fs'
 
 const id = process.argv[2] || '3719111841'

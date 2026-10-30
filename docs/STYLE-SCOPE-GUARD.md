@@ -74,7 +74,9 @@
 | `host:substr-component` | anchor | `[class*="P3OORG_panel"\|"QsffPG*"\|"composerSeat"\|"composerStack"\|"newSession"\|"thinkBody"]` | 宿主具体组件 hash 子串：只在这些组件内部细化 | 本表 |
 | `host:substr-menu` | anchor | `[class*="_menu*"\|"_dropdown"\|"_popover*"\|"_floatHeader_"\|"_selectMenu"\|"_denseList"\|"_expand"]` | 宿主弹层/菜单/下拉/顶栏展开面板：菜单半透明与"半透明又无模糊"抑制的作用域 | 本表 |
 | `host:substr-refine` | refine | `[class*="card"\|"row"\|"button"\|"fade"\|"primary"\|"message"\|"overlay"\|…]` 等通用子串 | 宿主结构通用类名：**只允许**作为已锚定选择器里的后代细化（裸出现即红） | 本表 |
-| `host:bs-bottom-resize` | anchor | `[class*="bottomResize"]` | better-sidebar 底部面板的宿主 resize strip（8px 拖拽带）：`bsFloat` 的 14px 圆角外壳会把它上沿切掉，故挪进面板内（`top:-4px` → `0`）；只改位置，不动尺寸/交互 | `BETTER-SIDEBAR-COMPAT.md:332`（existing） |
+| `host:dsh-popover` | anchor | `[data-dsh-popover]` | 宿主弹层容器稳定属性（dsh- 前缀 = 宿主命名空间）：浮层提层（z 3000 档）与弹层表面磨砂的作用域。原被 `host:better-sidebar` 顺带匹配，2026-11-03 适配退役后独立登记 | 本表 |
+| `host:dsh-surface` | anchor | `[data-dsh-surface]` | 宿主浮层表面标记（当前构建未见打标 = 惰性备选）。原被 `host:better-sidebar` 顺带匹配，2026-11-03 适配退役后独立登记 | 本表 |
+| ~~`host:better-sidebar`~~ / ~~`host:bs-bottom-resize`~~ | — | — | **2026-11-03 已移除**：better-sidebar 第三方插件适配整体退役（#2，见 tools/bs-compat-removed-test.mjs）；其稳定属性/resize 锚点不再被任何规则使用 | 本表 |
 | `host:substr-radius-compat` | anchor（整条选择器） | `:where([class*="wrap"], [class*="panel"], [class*="box"], [class*="section"], [class*="container"])` | 第三方插件 UI 圆角兼容（`roundCompat`，默认关）：**故意**匹配任意插件容器子串，但零优先级 `:where` + 只写 `border-radius` ⇒ 不覆盖任何既有样式 | 本表 |
 | `rail:marks` | anchor（**必须带门控**） | `.eGxaPq_*` / `.Y0dWHa_*` / `.qBU-ya*` | 只在 `body[data-mpw-rail-ink]`（对比补偿）/ `data-mpw-traject-clip`（仅几何裁剪）门控下成立 | `TIMELINE-RAIL-TOKEN.md:181`（existing） |
 | `rail:mark-attrs` | anchor（**必须带门控**） | `[class*="qBU-ya"]` / `[class*="_overview"]` | 同上（轨迹总览几何裁剪） | `TIMELINE-RAIL-TOKEN.md:181`（existing） |

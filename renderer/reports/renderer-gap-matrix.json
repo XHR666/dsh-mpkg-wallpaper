@@ -31,7 +31,7 @@
    "0917",
    "wallpaperE"
   ],
-  "corpus": "/root/Desktop/DSHarea/allwallpaper",
+  "corpus": "~/DSHarea/allwallpaper",
   "includePkg": true,
   "containersTotal": 199,
   "excludedDelete": 0,
@@ -2037,7 +2037,7 @@
   {
    "rel": "0923/3662790108/scene.pkg",
    "root": "0923",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0923/3662790108/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0923/3662790108/scene.pkg",
    "mb": 543,
    "magic": "PKGV0023",
    "entries": 1175,
@@ -2154,7 +2154,7 @@
   {
    "rel": "0923/3605722997/scene.pkg",
    "root": "0923",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0923/3605722997/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0923/3605722997/scene.pkg",
    "mb": 325.1,
    "magic": "PKGV0024",
    "entries": 84,
@@ -2271,7 +2271,7 @@
   {
    "rel": "dd/3470764447/scene.pkg",
    "root": "dd",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/dd/3470764447/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/dd/3470764447/scene.pkg",
    "mb": 320.6,
    "magic": "PKGV0022",
    "entries": 54,
@@ -2390,7 +2390,7 @@
   {
    "rel": "wallpaperE/伊蕾娜/夜莺night——【time_variation时间变化】elaina_伊蕾娜：闲憩微息【魔女之旅】day_night.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/伊蕾娜/夜莺night——【time_variation时间变化】elaina_伊蕾娜：闲憩微息【魔女之旅】day_night.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/伊蕾娜/夜莺night——【time_variation时间变化】elaina_伊蕾娜：闲憩微息【魔女之旅】day_night.mpkg",
    "mb": 315.9,
    "magic": "PKGM0018",
    "entries": 55,
@@ -2490,7 +2490,7 @@
   {
    "rel": "0923/3570308528/scene.pkg",
    "root": "0923",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0923/3570308528/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0923/3570308528/scene.pkg",
    "mb": 313.9,
    "magic": "PKGV0023",
    "entries": 21,
@@ -2607,7 +2607,7 @@
   {
    "rel": "0917/3600630828/scene.pkg",
    "root": "0917",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0917/3600630828/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0917/3600630828/scene.pkg",
    "mb": 293.3,
    "magic": "PKGV0024",
    "entries": 41,
@@ -2730,7 +2730,7 @@
   {
    "rel": "0923/3589454154/scene.pkg",
    "root": "0923",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0923/3589454154/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0923/3589454154/scene.pkg",
    "mb": 244.9,
    "magic": "PKGV0023",
    "entries": 193,
@@ -2854,7 +2854,7 @@
   {
    "rel": "dd/3326873240/scene.pkg",
    "root": "dd",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/dd/3326873240/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/dd/3326873240/scene.pkg",
    "mb": 235.4,
    "magic": "PKGV0023",
    "entries": 104,
@@ -2971,7 +2971,7 @@
   {
    "rel": "0917/3509243656/scene.pkg",
    "root": "0917",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0917/3509243656/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0917/3509243656/scene.pkg",
    "mb": 151.2,
    "magic": "PKGV0023",
    "entries": 146,
@@ -3115,7 +3115,7 @@
   {
    "rel": "0917/3448877775/scene.pkg",
    "root": "0917",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0917/3448877775/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0917/3448877775/scene.pkg",
    "mb": 131.9,
    "magic": "PKGV0022",
    "entries": 134,
@@ -3232,7 +3232,7 @@
   {
    "rel": "0923/2902406982/scene.pkg",
    "root": "0923",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0923/2902406982/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0923/2902406982/scene.pkg",
    "mb": 122.8,
    "magic": "PKGV0024",
    "entries": 129,
@@ -3349,7 +3349,7 @@
   {
    "rel": "0923/2887099508/scene.pkg",
    "root": "0923",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0923/2887099508/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0923/2887099508/scene.pkg",
    "mb": 119.9,
    "magic": "PKGV0018",
    "entries": 232,
@@ -3464,7 +3464,7 @@
   {
    "rel": "dd/3660962877/scene.pkg",
    "root": "dd",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/dd/3660962877/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/dd/3660962877/scene.pkg",
    "mb": 113.6,
    "magic": "PKGV0023",
    "entries": 68,
@@ -3579,7 +3579,7 @@
   {
    "rel": "dd/3669681034/scene.pkg",
    "root": "dd",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/dd/3669681034/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/dd/3669681034/scene.pkg",
    "mb": 94.2,
    "magic": "PKGV0023",
    "entries": 21,
@@ -3694,7 +3694,7 @@
   {
    "rel": "0923/3714466840/scene.pkg",
    "root": "0923",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0923/3714466840/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0923/3714466840/scene.pkg",
    "mb": 85.7,
    "magic": "PKGV0023",
    "entries": 6,
@@ -3809,7 +3809,7 @@
   {
    "rel": "0917/3195212886/scene.pkg",
    "root": "0917",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0917/3195212886/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0917/3195212886/scene.pkg",
    "mb": 82.5,
    "magic": "PKGV0024",
    "entries": 173,
@@ -3924,7 +3924,7 @@
   {
    "rel": "wallpaperE/遐蝶/夜莺Night——Honkai Star Rail Castorice 遐蝶 冥河永渡 崩坏星穹铁道The Etern.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/遐蝶/夜莺Night——Honkai Star Rail Castorice 遐蝶 冥河永渡 崩坏星穹铁道The Etern.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/遐蝶/夜莺Night——Honkai Star Rail Castorice 遐蝶 冥河永渡 崩坏星穹铁道The Etern.mpkg",
    "mb": 78,
    "magic": "PKGM0018",
    "entries": 49,
@@ -4024,7 +4024,7 @@
   {
    "rel": "wallpaperE/流萤/夜莺night——【customize自定义】firefly_流萤_星空之誓——夜莺night崩坏星穹铁道.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/流萤/夜莺night——【customize自定义】firefly_流萤_星空之誓——夜莺night崩坏星穹铁道.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/流萤/夜莺night——【customize自定义】firefly_流萤_星空之誓——夜莺night崩坏星穹铁道.mpkg",
    "mb": 73.8,
    "magic": "PKGM0018",
    "entries": 127,
@@ -4124,7 +4124,7 @@
   {
    "rel": "dd/3719111841/scene.pkg",
    "root": "dd",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/dd/3719111841/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/dd/3719111841/scene.pkg",
    "mb": 69.5,
    "magic": "PKGV0024",
    "entries": 147,
@@ -4239,7 +4239,7 @@
   {
    "rel": "0923/3151551777/scene.pkg",
    "root": "0923",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0923/3151551777/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0923/3151551777/scene.pkg",
    "mb": 67.1,
    "magic": "PKGV0021",
    "entries": 307,
@@ -4362,7 +4362,7 @@
   {
    "rel": "0923/3679620104/scene.pkg",
    "root": "0923",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0923/3679620104/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0923/3679620104/scene.pkg",
    "mb": 62.9,
    "magic": "PKGV0024",
    "entries": 10,
@@ -4477,7 +4477,7 @@
   {
    "rel": "wallpaperE/砂狼白子/砂狼白子11_03.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子11_03.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子11_03.mpkg",
    "mb": 61,
    "magic": "PKGM0014",
    "entries": 4,
@@ -4577,7 +4577,7 @@
   {
    "rel": "wallpaperE/佩丽卡/佩丽卡1_06.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_06.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_06.mpkg",
    "mb": 60.6,
    "magic": "PKGM0014",
    "entries": 4,
@@ -4677,7 +4677,7 @@
   {
    "rel": "wallpaperE/白洲梓/白洲梓_09.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓_09.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓_09.mpkg",
    "mb": 60,
    "magic": "PKGM0014",
    "entries": 4,
@@ -4777,7 +4777,7 @@
   {
    "rel": "wallpaperE/蔚蓝档案/蔚蓝档案_06.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_06.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_06.mpkg",
    "mb": 59.7,
    "magic": "PKGM0014",
    "entries": 4,
@@ -4877,7 +4877,7 @@
   {
    "rel": "dd/3327063360/scene.pkg",
    "root": "dd",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/dd/3327063360/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/dd/3327063360/scene.pkg",
    "mb": 59.5,
    "magic": "PKGV0022",
    "entries": 124,
@@ -4992,7 +4992,7 @@
   {
    "rel": "wallpaperE/洛茜/洛茜_07.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_07.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_07.mpkg",
    "mb": 59.5,
    "magic": "PKGM0014",
    "entries": 4,
@@ -5092,7 +5092,7 @@
   {
    "rel": "wallpaperE/佩丽卡/佩丽卡1_09.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_09.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_09.mpkg",
    "mb": 59.5,
    "magic": "PKGM0014",
    "entries": 4,
@@ -5192,7 +5192,7 @@
   {
    "rel": "wallpaperE/遐蝶/遐蝶_09.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/遐蝶/遐蝶_09.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/遐蝶/遐蝶_09.mpkg",
    "mb": 59.1,
    "magic": "PKGM0014",
    "entries": 4,
@@ -5292,7 +5292,7 @@
   {
    "rel": "wallpaperE/卡提希娅/卡提希娅_02.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/卡提希娅/卡提希娅_02.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/卡提希娅/卡提希娅_02.mpkg",
    "mb": 59,
    "magic": "PKGM0014",
    "entries": 4,
@@ -5392,7 +5392,7 @@
   {
    "rel": "wallpaperE/芙宁娜/芙宁娜_08.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/芙宁娜/芙宁娜_08.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/芙宁娜/芙宁娜_08.mpkg",
    "mb": 58.9,
    "magic": "PKGM0014",
    "entries": 4,
@@ -5492,7 +5492,7 @@
   {
    "rel": "wallpaperE/芙宁娜/芙宁娜1_04.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/芙宁娜/芙宁娜1_04.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/芙宁娜/芙宁娜1_04.mpkg",
    "mb": 58.9,
    "magic": "PKGM0014",
    "entries": 4,
@@ -5592,7 +5592,7 @@
   {
    "rel": "wallpaperE/佩丽卡/佩丽卡1_03.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_03.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_03.mpkg",
    "mb": 58.9,
    "magic": "PKGM0014",
    "entries": 4,
@@ -5692,7 +5692,7 @@
   {
    "rel": "wallpaperE/陈千语/陈千语_01.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/陈千语/陈千语_01.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/陈千语/陈千语_01.mpkg",
    "mb": 58.7,
    "magic": "PKGM0014",
    "entries": 4,
@@ -5794,7 +5794,7 @@
   {
    "rel": "wallpaperE/陈千语/陈千语_05.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/陈千语/陈千语_05.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/陈千语/陈千语_05.mpkg",
    "mb": 58.7,
    "magic": "PKGM0014",
    "entries": 4,
@@ -5894,7 +5894,7 @@
   {
    "rel": "wallpaperE/陈千语/陈千语_03.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/陈千语/陈千语_03.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/陈千语/陈千语_03.mpkg",
    "mb": 58.6,
    "magic": "PKGM0014",
    "entries": 4,
@@ -5994,7 +5994,7 @@
   {
    "rel": "wallpaperE/佩丽卡/佩丽卡1_05.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_05.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_05.mpkg",
    "mb": 58.6,
    "magic": "PKGM0014",
    "entries": 4,
@@ -6094,7 +6094,7 @@
   {
    "rel": "wallpaperE/佩丽卡/zmd_08.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/佩丽卡/zmd_08.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/佩丽卡/zmd_08.mpkg",
    "mb": 58.6,
    "magic": "PKGM0014",
    "entries": 4,
@@ -6194,7 +6194,7 @@
   {
    "rel": "wallpaperE/伊蕾娜/伊蕾娜_08.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/伊蕾娜/伊蕾娜_08.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/伊蕾娜/伊蕾娜_08.mpkg",
    "mb": 58.6,
    "magic": "PKGM0014",
    "entries": 4,
@@ -6294,7 +6294,7 @@
   {
    "rel": "wallpaperE/庄方宜/庄方宜_3.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/庄方宜/庄方宜_3.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/庄方宜/庄方宜_3.mpkg",
    "mb": 58.6,
    "magic": "PKGM0014",
    "entries": 4,
@@ -6396,7 +6396,7 @@
   {
    "rel": "wallpaperE/佩丽卡/佩丽卡1_02.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_02.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_02.mpkg",
    "mb": 58.5,
    "magic": "PKGM0014",
    "entries": 4,
@@ -6496,7 +6496,7 @@
   {
    "rel": "wallpaperE/白洲梓/白洲梓1_09.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓1_09.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓1_09.mpkg",
    "mb": 58.4,
    "magic": "PKGM0014",
    "entries": 4,
@@ -6598,7 +6598,7 @@
   {
    "rel": "wallpaperE/卡提希娅/卡提希娅_05.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/卡提希娅/卡提希娅_05.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/卡提希娅/卡提希娅_05.mpkg",
    "mb": 58.4,
    "magic": "PKGM0014",
    "entries": 4,
@@ -6698,7 +6698,7 @@
   {
    "rel": "wallpaperE/白洲梓/白洲梓1_02.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓1_02.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓1_02.mpkg",
    "mb": 58.1,
    "magic": "PKGM0014",
    "entries": 4,
@@ -6798,7 +6798,7 @@
   {
    "rel": "wallpaperE/洛琪希/洛琪希1_3.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛琪希/洛琪希1_3.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/洛琪希/洛琪希1_3.mpkg",
    "mb": 58,
    "magic": "PKGM0014",
    "entries": 4,
@@ -6900,7 +6900,7 @@
   {
    "rel": "wallpaperE/砂狼白子/砂狼白子02_08.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子02_08.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子02_08.mpkg",
    "mb": 58,
    "magic": "PKGM0014",
    "entries": 4,
@@ -7002,7 +7002,7 @@
   {
    "rel": "0917/3233141951/scene.pkg",
    "root": "0917",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0917/3233141951/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0917/3233141951/scene.pkg",
    "mb": 57.9,
    "magic": "PKGV0024",
    "entries": 151,
@@ -7117,7 +7117,7 @@
   {
    "rel": "wallpaperE/莱万汀/zmd_12.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/莱万汀/zmd_12.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/莱万汀/zmd_12.mpkg",
    "mb": 57.8,
    "magic": "PKGM0014",
    "entries": 4,
@@ -7217,7 +7217,7 @@
   {
    "rel": "wallpaperE/蔚蓝档案/蔚蓝档案_05.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_05.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_05.mpkg",
    "mb": 57.8,
    "magic": "PKGM0014",
    "entries": 4,
@@ -7319,7 +7319,7 @@
   {
    "rel": "wallpaperE/庄方宜/庄方宜_4.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/庄方宜/庄方宜_4.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/庄方宜/庄方宜_4.mpkg",
    "mb": 57.8,
    "magic": "PKGM0014",
    "entries": 4,
@@ -7419,7 +7419,7 @@
   {
    "rel": "wallpaperE/卡提希娅/卡提希娅_04.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/卡提希娅/卡提希娅_04.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/卡提希娅/卡提希娅_04.mpkg",
    "mb": 57.7,
    "magic": "PKGM0014",
    "entries": 4,
@@ -7519,7 +7519,7 @@
   {
    "rel": "wallpaperE/洛茜/洛茜_10.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_10.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_10.mpkg",
    "mb": 57.7,
    "magic": "PKGM0014",
    "entries": 4,
@@ -7621,7 +7621,7 @@
   {
    "rel": "wallpaperE/白洲梓/白洲梓1_06.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓1_06.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓1_06.mpkg",
    "mb": 57.4,
    "magic": "PKGM0014",
    "entries": 4,
@@ -7721,7 +7721,7 @@
   {
    "rel": "wallpaperE/芙宁娜/芙宁娜1_11.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/芙宁娜/芙宁娜1_11.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/芙宁娜/芙宁娜1_11.mpkg",
    "mb": 57.4,
    "magic": "PKGM0014",
    "entries": 4,
@@ -7823,7 +7823,7 @@
   {
    "rel": "wallpaperE/陈千语/陈千语_07.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/陈千语/陈千语_07.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/陈千语/陈千语_07.mpkg",
    "mb": 57.3,
    "magic": "PKGM0014",
    "entries": 4,
@@ -7923,7 +7923,7 @@
   {
    "rel": "wallpaperE/芙宁娜/芙宁娜1_03.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/芙宁娜/芙宁娜1_03.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/芙宁娜/芙宁娜1_03.mpkg",
    "mb": 57.3,
    "magic": "PKGM0014",
    "entries": 4,
@@ -8023,7 +8023,7 @@
   {
    "rel": "wallpaperE/卡提希娅/卡提希娅_10.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/卡提希娅/卡提希娅_10.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/卡提希娅/卡提希娅_10.mpkg",
    "mb": 57.3,
    "magic": "PKGM0014",
    "entries": 4,
@@ -8123,7 +8123,7 @@
   {
    "rel": "0917/3351163962/scene.pkg",
    "root": "0917",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0917/3351163962/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0917/3351163962/scene.pkg",
    "mb": 57,
    "magic": "PKGV0021",
    "entries": 113,
@@ -8238,7 +8238,7 @@
   {
    "rel": "wallpaperE/陈千语/陈千语_02.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/陈千语/陈千语_02.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/陈千语/陈千语_02.mpkg",
    "mb": 57,
    "magic": "PKGM0014",
    "entries": 4,
@@ -8340,7 +8340,7 @@
   {
    "rel": "wallpaperE/芙宁娜/芙宁娜1_05.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/芙宁娜/芙宁娜1_05.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/芙宁娜/芙宁娜1_05.mpkg",
    "mb": 57,
    "magic": "PKGM0014",
    "entries": 4,
@@ -8440,7 +8440,7 @@
   {
    "rel": "wallpaperE/庄方宜/庄方宜_19.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/庄方宜/庄方宜_19.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/庄方宜/庄方宜_19.mpkg",
    "mb": 56.8,
    "magic": "PKGM0014",
    "entries": 4,
@@ -8542,7 +8542,7 @@
   {
    "rel": "wallpaperE/卡提希娅/卡提希娅_07.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/卡提希娅/卡提希娅_07.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/卡提希娅/卡提希娅_07.mpkg",
    "mb": 55.5,
    "magic": "PKGM0014",
    "entries": 4,
@@ -8642,7 +8642,7 @@
   {
    "rel": "wallpaperE/砂狼白子/砂狼白子11_05.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子11_05.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子11_05.mpkg",
    "mb": 54.8,
    "magic": "PKGM0014",
    "entries": 4,
@@ -8742,7 +8742,7 @@
   {
    "rel": "wallpaperE/卡提希娅/卡提希娅_03.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/卡提希娅/卡提希娅_03.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/卡提希娅/卡提希娅_03.mpkg",
    "mb": 54,
    "magic": "PKGM0014",
    "entries": 4,
@@ -8842,7 +8842,7 @@
   {
    "rel": "wallpaperE/庄方宜/庄方宜_6.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/庄方宜/庄方宜_6.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/庄方宜/庄方宜_6.mpkg",
    "mb": 53.7,
    "magic": "PKGM0014",
    "entries": 4,
@@ -8942,7 +8942,7 @@
   {
    "rel": "wallpaperE/卡提希娅/卡提希娅_08.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/卡提希娅/卡提希娅_08.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/卡提希娅/卡提希娅_08.mpkg",
    "mb": 52.9,
    "magic": "PKGM0014",
    "entries": 4,
@@ -9042,7 +9042,7 @@
   {
    "rel": "wallpaperE/佩丽卡/佩丽卡1_08.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_08.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_08.mpkg",
    "mb": 52.5,
    "magic": "PKGM0014",
    "entries": 4,
@@ -9144,7 +9144,7 @@
   {
    "rel": "wallpaperE/other/夜莺night——【time_variation_时间变化】alone_孤独の少女【原画：rella].mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/other/夜莺night——【time_variation_时间变化】alone_孤独の少女【原画：rella].mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/other/夜莺night——【time_variation_时间变化】alone_孤独の少女【原画：rella].mpkg",
    "mb": 49.2,
    "magic": "PKGM0018",
    "entries": 132,
@@ -9244,7 +9244,7 @@
   {
    "rel": "wallpaperE/砂狼白子/砂狼白子_4.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子_4.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子_4.mpkg",
    "mb": 45.7,
    "magic": "PKGM0014",
    "entries": 4,
@@ -9344,7 +9344,7 @@
   {
    "rel": "0923/3687818927/scene.pkg",
    "root": "0923",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0923/3687818927/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0923/3687818927/scene.pkg",
    "mb": 45.5,
    "magic": "PKGV0023",
    "entries": 80,
@@ -9459,7 +9459,7 @@
   {
    "rel": "wallpaperE/佩丽卡/佩丽卡1_04.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_04.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_04.mpkg",
    "mb": 44.9,
    "magic": "PKGM0014",
    "entries": 4,
@@ -9559,7 +9559,7 @@
   {
    "rel": "dd/3544152633/scene.pkg",
    "root": "dd",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/dd/3544152633/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/dd/3544152633/scene.pkg",
    "mb": 42.4,
    "magic": "PKGV0023",
    "entries": 255,
@@ -9674,7 +9674,7 @@
   {
    "rel": "wallpaperE/蔚蓝档案/蔚蓝档案_04.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_04.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_04.mpkg",
    "mb": 41.8,
    "magic": "PKGM0014",
    "entries": 4,
@@ -9774,7 +9774,7 @@
   {
    "rel": "dd/3778592720/scene.pkg",
    "root": "dd",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/dd/3778592720/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/dd/3778592720/scene.pkg",
    "mb": 41.3,
    "magic": "PKGV0024",
    "entries": 38,
@@ -9889,7 +9889,7 @@
   {
    "rel": "0917/3462491575/scene.pkg",
    "root": "0917",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0917/3462491575/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0917/3462491575/scene.pkg",
    "mb": 34.2,
    "magic": "PKGV0022",
    "entries": 189,
@@ -10004,7 +10004,7 @@
   {
    "rel": "0923/2981249186/scene.pkg",
    "root": "0923",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0923/2981249186/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0923/2981249186/scene.pkg",
    "mb": 32.1,
    "magic": "PKGV0023",
    "entries": 30,
@@ -10132,7 +10132,7 @@
   {
    "rel": "0923/3521337568/scene.pkg",
    "root": "0923",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0923/3521337568/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0923/3521337568/scene.pkg",
    "mb": 31.3,
    "magic": "PKGV0022",
    "entries": 155,
@@ -10250,7 +10250,7 @@
   {
    "rel": "wallpaperE/白洲梓/白洲梓_02.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓_02.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓_02.mpkg",
    "mb": 30.5,
    "magic": "PKGM0014",
    "entries": 4,
@@ -10350,7 +10350,7 @@
   {
    "rel": "wallpaperE/庄方宜/庄方宜_24.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/庄方宜/庄方宜_24.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/庄方宜/庄方宜_24.mpkg",
    "mb": 30,
    "magic": "PKGM0014",
    "entries": 4,
@@ -10450,7 +10450,7 @@
   {
    "rel": "wallpaperE/白洲梓/白洲梓1_04.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓1_04.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓1_04.mpkg",
    "mb": 29.6,
    "magic": "PKGM0014",
    "entries": 4,
@@ -10552,7 +10552,7 @@
   {
    "rel": "wallpaperE/陈千语/陈千语_08.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/陈千语/陈千语_08.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/陈千语/陈千语_08.mpkg",
    "mb": 29.6,
    "magic": "PKGM0014",
    "entries": 4,
@@ -10652,7 +10652,7 @@
   {
    "rel": "wallpaperE/小鸟游星野/小鸟游星野_13.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/小鸟游星野/小鸟游星野_13.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/小鸟游星野/小鸟游星野_13.mpkg",
    "mb": 29.3,
    "magic": "PKGM0014",
    "entries": 4,
@@ -10754,7 +10754,7 @@
   {
    "rel": "wallpaperE/洛茜/洛茜_11.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_11.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_11.mpkg",
    "mb": 29.2,
    "magic": "PKGM0014",
    "entries": 4,
@@ -10854,7 +10854,7 @@
   {
    "rel": "wallpaperE/陈千语/陈千语_04.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/陈千语/陈千语_04.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/陈千语/陈千语_04.mpkg",
    "mb": 28.4,
    "magic": "PKGM0014",
    "entries": 4,
@@ -10956,7 +10956,7 @@
   {
    "rel": "wallpaperE/洁尔佩塔/洁尔佩塔_4.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洁尔佩塔/洁尔佩塔_4.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/洁尔佩塔/洁尔佩塔_4.mpkg",
    "mb": 27.6,
    "magic": "PKGM0014",
    "entries": 4,
@@ -11056,7 +11056,7 @@
   {
    "rel": "0923/3479521040/scene.pkg",
    "root": "0923",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0923/3479521040/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0923/3479521040/scene.pkg",
    "mb": 25.1,
    "magic": "PKGV0022",
    "entries": 138,
@@ -11171,7 +11171,7 @@
   {
    "rel": "wallpaperE/砂狼白子/砂狼白子02_10.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子02_10.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子02_10.mpkg",
    "mb": 24.7,
    "magic": "PKGM0014",
    "entries": 4,
@@ -11271,7 +11271,7 @@
   {
    "rel": "0923/3572877776/scene.pkg",
    "root": "0923",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0923/3572877776/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0923/3572877776/scene.pkg",
    "mb": 24.6,
    "magic": "PKGV0023",
    "entries": 487,
@@ -11386,7 +11386,7 @@
   {
    "rel": "0923/3602673806/scene.pkg",
    "root": "0923",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0923/3602673806/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0923/3602673806/scene.pkg",
    "mb": 24.6,
    "magic": "PKGV0023",
    "entries": 111,
@@ -11509,7 +11509,7 @@
   {
    "rel": "0923/3622495963/scene.pkg",
    "root": "0923",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0923/3622495963/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0923/3622495963/scene.pkg",
    "mb": 23.1,
    "magic": "PKGV0024",
    "entries": 114,
@@ -11624,7 +11624,7 @@
   {
    "rel": "0923/3593919489/scene.pkg",
    "root": "0923",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0923/3593919489/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0923/3593919489/scene.pkg",
    "mb": 22.7,
    "magic": "PKGV0023",
    "entries": 72,
@@ -11744,7 +11744,7 @@
   {
    "rel": "dd/3554161528/scene.pkg",
    "root": "dd",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/dd/3554161528/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/dd/3554161528/scene.pkg",
    "mb": 22.5,
    "magic": "PKGV0022",
    "entries": 134,
@@ -11859,7 +11859,7 @@
   {
    "rel": "wallpaperE/白洲梓/白洲梓1_05.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓1_05.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓1_05.mpkg",
    "mb": 22.5,
    "magic": "PKGM0014",
    "entries": 4,
@@ -11959,7 +11959,7 @@
   {
    "rel": "wallpaperE/白洲梓/白洲梓1_10.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓1_10.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓1_10.mpkg",
    "mb": 21.8,
    "magic": "PKGM0014",
    "entries": 4,
@@ -12059,7 +12059,7 @@
   {
    "rel": "wallpaperE/小鸟游星野/小鸟游星野11_10.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/小鸟游星野/小鸟游星野11_10.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/小鸟游星野/小鸟游星野11_10.mpkg",
    "mb": 21,
    "magic": "PKGM0014",
    "entries": 4,
@@ -12159,7 +12159,7 @@
   {
    "rel": "0923/833227004/scene.pkg",
    "root": "0923",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0923/833227004/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0923/833227004/scene.pkg",
    "mb": 20,
    "magic": "PKGV0001",
    "entries": 7,
@@ -12274,7 +12274,7 @@
   {
    "rel": "wallpaperE/庄方宜/庄方宜_7.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/庄方宜/庄方宜_7.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/庄方宜/庄方宜_7.mpkg",
    "mb": 19.9,
    "magic": "PKGM0014",
    "entries": 4,
@@ -12374,7 +12374,7 @@
   {
    "rel": "0923/3668498439/scene.pkg",
    "root": "0923",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0923/3668498439/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0923/3668498439/scene.pkg",
    "mb": 17,
    "magic": "PKGV0023",
    "entries": 40,
@@ -12489,7 +12489,7 @@
   {
    "rel": "0923/3463520581/scene.pkg",
    "root": "0923",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0923/3463520581/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0923/3463520581/scene.pkg",
    "mb": 16.7,
    "magic": "PKGV0023",
    "entries": 233,
@@ -12604,7 +12604,7 @@
   {
    "rel": "0923/3582367840/scene.pkg",
    "root": "0923",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0923/3582367840/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0923/3582367840/scene.pkg",
    "mb": 15.2,
    "magic": "PKGV0023",
    "entries": 92,
@@ -12719,7 +12719,7 @@
   {
    "rel": "0923/3448290956/scene.pkg",
    "root": "0923",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0923/3448290956/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0923/3448290956/scene.pkg",
    "mb": 14.5,
    "magic": "PKGV0022",
    "entries": 97,
@@ -12847,7 +12847,7 @@
   {
    "rel": "wallpaperE/佩丽卡/佩丽卡1_10.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_10.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_10.mpkg",
    "mb": 14.3,
    "magic": "PKGM0014",
    "entries": 4,
@@ -12947,7 +12947,7 @@
   {
    "rel": "0923/3806006894/scene.pkg",
    "root": "0923",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0923/3806006894/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0923/3806006894/scene.pkg",
    "mb": 12.6,
    "magic": "PKGV0024",
    "entries": 13,
@@ -13062,7 +13062,7 @@
   {
    "rel": "0923/3648434762/scene.pkg",
    "root": "0923",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0923/3648434762/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0923/3648434762/scene.pkg",
    "mb": 11.3,
    "magic": "PKGV0023",
    "entries": 21,
@@ -13177,7 +13177,7 @@
   {
    "rel": "0917/3299228616/scene.pkg",
    "root": "0917",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0917/3299228616/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0917/3299228616/scene.pkg",
    "mb": 10.9,
    "magic": "PKGV0022",
    "entries": 111,
@@ -13289,7 +13289,7 @@
   {
    "rel": "0923/3278399262/scene.pkg",
    "root": "0923",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0923/3278399262/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0923/3278399262/scene.pkg",
    "mb": 10.4,
    "magic": "PKGV0024",
    "entries": 31,
@@ -13404,7 +13404,7 @@
   {
    "rel": "0923/3653641024/scene.pkg",
    "root": "0923",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0923/3653641024/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0923/3653641024/scene.pkg",
    "mb": 10.2,
    "magic": "PKGV0023",
    "entries": 133,
@@ -13541,7 +13541,7 @@
   {
    "rel": "wallpaperE/other/红鸾樱落.mpkg",
    "root": "wallpaperE",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/other/红鸾樱落.mpkg",
+   "abs": "~/DSHarea/allwallpaper/wallpaperE/other/红鸾樱落.mpkg",
    "mb": 9.4,
    "magic": "PKGM0018",
    "entries": 149,
@@ -13641,7 +13641,7 @@
   {
    "rel": "dd/3721991999/scene.pkg",
    "root": "dd",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/dd/3721991999/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/dd/3721991999/scene.pkg",
    "mb": 8.3,
    "magic": "PKGV0024",
    "entries": 55,
@@ -13756,7 +13756,7 @@
   {
    "rel": "0917/3588181703/scene.pkg",
    "root": "0917",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0917/3588181703/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0917/3588181703/scene.pkg",
    "mb": 6.8,
    "magic": "PKGV0023",
    "entries": 24,
@@ -13884,7 +13884,7 @@
   {
    "rel": "0917/3250755486/scene.pkg",
    "root": "0917",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0917/3250755486/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0917/3250755486/scene.pkg",
    "mb": 6.7,
    "magic": "PKGV0020",
    "entries": 16,
@@ -13999,7 +13999,7 @@
   {
    "rel": "0923/3737270471/scene.pkg",
    "root": "0923",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0923/3737270471/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0923/3737270471/scene.pkg",
    "mb": 5.8,
    "magic": "PKGV0023",
    "entries": 6,
@@ -14114,7 +14114,7 @@
   {
    "rel": "0923/3696234311/scene.pkg",
    "root": "0923",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0923/3696234311/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0923/3696234311/scene.pkg",
    "mb": 4.5,
    "magic": "PKGV0023",
    "entries": 7,
@@ -14229,7 +14229,7 @@
   {
    "rel": "dd/3715743282/scene.pkg",
    "root": "dd",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/dd/3715743282/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/dd/3715743282/scene.pkg",
    "mb": 3.7,
    "magic": "PKGV0023",
    "entries": 26,
@@ -14350,7 +14350,7 @@
   {
    "rel": "0923/3690417937/scene.pkg",
    "root": "0923",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0923/3690417937/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0923/3690417937/scene.pkg",
    "mb": 2.7,
    "magic": "PKGV0023",
    "entries": 53,
@@ -14482,7 +14482,7 @@
   {
    "rel": "0923/3122339805/scene.pkg",
    "root": "0923",
-   "abs": "/root/Desktop/DSHarea/allwallpaper/0923/3122339805/scene.pkg",
+   "abs": "~/DSHarea/allwallpaper/0923/3122339805/scene.pkg",
    "mb": 2.2,
    "magic": "PKGV0022",
    "entries": 37,

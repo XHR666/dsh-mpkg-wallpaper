@@ -335,15 +335,9 @@ const RS_SEL = /\[data-sidebar-right-panel\]|\[data-dockkit-(pane|strip|surface|
   ok('B4b 「跟随」⇒ 左侧边栏不再输出自己那条 backdrop-filter（避免双重模糊）',
     !HAS_RULE(css, /body\[data-mpw-sblur\][^,]*\.pI_x6G_sidebarCol/, /backdrop-filter/))
 }
-{
-  const css = boot({ enabled: true, image: true, unifyTint: true, unifyAmount: 30, sidebarAlpha: 40, bsCompat: true, chatFollow: false })
-  ok('B5 better-sidebar 面板/底部工作台：跟雾色与厚度，但**不给** backdrop-filter（防困住内部 fixed 内容）',
-    HAS_RULE(css, /\[data-mpw-unify\] \[data-dsh-better-sidebar\] \[class\*="_bottomPanel"\]/, /background-color:\s*var\(--mpw-unify-surface\)/)
-    && !HAS_RULE(css, /\[data-mpw-unify\] \[data-dsh-better-sidebar\]/, /backdrop-filter/))
-  const cssOff = boot({ enabled: true, image: true, unifyTint: true, unifyAmount: 30, sidebarAlpha: 40, bsCompat: false, chatFollow: false })
-  ok('B5b bsCompat 手动关 ⇒ 产物里 0 条 [data-dsh-better-sidebar] 规则（尊重用户手动关）',
-    !/\[data-dsh-better-sidebar\]/.test(STRIP(cssOff)))
-}
+/* ①(2026-11-03 演进留痕 #2) B5/B5b（better-sidebar 适配块 + bsCompat 门控）随适配整块删除：
+   better-sidebar 第三方插件被 DSH 原生右栏取代，[data-dsh-better-sidebar] 属死代码；
+   "产物 0 条 [data-dsh-better-sidebar] 规则"的守护升级为常驻判据 tools/bs-compat-removed-test.mjs。 */
 {
   const css = boot({ enabled: true, image: false, unifyTint: true, unifyAmount: 30, sidebarAlpha: 40 })
   ok('B6 无壁纸 ⇒ 不产出接管规则（该路径本来就没有玻璃块）',
@@ -516,14 +510,8 @@ console.log('\n== E 组：变异自证 ==')
     TOKEN(cssM, 'mpw-unify-surface') !== '' && TOKEN(cssR, 'mpw-unify-surface') === '',
     JSON.stringify({ mutant: TOKEN(cssM, 'mpw-unify-surface'), real: TOKEN(cssR, 'mpw-unify-surface') }))
 }
-{
-  /* E4 better-sidebar 段不再受 bsCompat 门控 ⇒ B5b 必红 */
-  const m4 = mutant('bs-ungated', 'const bsTakeoverSurface = !unifyTakeover || !bsCompatTakeover ? "" : `', 'const bsTakeoverSurface = !unifyTakeover ? "" : `')
-  const cssM = boot({ enabled: true, image: true, unifyTint: true, unifyAmount: 30, sidebarAlpha: 40, bsCompat: false, chatFollow: false }, m4)
-  const cssR = boot({ enabled: true, image: true, unifyTint: true, unifyAmount: 30, sidebarAlpha: 40, bsCompat: false, chatFollow: false })
-  ok('E4 better-sidebar 段不再受 bsCompat 门控 ⇒ 手动关也照样产出规则（B5b 必红）',
-    /\[data-dsh-better-sidebar\]/.test(STRIP(cssM)) && !/\[data-dsh-better-sidebar\]/.test(STRIP(cssR)))
-}
+/* ①(2026-11-03 演进留痕 #2) E4（bsTakeoverSurface 门控变异）随适配删除：判据对象不存在了。
+   删除断言由 tools/bs-compat-removed-test.mjs 承担（含"写回一条 bs 适配规则 ⇒ 必红"的变异）。 */
 {
   /* E4b 把 shellPct 钉回 100（旧的"不虚化 ⇒ 实心"钳制）⇒ A2f 必红 */
   const m5 = mutant('solid-floor', 'shellPct: Math.max(0, Math.min(100, 100 - sidePct)),', 'shellPct: 100,')

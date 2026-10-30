@@ -221,6 +221,130 @@ console.log('\n== B. 行为（fixed 后代安全 + 光晕）==')
   cancelWorldTimers()
 }
 
+console.log('\n== C. backdrop 本体禁令（#Bug2/3/5 家族判据 2026-11-03）==')
+//   磨砂/玻璃一律写在伪元素上；"含 fixed 后代的宿主容器**本体**"不得再有非 none 的
+//   backdrop-filter（本体 = 不带 ::before/::after 的选择器）。家族名单与 lib/client.js
+//   迁移注释同源：sidebarCol / 菜单浮层族 / 右栏 rs-surface / dockkit / composer 卡。
+//   判定在 buildCss 真实产物上做（8 类组合里挑 3 档：磨砂开 / 弹层虚化开 / 全关）。
+const parseCssRules = (css) => {
+  const t = String(css).replace(/\/\*[\s\S]*?\*\//g, ' ')
+  const out = []
+  const walk = (start, end) => {
+    let i = start, prelude = ''
+    while (i < end) {
+      const c = t[i]
+      if (c === '{') {
+        let depth = 1, j = i + 1
+        while (j < end && depth > 0) { if (t[j] === '{') depth++; else if (t[j] === '}') depth--; j++ }
+        const head = prelude.trim()
+        if (head.startsWith('@')) {
+          const name = (head.match(/^@([a-zA-Z-]+)/) || [, ''])[1].toLowerCase()
+          if (['media', 'supports', 'layer', 'container', 'scope', 'document'].includes(name)) walk(i + 1, j - 1)
+        } else if (head) out.push({ selector: head.replace(/\s+/g, ' ').trim(), body: t.slice(i + 1, j - 1) })
+        i = j; prelude = ''
+        continue
+      }
+      if (c === ';' && prelude.trim().startsWith('@')) { prelude = ''; i++; continue }
+      prelude += c; i++
+    }
+  }
+  walk(0, t.length)
+  return out
+}
+const MPW_FIXED_HOST_FAMILY = /sidebarCol|role="menu"|_menu_|_popover_|_floatHeader_|data-mpw-rs-surface|data-dockkit-(pane|strip)|data-sidebar-right-panel|composerSeat|class\*="_card"/
+// 拆声明取 backdrop-filter 值，家族本体选择器上非 none 即违规
+// （:not(...) 里的家族词不算命中——如液态玻璃测试模式的 [data-mpw-lg-css]:not([class*="sidebarCol"])）
+const violations = (css) => {
+  const bad = []
+  for (const r of parseCssRules(css)) {
+    if (/::(before|after)/.test(r.selector)) continue
+    if (!MPW_FIXED_HOST_FAMILY.test(r.selector.replace(/:not\([^()]*\)/g, ''))) continue
+    for (const decl of r.body.split(';')) {
+      const m = /^\s*(-webkit-backdrop-filter|backdrop-filter)\s*:\s*(.+)$/.exec(decl)
+      const v = m ? m[2].replace(/!important\s*$/i, '').trim() : ''
+      if (m && !/^\s*none\s*$/.test(v) && !/^var\(--mpw-pop-blur,\s*none\)$/.test(v)) bad.push(r.selector.slice(0, 70) + ' → ' + v.slice(0, 40))
+    }
+  }
+  return bad
+}
+{
+  const combos = [
+    //   （磨砂开档带 unifyTint:false：统一虚化默认开会接管侧栏磨砂，E 块产物就不在了——M4 的变异对象也就进不了产物）
+    ['磨砂开', { enabled: true, image: 'data:image/png;base64,AAA', sidebarBlur: true, unifyTint: false }],
+    ['弹层虚化开', { enabled: true, image: 'data:image/png;base64,AAA', popoverBlur: true, rightSidebarBlur: true }],
+    ['全默认', { enabled: true, image: 'data:image/png;base64,AAA' }],
+  ]
+  let c1ok = true, c1why = ''
+  for (const [label, patch] of combos) {
+    reset()
+    loadPlugin({ quiet: true, settings: patch })
+    const css = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss(patch) : '')
+    cancelWorldTimers()
+    const bad = violations(css)
+    if (bad.length) { c1ok = false; c1why = label + ': ' + bad.slice(0, 3).join(' | ') }
+  }
+  ok('C1 家族本体零 backdrop-filter（三档产物；伪元素上的磨砂不计）', c1ok, c1why || '三档产物 0 违规')
+  // C2 伪元素磨砂形态在位（E 块侧栏 / G 块菜单）
+  //   （E 块 emit 条件 = sidebarBlur 开 ∧ 统一虚化关 —— 默认 unifyTint=true 会接管，故显式关）
+  reset()
+  loadPlugin({ quiet: true, settings: { enabled: true, image: 'data:image/png;base64,AAA', sidebarBlur: true, popoverBlur: true, unifyTint: false } })
+  const css2 = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({ sidebarBlur: true, popoverBlur: true, unifyTint: false }) : '')
+  cancelWorldTimers()
+  const rules2 = parseCssRules(css2)
+  const hasPseudo = (re) => rules2.some((r) => re.test(r.selector) && /backdrop-filter\s*:\s*(?!none)/.test(r.body))
+  ok('C2a 侧栏磨砂在 ::before（E 块伪元素形态存在）',
+    hasPseudo(/sidebarCol[^{}]*::before/) && !/backdrop-filter:\s*blur/.test((ruleBody(css2, 'body[data-mpw-sblur] [class*="sidebarCol"]:not([data-mpw-holds-layer]) {') || 'backdrop-filter:blur')))
+  ok('C2b 菜单玻璃在 ::before（G 块伪元素形态存在）', hasPseudo(/\[role="menu"\][^{}]*::before/))
+  ok('C2c 菜单本体 z-index 保留（提层不随迁移丢失）', /\[role="menu"\][^{}]*\{[^}]*z-index:\s*900/.test(css2))
+}
+
+console.log('\n== D. resize 手柄补偿 ±1px（#Bug1 2026-11-03）==')
+//   悬浮 ON：手柄布局中心须被补偿到视觉卡片边缘（|dx| 按几何算，判据=补偿后 |中心−边缘|≤1px）；
+//   悬浮 OFF：补偿清空。左栏（右缘）与右栏（左缘）各一条。
+function bootHandleEnv(doc, els) {
+  const all = els
+  doc.querySelectorAll = (s) => all.filter((el) => {
+    for (const one of String(s).split(',')) {
+      const t = one.trim()
+      let m = t.match(/^\[class\*="([^"]+)"\]$/)
+      if (m) { if (String(el.className || '').indexOf(m[1]) >= 0) return true; continue }
+      m = t.match(/^\[([^\]=]+)="([^"]+)"\]$/)
+      if (m) { if (el.getAttribute(m[1]) === m[2]) return true; continue }
+      m = t.match(/^\[([^\]=]+)\]$/)
+      if (m) { if (el.hasAttribute(m[1])) return true; continue }
+    }
+    return false
+  })
+  globalThis.getComputedStyle = (el) => Object.assign({ cursor: 'auto' }, (el && el.__cs) || {})
+}
+{
+  reset()
+  loadPlugin({ quiet: true, settings: { enabled: true } })
+  const doc = globalThis.document
+  const mk = (cls, rect, cursor) => { const e = doc.createElement('div'); if (cls) e.className = cls; e.__rect = rect; if (cursor) e.__cs = { cursor }; e.getBoundingClientRect = () => e.__rect; return e }
+  // 真机探针读数（2026-11-02）：悬浮 ON 左栏 col right=268，handle 中心 280（宽 8，276–284）
+  const colL = mk('pI_x6G_sidebarCol', { left: 12, right: 268, width: 256, top: 0, bottom: 900, height: 900 })
+  const hdL = mk('pI_x6G_handle', { left: 276, right: 284, width: 8, top: 0, bottom: 900, height: 900 }, 'col-resize')
+  // 右栏：视觉左缘 1012-12=1000？取镜像：pane left=1012-12=1000 → 视觉左缘 1000，handle 中心 988+... 用对称数据：pane left=1000，handle 中心 988（988=1000-12 偏内）
+  const paneR = mk('', { left: 1000, right: 1280, width: 280, top: 0, bottom: 900, height: 900 })
+  paneR.setAttribute('data-sidebar-right-panel', 'push')
+  const hdR = mk('xxx_handleyyy', { left: 984, right: 992, width: 8, top: 0, bottom: 900, height: 900 }, 'ew-resize')
+  doc.body.appendChild(colL); doc.body.appendChild(hdL); doc.body.appendChild(paneR); doc.body.appendChild(hdR)
+  bootHandleEnv(doc, [colL, hdL, paneR, hdR])
+  const T2 = globalThis.__mpwPopUntruncTest
+  // 悬浮 ON
+  doc.body.setAttribute('data-mpw-float', '')
+  T2.handleSync()
+  const centerOf = (hd) => { const m = /translateX\((-?[\d.]+)px\)/.exec(String(hd.style.transform || '')); const dx = m ? parseFloat(m[1]) : 0; return (hd.__rect.left + hd.__rect.width / 2) + dx }
+  ok('D1 左栏手柄补偿后中心 = 视觉右缘（±1px）', Math.abs(centerOf(hdL) - 268) <= 1, 'center=' + centerOf(hdL).toFixed(2))
+  ok('D2 右栏手柄补偿后中心 = 视觉左缘（±1px）', Math.abs(centerOf(hdR) - 1000) <= 1, 'center=' + centerOf(hdR).toFixed(2))
+  // 悬浮 OFF ⇒ 清空
+  doc.body.removeAttribute('data-mpw-float')
+  T2.handleSync()
+  ok('D3 悬浮关 ⇒ 补偿清空（transform="")', hdL.style.transform === '' && hdR.style.transform === '')
+  cancelWorldTimers()
+}
+
 console.log('\n== M. 变异自证（隔离副本；期望红集 == 实际红集，逐条相等）==')
 const MUT = [
   { id: 'M1', what: '把 transform 写回面（倾斜回归复刻；⑧改向：写入点在 mpwGlowApply 的面变量之后）⇒ B1 必红', expect: ['B1'],
@@ -234,6 +358,19 @@ const MUT = [
   { id: 'M3', what: 'float 标题栏规则被改成 transform 实现 ⇒ A3 必红', expect: ['A3'],
     patch: (s) => s.replace('body[data-mpw-float] .wSkVaW_header {\n\tmargin: 10px 16px 0;', 'body[data-mpw-float] .wSkVaW_header {\n\ttransform: translateY(-2px);\n\tmargin: 10px 16px 0;'),
     verify: (s) => s.indexOf('body[data-mpw-float] .wSkVaW_header {\n\ttransform: translateY(-2px);') >= 0 },
+  /* ①(2026-11-03 #Bug2/3/5) 家族变异：把磨砂写回"本体"⇒ C 组必红 */
+  { id: 'M4', what: '侧栏磨砂写回 sidebarCol 本体（Bug2/3 回归复刻）⇒ C1 必红', expect: ['C1'],
+    patch: (s) => s.replace('body[data-mpw-sblur] .pI_x6G_sidebarCol:not([data-mpw-holds-layer]),\nbody[data-mpw-sblur] [class*="sidebarCol"]:not([data-mpw-holds-layer]) {\n\tposition: relative;\n\tbackdrop-filter: none !important;',
+      'body[data-mpw-sblur] .pI_x6G_sidebarCol:not([data-mpw-holds-layer]),\nbody[data-mpw-sblur] [class*="sidebarCol"]:not([data-mpw-holds-layer]) {\n\tposition: relative;\n\tbackdrop-filter: blur(30px) !important;'),
+    verify: (s) => s.indexOf('backdrop-filter: blur(30px) !important;\n\t-webkit-backdrop-filter: none !important;\n}\nbody[data-mpw-sblur] .pI_x6G_sidebarCol:not([data-mpw-holds-layer])::before') >= 0 },
+  { id: 'M5', what: '菜单玻璃写回菜单本体（Bug5 回归复刻）⇒ C1 必红', expect: ['C1'],
+    patch: (s) => s.replace('[role="menu"], [class*="_menu_"]:not([class*="_pane_"]), [class*="_popover_"], [class*="_floatHeader_"] {\n  -webkit-backdrop-filter: none;\n  backdrop-filter: none;\n  z-index: 900 !important;\n}',
+      '[role="menu"], [class*="_menu_"]:not([class*="_pane_"]), [class*="_popover_"], [class*="_floatHeader_"] {\n  -webkit-backdrop-filter: blur(10px) saturate(150%);\n  backdrop-filter: blur(10px) saturate(150%);\n  z-index: 900 !important;\n}'),
+    verify: (s) => s.indexOf('-webkit-backdrop-filter: blur(10px) saturate(150%);\n  backdrop-filter: blur(10px) saturate(150%);\n  z-index: 900 !important;') >= 0 },
+  { id: 'M6', what: '手柄补偿被去掉（Bug1 回归复刻）⇒ D1/D2 必红', expect: ['D1', 'D2'],
+    patch: (s) => s.replace('else { if (hd.style) { hd.style.transform = "translateX(" + want + "px)"; n++ } }',
+      'else { if (hd.style) { n++ } /* 变异：补偿丢失 */ }'),
+    verify: (s) => s.indexOf('else { if (hd.style) { n++ } /* 变异：补偿丢失 */ }') >= 0 },
 ]
 function runChecksOn(clientPath) {
   const r = {}
@@ -273,6 +410,28 @@ function runChecksOn(clientPath) {
     r['B3a'] = header.hasAttribute('data-mpw-glow-face') && side.hasAttribute('data-mpw-glow-face')
       && !!header.style.getPropertyValue('--mpw-glow-x') && !!side.style.getPropertyValue('--mpw-glow-x')
     r['B3b'] = !doc.querySelector('[data-mpw-glow]') && !doc.body.hasAttribute('data-mpw-glow-face')
+    /* C1（产物级，#Bug2/3/5 家族）——用"磨砂开"组合的产物（E 块在；M4 变异才进得了产物） */
+    {
+      const cssFrost = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({ float: true, sidebarBlur: true, unifyTint: false }) : '')
+      r['C1'] = violations(css).length === 0 && violations(cssFrost).length === 0
+    }
+    /* D1/D2（行为级，#Bug1 手柄补偿） */
+    {
+      const mkH = (cls, rect, cursor) => { const e = mk('div', cls); e.__rect = rect; if (cursor) e.__cs = { cursor }; e.getBoundingClientRect = () => e.__rect; return e }
+      const colL = mkH('pI_x6G_sidebarCol', { left: 12, right: 268, width: 256, top: 0, bottom: 900, height: 900 })
+      const hdL = mkH('pI_x6G_handle', { left: 276, right: 284, width: 8, top: 0, bottom: 900, height: 900 }, 'col-resize')
+      const paneR = mkH('', { left: 1000, right: 1280, width: 280, top: 0, bottom: 900, height: 900 })
+      paneR.setAttribute('data-sidebar-right-panel', 'push')
+      const hdR = mkH('xxx_handleyyy', { left: 984, right: 992, width: 8, top: 0, bottom: 900, height: 900 }, 'ew-resize')
+      doc.body.appendChild(colL); doc.body.appendChild(hdL); doc.body.appendChild(paneR); doc.body.appendChild(hdR)
+      bootHandleEnv(doc, [colL, hdL, paneR, hdR])
+      doc.body.setAttribute('data-mpw-float', '')
+      globalThis.__mpwPopUntruncTest.handleSync()
+      const centerOf = (hd) => { const m2 = /translateX\((-?[\d.]+)px\)/.exec(String(hd.style.transform || '')); const dx = m2 ? parseFloat(m2[1]) : 0; return (hd.__rect.left + hd.__rect.width / 2) + dx }
+      r['D1'] = Math.abs(centerOf(hdL) - 268) <= 1
+      r['D2'] = Math.abs(centerOf(hdR) - 1000) <= 1
+      doc.body.removeAttribute('data-mpw-float')
+    }
     cancelWorldTimers()
   } catch (e) { /* 判红即结果 */ }
   return r

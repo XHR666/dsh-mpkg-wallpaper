@@ -11,7 +11,7 @@
    "rel": "wallpaperE/洛茜/洛茜_11.mpkg",
    "why": "wallpaperE 新名字（29.2MB，PKGM0014，scene.json 57KB 最大）",
    "off": {
-    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_11.mpkg",
+    "abs": "~/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_11.mpkg",
     "exists": true,
     "mb": 29.2,
     "magic": "PKGM0014",
@@ -251,7 +251,7 @@
    "rel": "wallpaperE/蔚蓝档案/蔚蓝档案_04.mpkg",
    "why": "wallpaperE 新名字（41.8MB，PKGM0014）",
    "off": {
-    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_04.mpkg",
+    "abs": "~/DSHarea/allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_04.mpkg",
     "exists": true,
     "mb": 41.8,
     "magic": "PKGM0014",
@@ -492,7 +492,7 @@
    "rel": "wallpaperE/陈千语/陈千语_01.mpkg",
    "why": "**唯一**带 scene.json 的 `*_01.mpkg`（58.7MB，PKGM0014）",
    "off": {
-    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/陈千语/陈千语_01.mpkg",
+    "abs": "~/DSHarea/allwallpaper/wallpaperE/陈千语/陈千语_01.mpkg",
     "exists": true,
     "mb": 58.7,
     "magic": "PKGM0014",
@@ -733,7 +733,7 @@
    "rel": "wallpaperE/卡提希娅/卡提希娅_09.mpkg",
    "why": "对照：**无 scene.json**（9.2MB，3 条目 = preview+project.json+mp4）",
    "off": {
-    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/卡提希娅/卡提希娅_09.mpkg",
+    "abs": "~/DSHarea/allwallpaper/wallpaperE/卡提希娅/卡提希娅_09.mpkg",
     "exists": true,
     "mb": 9.2,
     "magic": "PKGM0014",
@@ -778,7 +778,7 @@
     "logFatal": 1,
     "logWarn": 5,
     "logTail": [
-     "加载本地容器: /root/Desktop/DSHarea/allwallpaper/wallpaperE/卡提希娅/卡提希娅_09.mpkg",
+     "加载本地容器: ~/DSHarea/allwallpaper/wallpaperE/卡提希娅/卡提希娅_09.mpkg",
      "容器: PKGM0014 条目 3 个",
      "⚠ 容器里没有 scene.json（不是场景包）⇒ 按**纯视频壁纸**播放：bilibili-吃面面用勺-欢迎转载.mp4（8.2MB）",
      "  条目：bilibili-吃面面用勺-欢迎转载.mp4, preview.gif, project.json",
@@ -788,7 +788,7 @@
      "❌ ⚠ 7s 内没有首帧，但 module 已启动（`window.__mpwModuleStarted=1`）= \"到了但某个 await 没回\"这一类：最后一行日志 = 视频已加载 3840x2160（对照 docs/RENDER-BUGS-20260918.md §1.4 判据表；P-135 起每个网络/解码 await 超时都会自写一行 `⚠ 超时 <URL>`）"
     ],
     "logKey": [
-     "容器: /root/Desktop/DSHarea/allwallpaper/wallpaperE/卡提希娅/卡提希娅_09.mpkg",
+     "容器: ~/DSHarea/allwallpaper/wallpaperE/卡提希娅/卡提希娅_09.mpkg",
      "容器: PKGM0014 条目 3 个"
     ]
    },
@@ -891,7 +891,7 @@
    "rel": "wallpaperE/佩丽卡/佩丽卡1_01.mpkg",
    "why": "对照：**无 scene.json**（10.6MB，3 条目）",
    "off": {
-    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_01.mpkg",
+    "abs": "~/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_01.mpkg",
     "exists": true,
     "mb": 10.6,
     "magic": "PKGM0014",
@@ -937,7 +937,7 @@
     "logWarn": 5,
     "logTail": [
      "加载场景 mpkg-sweep…",
-     "加载本地容器: /root/Desktop/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_01.mpkg",
+     "加载本地容器: ~/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_01.mpkg",
      "容器: PKGM0014 条目 3 个",
      "⚠ 容器里没有 scene.json（不是场景包）⇒ 按**纯视频壁纸**播放：32.mp4（10.0MB）",
      "  条目：32.mp4, preview.gif, project.json",
@@ -946,7 +946,7 @@
      "❌ ⚠ 7s 内没有首帧，但 module 已启动（`window.__mpwModuleStarted=1`）= \"到了但某个 await 没回\"这一类：最后一行日志 = 视频已加载 3624x4832（对照 docs/RENDER-BUGS-20260918.md §1.4 判据表；P-135 起每个网络/解码 await 超时都会自写一行 `⚠ 超时 <URL>`）"
     ],
     "logKey": [
-     "容器: /root/Desktop/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_01.mpkg",
+     "容器: ~/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_01.mpkg",
      "容器: PKGM0014 条目 3 个"
     ]
    },
@@ -1049,7 +1049,7 @@
    "rel": "wallpaperE/白洲梓/白洲梓1_07.mpkg",
    "why": "对照：**无 scene.json**（11.8MB，3 条目）",
    "off": {
-    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓1_07.mpkg",
+    "abs": "~/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓1_07.mpkg",
     "exists": true,
     "mb": 11.8,
     "magic": "PKGM0014",
@@ -1095,7 +1095,7 @@
     "logWarn": 5,
     "logTail": [
      "加载场景 mpkg-sweep…",
-     "加载本地容器: /root/Desktop/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓1_07.mpkg",
+     "加载本地容器: ~/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓1_07.mpkg",
      "容器: PKGM0014 条目 3 个",
      "⚠ 容器里没有 scene.json（不是场景包）⇒ 按**纯视频壁纸**播放：日奈+白洲梓_45.mp4（11.2MB）",
      "  条目：preview.jpg, project.json, 日奈+白洲梓_45.mp4",
@@ -1104,7 +1104,7 @@
      "❌ ⚠ 7s 内没有首帧，但 module 已启动（`window.__mpwModuleStarted=1`）= \"到了但某个 await 没回\"这一类：最后一行日志 = 视频已加载 3906x2050（对照 docs/RENDER-BUGS-20260918.md §1.4 判据表；P-135 起每个网络/解码 await 超时都会自写一行 `⚠ 超时 <URL>`）"
     ],
     "logKey": [
-     "容器: /root/Desktop/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓1_07.mpkg",
+     "容器: ~/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓1_07.mpkg",
      "容器: PKGM0014 条目 3 个"
     ]
    },
