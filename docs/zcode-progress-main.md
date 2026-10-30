@@ -101,3 +101,66 @@
 - 真机目验清单（上）逐条确认；Bug 1 的左右手柄 dx 若与探针不符，以 `mpwFloatHandleSync` 的实测 dx 为准回填判据。
 - #7 更新检测真改功能时：/update-check 版本比较、市场只读路径、releaseAt 提示一起梳理。
 - 表面质感 A/B/C（挂起，用户未选）；`feat/renderer-embedded` 分支的 2 红门禁 + 全量门禁（挂起，属任务书 B）。
+
+---
+
+# 第二轮：真机回归逐条处置（2026-11-03 晚，分支 feat/ui-copy-and-family-fixes）
+
+> 背景：上一轮未提交改动经软链生效到真机后出现 §2 十二类回归（用户实测，有壁纸才出现）。
+> 本轮在复刻 DOM + 无头 Firefox 探针（`~/Desktop/DSHarea/probes/ui-regr-20261103/`）里复现并定位。
+
+## 根因（一条解释八类）
+
+**弹层伪元素选择器列表拼接错误**：上一轮把弹层磨砂迁 `::before` 时写成
+`${逗号选择器列表}::before` —— 只有最后一项带伪元素，**前面所有项变成"本体选择器"却继承
+伪元素规则体**。产物里该规则体 = `position:absolute !important; inset:0 !important;
+z-index:-1 !important`，落在菜单/tooltip 的**本体**上。该块仅在 hasImage（弹层虚化）时
+输出 ⇒ 与用户"无壁纸一切正常"的观测完全一致。
+
+| §2 | 现象 | 与根因的对应 | 处置 |
+|---|---|---|---|
+| 2.7 | 弹框巨大化+点击无效 | `inset:0` 把菜单本体钉满包含块；`z-index:-1` 沉底 | ✅ 同根因 |
+| 2.5 | tooltip 拉成长黑竖条 | tooltip 本体被 absolute+inset 钉满、深色底被拉伸 | ✅ 同根因 |
+| 2.2 | 子智能体面板/"+"菜单 20px 白条 | 菜单本体被钉进小父级再被宿主 overflow 裁掉 | ✅ 同根因 |
+| 2.8 | 三点菜单错位/反馈被切 | 同 2.7（role=menu 家族） | ✅ 同根因 |
+| 2.6/2.9 | 悬停发送/上下文占用页面跳动 | tooltip 几何被改 ⇒ 热区反复丢失 | ✅ 同根因 |
+| 2.4 | 右栏裁切/滚动失效 | 右栏内 `_menu_`/`_popover_` 族元素本体被 absolute 化 | ✅ 同根因 |
+| 2.1 | 左栏磨砂消失（右栏展开恢复） | **未定案**：离线三假设全被证伪（z 序涂色法两态伪元素都在壁纸上方 / 宿主无 sidebarCol 伪位占用 / composer 定位带 relative）。损坏形态引发的布局坍塌是最大嫌疑；真机复验 | ⏳ 真机 |
+| 2.3/2.11 | 打开设置整屏左移 | 设置界面内弹层族被 absolute 化 ⇒ 布局坍缩 + frame 过渡动画；无壁纸时该块不输出（与"无壁纸仅偶发"一致） | ⏳ 真机（高置信） |
+| 2.10 | 对照组功能正常 | 会话统计/Token 用量等面板不在损坏家族的命中面 | ✅ 无需改 |
+
+修复：`lib/client.js` 弹层伪元素规则改为 `popTipSel/popSurfaceSel.split(",").map(...逐项追加...)`。
+判据：`tools/popover-glass-test` 新增 **J1/J2**（产物文本级：凡 content:"" 规则的每个逗号项
+都以 :before/::after 结尾；捕获上限 30000 字符覆盖 POP_NOT 巨型选择器——桩环境的 matches()
+判不出这种损坏，必须文本级断言）+ **J-MUT** 变异（把损坏形态注回 ⇒ J1 必红）。读数 **36/0**。
+
+## 探针方法与限制（诚实边界）
+- 无头 Firefox **截图不合成 backdrop-filter**（最小用例证实：CSS.supports=true 但视觉不糊）
+  ⇒ 磨砂**可见性**无法离线判定；几何/层叠/计算值可以。
+- 复刻探针读数（修复后）：jobs 菜单 rect 500×80（内容自适应，不再巨大）、fixed 菜单
+  position:fixed + 本体 none + ::before blur ✓、tooltip 79×26 fixed ✓、侧栏伪元素
+  blur(30px)/absolute/z:-1 ✓、涂色法两树序伪元素均在壁纸上方 ✓。
+
+## 分门禁读数（第二轮修复后）
+popover-glass **36/0**（含 J 组）· plus-menu-frost 10/0 · np-media **117/0** ·
+np-control 106/0 · wallpaper-lifecycle **214/0** · preset 57/0 · settings-persist 112/0 ·
+bs-scan 42/0 · bs-tab 52/0 · tip-no-layout-shift 13/0 · update-fake 8/0 ·
+bs-compat-removed 7/0 · we-json-tolerance 50/0 · transcode-prescale 39/0 ·
+glow-fixed-safety 26/0 · token-namespace ✓ · css-matrix ✓ · style-scope-guard 0 RED ·
+panel-smoke 5/5 · market-topbar 9/0 · sidebar-frost-team-panel 17/0 · fog-model 93/0
+
+## 全量门禁（交付）
+`bash tools/check.sh --full` ⇒ **PASS 12 / FAIL 0**（真跑 12 步，1101.7s，峰值 ≈1993 MiB，
+指纹 01870b1ed70c，日志 /tmp/branch-fullgate.log）。
+
+## 真机待验清单（刷新页面即可生效）
+1. §2.7 弹框（工作区/Agent 预设/权限/模型/VSCode）恢复为内容尺寸、可点击
+2. §2.5 tooltip 恢复小气泡（复制/好的回答/收起侧边栏等）
+3. §2.2 子智能体面板与"+"菜单恢复正常展开
+4. §2.8 三点菜单两项完整显示
+5. §2.6/2.9 悬停发送/上下文占用不再跳动
+6. §2.4 右栏滚动恢复
+7. §2.1 左栏磨砂恢复（**若仍消失**：请跑 `docs/UI-TASKS-BACKLOG.md` 探针 #3 的祖先链
+   Console 片段，读 sidebarCol 的 computed backdropFilter 与 ::before）
+8. §2.3 打开壁纸设置不再整屏左移
+9. A1 新文案（DSH壁纸引擎/主题与配色/说明段链接）与 #4 光晕亮度颜色两行
