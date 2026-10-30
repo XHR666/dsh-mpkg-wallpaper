@@ -24,7 +24,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { loadPlugin } from './_stub.mjs'
+import { loadPlugin, cancelWorldTimers } from './_stub.mjs'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.join(here, '..')
@@ -333,6 +333,63 @@ const loadMutant = (from, to) => {
   ok('D2 把"已带标记就放行"改坏 ⇒ 第二轮把 trunc 标记摘掉（B7 必红：真机就是打-撤-打地闪）',
     first && !surface.hasAttribute('data-mpw-pop-trunc'), '首轮=' + first + ' 二轮=' + surface.hasAttribute('data-mpw-pop-trunc'))
   surface.removeAttribute('data-mpw-pop-bg')
+}
+/* ═══ J 组（2026-11-03 #真机回归根因）：伪元素选择器**逐项展开**断言 ═══════════════
+   背景：真机 §2.2/2.4/2.5/2.6/2.7/2.8/2.9 八类回归同根因 —— 模板里给"逗号选择器列表"整体
+   接 ::before，只有最后一项带伪元素，前面所有项变成"本体选择器"却继承伪元素规则体
+   （position:absolute + inset:0 + z-index:-1 落到菜单/tooltip 本体上 ⇒ 弹框巨大化、
+   tooltip 黑竖条、菜单压扁、点击无效）。桩环境的 matches() 判不出这种损坏（选择器照样
+   "匹配"）⇒ 必须在**产物文本**上断言：凡规则体含 content:""（伪元素规则），其每个
+   逗号项都必须以 ::before/::after 结尾。变异 J-MUT 把损坏形态注回 ⇒ 必红。 */
+{
+  reset()
+  loadPlugin({ quiet: true, settings: { enabled: true, image: 'stub-wallpaper.png', popoverBlur: true }, search: '' })
+  const css = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({ popoverBlur: true }) : '')
+  cancelWorldTimers()
+  const strip = css.replace(/\/\*[\s\S]*?\*\//g, ' ')
+  const bad = []
+  const re = /([^{}]{1,30000})\{([^{}]*content:\s*""[^{}]*)\}/g
+  let m
+  while ((m = re.exec(strip))) {
+    const sel = m[1].replace(/\s+/g, ' ').trim()
+    // 跳过 @规则头与明显非选择器片段
+    if (sel.startsWith('@') || sel.startsWith('//')) continue
+    for (const one of sel.split(',')) {
+      const t = one.trim()
+      if (t && !/:{1,2}(before|after)$/.test(t)) bad.push(t.slice(0, 80) + ' ⟵〔' + sel.slice(0, 60) + '…〕')
+    }
+  }
+  ok('J1 伪元素选择器逐项展开（凡 content:\"\" 规则的每个逗号项都以 :before/::after 结尾，单/双冒号均可）',
+    bad.length === 0, bad.length ? '损坏项=' + bad.slice(0, 3).join(' | ') : '0 损坏')
+  ok('J2 弹层伪元素规则在产物里（J1 的对象存在，防空转）',
+    /_menu[^\n]*::before/.test(strip) && /role="tooltip"[^\n]*::before/.test(strip))
+}
+{
+  /* J-MUT：把损坏形态注回（逗号列表整体接 ::before）⇒ J1 必红 */
+  // ①(2026-11-03) 锚点随修复形态更新：把"逐项展开"改回"列表整体接 ::before"（= 损坏原形）
+  const from = '${popTipSel.split(",").map((x) => x.trim() + "::before").join(",\\n")}'
+  const to = '${popTipSel}::before'
+  reset()
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mpw-pop-j-'))
+  const mut = CLIENT.replace(from, to)
+  if (mut === CLIENT) throw new Error('J-MUT 锚点缺失')
+  const p2 = path.join(dir, 'client.js'); fs.writeFileSync(p2, mut)
+  loadPlugin({ quiet: true, clientPath: p2, settings: { enabled: true, image: 'stub-wallpaper.png', popoverBlur: true }, search: '' })
+  const css = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({ popoverBlur: true }) : '')
+  cancelWorldTimers()
+  const strip = css.replace(/\/\*[\s\S]*?\*\//g, ' ')
+  const bad = []
+  const re = /([^{}]{1,30000})\{([^{}]*content:\s*""[^{}]*)\}/g
+  let m
+  while ((m = re.exec(strip))) {
+    const sel = m[1].replace(/\s+/g, ' ').trim()
+    for (const one of sel.split(',')) {
+      const t = one.trim()
+      if (t && !/:{1,2}(before|after)$/.test(t)) bad.push(t.slice(0, 60))
+    }
+  }
+  ok('J-MUT 把损坏形态注回（列表整体接 ::before）⇒ J1 判据必红',
+    bad.length > 0, '损坏项=' + bad.slice(0, 2).join(' | '))
 }
 console.log('\n===== popover-glass: ' + pass + ' 通过 / ' + fail + ' 失败 =====')
 process.exit(fail ? 1 : 0)
