@@ -1,0 +1,1786 @@
+{
+ "generatedAt": "2026-09-15T22:34:44.053Z",
+ "rows": [
+  {
+   "id": "2aeac838640589c66efc315e821c44b6",
+   "path": "/root/.dsh-mpkg-wallpaper/2aeac838640589c66efc315e821c44b6.mpkg",
+   "fileMB": 0,
+   "issues": [
+    {
+     "key": "SCENE",
+     "detail": "no scene.json"
+    }
+   ],
+   "container": {
+    "magic": "v1.0",
+    "entries": 1,
+    "sizeMB": 0,
+    "layoutOk": true
+   },
+   "scene": {
+    "err": "no scene.json"
+   },
+   "timing": {
+    "parseMs": 1.8
+   }
+  },
+  {
+   "id": "5a85a54b12b64bc882d1e7bab0f8e837",
+   "path": "/root/.dsh-mpkg-wallpaper/5a85a54b12b64bc882d1e7bab0f8e837.mpkg",
+   "fileMB": 315.9,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0018",
+    "entries": 55,
+    "sizeMB": 315.9,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 41,
+    "visible": 17,
+    "containers": 1,
+    "image": 12,
+    "video": 0,
+    "particle": 1,
+    "text": 16,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 31,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 1,
+    "animated": 1
+   },
+   "textures": {
+    "referenced": 9,
+    "pkgHit": 9,
+    "decodeOk": 9,
+    "decodeFail": 0,
+    "bytesMB": 292.8,
+    "formats": {
+     "0": 5,
+     "5": 4
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 1,
+    "maxcount": 128,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "alive": 20
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 9,
+    "skippedLayers": 25,
+    "skippedNames": [
+     "myLayer",
+     "mddn",
+     "morning",
+     "dusk",
+     "night",
+     "可调整组合层",
+     "纯色",
+     "Audio Bars",
+     "帧率位置",
+     "帧率显示",
+     "Clock",
+     "Date"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "meshDrawn": [],
+    "draws": 9,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 347,
+    "decodeMs": 332.1,
+    "auditMs": 17.9
+   }
+  },
+  {
+   "id": "aef86642c01a9db43979dedc142711d2",
+   "path": "/root/.dsh-mpkg-wallpaper/aef86642c01a9db43979dedc142711d2.mpkg",
+   "fileMB": 125.7,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 125.7,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 135.3,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "d5007a52866682e2210d9d855d170c80",
+   "path": "/root/.dsh-mpkg-wallpaper/d5007a52866682e2210d9d855d170c80.mpkg",
+   "fileMB": 73.8,
+   "issues": [
+    {
+     "key": "TRANSPARENT_FALLBACK",
+     "detail": "纯色,Media Info (ROUND),Album Cover"
+    }
+   ],
+   "container": {
+    "magic": "PKGM0018",
+    "entries": 127,
+    "sizeMB": 73.8,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 58,
+    "visible": 24,
+    "containers": 0,
+    "image": 22,
+    "video": 0,
+    "particle": 4,
+    "text": 22,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 47,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 2,
+    "animated": 2
+   },
+   "textures": {
+    "referenced": 24,
+    "pkgHit": 22,
+    "decodeOk": 20,
+    "decodeFail": 0,
+    "bytesMB": 113.2,
+    "formats": {
+     "0": 3,
+     "5": 16,
+     "9": 1
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 4,
+    "maxcount": 738,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "Stars",
+      "maxcount": 500,
+      "alive": 236
+     },
+     {
+      "name": "Twinkling shooting star",
+      "maxcount": 100,
+      "alive": 23
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 10,
+      "alive": 10
+     },
+     {
+      "name": "轨迹 1",
+      "maxcount": 128,
+      "alive": 20
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 15,
+    "skippedLayers": 34,
+    "skippedNames": [
+     "流萤正常 蓝幕60帧_batch",
+     "帧率位置",
+     "帧率显示",
+     "Clock",
+     "Date",
+     "Day",
+     "D a y",
+     "Clock Container",
+     "Text Container",
+     "Background",
+     "Rounded Corners",
+     "Artist Name"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [
+     "纯色",
+     "Media Info (ROUND)",
+     "Album Cover"
+    ],
+    "meshDrawn": [],
+    "draws": 18,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 118.8,
+    "decodeMs": 563.9,
+    "auditMs": 76.3
+   }
+  },
+  {
+   "id": "f643f908ae8800b413e9e4d02b9d7858",
+   "path": "/root/.dsh-mpkg-wallpaper/f643f908ae8800b413e9e4d02b9d7858.mpkg",
+   "fileMB": 315.9,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0018",
+    "entries": 55,
+    "sizeMB": 315.9,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 41,
+    "visible": 17,
+    "containers": 1,
+    "image": 12,
+    "video": 0,
+    "particle": 1,
+    "text": 16,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 31,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 1,
+    "animated": 1
+   },
+   "textures": {
+    "referenced": 9,
+    "pkgHit": 9,
+    "decodeOk": 9,
+    "decodeFail": 0,
+    "bytesMB": 292.8,
+    "formats": {
+     "0": 5,
+     "5": 4
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 1,
+    "maxcount": 128,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "alive": 20
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 9,
+    "skippedLayers": 25,
+    "skippedNames": [
+     "myLayer",
+     "mddn",
+     "morning",
+     "dusk",
+     "night",
+     "可调整组合层",
+     "纯色",
+     "Audio Bars",
+     "帧率位置",
+     "帧率显示",
+     "Clock",
+     "Date"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "meshDrawn": [],
+    "draws": 9,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 312.1,
+    "decodeMs": 257.7,
+    "auditMs": 12.6
+   }
+  },
+  {
+   "id": "3326873240",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3326873240/scene.pkg",
+   "fileMB": 235.4,
+   "issues": [
+    {
+     "key": "TRANSPARENT_FALLBACK",
+     "detail": "myLayer,193,纯色,组件,1054"
+    }
+   ],
+   "container": {
+    "magic": "PKGV0023",
+    "entries": 104,
+    "sizeMB": 235.4,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 62,
+    "visible": 18,
+    "containers": 0,
+    "image": 31,
+    "video": 0,
+    "particle": 1,
+    "text": 19,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 49,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 4,
+    "animated": 3
+   },
+   "textures": {
+    "referenced": 27,
+    "pkgHit": 27,
+    "decodeOk": 25,
+    "decodeFail": 0,
+    "bytesMB": 240,
+    "formats": {
+     "0": 7,
+     "4": 18
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 1,
+    "maxcount": 128,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "alive": 20
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 16,
+    "skippedLayers": 44,
+    "skippedNames": [
+     "mddn",
+     "dusk",
+     "day",
+     "night",
+     "Media Info (ROUND)",
+     "Holder (hide before publish)",
+     "Clock Container",
+     "Clock",
+     "Text Container",
+     "Background",
+     "Rounded Corners",
+     "Progress Bar"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [
+     "myLayer",
+     193,
+     "纯色",
+     "组件",
+     1054,
+     893,
+     1297271
+    ],
+    "meshDrawn": [],
+    "draws": 16,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 261.8,
+    "decodeMs": 332.8,
+    "auditMs": 11.5
+   }
+  },
+  {
+   "id": "3327063360",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3327063360/scene.pkg",
+   "fileMB": 59.5,
+   "issues": [
+    {
+     "key": "TRANSPARENT_FALLBACK",
+     "detail": "纯色"
+    }
+   ],
+   "container": {
+    "magic": "PKGV0022",
+    "entries": 124,
+    "sizeMB": 59.5,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 69,
+    "visible": 15,
+    "containers": 1,
+    "image": 36,
+    "video": 0,
+    "particle": 2,
+    "text": 21,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 58,
+    "attachment": 0,
+    "puppet": 1,
+    "alignNonCenter": 4,
+    "animated": 2
+   },
+   "textures": {
+    "referenced": 35,
+    "pkgHit": 34,
+    "decodeOk": 22,
+    "decodeFail": 0,
+    "bytesMB": 54.3,
+    "formats": {
+     "0": 3,
+     "4": 15,
+     "6": 3,
+     "9": 1
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 2,
+    "maxcount": 138,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "alive": null,
+      "hidden": true
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 10,
+      "alive": 10
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 10,
+    "skippedLayers": 54,
+    "skippedNames": [
+     "伊蕾娜",
+     "背景蒙版",
+     "帧率三角阴影",
+     "帧率三角高光",
+     "帧率三角",
+     "日三角阴影",
+     "日三角高光",
+     "三角 倒",
+     "文字三角阴影",
+     "文字三角高光",
+     "文字三角",
+     "主三角阴影"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [
+     "纯色"
+    ],
+    "meshDrawn": [],
+    "draws": 10,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 120.6,
+    "decodeMs": 176.2,
+    "auditMs": 24.8
+   }
+  },
+  {
+   "id": "3470764447",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3470764447/scene.pkg",
+   "fileMB": 320.6,
+   "issues": [],
+   "container": {
+    "magic": "PKGV0022",
+    "entries": 54,
+    "sizeMB": 320.6,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 41,
+    "visible": 17,
+    "containers": 1,
+    "image": 12,
+    "video": 0,
+    "particle": 1,
+    "text": 16,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 31,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 1,
+    "animated": 1
+   },
+   "textures": {
+    "referenced": 9,
+    "pkgHit": 9,
+    "decodeOk": 9,
+    "decodeFail": 0,
+    "bytesMB": 307.6,
+    "formats": {
+     "0": 6,
+     "4": 3
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 1,
+    "maxcount": 128,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "alive": 20
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 9,
+    "skippedLayers": 25,
+    "skippedNames": [
+     "myLayer",
+     "mddn",
+     "morning",
+     "dusk",
+     "night",
+     "可调整组合层",
+     "纯色",
+     "Audio Bars",
+     "帧率位置",
+     "帧率显示",
+     "Clock",
+     "Date"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "meshDrawn": [],
+    "draws": 9,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 340.6,
+    "decodeMs": 358.7,
+    "auditMs": 5.8
+   }
+  },
+  {
+   "id": "3544152633",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3544152633/scene.pkg",
+   "fileMB": 42.4,
+   "issues": [],
+   "container": {
+    "magic": "PKGV0023",
+    "entries": 255,
+    "sizeMB": 42.4,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 70,
+    "visible": 34,
+    "containers": 6,
+    "image": 31,
+    "video": 0,
+    "particle": 16,
+    "text": 16,
+    "sound": 0,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 15,
+    "attachment": 0,
+    "puppet": 1,
+    "alignNonCenter": 4,
+    "animated": 3
+   },
+   "textures": {
+    "referenced": 53,
+    "pkgHit": 41,
+    "decodeOk": 30,
+    "decodeFail": 0,
+    "bytesMB": 76.8,
+    "formats": {
+     "0": 25,
+     "8": 1,
+     "9": 4
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 16,
+    "maxcount": 12387,
+    "spriteSheets": 2,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "Rain perspective",
+      "maxcount": 512,
+      "alive": 199
+     },
+     {
+      "name": "Shooting star-blue-2",
+      "maxcount": 20,
+      "alive": 8
+     },
+     {
+      "name": "rain_on_the_glass2",
+      "maxcount": 150,
+      "alive": 146
+     },
+     {
+      "name": "Fog (calm)",
+      "maxcount": 20,
+      "alive": 6
+     },
+     {
+      "name": "Fireworks 3",
+      "maxcount": 50,
+      "alive": 1
+     },
+     {
+      "name": "Blinking Stars_01",
+      "maxcount": 750,
+      "alive": 240
+     },
+     {
+      "name": "reactive Stars",
+      "maxcount": 500,
+      "alive": 297
+     },
+     {
+      "name": "Shooting_Star_01",
+      "maxcount": 35,
+      "alive": 32
+     },
+     {
+      "name": "Moving Stars_02",
+      "maxcount": 85,
+      "alive": 83
+     },
+     {
+      "name": "Glowing Stars_01",
+      "maxcount": 35,
+      "alive": 34
+     },
+     {
+      "name": "Glowing Stars_02",
+      "maxcount": 8,
+      "alive": 8
+     },
+     {
+      "name": "birds",
+      "maxcount": 30,
+      "alive": 25
+     },
+     {
+      "name": "Star Reactive",
+      "maxcount": 75,
+      "alive": 75
+     },
+     {
+      "name": "Rain_secondary",
+      "maxcount": 10000,
+      "alive": 9941
+     },
+     {
+      "name": "Moving Glowing Stars_01",
+      "maxcount": 85,
+      "alive": 82
+     },
+     {
+      "name": "Vapor (double)",
+      "maxcount": 32,
+      "alive": 26
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 18,
+    "skippedLayers": 37,
+    "skippedNames": [
+     "Audio bar",
+     "Clouds",
+     "Clock",
+     "Date",
+     "DAY DATE TIME (JP)",
+     "---------------------------------------",
+     "----MUSIC PLAYER---- (DO NOT TOUCH ME)",
+     "PLAYER ASSET MOVER. DRAG TO REPOSITION",
+     "playeroutlineanim",
+     "playerthumbnailbackgroundexception",
+     "playerboundsexception",
+     "playervolumebar"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "meshDrawn": [
+     "girl"
+    ],
+    "draws": 20,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 80.2,
+    "decodeMs": 356.6,
+    "auditMs": 1878.9
+   }
+  },
+  {
+   "id": "3554161528",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3554161528/scene.pkg",
+   "fileMB": 22.5,
+   "issues": [
+    {
+     "key": "TRANSPARENT_FALLBACK",
+     "detail": "纯色"
+    }
+   ],
+   "container": {
+    "magic": "PKGV0022",
+    "entries": 134,
+    "sizeMB": 22.5,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 37,
+    "visible": 32,
+    "containers": 3,
+    "image": 15,
+    "video": 0,
+    "particle": 13,
+    "text": 2,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 19,
+    "attachment": 0,
+    "puppet": 1,
+    "alignNonCenter": 0,
+    "animated": 1
+   },
+   "textures": {
+    "referenced": 26,
+    "pkgHit": 18,
+    "decodeOk": 16,
+    "decodeFail": 0,
+    "bytesMB": 91.3,
+    "formats": {
+     "0": 3,
+     "4": 8,
+     "8": 2,
+     "9": 3
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 13,
+    "maxcount": 1471,
+    "spriteSheets": 4,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "雪景远景",
+      "maxcount": 40,
+      "alive": null,
+      "unverifiable": true
+     },
+     {
+      "name": "落花",
+      "maxcount": 30,
+      "alive": 30
+     },
+     {
+      "name": "notes1_simple",
+      "maxcount": 20,
+      "alive": 7
+     },
+     {
+      "name": "Blinking Stars",
+      "maxcount": 100,
+      "alive": 100
+     },
+     {
+      "name": "Blinking Stars",
+      "maxcount": 150,
+      "alive": 147
+     },
+     {
+      "name": "Blinking Stars",
+      "maxcount": 15,
+      "alive": 15
+     },
+     {
+      "name": "流星",
+      "maxcount": 16,
+      "alive": 1
+     },
+     {
+      "name": "雾 2",
+      "maxcount": 20,
+      "alive": 17
+     },
+     {
+      "name": "落花",
+      "maxcount": 30,
+      "alive": 30
+     },
+     {
+      "name": "雪景远景",
+      "maxcount": 40,
+      "alive": null,
+      "unverifiable": true
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 5,
+      "alive": 5
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 5,
+      "alive": 5
+     },
+     {
+      "name": "cherry blossoms on cursor",
+      "maxcount": 1000,
+      "alive": 163
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 13,
+    "skippedLayers": 8,
+    "skippedNames": [
+     "可调整组合层",
+     "纯色",
+     "Desktop_2025_(mp3cut.net).mp3"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [
+     "纯色"
+    ],
+    "meshDrawn": [
+     "人物"
+    ],
+    "draws": 21,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 23.8,
+    "decodeMs": 570.3,
+    "auditMs": 210.4
+   }
+  },
+  {
+   "id": "3660962877",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3660962877/scene.pkg",
+   "fileMB": 113.6,
+   "issues": [
+    {
+     "key": "TRANSPARENT_FALLBACK",
+     "detail": "组件,1054,893,691"
+    }
+   ],
+   "container": {
+    "magic": "PKGV0023",
+    "entries": 68,
+    "sizeMB": 113.6,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 127,
+    "visible": 17,
+    "containers": 0,
+    "image": 34,
+    "video": 0,
+    "particle": 2,
+    "text": 69,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 110,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 27,
+    "animated": 1
+   },
+   "textures": {
+    "referenced": 31,
+    "pkgHit": 30,
+    "decodeOk": 7,
+    "decodeFail": 0,
+    "bytesMB": 102.2,
+    "formats": {
+     "0": 3,
+     "4": 3,
+     "9": 1
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 2,
+    "maxcount": 1128,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "alive": 20
+     },
+     {
+      "name": "cherry blossoms on cursor",
+      "maxcount": 1000,
+      "alive": 163
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 15,
+    "skippedLayers": 110,
+    "skippedNames": [
+     "纯色",
+     "组件镜像",
+     484,
+     "文本1",
+     "文本2",
+     "帧率位置",
+     "帧率显示",
+     491,
+     "早中晚英文",
+     "早中晚",
+     "横Clock",
+     "Clock"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [
+     "组件",
+     1054,
+     893,
+     691
+    ],
+    "meshDrawn": [],
+    "draws": 15,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 127.3,
+    "decodeMs": 217.4,
+    "auditMs": 98.5
+   }
+  },
+  {
+   "id": "3669681034",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3669681034/scene.pkg",
+   "fileMB": 94.2,
+   "issues": [
+    {
+     "key": "TRANSPARENT_FALLBACK",
+     "detail": "松本文紀 - 親愛なるあの日々へ.flac"
+    }
+   ],
+   "container": {
+    "magic": "PKGV0023",
+    "entries": 21,
+    "sizeMB": 94.2,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 2,
+    "visible": 2,
+    "containers": 0,
+    "image": 1,
+    "video": 0,
+    "particle": 0,
+    "text": 0,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 0,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 0,
+    "animated": 0
+   },
+   "textures": {
+    "referenced": 1,
+    "pkgHit": 1,
+    "decodeOk": 1,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {
+     "0": 1
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 2,
+    "skippedLayers": 0,
+    "skippedNames": [],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [
+     "松本文紀 - 親愛なるあの日々へ.flac"
+    ],
+    "meshDrawn": [],
+    "draws": 2,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 114.3,
+    "decodeMs": 35.4,
+    "auditMs": 5.1
+   }
+  },
+  {
+   "id": "3715743282",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3715743282/scene.pkg",
+   "fileMB": 3.7,
+   "issues": [],
+   "container": {
+    "magic": "PKGV0023",
+    "entries": 26,
+    "sizeMB": 3.7,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 9,
+    "visible": 6,
+    "containers": 0,
+    "image": 2,
+    "video": 0,
+    "particle": 3,
+    "text": 4,
+    "sound": 0,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 0,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 0,
+    "animated": 0
+   },
+   "textures": {
+    "referenced": 5,
+    "pkgHit": 3,
+    "decodeOk": 3,
+    "decodeFail": 0,
+    "bytesMB": 4.6,
+    "formats": {
+     "0": 3
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 3,
+    "maxcount": 208,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "灰烬大",
+      "maxcount": 40,
+      "alive": 39
+     },
+     {
+      "name": "尘埃",
+      "maxcount": 128,
+      "alive": 66
+     },
+     {
+      "name": "Ember",
+      "maxcount": 40,
+      "alive": 39
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 3,
+    "skippedLayers": 3,
+    "skippedNames": [
+     "D a y",
+     "欢迎回家",
+     "时间"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "meshDrawn": [],
+    "draws": 3,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 4.9,
+    "decodeMs": 14,
+    "auditMs": 64.6
+   }
+  },
+  {
+   "id": "3719111841",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3719111841/scene.pkg",
+   "fileMB": 69.5,
+   "issues": [],
+   "container": {
+    "magic": "PKGV0024",
+    "entries": 147,
+    "sizeMB": 69.5,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 43,
+    "visible": 34,
+    "containers": 0,
+    "image": 26,
+    "video": 0,
+    "particle": 8,
+    "text": 3,
+    "sound": 4,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 22,
+    "attachment": 19,
+    "puppet": 5,
+    "alignNonCenter": 0,
+    "animated": 0
+   },
+   "textures": {
+    "referenced": 44,
+    "pkgHit": 39,
+    "decodeOk": 39,
+    "decodeFail": 0,
+    "bytesMB": 443.5,
+    "formats": {
+     "0": 3,
+     "4": 24,
+     "9": 12
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 8,
+    "maxcount": 1774,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "Glass Shards",
+      "maxcount": 50,
+      "alive": 45
+     },
+     {
+      "name": "Matrix spawnerREADNAME --> (place top left corner, duplicate once and move second layer  x origin -30)",
+      "maxcount": 500,
+      "alive": 499
+     },
+     {
+      "name": "灰烬大",
+      "maxcount": 40,
+      "alive": 38
+     },
+     {
+      "name": "灰烬光束",
+      "maxcount": 40,
+      "alive": 19
+     },
+     {
+      "name": "Bokeh Hex",
+      "maxcount": 500,
+      "alive": 20
+     },
+     {
+      "name": "Bokeh Cir",
+      "maxcount": 500,
+      "alive": 20
+     },
+     {
+      "name": "尘埃",
+      "maxcount": 128,
+      "alive": 66
+     },
+     {
+      "name": "光束 2 (旧)",
+      "maxcount": 16,
+      "alive": null,
+      "hidden": true
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 27,
+    "skippedLayers": 9,
+    "skippedNames": [
+     "凯尔希_无底",
+     "背景暗色",
+     "音频线Audio Spectrum Visualizer",
+     "塞壬唱片-MSR,Robert Wolf - Дом.mp3",
+     "塞壬唱片-MSR,Robert Wolf - 走过漫漫时空.mp3",
+     "塞壬唱片-MSR,松林凜 - Innocence (Instrumental).mp3",
+     "塞壬唱片-MSR,ユリカリパブリック,松林凜 - Innocence.mp3",
+     "光束 2 (旧)",
+     "后处理层"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "meshDrawn": [
+     "长发3",
+     "主体",
+     "右眼上眼睑",
+     "左耳朵1",
+     "眼睛组合"
+    ],
+    "draws": 51,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 107.8,
+    "decodeMs": 4983.5,
+    "auditMs": 166.5
+   }
+  },
+  {
+   "id": "3721991999",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3721991999/scene.pkg",
+   "fileMB": 8.3,
+   "issues": [],
+   "container": {
+    "magic": "PKGV0024",
+    "entries": 55,
+    "sizeMB": 8.3,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 2,
+    "visible": 2,
+    "containers": 0,
+    "image": 1,
+    "video": 0,
+    "particle": 1,
+    "text": 0,
+    "sound": 0,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 0,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 0,
+    "animated": 0
+   },
+   "textures": {
+    "referenced": 2,
+    "pkgHit": 1,
+    "decodeOk": 1,
+    "decodeFail": 0,
+    "bytesMB": 4.5,
+    "formats": {
+     "0": 1
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 1,
+    "maxcount": 128,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "尘埃",
+      "maxcount": 128,
+      "alive": 66
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 1,
+    "skippedLayers": 0,
+    "skippedNames": [],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "meshDrawn": [],
+    "draws": 1,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 16.1,
+    "decodeMs": 10.9,
+    "auditMs": 30.8
+   }
+  },
+  {
+   "id": "3778592720",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3778592720/scene.pkg",
+   "fileMB": 41.3,
+   "issues": [],
+   "container": {
+    "magic": "PKGV0024",
+    "entries": 38,
+    "sizeMB": 41.3,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 5,
+    "visible": 4,
+    "containers": 0,
+    "image": 2,
+    "video": 0,
+    "particle": 2,
+    "text": 0,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 0,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 0,
+    "animated": 0
+   },
+   "textures": {
+    "referenced": 4,
+    "pkgHit": 2,
+    "decodeOk": 2,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {
+     "0": 2
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 2,
+    "maxcount": 80,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "灰烬大",
+      "maxcount": 40,
+      "alive": 38
+     },
+     {
+      "name": "灰烬大",
+      "maxcount": 40,
+      "alive": 38
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 2,
+    "skippedLayers": 1,
+    "skippedNames": [
+     "obj_wo3DlMOGwrbDjj7DisKw_8747985084_4b5e_77fa_fcfc_2d79b769f05b53407d42e3257e960aae[1].mp3"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "meshDrawn": [],
+    "draws": 2,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 85.3,
+    "decodeMs": 8.1,
+    "auditMs": 61
+   }
+  },
+  {
+   "id": "夜莺Night——Honkai Star Rail Castorice 遐蝶 冥河永渡 崩坏星穹铁道The Etern",
+   "path": "/mnt/sdcard/wallpapertest1/夜莺Night——Honkai Star Rail Castorice 遐蝶 冥河永渡 崩坏星穹铁道The Etern.mpkg",
+   "fileMB": 78,
+   "issues": [
+    {
+     "key": "TRANSPARENT_FALLBACK",
+     "detail": "纯色"
+    }
+   ],
+   "container": {
+    "magic": "PKGM0018",
+    "entries": 49,
+    "sizeMB": 78,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 41,
+    "visible": 21,
+    "containers": 0,
+    "image": 5,
+    "video": 0,
+    "particle": 5,
+    "text": 21,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 27,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 0,
+    "animated": 5
+   },
+   "textures": {
+    "referenced": 10,
+    "pkgHit": 6,
+    "decodeOk": 4,
+    "decodeFail": 0,
+    "bytesMB": 60,
+    "formats": {
+     "0": 2,
+     "5": 1,
+     "9": 1
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 5,
+    "maxcount": 388,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "大型",
+      "maxcount": 40,
+      "alive": 37
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 10,
+      "alive": 10
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 10,
+      "alive": 10
+     },
+     {
+      "name": "樱花",
+      "maxcount": 200,
+      "alive": 174
+     },
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "alive": 20
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 11,
+    "skippedLayers": 20,
+    "skippedNames": [
+     "帧率位置",
+     "帧率显示",
+     "Clock",
+     "Date",
+     "Day",
+     "D a y",
+     "纯色",
+     "尾澤拓実 - 眠.mp3"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [
+     "纯色"
+    ],
+    "meshDrawn": [],
+    "draws": 11,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 169.1,
+    "decodeMs": 24.6,
+    "auditMs": 107.1
+   }
+  },
+  {
+   "id": "夜莺night——【customize自定义】firefly_流萤_星空之誓——夜莺night崩坏星穹铁道",
+   "path": "/mnt/sdcard/wallpapertest1/夜莺night——【customize自定义】firefly_流萤_星空之誓——夜莺night崩坏星穹铁道.mpkg",
+   "fileMB": 73.8,
+   "issues": [
+    {
+     "key": "TRANSPARENT_FALLBACK",
+     "detail": "纯色,Media Info (ROUND),Album Cover"
+    }
+   ],
+   "container": {
+    "magic": "PKGM0018",
+    "entries": 127,
+    "sizeMB": 73.8,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 58,
+    "visible": 24,
+    "containers": 0,
+    "image": 22,
+    "video": 0,
+    "particle": 4,
+    "text": 22,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 47,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 2,
+    "animated": 2
+   },
+   "textures": {
+    "referenced": 24,
+    "pkgHit": 22,
+    "decodeOk": 20,
+    "decodeFail": 0,
+    "bytesMB": 113.2,
+    "formats": {
+     "0": 3,
+     "5": 16,
+     "9": 1
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 4,
+    "maxcount": 738,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "Stars",
+      "maxcount": 500,
+      "alive": 236
+     },
+     {
+      "name": "Twinkling shooting star",
+      "maxcount": 100,
+      "alive": 23
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 10,
+      "alive": 10
+     },
+     {
+      "name": "轨迹 1",
+      "maxcount": 128,
+      "alive": 20
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 15,
+    "skippedLayers": 34,
+    "skippedNames": [
+     "流萤正常 蓝幕60帧_batch",
+     "帧率位置",
+     "帧率显示",
+     "Clock",
+     "Date",
+     "Day",
+     "D a y",
+     "Clock Container",
+     "Text Container",
+     "Background",
+     "Rounded Corners",
+     "Artist Name"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [
+     "纯色",
+     "Media Info (ROUND)",
+     "Album Cover"
+    ],
+    "meshDrawn": [],
+    "draws": 18,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 164.2,
+    "decodeMs": 890.9,
+    "auditMs": 67.5
+   }
+  },
+  {
+   "id": "夜莺night——【time_variation时间变化】elaina_伊蕾娜：闲憩微息【魔女之旅】day_night",
+   "path": "/mnt/sdcard/wallpapertest1/夜莺night——【time_variation时间变化】elaina_伊蕾娜：闲憩微息【魔女之旅】day_night.mpkg",
+   "fileMB": 315.9,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0018",
+    "entries": 55,
+    "sizeMB": 315.9,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 41,
+    "visible": 17,
+    "containers": 1,
+    "image": 12,
+    "video": 0,
+    "particle": 1,
+    "text": 16,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 31,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 1,
+    "animated": 1
+   },
+   "textures": {
+    "referenced": 9,
+    "pkgHit": 9,
+    "decodeOk": 9,
+    "decodeFail": 0,
+    "bytesMB": 292.8,
+    "formats": {
+     "0": 5,
+     "5": 4
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 1,
+    "maxcount": 128,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "alive": 20
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 9,
+    "skippedLayers": 25,
+    "skippedNames": [
+     "myLayer",
+     "mddn",
+     "morning",
+     "dusk",
+     "night",
+     "可调整组合层",
+     "纯色",
+     "Audio Bars",
+     "帧率位置",
+     "帧率显示",
+     "Clock",
+     "Date"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "meshDrawn": [],
+    "draws": 9,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 845,
+    "decodeMs": 312.7,
+    "auditMs": 7.9
+   }
+  }
+ ]
+}

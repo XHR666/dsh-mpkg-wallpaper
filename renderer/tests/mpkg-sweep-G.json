@@ -1,0 +1,1888 @@
+{
+ "at": "2026-09-23T13:55:53.450Z",
+ "batch": "G",
+ "route": "pkgpath",
+ "authority": "127.0.0.1:8902",
+ "launchNote": "有头 DISPLAY=:0",
+ "gl": null,
+ "aborted": null,
+ "rows": [
+  {
+   "rel": "wallpaperE/砂狼白子/砂狼白子11_03.mpkg",
+   "why": "补扫：59.8MB 视频条目（70 个里最大的一档）",
+   "off": {
+    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子11_03.mpkg",
+    "exists": true,
+    "mb": 61,
+    "magic": "PKGM0014",
+    "entries": 4,
+    "hasScene": true,
+    "sceneLayers": 69,
+    "sceneVisible": 68,
+    "videoEntry": "wallpaper.mp4",
+    "pkgError": null
+   },
+   "freeBefore": 4315,
+   "url": "http://127.0.0.1:8902/webloader/?type=scene&id=mpkg-sweep&res=dpr&_t=1790171634482&pkgpath=%2Froot%2FDesktop%2FDSHarea%2Fallwallpaper%2FwallpaperE%2F%E7%A0%82%E7%8B%BC%E7%99%BD%E5%AD%90%2F%E7%A0%82%E7%8B%BC%E7%99%BD%E5%AD%9011_03.mpkg",
+   "pageErrors": [],
+   "consoleErrors": [],
+   "state": {
+    "canvas": {
+     "w": 960,
+     "h": 540,
+     "cssW": 960,
+     "cssH": 540
+    },
+    "layers": 70,
+    "texStats": 3,
+    "liveRes": {
+     "w": 960,
+     "h": 540,
+     "cssW": 960,
+     "cssH": 540,
+     "dpr": 1,
+     "dprCap": null,
+     "capped": "ok",
+     "updates": 0,
+     "why": "resize"
+    },
+    "resTier": {
+     "name": "dpr",
+     "requested": "dpr",
+     "width": 960,
+     "height": 540,
+     "live": true
+    },
+    "bootError": null,
+    "firstFrame": true,
+    "moduleStarted": true,
+    "videos": [
+     {
+      "rs": 4,
+      "ns": 1,
+      "err": null,
+      "w": 3840,
+      "h": 2160,
+      "src": "blob:http://127.0.0.1:89"
+     }
+    ],
+    "logLen": 11363,
+    "logFatal": 0,
+    "logWarn": 179,
+    "logTail": [
+     "⚠ [首帧] . #69 跳过(不可见/容器)",
+     "⚠ [首帧] 层循环结束（共 70 层）",
+     "✅ 首帧完成 609ms",
+     "【帧1】左缘=0,0,0 中心=255,255,255 背景层=__videoBasetexOK 背景vis=1",
+     "  视频状态 readyState=4 t=1.7s paused=false",
+     "【帧2】左缘=0,0,0 中心=255,255,255 背景层=__videoBasetexOK 背景vis=1",
+     "【帧3】左缘=0,0,0 中心=255,255,255 背景层=__videoBasetexOK 背景vis=1",
+     "【帧4】左缘=0,0,0 中心=255,255,255 背景层=__videoBasetexOK 背景vis=1"
+    ],
+    "logKey": [
+     "容器: PKGM0014 条目 4 个",
+     "scene.json 解析: 70 layers",
+     "绑定纹理的层: 1/70",
+     "✅ 首帧完成 609ms"
+    ]
+   },
+   "pixel": {
+    "w": 960,
+    "h": 540,
+    "meanL": 40.837,
+    "maxL": 255,
+    "stdL": 79.436,
+    "litFrac": 0.3289,
+    "bytes": 2073600
+   },
+   "dprFollow": {
+    "before": {
+     "w": 960,
+     "h": 540,
+     "live": {
+      "w": 960,
+      "h": 540,
+      "cssW": 960,
+      "cssH": 540,
+      "dpr": 1,
+      "dprCap": null,
+      "capped": "ok",
+      "updates": 0,
+      "why": "resize"
+     }
+    },
+    "after": {
+     "w": 700,
+     "h": 394,
+     "live": {
+      "w": 700,
+      "h": 394,
+      "cssW": 700,
+      "cssH": 394,
+      "dpr": 1,
+      "dprCap": null,
+      "capped": "ok",
+      "updates": 1,
+      "why": "resize"
+     }
+    },
+    "changed": true,
+    "matchesLiveRes": true,
+    "updatesGrew": true,
+    "formula": {
+     "cssW": 700,
+     "cssH": 394,
+     "dpr": 1,
+     "cap": null,
+     "want": 700,
+     "got": 700,
+     "capped": "ok"
+    }
+   },
+   "verdict": "PASS 出画",
+   "notes": [],
+   "ms": 16982,
+   "shell": {
+    "skipped": "不摘外壳（按画布盒裁剪；见 --hide-shell 注释）"
+   },
+   "stateAfterHide": {
+    "canvas": {
+     "w": 960,
+     "h": 540,
+     "cssW": 960,
+     "cssH": 540
+    },
+    "liveRes": {
+     "w": 960,
+     "h": 540,
+     "cssW": 960,
+     "cssH": 540,
+     "dpr": 1,
+     "dprCap": null,
+     "capped": "ok",
+     "updates": 0,
+     "why": "resize"
+    },
+    "videos": [
+     {
+      "rs": 4,
+      "ns": 1,
+      "err": null,
+      "w": 3840,
+      "h": 2160,
+      "src": "blob:http://127.0.0.1:89"
+     }
+    ]
+   },
+   "freeAfter": 3839,
+   "summary": {
+    "layers": 70,
+    "texStats": 3,
+    "nonEmpty": true,
+    "meanL": 40.837,
+    "maxL": 255,
+    "stdL": 79.436,
+    "litFrac": 0.3289,
+    "shot": "960x540",
+    "scriptErrs": 0,
+    "pageErrors": 0,
+    "logFatal": 0,
+    "firstFrame": true,
+    "bootError": null,
+    "videos": [
+     {
+      "rs": 4,
+      "ns": 1,
+      "err": null,
+      "w": 3840,
+      "h": 2160,
+      "src": "blob:http://127.0.0.1:89"
+     }
+    ],
+    "dprFollow": {
+     "before": {
+      "w": 960,
+      "h": 540,
+      "live": {
+       "w": 960,
+       "h": 540,
+       "cssW": 960,
+       "cssH": 540,
+       "dpr": 1,
+       "dprCap": null,
+       "capped": "ok",
+       "updates": 0,
+       "why": "resize"
+      }
+     },
+     "after": {
+      "w": 700,
+      "h": 394,
+      "live": {
+       "w": 700,
+       "h": 394,
+       "cssW": 700,
+       "cssH": 394,
+       "dpr": 1,
+       "dprCap": null,
+       "capped": "ok",
+       "updates": 1,
+       "why": "resize"
+      }
+     },
+     "changed": true,
+     "matchesLiveRes": true,
+     "updatesGrew": true,
+     "formula": {
+      "cssW": 700,
+      "cssH": 394,
+      "dpr": 1,
+      "cap": null,
+      "want": 700,
+      "got": 700,
+      "capped": "ok"
+     }
+    },
+    "ms": 16982,
+    "freeAfter": 3839
+   }
+  },
+  {
+   "rel": "wallpaperE/佩丽卡/佩丽卡1_06.mpkg",
+   "why": "补扫：59.7MB",
+   "off": {
+    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_06.mpkg",
+    "exists": true,
+    "mb": 60.6,
+    "magic": "PKGM0014",
+    "entries": 4,
+    "hasScene": true,
+    "sceneLayers": 12,
+    "sceneVisible": 12,
+    "videoEntry": "wallpaper.mp4",
+    "pkgError": null
+   },
+   "freeBefore": 3837,
+   "url": "http://127.0.0.1:8902/webloader/?type=scene&id=mpkg-sweep&res=dpr&_t=1790171652565&pkgpath=%2Froot%2FDesktop%2FDSHarea%2Fallwallpaper%2FwallpaperE%2F%E4%BD%A9%E4%B8%BD%E5%8D%A1%2F%E4%BD%A9%E4%B8%BD%E5%8D%A11_06.mpkg",
+   "pageErrors": [],
+   "consoleErrors": [
+    "⚠ 7s 内没有首帧，但 module 已启动（`window.__mpwModuleStarted=1`）= \"到了但某个 await 没回\"这一类：最后一行日志 =   ℹ 精灵表 particle/fog/fog3：64 帧 8x8 帧UV=0.1250x0.1250 rate=1.000（对照 docs/RENDER-BUGS-20260918.md §1.4 判据表；P-135 起每个网"
+   ],
+   "state": {
+    "canvas": {
+     "w": 300,
+     "h": 150,
+     "cssW": 960,
+     "cssH": 540
+    },
+    "layers": 13,
+    "texStats": 6,
+    "liveRes": null,
+    "resTier": null,
+    "bootError": null,
+    "firstFrame": false,
+    "moduleStarted": true,
+    "videos": [
+     {
+      "rs": 4,
+      "ns": 1,
+      "err": null,
+      "w": 3840,
+      "h": 2160,
+      "src": "blob:http://127.0.0.1:89"
+     }
+    ],
+    "logLen": 2658,
+    "logFatal": 1,
+    "logWarn": 15,
+    "logTail": [
+     "加载图层纹理（model→material→texture 链路）…",
+     "① 🔊 音频面板: 本包 0 条音轨",
+     "[we-scene] 🔊 音轨列表就绪 @4226ms（本包 0 条）—— 早于纹理加载；画面继续加载",
+     "  ⚠ 缺 model: models/pelica.json",
+     "  ⚠ 缺 model: models/workshop/2652493753/bar.json",
+     "  ℹ 精灵表 particle/fog/fog3：64 帧 8x8 帧UV=0.1250x0.1250 rate=1.000",
+     "⚠ 7s 内没有首帧，但 module 已启动（`window.__mpwModuleStarted=1`）= \"到了但某个 await 没回\"这一类：最后一行日志 =   ℹ 精灵表 particle/fog/fog3：64 帧 8x8 帧UV=0.1250x0.1250 rate=1.000（对照 docs/RENDER-BUGS-20260918.md §1.4 判据表；P-135 起每个网",
+     "❌ ⚠ 7s 内没有首帧，但 module 已启动（`window.__mpwModuleStarted=1`）= \"到了但某个 await 没回\"这一类：最后一行日志 =   ℹ 精灵表 particle/fog/fog3：64 帧 8x8 帧UV=0.1250x0.1250 rate=1.000（对照 docs/RENDER-BUGS-20260918.md §1.4 判据表；P-135 起每"
+    ],
+    "logKey": [
+     "容器: /root/Desktop/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_06.mpkg",
+     "容器: PKGM0014 条目 4 个",
+     "scene.json 解析: 13 layers"
+    ]
+   },
+   "pixel": {
+    "w": 960,
+    "h": 540,
+    "meanL": 11.388,
+    "maxL": 255,
+    "stdL": 40.959,
+    "litFrac": 0.0947,
+    "bytes": 2073600
+   },
+   "dprFollow": {
+    "before": {
+     "w": 300,
+     "h": 150,
+     "live": null
+    },
+    "after": {
+     "w": 700,
+     "h": 394,
+     "live": {
+      "w": 700,
+      "h": 394,
+      "cssW": 700,
+      "cssH": 394,
+      "dpr": 1,
+      "dprCap": null,
+      "capped": "ok",
+      "updates": 0,
+      "why": "init"
+     }
+    },
+    "changed": true,
+    "matchesLiveRes": true,
+    "updatesGrew": false,
+    "formula": {
+     "cssW": 700,
+     "cssH": 394,
+     "dpr": 1,
+     "cap": null,
+     "want": 700,
+     "got": 700,
+     "capped": "ok"
+    }
+   },
+   "verdict": "PASS 出画",
+   "notes": [],
+   "ms": 11405,
+   "shell": {
+    "skipped": "不摘外壳（按画布盒裁剪；见 --hide-shell 注释）"
+   },
+   "stateAfterHide": {
+    "canvas": {
+     "w": 300,
+     "h": 150,
+     "cssW": 960,
+     "cssH": 540
+    },
+    "liveRes": null,
+    "videos": [
+     {
+      "rs": 4,
+      "ns": 1,
+      "err": null,
+      "w": 3840,
+      "h": 2160,
+      "src": "blob:http://127.0.0.1:89"
+     }
+    ]
+   },
+   "freeAfter": 3970,
+   "summary": {
+    "layers": 13,
+    "texStats": 6,
+    "nonEmpty": true,
+    "meanL": 11.388,
+    "maxL": 255,
+    "stdL": 40.959,
+    "litFrac": 0.0947,
+    "shot": "960x540",
+    "scriptErrs": 1,
+    "pageErrors": 0,
+    "logFatal": 1,
+    "firstFrame": false,
+    "bootError": null,
+    "videos": [
+     {
+      "rs": 4,
+      "ns": 1,
+      "err": null,
+      "w": 3840,
+      "h": 2160,
+      "src": "blob:http://127.0.0.1:89"
+     }
+    ],
+    "dprFollow": {
+     "before": {
+      "w": 300,
+      "h": 150,
+      "live": null
+     },
+     "after": {
+      "w": 700,
+      "h": 394,
+      "live": {
+       "w": 700,
+       "h": 394,
+       "cssW": 700,
+       "cssH": 394,
+       "dpr": 1,
+       "dprCap": null,
+       "capped": "ok",
+       "updates": 0,
+       "why": "init"
+      }
+     },
+     "changed": true,
+     "matchesLiveRes": true,
+     "updatesGrew": false,
+     "formula": {
+      "cssW": 700,
+      "cssH": 394,
+      "dpr": 1,
+      "cap": null,
+      "want": 700,
+      "got": 700,
+      "capped": "ok"
+     }
+    },
+    "ms": 11405,
+    "freeAfter": 3970
+   }
+  },
+  {
+   "rel": "wallpaperE/白洲梓/白洲梓_09.mpkg",
+   "why": "补扫：59.0MB",
+   "off": {
+    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓_09.mpkg",
+    "exists": true,
+    "mb": 60,
+    "magic": "PKGM0014",
+    "entries": 4,
+    "hasScene": true,
+    "sceneLayers": 1,
+    "sceneVisible": 1,
+    "videoEntry": "wallpaper.mp4",
+    "pkgError": null
+   },
+   "freeBefore": 3995,
+   "url": "http://127.0.0.1:8902/webloader/?type=scene&id=mpkg-sweep&res=dpr&_t=1790171665023&pkgpath=%2Froot%2FDesktop%2FDSHarea%2Fallwallpaper%2FwallpaperE%2F%E7%99%BD%E6%B4%B2%E6%A2%93%2F%E7%99%BD%E6%B4%B2%E6%A2%93_09.mpkg",
+   "pageErrors": [],
+   "consoleErrors": [],
+   "state": {
+    "canvas": {
+     "w": 960,
+     "h": 540,
+     "cssW": 960,
+     "cssH": 540
+    },
+    "layers": 2,
+    "texStats": null,
+    "liveRes": {
+     "w": 960,
+     "h": 540,
+     "cssW": 960,
+     "cssH": 540,
+     "dpr": 1,
+     "dprCap": null,
+     "capped": "ok",
+     "updates": 0,
+     "why": "resize"
+    },
+    "resTier": {
+     "name": "dpr",
+     "requested": "dpr",
+     "width": 960,
+     "height": 540,
+     "live": true
+    },
+    "bootError": null,
+    "firstFrame": true,
+    "moduleStarted": true,
+    "videos": [
+     {
+      "rs": 4,
+      "ns": 1,
+      "err": null,
+      "w": 2560,
+      "h": 1440,
+      "src": "blob:http://127.0.0.1:89"
+     }
+    ],
+    "logLen": 6161,
+    "logFatal": 0,
+    "logWarn": 18,
+    "logTail": [
+     "【帧40】左缘=211,231,234 中心=211,231,234 背景层=背景texNULL 背景vis=1",
+     "🔁 视频底层：blob 首次 load 挂住（rs=0），第 2/2 次补 load()（上游 Firefox Bug 2056444）",
+     "⚠ 视频底层：补 load() 后自动播放被拒（AbortError），画面会停在首帧",
+     "⚠ [we-scene][P-68] videoStats {\"res\":\"dpr\",\"tier\":\"dpr\",\"legacy\":0,\"canvas\":\"960x540\",\"cap\":\"960x540\",\"throttleMs\":16.67,\"throttleFps\":60,\"throttleSrc\":\"tier-default\",\"smoothing\":\"high\",\"mip\":0,\"fboAu",
+     "⚠ [we-scene] 视频首帧已上传 960x540（源 2560x1440，档位 dpr，上限 960x540，2D 中转，节流 16.67ms）",
+     "⚠ [we-scene] 视频中心像素 rgba=223,179,165,255",
+     "  视频状态 readyState=4 t=0.2s paused=false",
+     "【DIAG】__videoBase@(1280,720)0,0,0"
+    ],
+    "logKey": [
+     "容器: PKGM0014 条目 4 个",
+     "scene.json 解析: 2 layers",
+     "绑定纹理的层: 1/2",
+     "✅ 首帧完成 39ms"
+    ]
+   },
+   "pixel": {
+    "w": 960,
+    "h": 540,
+    "meanL": 12.502,
+    "maxL": 255,
+    "stdL": 42.643,
+    "litFrac": 0.1067,
+    "bytes": 2073600
+   },
+   "dprFollow": {
+    "before": {
+     "w": 960,
+     "h": 540,
+     "live": {
+      "w": 960,
+      "h": 540,
+      "cssW": 960,
+      "cssH": 540,
+      "dpr": 1,
+      "dprCap": null,
+      "capped": "ok",
+      "updates": 0,
+      "why": "resize"
+     }
+    },
+    "after": {
+     "w": 700,
+     "h": 394,
+     "live": {
+      "w": 700,
+      "h": 394,
+      "cssW": 700,
+      "cssH": 394,
+      "dpr": 1,
+      "dprCap": null,
+      "capped": "ok",
+      "updates": 1,
+      "why": "resize"
+     }
+    },
+    "changed": true,
+    "matchesLiveRes": true,
+    "updatesGrew": true,
+    "formula": {
+     "cssW": 700,
+     "cssH": 394,
+     "dpr": 1,
+     "cap": null,
+     "want": 700,
+     "got": 700,
+     "capped": "ok"
+    }
+   },
+   "verdict": "PASS 出画",
+   "notes": [],
+   "ms": 10067,
+   "videoWaitMs": 3117,
+   "shell": {
+    "skipped": "不摘外壳（按画布盒裁剪；见 --hide-shell 注释）"
+   },
+   "stateAfterHide": {
+    "canvas": {
+     "w": 960,
+     "h": 540,
+     "cssW": 960,
+     "cssH": 540
+    },
+    "liveRes": {
+     "w": 960,
+     "h": 540,
+     "cssW": 960,
+     "cssH": 540,
+     "dpr": 1,
+     "dprCap": null,
+     "capped": "ok",
+     "updates": 0,
+     "why": "resize"
+    },
+    "videos": [
+     {
+      "rs": 4,
+      "ns": 1,
+      "err": null,
+      "w": 2560,
+      "h": 1440,
+      "src": "blob:http://127.0.0.1:89"
+     }
+    ]
+   },
+   "freeAfter": 3774,
+   "summary": {
+    "layers": 2,
+    "texStats": null,
+    "nonEmpty": true,
+    "meanL": 12.502,
+    "maxL": 255,
+    "stdL": 42.643,
+    "litFrac": 0.1067,
+    "shot": "960x540",
+    "scriptErrs": 0,
+    "pageErrors": 0,
+    "logFatal": 0,
+    "firstFrame": true,
+    "bootError": null,
+    "videos": [
+     {
+      "rs": 4,
+      "ns": 1,
+      "err": null,
+      "w": 2560,
+      "h": 1440,
+      "src": "blob:http://127.0.0.1:89"
+     }
+    ],
+    "dprFollow": {
+     "before": {
+      "w": 960,
+      "h": 540,
+      "live": {
+       "w": 960,
+       "h": 540,
+       "cssW": 960,
+       "cssH": 540,
+       "dpr": 1,
+       "dprCap": null,
+       "capped": "ok",
+       "updates": 0,
+       "why": "resize"
+      }
+     },
+     "after": {
+      "w": 700,
+      "h": 394,
+      "live": {
+       "w": 700,
+       "h": 394,
+       "cssW": 700,
+       "cssH": 394,
+       "dpr": 1,
+       "dprCap": null,
+       "capped": "ok",
+       "updates": 1,
+       "why": "resize"
+      }
+     },
+     "changed": true,
+     "matchesLiveRes": true,
+     "updatesGrew": true,
+     "formula": {
+      "cssW": 700,
+      "cssH": 394,
+      "dpr": 1,
+      "cap": null,
+      "want": 700,
+      "got": 700,
+      "capped": "ok"
+     }
+    },
+    "ms": 10067,
+    "freeAfter": 3774
+   }
+  },
+  {
+   "rel": "wallpaperE/洛茜/洛茜_07.mpkg",
+   "why": "补扫：58.8MB",
+   "off": {
+    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_07.mpkg",
+    "exists": true,
+    "mb": 59.5,
+    "magic": "PKGM0014",
+    "entries": 4,
+    "hasScene": true,
+    "sceneLayers": 16,
+    "sceneVisible": 14,
+    "videoEntry": "wallpaper.mp4",
+    "pkgError": null
+   },
+   "freeBefore": 3765,
+   "url": "http://127.0.0.1:8902/webloader/?type=scene&id=mpkg-sweep&res=dpr&_t=1790171675979&pkgpath=%2Froot%2FDesktop%2FDSHarea%2Fallwallpaper%2FwallpaperE%2F%E6%B4%9B%E8%8C%9C%2F%E6%B4%9B%E8%8C%9C_07.mpkg",
+   "pageErrors": [],
+   "consoleErrors": [],
+   "state": {
+    "canvas": {
+     "w": 960,
+     "h": 540,
+     "cssW": 960,
+     "cssH": 540
+    },
+    "layers": 17,
+    "texStats": 3,
+    "liveRes": {
+     "w": 960,
+     "h": 540,
+     "cssW": 960,
+     "cssH": 540,
+     "dpr": 1,
+     "dprCap": null,
+     "capped": "ok",
+     "updates": 0,
+     "why": "resize"
+    },
+    "resTier": {
+     "name": "dpr",
+     "requested": "dpr",
+     "width": 960,
+     "height": 540,
+     "live": true
+    },
+    "bootError": null,
+    "firstFrame": true,
+    "moduleStarted": true,
+    "videos": [
+     {
+      "rs": 4,
+      "ns": 1,
+      "err": null,
+      "w": 3840,
+      "h": 2160,
+      "src": "blob:http://127.0.0.1:89"
+     }
+    ],
+    "logLen": 6169,
+    "logFatal": 0,
+    "logWarn": 38,
+    "logTail": [
+     "⚠ [we-scene] 视频首帧已上传 960x540（源 3840x2160，档位 dpr，上限 960x540，2D 中转，节流 16.67ms）",
+     "⚠ [we-scene] 视频中心像素 rgba=49,20,23,255",
+     "【帧3】左缘=0,0,0 中心=0,0,0 背景层=__videoBasetexOK 背景vis=1",
+     "⚠ [we-scene][P-68] videoStats {\"res\":\"dpr\",\"tier\":\"dpr\",\"legacy\":0,\"canvas\":\"960x540\",\"cap\":\"960x540\",\"throttleMs\":16.67,\"throttleFps\":60,\"throttleSrc\":\"tier-default\",\"smoothing\":\"high\",\"mip\":0,\"fboAu",
+     "【帧4】左缘=0,0,0 中心=0,0,0 背景层=__videoBasetexOK 背景vis=1",
+     "🔤 文本字体 GenEiPOPlePw-Bk.ttf：缺失→回退 sans-serif（试过：/assets/fonts/GenEiPOPlePw-Bk.ttf → /weassist/fonts/GenEiPOPlePw-Bk.ttf）",
+     "① 文本层已光栅化: 9 层",
+     "【帧5】左缘=0,0,0 中心=0,0,0 背景层=__videoBasetexOK 背景vis=1"
+    ],
+    "logKey": [
+     "容器: PKGM0014 条目 4 个",
+     "scene.json 解析: 17 layers",
+     "绑定纹理的层: 1/17",
+     "✅ 首帧完成 267ms"
+    ]
+   },
+   "pixel": {
+    "w": 960,
+    "h": 540,
+    "meanL": 13.69,
+    "maxL": 255,
+    "stdL": 43.514,
+    "litFrac": 0.1212,
+    "bytes": 2073600
+   },
+   "dprFollow": {
+    "before": {
+     "w": 960,
+     "h": 540,
+     "live": {
+      "w": 960,
+      "h": 540,
+      "cssW": 960,
+      "cssH": 540,
+      "dpr": 1,
+      "dprCap": null,
+      "capped": "ok",
+      "updates": 0,
+      "why": "resize"
+     }
+    },
+    "after": {
+     "w": 700,
+     "h": 394,
+     "live": {
+      "w": 700,
+      "h": 394,
+      "cssW": 700,
+      "cssH": 394,
+      "dpr": 1,
+      "dprCap": null,
+      "capped": "ok",
+      "updates": 1,
+      "why": "resize"
+     }
+    },
+    "changed": true,
+    "matchesLiveRes": true,
+    "updatesGrew": true,
+    "formula": {
+     "cssW": 700,
+     "cssH": 394,
+     "dpr": 1,
+     "cap": null,
+     "want": 700,
+     "got": 700,
+     "capped": "ok"
+    }
+   },
+   "verdict": "PASS 出画",
+   "notes": [],
+   "ms": 12565,
+   "shell": {
+    "skipped": "不摘外壳（按画布盒裁剪；见 --hide-shell 注释）"
+   },
+   "stateAfterHide": {
+    "canvas": {
+     "w": 960,
+     "h": 540,
+     "cssW": 960,
+     "cssH": 540
+    },
+    "liveRes": {
+     "w": 960,
+     "h": 540,
+     "cssW": 960,
+     "cssH": 540,
+     "dpr": 1,
+     "dprCap": null,
+     "capped": "ok",
+     "updates": 0,
+     "why": "resize"
+    },
+    "videos": [
+     {
+      "rs": 4,
+      "ns": 1,
+      "err": null,
+      "w": 3840,
+      "h": 2160,
+      "src": "blob:http://127.0.0.1:89"
+     }
+    ]
+   },
+   "freeAfter": 4322,
+   "summary": {
+    "layers": 17,
+    "texStats": 3,
+    "nonEmpty": true,
+    "meanL": 13.69,
+    "maxL": 255,
+    "stdL": 43.514,
+    "litFrac": 0.1212,
+    "shot": "960x540",
+    "scriptErrs": 0,
+    "pageErrors": 0,
+    "logFatal": 0,
+    "firstFrame": true,
+    "bootError": null,
+    "videos": [
+     {
+      "rs": 4,
+      "ns": 1,
+      "err": null,
+      "w": 3840,
+      "h": 2160,
+      "src": "blob:http://127.0.0.1:89"
+     }
+    ],
+    "dprFollow": {
+     "before": {
+      "w": 960,
+      "h": 540,
+      "live": {
+       "w": 960,
+       "h": 540,
+       "cssW": 960,
+       "cssH": 540,
+       "dpr": 1,
+       "dprCap": null,
+       "capped": "ok",
+       "updates": 0,
+       "why": "resize"
+      }
+     },
+     "after": {
+      "w": 700,
+      "h": 394,
+      "live": {
+       "w": 700,
+       "h": 394,
+       "cssW": 700,
+       "cssH": 394,
+       "dpr": 1,
+       "dprCap": null,
+       "capped": "ok",
+       "updates": 1,
+       "why": "resize"
+      }
+     },
+     "changed": true,
+     "matchesLiveRes": true,
+     "updatesGrew": true,
+     "formula": {
+      "cssW": 700,
+      "cssH": 394,
+      "dpr": 1,
+      "cap": null,
+      "want": 700,
+      "got": 700,
+      "capped": "ok"
+     }
+    },
+    "ms": 12565,
+    "freeAfter": 4322
+   }
+  },
+  {
+   "rel": "wallpaperE/蔚蓝档案/蔚蓝档案_06.mpkg",
+   "why": "补扫：58.8MB",
+   "off": {
+    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_06.mpkg",
+    "exists": true,
+    "mb": 59.7,
+    "magic": "PKGM0014",
+    "entries": 4,
+    "hasScene": true,
+    "sceneLayers": 7,
+    "sceneVisible": 7,
+    "videoEntry": "wallpaper.mp4",
+    "pkgError": null
+   },
+   "freeBefore": 4351,
+   "url": "http://127.0.0.1:8902/webloader/?type=scene&id=mpkg-sweep&res=dpr&_t=1790171689410&pkgpath=%2Froot%2FDesktop%2FDSHarea%2Fallwallpaper%2FwallpaperE%2F%E8%94%9A%E8%93%9D%E6%A1%A3%E6%A1%88%2F%E8%94%9A%E8%93%9D%E6%A1%A3%E6%A1%88_06.mpkg",
+   "pageErrors": [],
+   "consoleErrors": [],
+   "state": {
+    "canvas": {
+     "w": 960,
+     "h": 540,
+     "cssW": 960,
+     "cssH": 540
+    },
+    "layers": 8,
+    "texStats": null,
+    "liveRes": {
+     "w": 960,
+     "h": 540,
+     "cssW": 960,
+     "cssH": 540,
+     "dpr": 1,
+     "dprCap": null,
+     "capped": "ok",
+     "updates": 0,
+     "why": "resize"
+    },
+    "resTier": {
+     "name": "dpr",
+     "requested": "dpr",
+     "width": 960,
+     "height": 540,
+     "live": true
+    },
+    "bootError": null,
+    "firstFrame": true,
+    "moduleStarted": true,
+    "videos": [
+     {
+      "rs": 4,
+      "ns": 1,
+      "err": null,
+      "w": 3840,
+      "h": 2160,
+      "src": "blob:http://127.0.0.1:89"
+     }
+    ],
+    "logLen": 5655,
+    "logFatal": 0,
+    "logWarn": 26,
+    "logTail": [
+     "【帧23】左缘=178,178,178 中心=178,178,178 背景层=__videoBasetexOK 背景vis=1",
+     "【帧24】左缘=178,178,178 中心=178,178,178 背景层=__videoBasetexOK 背景vis=1",
+     "【帧25】左缘=178,178,178 中心=178,178,178 背景层=__videoBasetexOK 背景vis=1",
+     "【帧26】左缘=178,178,178 中心=178,178,178 背景层=__videoBasetexOK 背景vis=1",
+     "  视频状态 readyState=4 t=0.0s paused=false",
+     "⚠ [we-scene] 视频首帧已上传 960x540（源 3840x2160，档位 dpr，上限 960x540，2D 中转，节流 16.67ms）",
+     "⚠ [we-scene] 视频中心像素 rgba=237,217,202,255",
+     "【帧27】左缘=0,0,0 中心=0,0,0 背景层=__videoBasetexOK 背景vis=1"
+    ],
+    "logKey": [
+     "容器: PKGM0014 条目 4 个",
+     "scene.json 解析: 8 layers",
+     "绑定纹理的层: 1/8",
+     "✅ 首帧完成 37ms"
+    ]
+   },
+   "pixel": {
+    "w": 960,
+    "h": 540,
+    "meanL": 13.991,
+    "maxL": 255,
+    "stdL": 44.376,
+    "litFrac": 0.122,
+    "bytes": 2073600
+   },
+   "dprFollow": {
+    "before": {
+     "w": 960,
+     "h": 540,
+     "live": {
+      "w": 960,
+      "h": 540,
+      "cssW": 960,
+      "cssH": 540,
+      "dpr": 1,
+      "dprCap": null,
+      "capped": "ok",
+      "updates": 0,
+      "why": "resize"
+     }
+    },
+    "after": {
+     "w": 700,
+     "h": 394,
+     "live": {
+      "w": 700,
+      "h": 394,
+      "cssW": 700,
+      "cssH": 394,
+      "dpr": 1,
+      "dprCap": null,
+      "capped": "ok",
+      "updates": 1,
+      "why": "resize"
+     }
+    },
+    "changed": true,
+    "matchesLiveRes": true,
+    "updatesGrew": true,
+    "formula": {
+     "cssW": 700,
+     "cssH": 394,
+     "dpr": 1,
+     "cap": null,
+     "want": 700,
+     "got": 700,
+     "capped": "ok"
+    }
+   },
+   "verdict": "PASS 出画",
+   "notes": [],
+   "ms": 7429,
+   "shell": {
+    "skipped": "不摘外壳（按画布盒裁剪；见 --hide-shell 注释）"
+   },
+   "stateAfterHide": {
+    "canvas": {
+     "w": 960,
+     "h": 540,
+     "cssW": 960,
+     "cssH": 540
+    },
+    "liveRes": {
+     "w": 960,
+     "h": 540,
+     "cssW": 960,
+     "cssH": 540,
+     "dpr": 1,
+     "dprCap": null,
+     "capped": "ok",
+     "updates": 0,
+     "why": "resize"
+    },
+    "videos": [
+     {
+      "rs": 4,
+      "ns": 1,
+      "err": null,
+      "w": 3840,
+      "h": 2160,
+      "src": "blob:http://127.0.0.1:89"
+     }
+    ]
+   },
+   "freeAfter": 4497,
+   "summary": {
+    "layers": 8,
+    "texStats": null,
+    "nonEmpty": true,
+    "meanL": 13.991,
+    "maxL": 255,
+    "stdL": 44.376,
+    "litFrac": 0.122,
+    "shot": "960x540",
+    "scriptErrs": 0,
+    "pageErrors": 0,
+    "logFatal": 0,
+    "firstFrame": true,
+    "bootError": null,
+    "videos": [
+     {
+      "rs": 4,
+      "ns": 1,
+      "err": null,
+      "w": 3840,
+      "h": 2160,
+      "src": "blob:http://127.0.0.1:89"
+     }
+    ],
+    "dprFollow": {
+     "before": {
+      "w": 960,
+      "h": 540,
+      "live": {
+       "w": 960,
+       "h": 540,
+       "cssW": 960,
+       "cssH": 540,
+       "dpr": 1,
+       "dprCap": null,
+       "capped": "ok",
+       "updates": 0,
+       "why": "resize"
+      }
+     },
+     "after": {
+      "w": 700,
+      "h": 394,
+      "live": {
+       "w": 700,
+       "h": 394,
+       "cssW": 700,
+       "cssH": 394,
+       "dpr": 1,
+       "dprCap": null,
+       "capped": "ok",
+       "updates": 1,
+       "why": "resize"
+      }
+     },
+     "changed": true,
+     "matchesLiveRes": true,
+     "updatesGrew": true,
+     "formula": {
+      "cssW": 700,
+      "cssH": 394,
+      "dpr": 1,
+      "cap": null,
+      "want": 700,
+      "got": 700,
+      "capped": "ok"
+     }
+    },
+    "ms": 7429,
+    "freeAfter": 4497
+   }
+  },
+  {
+   "rel": "wallpaperE/佩丽卡/佩丽卡1_09.mpkg",
+   "why": "补扫：58.6MB",
+   "off": {
+    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_09.mpkg",
+    "exists": true,
+    "mb": 59.5,
+    "magic": "PKGM0014",
+    "entries": 4,
+    "hasScene": true,
+    "sceneLayers": 7,
+    "sceneVisible": 7,
+    "videoEntry": "wallpaper.mp4",
+    "pkgError": null
+   },
+   "freeBefore": 4499,
+   "url": "http://127.0.0.1:8902/webloader/?type=scene&id=mpkg-sweep&res=dpr&_t=1790171697537&pkgpath=%2Froot%2FDesktop%2FDSHarea%2Fallwallpaper%2FwallpaperE%2F%E4%BD%A9%E4%B8%BD%E5%8D%A1%2F%E4%BD%A9%E4%B8%BD%E5%8D%A11_09.mpkg",
+   "pageErrors": [],
+   "consoleErrors": [],
+   "state": {
+    "canvas": {
+     "w": 960,
+     "h": 540,
+     "cssW": 960,
+     "cssH": 540
+    },
+    "layers": 8,
+    "texStats": 2,
+    "liveRes": {
+     "w": 960,
+     "h": 540,
+     "cssW": 960,
+     "cssH": 540,
+     "dpr": 1,
+     "dprCap": null,
+     "capped": "ok",
+     "updates": 0,
+     "why": "resize"
+    },
+    "resTier": {
+     "name": "dpr",
+     "requested": "dpr",
+     "width": 960,
+     "height": 540,
+     "live": true
+    },
+    "bootError": null,
+    "firstFrame": true,
+    "moduleStarted": true,
+    "videos": [
+     {
+      "rs": 4,
+      "ns": 1,
+      "err": null,
+      "w": 3840,
+      "h": 2160,
+      "src": "blob:http://127.0.0.1:89"
+     }
+    ],
+    "logLen": 5577,
+    "logFatal": 0,
+    "logWarn": 26,
+    "logTail": [
+     "【帧8】左缘=0,0,0 中心=0,0,0 背景层=__videoBasetexOK 背景vis=1",
+     "【帧9】左缘=0,0,0 中心=0,0,0 背景层=__videoBasetexOK 背景vis=1",
+     "  视频状态 readyState=4 t=0.5s paused=false",
+     "【帧10】左缘=0,0,0 中心=0,0,0 背景层=__videoBasetexOK 背景vis=1",
+     "【帧11】左缘=0,0,0 中心=0,0,0 背景层=__videoBasetexOK 背景vis=1",
+     "⚠ [we-scene][P-68] videoStats {\"res\":\"dpr\",\"tier\":\"dpr\",\"legacy\":0,\"canvas\":\"960x540\",\"cap\":\"960x540\",\"throttleMs\":16.67,\"throttleFps\":60,\"throttleSrc\":\"tier-default\",\"smoothing\":\"high\",\"mip\":0,\"fboAu",
+     "【帧12】左缘=0,0,0 中心=0,0,0 背景层=__videoBasetexOK 背景vis=1",
+     "【帧13】左缘=0,0,0 中心=0,0,0 背景层=__videoBasetexOK 背景vis=1"
+    ],
+    "logKey": [
+     "容器: PKGM0014 条目 4 个",
+     "scene.json 解析: 8 layers",
+     "绑定纹理的层: 1/8",
+     "✅ 首帧完成 126ms"
+    ]
+   },
+   "pixel": {
+    "w": 960,
+    "h": 540,
+    "meanL": 13.151,
+    "maxL": 255,
+    "stdL": 43.078,
+    "litFrac": 0.1183,
+    "bytes": 2073600
+   },
+   "dprFollow": {
+    "before": {
+     "w": 960,
+     "h": 540,
+     "live": {
+      "w": 960,
+      "h": 540,
+      "cssW": 960,
+      "cssH": 540,
+      "dpr": 1,
+      "dprCap": null,
+      "capped": "ok",
+      "updates": 0,
+      "why": "resize"
+     }
+    },
+    "after": {
+     "w": 700,
+     "h": 394,
+     "live": {
+      "w": 700,
+      "h": 394,
+      "cssW": 700,
+      "cssH": 394,
+      "dpr": 1,
+      "dprCap": null,
+      "capped": "ok",
+      "updates": 1,
+      "why": "resize"
+     }
+    },
+    "changed": true,
+    "matchesLiveRes": true,
+    "updatesGrew": true,
+    "formula": {
+     "cssW": 700,
+     "cssH": 394,
+     "dpr": 1,
+     "cap": null,
+     "want": 700,
+     "got": 700,
+     "capped": "ok"
+    }
+   },
+   "verdict": "PASS 出画",
+   "notes": [],
+   "ms": 10383,
+   "videoWaitMs": 1661,
+   "shell": {
+    "skipped": "不摘外壳（按画布盒裁剪；见 --hide-shell 注释）"
+   },
+   "stateAfterHide": {
+    "canvas": {
+     "w": 960,
+     "h": 540,
+     "cssW": 960,
+     "cssH": 540
+    },
+    "liveRes": {
+     "w": 960,
+     "h": 540,
+     "cssW": 960,
+     "cssH": 540,
+     "dpr": 1,
+     "dprCap": null,
+     "capped": "ok",
+     "updates": 0,
+     "why": "resize"
+    },
+    "videos": [
+     {
+      "rs": 4,
+      "ns": 1,
+      "err": null,
+      "w": 3840,
+      "h": 2160,
+      "src": "blob:http://127.0.0.1:89"
+     }
+    ]
+   },
+   "freeAfter": 4527,
+   "summary": {
+    "layers": 8,
+    "texStats": 2,
+    "nonEmpty": true,
+    "meanL": 13.151,
+    "maxL": 255,
+    "stdL": 43.078,
+    "litFrac": 0.1183,
+    "shot": "960x540",
+    "scriptErrs": 0,
+    "pageErrors": 0,
+    "logFatal": 0,
+    "firstFrame": true,
+    "bootError": null,
+    "videos": [
+     {
+      "rs": 4,
+      "ns": 1,
+      "err": null,
+      "w": 3840,
+      "h": 2160,
+      "src": "blob:http://127.0.0.1:89"
+     }
+    ],
+    "dprFollow": {
+     "before": {
+      "w": 960,
+      "h": 540,
+      "live": {
+       "w": 960,
+       "h": 540,
+       "cssW": 960,
+       "cssH": 540,
+       "dpr": 1,
+       "dprCap": null,
+       "capped": "ok",
+       "updates": 0,
+       "why": "resize"
+      }
+     },
+     "after": {
+      "w": 700,
+      "h": 394,
+      "live": {
+       "w": 700,
+       "h": 394,
+       "cssW": 700,
+       "cssH": 394,
+       "dpr": 1,
+       "dprCap": null,
+       "capped": "ok",
+       "updates": 1,
+       "why": "resize"
+      }
+     },
+     "changed": true,
+     "matchesLiveRes": true,
+     "updatesGrew": true,
+     "formula": {
+      "cssW": 700,
+      "cssH": 394,
+      "dpr": 1,
+      "cap": null,
+      "want": 700,
+      "got": 700,
+      "capped": "ok"
+     }
+    },
+    "ms": 10383,
+    "freeAfter": 4527
+   }
+  },
+  {
+   "rel": "wallpaperE/芙宁娜/芙宁娜1_04.mpkg",
+   "why": "补扫：58.4MB（NSL 类脚本包的对照）",
+   "off": {
+    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/芙宁娜/芙宁娜1_04.mpkg",
+    "exists": true,
+    "mb": 58.9,
+    "magic": "PKGM0014",
+    "entries": 4,
+    "hasScene": true,
+    "sceneLayers": 5,
+    "sceneVisible": 5,
+    "videoEntry": "wallpaper.mp4",
+    "pkgError": null
+   },
+   "freeBefore": 4592,
+   "url": "http://127.0.0.1:8902/webloader/?type=scene&id=mpkg-sweep&res=dpr&_t=1790171708660&pkgpath=%2Froot%2FDesktop%2FDSHarea%2Fallwallpaper%2FwallpaperE%2F%E8%8A%99%E5%AE%81%E5%A8%9C%2F%E8%8A%99%E5%AE%81%E5%A8%9C1_04.mpkg",
+   "pageErrors": [],
+   "consoleErrors": [],
+   "state": {
+    "canvas": {
+     "w": 960,
+     "h": 540,
+     "cssW": 960,
+     "cssH": 540
+    },
+    "layers": 6,
+    "texStats": 4,
+    "liveRes": {
+     "w": 960,
+     "h": 540,
+     "cssW": 960,
+     "cssH": 540,
+     "dpr": 1,
+     "dprCap": null,
+     "capped": "ok",
+     "updates": 0,
+     "why": "resize"
+    },
+    "resTier": {
+     "name": "dpr",
+     "requested": "dpr",
+     "width": 960,
+     "height": 540,
+     "live": true
+    },
+    "bootError": null,
+    "firstFrame": true,
+    "moduleStarted": true,
+    "videos": [
+     {
+      "rs": 4,
+      "ns": 1,
+      "err": null,
+      "w": 2560,
+      "h": 1440,
+      "src": "blob:http://127.0.0.1:89"
+     }
+    ],
+    "logLen": 4484,
+    "logFatal": 0,
+    "logWarn": 22,
+    "logTail": [
+     "✅ 首帧完成 374ms",
+     "【帧1】左缘=0,0,0 中心=0,0,0 背景层=背景texNULL 背景vis=1",
+     "【帧2】左缘=0,0,0 中心=0,0,0 背景层=背景texNULL 背景vis=1",
+     "  视频状态 readyState=4 t=0.5s paused=false",
+     "【帧3】左缘=0,0,0 中心=0,0,0 背景层=背景texNULL 背景vis=1",
+     "⚠ [we-scene][P-68] videoStats {\"res\":\"dpr\",\"tier\":\"dpr\",\"legacy\":0,\"canvas\":\"960x540\",\"cap\":\"960x540\",\"throttleMs\":16.67,\"throttleFps\":60,\"throttleSrc\":\"tier-default\",\"smoothing\":\"high\",\"mip\":0,\"fboAu",
+     "【帧4】左缘=0,0,0 中心=0,0,0 背景层=背景texNULL 背景vis=1",
+     "【帧5】左缘=0,0,0 中心=0,0,0 背景层=背景texNULL 背景vis=1"
+    ],
+    "logKey": [
+     "容器: PKGM0014 条目 4 个",
+     "scene.json 解析: 6 layers",
+     "绑定纹理的层: 1/6",
+     "✅ 首帧完成 374ms"
+    ]
+   },
+   "pixel": {
+    "w": 960,
+    "h": 540,
+    "meanL": 13.053,
+    "maxL": 255,
+    "stdL": 42.689,
+    "litFrac": 0.1127,
+    "bytes": 2073600
+   },
+   "dprFollow": {
+    "before": {
+     "w": 960,
+     "h": 540,
+     "live": {
+      "w": 960,
+      "h": 540,
+      "cssW": 960,
+      "cssH": 540,
+      "dpr": 1,
+      "dprCap": null,
+      "capped": "ok",
+      "updates": 0,
+      "why": "resize"
+     }
+    },
+    "after": {
+     "w": 700,
+     "h": 394,
+     "live": {
+      "w": 700,
+      "h": 394,
+      "cssW": 700,
+      "cssH": 394,
+      "dpr": 1,
+      "dprCap": null,
+      "capped": "ok",
+      "updates": 1,
+      "why": "resize"
+     }
+    },
+    "changed": true,
+    "matchesLiveRes": true,
+    "updatesGrew": true,
+    "formula": {
+     "cssW": 700,
+     "cssH": 394,
+     "dpr": 1,
+     "cap": null,
+     "want": 700,
+     "got": 700,
+     "capped": "ok"
+    }
+   },
+   "verdict": "PASS 出画",
+   "notes": [],
+   "ms": 12558,
+   "shell": {
+    "skipped": "不摘外壳（按画布盒裁剪；见 --hide-shell 注释）"
+   },
+   "stateAfterHide": {
+    "canvas": {
+     "w": 960,
+     "h": 540,
+     "cssW": 960,
+     "cssH": 540
+    },
+    "liveRes": {
+     "w": 960,
+     "h": 540,
+     "cssW": 960,
+     "cssH": 540,
+     "dpr": 1,
+     "dprCap": null,
+     "capped": "ok",
+     "updates": 0,
+     "why": "resize"
+    },
+    "videos": [
+     {
+      "rs": 4,
+      "ns": 1,
+      "err": null,
+      "w": 2560,
+      "h": 1440,
+      "src": "blob:http://127.0.0.1:89"
+     }
+    ]
+   },
+   "freeAfter": 4019,
+   "summary": {
+    "layers": 6,
+    "texStats": 4,
+    "nonEmpty": true,
+    "meanL": 13.053,
+    "maxL": 255,
+    "stdL": 42.689,
+    "litFrac": 0.1127,
+    "shot": "960x540",
+    "scriptErrs": 0,
+    "pageErrors": 0,
+    "logFatal": 0,
+    "firstFrame": true,
+    "bootError": null,
+    "videos": [
+     {
+      "rs": 4,
+      "ns": 1,
+      "err": null,
+      "w": 2560,
+      "h": 1440,
+      "src": "blob:http://127.0.0.1:89"
+     }
+    ],
+    "dprFollow": {
+     "before": {
+      "w": 960,
+      "h": 540,
+      "live": {
+       "w": 960,
+       "h": 540,
+       "cssW": 960,
+       "cssH": 540,
+       "dpr": 1,
+       "dprCap": null,
+       "capped": "ok",
+       "updates": 0,
+       "why": "resize"
+      }
+     },
+     "after": {
+      "w": 700,
+      "h": 394,
+      "live": {
+       "w": 700,
+       "h": 394,
+       "cssW": 700,
+       "cssH": 394,
+       "dpr": 1,
+       "dprCap": null,
+       "capped": "ok",
+       "updates": 1,
+       "why": "resize"
+      }
+     },
+     "changed": true,
+     "matchesLiveRes": true,
+     "updatesGrew": true,
+     "formula": {
+      "cssW": 700,
+      "cssH": 394,
+      "dpr": 1,
+      "cap": null,
+      "want": 700,
+      "got": 700,
+      "capped": "ok"
+     }
+    },
+    "ms": 12558,
+    "freeAfter": 4019
+   }
+  },
+  {
+   "rel": "wallpaperE/遐蝶/遐蝶_09.mpkg",
+   "why": "补扫：58.1MB",
+   "off": {
+    "abs": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/遐蝶/遐蝶_09.mpkg",
+    "exists": true,
+    "mb": 59.1,
+    "magic": "PKGM0014",
+    "entries": 4,
+    "hasScene": true,
+    "sceneLayers": 45,
+    "sceneVisible": 45,
+    "videoEntry": "wallpaper.mp4",
+    "pkgError": null
+   },
+   "freeBefore": 4018,
+   "url": "http://127.0.0.1:8902/webloader/?type=scene&id=mpkg-sweep&res=dpr&_t=1790171722424&pkgpath=%2Froot%2FDesktop%2FDSHarea%2Fallwallpaper%2FwallpaperE%2F%E9%81%90%E8%9D%B6%2F%E9%81%90%E8%9D%B6_09.mpkg",
+   "pageErrors": [],
+   "consoleErrors": [],
+   "state": {
+    "canvas": {
+     "w": 960,
+     "h": 540,
+     "cssW": 960,
+     "cssH": 540
+    },
+    "layers": 46,
+    "texStats": 2,
+    "liveRes": {
+     "w": 960,
+     "h": 540,
+     "cssW": 960,
+     "cssH": 540,
+     "dpr": 1,
+     "dprCap": null,
+     "capped": "ok",
+     "updates": 0,
+     "why": "resize"
+    },
+    "resTier": {
+     "name": "dpr",
+     "requested": "dpr",
+     "width": 960,
+     "height": 540,
+     "live": true
+    },
+    "bootError": null,
+    "firstFrame": true,
+    "moduleStarted": true,
+    "videos": [
+     {
+      "rs": 4,
+      "ns": 1,
+      "err": null,
+      "w": 3840,
+      "h": 2160,
+      "src": "blob:http://127.0.0.1:89"
+     }
+    ],
+    "logLen": 9435,
+    "logFatal": 0,
+    "logWarn": 99,
+    "logTail": [
+     "✅ 首帧完成 1676ms",
+     "【帧1】左缘=0,0,0 中心=0,0,0 背景层=__videoBasetexOK 背景vis=1",
+     "  视频状态 readyState=4 t=1.2s paused=false",
+     "【帧2】左缘=0,0,0 中心=0,0,0 背景层=__videoBasetexOK 背景vis=1",
+     "【帧3】左缘=0,0,0 中心=0,0,0 背景层=__videoBasetexOK 背景vis=1",
+     "【DIAG】__videoBase@(1920,1080)0,0,0",
+     "⚠ [粒子] 层 \"大型\" renderer=spritetrail 官方几何生效：沿速度拉伸一条精灵（length=0.007000000074505806，maxlength=10）；贴图=particle/halo_2",
+     "【帧4】左缘=0,0,0 中心=0,0,0 背景层=__videoBasetexOK 背景vis=1"
+    ],
+    "logKey": [
+     "容器: PKGM0014 条目 4 个",
+     "scene.json 解析: 46 layers",
+     "绑定纹理的层: 1/46",
+     "✅ 首帧完成 1676ms"
+    ]
+   },
+   "pixel": {
+    "w": 960,
+    "h": 540,
+    "meanL": 14.455,
+    "maxL": 255,
+    "stdL": 44.872,
+    "litFrac": 0.1333,
+    "bytes": 2073600
+   },
+   "dprFollow": {
+    "before": {
+     "w": 960,
+     "h": 540,
+     "live": {
+      "w": 960,
+      "h": 540,
+      "cssW": 960,
+      "cssH": 540,
+      "dpr": 1,
+      "dprCap": null,
+      "capped": "ok",
+      "updates": 0,
+      "why": "resize"
+     }
+    },
+    "after": {
+     "w": 700,
+     "h": 394,
+     "live": {
+      "w": 700,
+      "h": 394,
+      "cssW": 700,
+      "cssH": 394,
+      "dpr": 1,
+      "dprCap": null,
+      "capped": "ok",
+      "updates": 1,
+      "why": "resize"
+     }
+    },
+    "changed": true,
+    "matchesLiveRes": true,
+    "updatesGrew": true,
+    "formula": {
+     "cssW": 700,
+     "cssH": 394,
+     "dpr": 1,
+     "cap": null,
+     "want": 700,
+     "got": 700,
+     "capped": "ok"
+    }
+   },
+   "verdict": "PASS 出画",
+   "notes": [],
+   "ms": 30285,
+   "shell": {
+    "skipped": "不摘外壳（按画布盒裁剪；见 --hide-shell 注释）"
+   },
+   "stateAfterHide": {
+    "canvas": {
+     "w": 960,
+     "h": 540,
+     "cssW": 960,
+     "cssH": 540
+    },
+    "liveRes": {
+     "w": 960,
+     "h": 540,
+     "cssW": 960,
+     "cssH": 540,
+     "dpr": 1,
+     "dprCap": null,
+     "capped": "ok",
+     "updates": 0,
+     "why": "resize"
+    },
+    "videos": [
+     {
+      "rs": 4,
+      "ns": 1,
+      "err": null,
+      "w": 3840,
+      "h": 2160,
+      "src": "blob:http://127.0.0.1:89"
+     }
+    ]
+   },
+   "freeAfter": 4156,
+   "summary": {
+    "layers": 46,
+    "texStats": 2,
+    "nonEmpty": true,
+    "meanL": 14.455,
+    "maxL": 255,
+    "stdL": 44.872,
+    "litFrac": 0.1333,
+    "shot": "960x540",
+    "scriptErrs": 0,
+    "pageErrors": 0,
+    "logFatal": 0,
+    "firstFrame": true,
+    "bootError": null,
+    "videos": [
+     {
+      "rs": 4,
+      "ns": 1,
+      "err": null,
+      "w": 3840,
+      "h": 2160,
+      "src": "blob:http://127.0.0.1:89"
+     }
+    ],
+    "dprFollow": {
+     "before": {
+      "w": 960,
+      "h": 540,
+      "live": {
+       "w": 960,
+       "h": 540,
+       "cssW": 960,
+       "cssH": 540,
+       "dpr": 1,
+       "dprCap": null,
+       "capped": "ok",
+       "updates": 0,
+       "why": "resize"
+      }
+     },
+     "after": {
+      "w": 700,
+      "h": 394,
+      "live": {
+       "w": 700,
+       "h": 394,
+       "cssW": 700,
+       "cssH": 394,
+       "dpr": 1,
+       "dprCap": null,
+       "capped": "ok",
+       "updates": 1,
+       "why": "resize"
+      }
+     },
+     "changed": true,
+     "matchesLiveRes": true,
+     "updatesGrew": true,
+     "formula": {
+      "cssW": 700,
+      "cssH": 394,
+      "dpr": 1,
+      "cap": null,
+      "want": 700,
+      "got": 700,
+      "capped": "ok"
+     }
+    },
+    "ms": 30285,
+    "freeAfter": 4156
+   }
+  }
+ ]
+}

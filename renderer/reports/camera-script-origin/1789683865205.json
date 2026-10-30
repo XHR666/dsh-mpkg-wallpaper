@@ -1,0 +1,75 @@
+{
+ "tool": "camera-script-origin-probe",
+ "schemaVersion": 1,
+ "generatedAt": "2026-09-17T22:24:25.205Z",
+ "epochMs": 1789683865205,
+ "env": {
+  "mpwRoot": "/tmp/csprobe/empty",
+  "repoRoot": "/root/Desktop/DSHarea/we-scene-demo",
+  "node": "v24.19.0",
+  "canvas": [
+   3840,
+   2160
+  ],
+  "ticks": 3,
+  "userPropsMode": "project",
+  "abVariant": true,
+  "idFilter": null,
+  "peakRssMb": 47.6,
+  "elapsedMs": 2
+ },
+ "corpus": {
+  "packs": 0,
+  "looseScenes": 0,
+  "packsWithoutSceneJson": 0,
+  "cameraObjects": 0,
+  "hits": 0
+ },
+ "criteria": {
+  "cameraObject": "scene.json objects[] 里 typeof o.camera === 'string'（与 core/we-scene-bundle.js:1513 同判据）",
+  "hit": "相机对象的 origin 或 zoom 是 {script:<字符串>} 节点",
+  "staticSnapshot": "不跑脚本时该属性节点的 .value（= 渲染器今天解析到的 authored 值）",
+  "host": "elysia/scene-scripts.js applySceneScripts + createScriptCache（离线；只 import 不修改）"
+ },
+ "checks": {
+  "pass": 3,
+  "fail": 1,
+  "skip": 1,
+  "failures": [
+   "① 语料枚举非空（包容器 0 / 散装 scene.json 0）"
+  ],
+  "items": [
+   {
+    "name": "① 语料枚举非空（包容器 0 / 散装 scene.json 0）",
+    "ok": false,
+    "detail": "语料根下什么都没有 —— 期望 /tmp/csprobe/empty/allwallpaper 与 /tmp/csprobe/empty/wallpaper_engine/assets（--root 写错？）"
+   },
+   {
+    "name": "② 没有读不动的包（读不了会打印是哪个包，并退 1）",
+    "ok": true,
+    "detail": "0 个"
+   },
+   {
+    "name": "③ 没有 scene.json 坏掉的包",
+    "ok": true,
+    "detail": "0 个"
+   },
+   {
+    "name": "④ 没有 scene.json 坏掉的散装场景",
+    "ok": true,
+    "detail": "0 个"
+   },
+   {
+    "name": "⑤ 命中数 ≥ 1",
+    "skipped": true,
+    "detail": "语料里没有 origin.script / zoom.script 的相机对象"
+   }
+  ]
+ },
+ "objects": [],
+ "rows": [],
+ "noSceneJson": [],
+ "readErrors": [],
+ "sceneErrors": [],
+ "looseErrors": []
+}

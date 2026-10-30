@@ -1,0 +1,101 @@
+{
+ "generatedAt": "2026-10-07T16:25:31.072Z",
+ "source": "直挂（mediaBase+src），非工具条档",
+ "upstream": "renderer-n-Rw_ZVc.js",
+ "mediaBase": "http://127.0.0.1:8902/media/dev",
+ "probeId": "2887099508",
+ "rows": [
+  {
+   "combo": {
+    "fit": "contain",
+    "renderDpr": 1
+   },
+   "canvas": {
+    "w": 1280,
+    "h": 800,
+    "cssW": 1280,
+    "cssH": 800
+   },
+   "css": {
+    "w": 1280,
+    "h": 800
+   },
+   "quality": {
+    "antiAliasing": "off",
+    "particles": "high",
+    "postProcessing": "off"
+   },
+   "mediaReqs": 2,
+   "wpReady": true
+  },
+  {
+   "combo": {
+    "fit": "contain",
+    "renderDpr": 2
+   },
+   "canvas": {
+    "w": 2560,
+    "h": 1600,
+    "cssW": 1280,
+    "cssH": 800
+   },
+   "css": {
+    "w": 1280,
+    "h": 800
+   },
+   "quality": {
+    "antiAliasing": "off",
+    "particles": "high",
+    "postProcessing": "off"
+   },
+   "mediaReqs": 2,
+   "wpReady": true
+  },
+  {
+   "combo": {
+    "fit": "cover",
+    "renderDpr": 1
+   },
+   "canvas": {
+    "w": 1280,
+    "h": 800,
+    "cssW": 1280,
+    "cssH": 800
+   },
+   "css": {
+    "w": 1280,
+    "h": 800
+   },
+   "quality": {
+    "antiAliasing": "off",
+    "particles": "high",
+    "postProcessing": "off"
+   },
+   "mediaReqs": 2,
+   "wpReady": true
+  },
+  {
+   "combo": {
+    "fit": "cover",
+    "renderDpr": 2
+   },
+   "canvas": {
+    "w": 2560,
+    "h": 1600,
+    "cssW": 1280,
+    "cssH": 800
+   },
+   "css": {
+    "w": 1280,
+    "h": 800
+   },
+   "quality": {
+    "antiAliasing": "off",
+    "particles": "high",
+    "postProcessing": "off"
+   },
+   "mediaReqs": 2,
+   "wpReady": true
+  }
+ ]
+}

@@ -1,0 +1,160 @@
+{
+ "kind": "real-machine",
+ "schema": 1,
+ "at": "2026-09-24T00:12:36.738Z",
+ "id": "sample-synthetic",
+ "url": "http://127.0.0.1:8899/?id=sample-synthetic",
+ "source": "playwright-firefox-headless",
+ "ua": "Mozilla/5.0 (X11; Linux x86_64; rv:153.0) Gecko/20100101 Firefox/153.0",
+ "device": {
+  "viewport": [
+   1280,
+   800
+  ],
+  "dpr": 1,
+  "cores": 8,
+  "canvas": [
+   300,
+   150
+  ],
+  "canvasCss": [
+   "1280px",
+   "720px"
+  ]
+ },
+ "webgl2": false,
+ "gpu": false,
+ "startup": {
+  "navToModuleStartedMs": 969,
+  "navToFirstFrameMs": null,
+  "firstFrameToReadyMs": null,
+  "totalMs": 590,
+  "readyReason": "scene-parsed(no-webgl2)",
+  "note": "本机口径：导航→`scene.json 解析: N layers`（无 GPU 永远到不了首帧；有 GPU 的真机数字仍由 ?baseline=1 采集器产出）"
+ },
+ "fps": {
+  "median": null,
+  "p1Low": null,
+  "min": null,
+  "max": null,
+  "windowMs": 500,
+  "note": "无 WebGL2 ⇒ 0 帧；不编造数字"
+ },
+ "frames": {
+  "n": 0,
+  "p50": null,
+  "p95": null,
+  "p99": null,
+  "max": null
+ },
+ "render": {
+  "available": false,
+  "note": "无 WebGL2 ⇒ 没有渲染帧；render.* 需 ?perf=1 + 真 GPU"
+ },
+ "counts": {
+  "layers": 5,
+  "propsRows": 4,
+  "propsGroups": 0
+ },
+ "vramProxy": {
+  "textureBytesEst": null,
+  "note": "浏览器拿不到真实显存（WebGL 无此 API）；无 GPU 时采集器也不产出代理值"
+ },
+ "switch": {
+  "swapTo": {
+   "ms": 1225,
+   "toId": "3554161528"
+  },
+  "swapBack": null
+ },
+ "surfaces": {
+  "bar": true,
+  "barLinks": 10,
+  "barButtons": 4,
+  "canvas": true,
+  "canvasDisplay": "block",
+  "canvasPos": "fixed",
+  "fps": true,
+  "fpsText": "--",
+  "log": true,
+  "logOverflow": "auto",
+  "logChars": 1083,
+  "logbar": true,
+  "arrow": "▾",
+  "tip": "日志（拖动调高 · 点 ▾ 收起）",
+  "barAria": "true",
+  "skinBtn": true,
+  "skinState": "当前: skiny=默认 (-y，翻转开启)",
+  "propsBtn": true,
+  "propsDiv": true,
+  "propsDivCls": "open",
+  "propsDivDisplay": "block",
+  "propsBtnAria": "true",
+  "rows": 25,
+  "groups": 5,
+  "audioBtn": false,
+  "audioPanel": false,
+  "fullscreenCtl": false,
+  "themeCtl": false
+ },
+ "surfacesB": {
+  "bar": true,
+  "barLinks": 10,
+  "barButtons": 4,
+  "canvas": true,
+  "canvasDisplay": "block",
+  "canvasPos": "fixed",
+  "fps": true,
+  "fpsText": "--",
+  "log": true,
+  "logOverflow": "auto",
+  "logChars": 735,
+  "logbar": true,
+  "arrow": "▾",
+  "tip": "日志（拖动调高 · 点 ▾ 收起）",
+  "barAria": "true",
+  "skinBtn": true,
+  "skinState": "当前: skiny=默认 (-y，翻转开启)",
+  "propsBtn": true,
+  "propsDiv": true,
+  "propsDivCls": "open",
+  "propsDivDisplay": "block",
+  "propsBtnAria": "true",
+  "rows": 4,
+  "groups": 0,
+  "audioBtn": false,
+  "audioPanel": false,
+  "fullscreenCtl": false,
+  "themeCtl": false
+ },
+ "checks": {
+  "total": 52,
+  "passed": 52,
+  "failed": []
+ },
+ "pageErrors": [],
+ "consoleErrors": [],
+ "failedRequests": [],
+ "allowlistedRequests": [
+  {
+   "url": "/refrender/3554161528",
+   "reason": "HTTP 404",
+   "count": 2,
+   "why": "官方标定 refrender 采样：可选诊断产物，取不到只是\"没有对照数据\"，页面继续建档 ⇒ 良性",
+   "kind": "benign-404"
+  },
+  {
+   "url": "/refrender/sample-synthetic",
+   "reason": "HTTP 404",
+   "count": 4,
+   "why": "官方标定 refrender 采样：可选诊断产物，取不到只是\"没有对照数据\"，页面继续建档 ⇒ 良性",
+   "kind": "benign-404"
+  }
+ ],
+ "skipped": [],
+ "notes": [
+  "GET /demo.html → 404（任务书写它是 demo 页 URL；实测 404，真正的页面是 `/`，见文件头）",
+  "本机 WebGL2=false（无 GPU ⇒ 页面以 `❌ 启动失败: 当前浏览器不支持 WebGL2` 收尾：**像素/帧率类断言在本机不可做**，见 docs/REAL-MACHINE-AUTOMATION.md §4）",
+  "🔊 音频面板：absent（无 GPU ⇒ 启动在装音频面板之前就收尾；音轨枚举那一半由 tests/audio-panel-test.mjs / audio-panel-real-test.mjs 覆盖，真机点击见 docs/REAL-MACHINE-AUTOMATION.md §4 #5）"
+ ]
+}

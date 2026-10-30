@@ -1,0 +1,570 @@
+{
+ "when": "2026-09-22T23:16:08.405Z",
+ "ffprobe": true,
+ "rows": [
+  {
+   "pkg": "delete/wallpapertest1/wallpapertest1_夜莺Night——Honkai Star Rail Castorice 遐蝶 冥河永渡 崩坏星穹铁道The Etern.mpkg",
+   "entries": [
+    {
+     "name": "effects/lightshafts/effect.json",
+     "size": 643
+    },
+    {
+     "name": "effects/opacity/effect.json",
+     "size": 433
+    },
+    {
+     "name": "effects/workshop/2981960200/blurprecise/effect.json",
+     "size": 1085
+    },
+    {
+     "name": "effects/workshop/3082978660/enhanced_simple_audio_bars/effect.json",
+     "size": 500
+    },
+    {
+     "name": "effects/workshop/3157623591/geometric_transform/effect.json",
+     "size": 494
+    },
+    {
+     "name": "fonts/2.ttf",
+     "size": 1730044
+    },
+    {
+     "name": "fonts/workshop/2981960200/Anurati-Regular.otf",
+     "size": 8176
+    },
+    {
+     "name": "fonts/workshop/2981960200/Quicksand-Bold.otf",
+     "size": 29324
+    },
+    {
+     "name": "fonts/书法字体.ttf",
+     "size": 16994592
+    },
+    {
+     "name": "materials/effects/lightshafts.json",
+     "size": 168
+    },
+    {
+     "name": "materials/effects/opacity.json",
+     "size": 164
+    },
+    {
+     "name": "materials/masks/opacity_mask_440f3ea0.tex",
+     "size": 34568
+    },
+    {
+     "name": "materials/particle/流星.tex",
+     "size": 29692
+    },
+    {
+     "name": "materials/presets/ember.json",
+     "size": 278
+    },
+    {
+     "name": "materials/presets/emberglow.json",
+     "size": 200
+    },
+    {
+     "name": "materials/presets/fireflies.json",
+     "size": 226
+    },
+    {
+     "name": "materials/presets/firefliestrail.json",
+     "size": 200
+    },
+    {
+     "name": "materials/presets/leaves5.json",
+     "size": 292
+    },
+    {
+     "name": "materials/presets/trail_1.json",
+     "size": 226
+    },
+    {
+     "name": "materials/workshop/2981960200/effects/blur_precise_gaussian_x.json",
+     "size": 218
+    },
+    {
+     "name": "materials/workshop/2981960200/effects/blur_precise_gaussian_y.json",
+     "size": 290
+    },
+    {
+     "name": "materials/workshop/3082978660/effects/Simple_Audio_Bars.json",
+     "size": 214
+    },
+    {
+     "name": "materials/workshop/3157623591/effects/geometric_transform.json",
+     "size": 216
+    },
+    {
+     "name": "materials/入场动画.json",
+     "size": 250
+    },
+    {
+     "name": "materials/入场动画2_batch.tex",
+     "size": 25071710
+    },
+    {
+     "name": "materials/遐蝶 冥河永渡.json",
+     "size": 252
+    },
+    {
+     "name": "materials/遐蝶 冥河永渡_2.tex",
+     "size": 36668953
+    },
+    {
+     "name": "models/入场动画.json",
+     "size": 108
+    },
+    {
+     "name": "models/遐蝶 冥河永渡.json",
+     "size": 115
+    },
+    {
+     "name": "particles/presets/ember.json",
+     "size": 2033
+    },
+    {
+     "name": "particles/presets/emberglow.json",
+     "size": 1516
+    },
+    {
+     "name": "particles/presets/fireflies.json",
+     "size": 2366
+    },
+    {
+     "name": "particles/presets/firefliestrail.json",
+     "size": 1802
+    },
+    {
+     "name": "particles/presets/leaves5.json",
+     "size": 2041
+    },
+    {
+     "name": "particles/presets/trail_1.json",
+     "size": 1352
+    },
+    {
+     "name": "preview.gif",
+     "size": 1019773
+    },
+    {
+     "name": "project.json",
+     "size": 26297
+    },
+    {
+     "name": "scene.json",
+     "size": 145699
+    },
+    {
+     "name": "scripts/camera_paths_1297271.json",
+     "size": 19
+    },
+    {
+     "name": "shaders/effects/lightshafts.frag",
+     "size": 7394
+    },
+    {
+     "name": "shaders/effects/lightshafts.vert",
+     "size": 1183
+    },
+    {
+     "name": "shaders/effects/opacity.frag",
+     "size": 589
+    },
+    {
+     "name": "shaders/effects/opacity.vert",
+     "size": 449
+    },
+    {
+     "name": "shaders/workshop/2981960200/effects/blur_precise_gaussian.frag",
+     "size": 1017
+    },
+    {
+     "name": "shaders/workshop/2981960200/effects/blur_precise_gaussian.vert",
+     "size": 1093
+    },
+    {
+     "name": "shaders/workshop/3082978660/effects/Simple_Audio_Bars.frag",
+     "size": 27344
+    },
+    {
+     "name": "shaders/workshop/3082978660/effects/Simple_Audio_Bars.vert",
+     "size": 2751
+    },
+    {
+     "name": "shaders/workshop/3157623591/effects/geometric_transform.frag",
+     "size": 1165
+    },
+    {
+     "name": "shaders/workshop/3157623591/effects/geometric_transform.vert",
+     "size": 254
+    }
+   ],
+   "video": {
+    "name": "scene.json",
+    "size": 145699,
+    "viaProjectJson": true
+   },
+   "size": 81822224,
+   "magic": "PKGM0018",
+   "projectFile": "scene.json",
+   "projectType": "scene",
+   "hasSceneJson": true,
+   "magicKind": "unknown",
+   "tokens": {
+    "head": [],
+    "tail": []
+   },
+   "probe": {
+    "ok": false,
+    "err": "/root/Desktop/DSHarea/we-scene-demo/reports/.tmp-video/v0.json: Invalid data found when processing input"
+   }
+  },
+  {
+   "pkg": "wallpaperE/佩丽卡/佩丽卡1_03.mpkg",
+   "entries": [
+    {
+     "name": "preview.gif",
+     "size": 888489
+    },
+    {
+     "name": "project.json",
+     "size": 2845
+    },
+    {
+     "name": "scene.json",
+     "size": 50801
+    },
+    {
+     "name": "wallpaper.mp4",
+     "size": 60834854
+    }
+   ],
+   "video": {
+    "name": "wallpaper.mp4",
+    "size": 60834854,
+    "viaProjectJson": true
+   },
+   "size": 61777099,
+   "magic": "PKGM0014",
+   "projectFile": "wallpaper.mp4",
+   "projectType": "Scene",
+   "hasSceneJson": true,
+   "magicKind": "iso-bmff(mp4/mov) brand=mp42",
+   "tokens": {
+    "head": [],
+    "tail": [
+     "avc1"
+    ]
+   },
+   "probe": {
+    "ok": true,
+    "vcodec": "h264",
+    "vprofile": "Constrained Baseline",
+    "pix": "yuv420p",
+    "w": 3840,
+    "h": 2108,
+    "fps": "60/1",
+    "acodec": null,
+    "dur": 30,
+    "fmt": "mov,mp4,m4a,3gp,3g2,mj2"
+   }
+  },
+  {
+   "pkg": "wallpaperE/卡提希娅/卡提希娅_07.mpkg",
+   "entries": [
+    {
+     "name": "preview.jpg",
+     "size": 655148
+    },
+    {
+     "name": "project.json",
+     "size": 687
+    },
+    {
+     "name": "scene.json",
+     "size": 23962
+    },
+    {
+     "name": "wallpaper.mp4",
+     "size": 57490805
+    }
+   ],
+   "video": {
+    "name": "wallpaper.mp4",
+    "size": 57490805,
+    "viaProjectJson": true
+   },
+   "size": 58170712,
+   "magic": "PKGM0014",
+   "projectFile": "wallpaper.mp4",
+   "projectType": "Scene",
+   "hasSceneJson": true,
+   "magicKind": "iso-bmff(mp4/mov) brand=mp42",
+   "tokens": {
+    "head": [],
+    "tail": [
+     "avc1"
+    ]
+   },
+   "probe": {
+    "ok": true,
+    "vcodec": "h264",
+    "vprofile": "Constrained Baseline",
+    "pix": "yuv420p",
+    "w": 3840,
+    "h": 2160,
+    "fps": "60/1",
+    "acodec": null,
+    "dur": 30,
+    "fmt": "mov,mp4,m4a,3gp,3g2,mj2"
+   }
+  },
+  {
+   "pkg": "wallpaperE/洁尔佩塔/洁尔佩塔_4.mpkg",
+   "entries": [
+    {
+     "name": "preview.gif",
+     "size": 792874
+    },
+    {
+     "name": "project.json",
+     "size": 868
+    },
+    {
+     "name": "scene.json",
+     "size": 20921
+    },
+    {
+     "name": "wallpaper.mp4",
+     "size": 28124013
+    }
+   ],
+   "video": {
+    "name": "wallpaper.mp4",
+    "size": 28124013,
+    "viaProjectJson": true
+   },
+   "size": 28938786,
+   "magic": "PKGM0014",
+   "projectFile": "wallpaper.mp4",
+   "projectType": "Scene",
+   "hasSceneJson": true,
+   "magicKind": "iso-bmff(mp4/mov) brand=mp42",
+   "tokens": {
+    "head": [],
+    "tail": [
+     "avc1"
+    ]
+   },
+   "probe": {
+    "ok": true,
+    "vcodec": "h264",
+    "vprofile": "Constrained Baseline",
+    "pix": "yuv420p",
+    "w": 1920,
+    "h": 1080,
+    "fps": "60/1",
+    "acodec": null,
+    "dur": 30,
+    "fmt": "mov,mp4,m4a,3gp,3g2,mj2"
+   }
+  },
+  {
+   "pkg": "wallpaperE/白洲梓/白洲梓1_10.mpkg",
+   "entries": [
+    {
+     "name": "preview.jpg",
+     "size": 617291
+    },
+    {
+     "name": "project.json",
+     "size": 444
+    },
+    {
+     "name": "scene.json",
+     "size": 2118
+    },
+    {
+     "name": "wallpaper.mp4",
+     "size": 22256547
+    }
+   ],
+   "video": {
+    "name": "wallpaper.mp4",
+    "size": 22256547,
+    "viaProjectJson": true
+   },
+   "size": 22876510,
+   "magic": "PKGM0014",
+   "projectFile": "wallpaper.mp4",
+   "projectType": "scene",
+   "hasSceneJson": true,
+   "magicKind": "iso-bmff(mp4/mov) brand=mp42",
+   "tokens": {
+    "head": [],
+    "tail": [
+     "avc1"
+    ]
+   },
+   "probe": {
+    "ok": true,
+    "vcodec": "h264",
+    "vprofile": "Constrained Baseline",
+    "pix": "yuv420p",
+    "w": 1636,
+    "h": 1156,
+    "fps": "60/1",
+    "acodec": null,
+    "dur": 30,
+    "fmt": "mov,mp4,m4a,3gp,3g2,mj2"
+   }
+  },
+  {
+   "pkg": "wallpaperE/芙宁娜/芙宁娜1_11.mpkg",
+   "entries": [
+    {
+     "name": "preview.jpg",
+     "size": 683002
+    },
+    {
+     "name": "project.json",
+     "size": 670
+    },
+    {
+     "name": "scene.json",
+     "size": 3498
+    },
+    {
+     "name": "wallpaper.mp4",
+     "size": 59460382
+    }
+   ],
+   "video": {
+    "name": "wallpaper.mp4",
+    "size": 59460382,
+    "viaProjectJson": true
+   },
+   "size": 60147662,
+   "magic": "PKGM0014",
+   "projectFile": "wallpaper.mp4",
+   "projectType": "scene",
+   "hasSceneJson": true,
+   "magicKind": "iso-bmff(mp4/mov) brand=mp42",
+   "tokens": {
+    "head": [],
+    "tail": [
+     "avc1"
+    ]
+   },
+   "probe": {
+    "ok": true,
+    "vcodec": "h264",
+    "vprofile": "Constrained Baseline",
+    "pix": "yuv420p",
+    "w": 3840,
+    "h": 2176,
+    "fps": "60/1",
+    "acodec": null,
+    "dur": 30,
+    "fmt": "mov,mp4,m4a,3gp,3g2,mj2"
+   }
+  },
+  {
+   "pkg": "delete/wallpaperE/芙宁娜/芙宁娜2_02.mpkg",
+   "entries": [
+    {
+     "name": "preview.gif",
+     "size": 1035729
+    },
+    {
+     "name": "project.json",
+     "size": 157
+    },
+    {
+     "name": "芙宁娜泳装60fps.mp4",
+     "size": 242755646
+    }
+   ],
+   "video": {
+    "name": "芙宁娜泳装60fps.mp4",
+    "size": 242755646,
+    "viaProjectJson": true
+   },
+   "size": 243791631,
+   "magic": "PKGM0014",
+   "projectFile": "芙宁娜泳装60fps.mp4",
+   "projectType": "video",
+   "hasSceneJson": false,
+   "magicKind": "iso-bmff(mp4/mov) brand=isom",
+   "tokens": {
+    "head": [
+     "avc1"
+    ],
+    "tail": [
+     "avc1"
+    ]
+   },
+   "probe": {
+    "ok": true,
+    "vcodec": "h264",
+    "vprofile": "High",
+    "pix": "yuv420p",
+    "w": 2268,
+    "h": 3932,
+    "fps": "60/1",
+    "acodec": null,
+    "dur": 30,
+    "fmt": "mov,mp4,m4a,3gp,3g2,mj2"
+   }
+  },
+  {
+   "pkg": "wallpaperE/白洲梓/白洲梓_04.mpkg",
+   "entries": [
+    {
+     "name": "preview.gif",
+     "size": 1039343
+    },
+    {
+     "name": "project.json",
+     "size": 132
+    },
+    {
+     "name": "蔚蓝档案_白洲梓2.mp4",
+     "size": 309286486
+    }
+   ],
+   "video": {
+    "name": "蔚蓝档案_白洲梓2.mp4",
+    "size": 309286486,
+    "viaProjectJson": true
+   },
+   "size": 310326063,
+   "magic": "PKGM0014",
+   "projectFile": "蔚蓝档案_白洲梓2.mp4",
+   "projectType": "video",
+   "hasSceneJson": false,
+   "magicKind": "iso-bmff(mp4/mov) brand=mp42",
+   "tokens": {
+    "head": [
+     "avc1"
+    ],
+    "tail": []
+   },
+   "probe": {
+    "ok": true,
+    "vcodec": "h264",
+    "vprofile": "Main",
+    "pix": "yuv420p",
+    "w": 2530,
+    "h": 1080,
+    "fps": "30/1",
+    "acodec": "aac",
+    "dur": 240.04,
+    "fmt": "mov,mp4,m4a,3gp,3g2,mj2"
+   }
+  }
+ ]
+}

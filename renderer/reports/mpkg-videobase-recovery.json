@@ -1,0 +1,71 @@
+{
+ "pkg": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓1_10.mpkg",
+ "res": "720p",
+ "launchNote": "有头 DISPLAY=:0",
+ "firstFrameMs": 2196,
+ "stalled": {
+  "rs": 0,
+  "ns": 1,
+  "w": 0,
+  "h": 0,
+  "dur": null,
+  "paused": false,
+  "ct": 0,
+  "buffered": 0,
+  "err": null
+ },
+ "pixelsStalled": {
+  "w": 1400,
+  "h": 788,
+  "meanL": 94.408,
+  "maxL": 255,
+  "stdL": 68.935,
+  "litFrac": 0.9453
+ },
+ "retryLoadOnly": {
+  "rs": 4,
+  "ns": 1,
+  "w": 1636,
+  "h": 1156,
+  "ev": [
+   "loadstart",
+   "progress",
+   "loadedmetadata",
+   "loadeddata",
+   "canplay"
+  ]
+ },
+ "fetchThenLoad": {
+  "skipped": "D 已经出数据 ⇒ 不需要 E"
+ },
+ "recoveredBy": "D",
+ "videoAfter": {
+  "rs": 4,
+  "ns": 1,
+  "w": 1636,
+  "h": 1156,
+  "dur": 30,
+  "paused": false,
+  "ct": 1.74,
+  "buffered": 30,
+  "err": null
+ },
+ "pixelsAfter": {
+  "w": 1400,
+  "h": 788,
+  "meanL": 8.901,
+  "maxL": 255,
+  "stdL": 36.278,
+  "litFrac": 0.0784
+ },
+ "uploadLog": [
+  "🎬 视频底层已加入（最底层叠加）：wallpaper.mp4",
+  "⚠ [we-scene][P-68] 视频分辨率档位 ?res=720p → 720p 画布 1280x720，视频上传上限 1280x720，节流 33ms(tier-legacy)，smoothing=low [legacy 逐位兼容]",
+  "分辨率档位 ?res=720p → 720p 1280x720，视频上传上限 1280x720，节流 33ms(legacy) [legacy 逐位兼容]",
+  "  #0 __videoBase      tex=__videoBase px=[0,1280]x[0,720]",
+  "⚠ [首帧] #0 __videoBase vis=1 tex=__videoBase skin=0 fx=0 part=0",
+  "  视频状态 readyState=0 t=0.0s paused=false",
+  "【DIAG】__videoBase@(819,579)178,178,178",
+  "  ⚠ 视频底层自动播放失败: The fetching process for the media resource was aborted by the user agent at the user's request."
+ ]
+}

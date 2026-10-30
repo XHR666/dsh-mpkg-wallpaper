@@ -1,0 +1,62 @@
+{
+ "pkg": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓1_10.mpkg",
+ "res": "720p",
+ "launchNote": "有头 DISPLAY=:0",
+ "firstFrameMs": 2061,
+ "stalled": {
+  "rs": 4,
+  "ns": 1,
+  "w": 1636,
+  "h": 1156,
+  "dur": 30,
+  "paused": false,
+  "ct": 1.91,
+  "buffered": 30,
+  "err": null
+ },
+ "pixelsStalled": {
+  "w": 1400,
+  "h": 788,
+  "meanL": 8.912,
+  "maxL": 255,
+  "stdL": 36.298,
+  "litFrac": 0.0784
+ },
+ "auto": {
+  "waitedMs": 693,
+  "video": {
+   "rs": 4,
+   "ns": 1,
+   "w": 1636,
+   "h": 1156,
+   "dur": 30,
+   "paused": false,
+   "ct": 4.77,
+   "buffered": 30,
+   "err": null
+  },
+  "hook": {
+   "calls": 1,
+   "retries": 1,
+   "gaveUp": 0,
+   "byLabel": {
+    "视频底层": {
+     "calls": 1,
+     "retries": 1,
+     "gaveUp": 0
+    }
+   }
+  },
+  "pixels": {
+   "w": 1400,
+   "h": 788,
+   "meanL": 8.901,
+   "maxL": 255,
+   "stdL": 36.277,
+   "litFrac": 0.0784
+  },
+  "logs": [
+   "🔁 视频底层：blob 首次 load 挂住（rs=0），第 1/2 次补 load()（上游 Firefox Bug 2056444）"
+  ]
+ }
+}

@@ -1,0 +1,2151 @@
+{
+ "layers": [
+  {
+   "idx": 0,
+   "id": 45,
+   "name": "wind.mp3",
+   "type": "sound",
+   "vis": false,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": false,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": null,
+   "rectDrawn": null,
+   "skipReason": "invisible-config"
+  },
+  {
+   "idx": 1,
+   "id": 348,
+   "name": "BBB",
+   "type": "sound",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": false,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": null,
+   "rectDrawn": null,
+   "skipReason": "degenerate-geometry"
+  },
+  {
+   "idx": 2,
+   "id": 349,
+   "name": "CCC",
+   "type": "sound",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": false,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": null,
+   "rectDrawn": null,
+   "skipReason": "degenerate-geometry"
+  },
+  {
+   "idx": 3,
+   "id": 174,
+   "name": "Solid",
+   "type": "solid",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 3240,
+    "y": 1710,
+    "w": 1,
+    "h": 1
+   },
+   "rectDrawn": {
+    "x0": 0,
+    "y0": 0,
+    "x1": 2046,
+    "y1": 1080
+   },
+   "bind": "solidcolor",
+   "glDraws": 1
+  },
+  {
+   "idx": 4,
+   "id": 76,
+   "name": "cloud",
+   "type": "image",
+   "vis": true,
+   "texture": "1234",
+   "textureHit": true,
+   "passes": 2,
+   "fxFiles": [
+    "effects/waterflow/effect.json",
+    "effects/scroll/effect.json"
+   ],
+   "copybg": true,
+   "chainInput": "own",
+   "blend": 0,
+   "rectDesign": {
+    "x": 646,
+    "y": 379,
+    "w": 4982,
+    "h": 1733
+   },
+   "rectDrawn": {
+    "x0": -222,
+    "y0": -325,
+    "x1": 2203,
+    "y1": 1112
+   },
+   "bind": "texture",
+   "glDraws": 4
+  },
+  {
+   "idx": 5,
+   "id": 553,
+   "name": "sound line",
+   "type": "solid",
+   "vis": false,
+   "texture": null,
+   "textureHit": null,
+   "passes": 1,
+   "fxFiles": [
+    "effects/workshop/2084198056/Simple_Audio_Bars/effect.json"
+   ],
+   "copybg": true,
+   "chainInput": "rt",
+   "blend": 0,
+   "rectDesign": {
+    "x": 606,
+    "y": -168,
+    "w": 4000,
+    "h": 2000
+   },
+   "rectDrawn": null,
+   "skipReason": "invisible"
+  },
+  {
+   "idx": 6,
+   "id": 661,
+   "name": "ey22222",
+   "type": "image",
+   "vis": true,
+   "texture": "ey22222",
+   "textureHit": true,
+   "passes": 2,
+   "fxFiles": [
+    "effects/shake/effect.json",
+    "effects/iris/effect.json"
+   ],
+   "copybg": true,
+   "chainInput": "own",
+   "blend": 0,
+   "rectDesign": {
+    "x": 4012,
+    "y": 1128,
+    "w": 617,
+    "h": 403
+   },
+   "rectDrawn": {
+    "x0": 1267,
+    "y0": 356,
+    "x1": 1462,
+    "y1": 483
+   },
+   "bind": "texture",
+   "glDraws": 4
+  },
+  {
+   "idx": 7,
+   "id": 682,
+   "name": "ey00000",
+   "type": "image",
+   "vis": false,
+   "texture": "ey22222",
+   "textureHit": true,
+   "passes": 2,
+   "fxFiles": [
+    "effects/shake/effect.json",
+    "effects/iris/effect.json"
+   ],
+   "copybg": true,
+   "chainInput": "own",
+   "blend": 0,
+   "rectDesign": {
+    "x": 4009,
+    "y": 1128,
+    "w": 617,
+    "h": 403
+   },
+   "rectDrawn": null,
+   "skipReason": "invisible"
+  },
+  {
+   "idx": 8,
+   "id": 795,
+   "name": "lighthhh",
+   "type": "image",
+   "vis": true,
+   "texture": "lighthhh",
+   "textureHit": true,
+   "passes": 3,
+   "fxFiles": [
+    "effects/shake/effect.json",
+    "effects/waterwaves/effect.json"
+   ],
+   "copybg": true,
+   "chainInput": "own",
+   "blend": 0,
+   "rectDesign": {
+    "x": 4030,
+    "y": 1202,
+    "w": 545,
+    "h": 276
+   },
+   "rectDrawn": {
+    "x0": 1273,
+    "y0": 379,
+    "x1": 1445,
+    "y1": 467
+   },
+   "bind": "texture",
+   "glDraws": 5
+  },
+  {
+   "idx": 9,
+   "id": 859,
+   "name": "yanddddddd",
+   "type": "solid",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 3746,
+    "y": 843,
+    "w": 1000,
+    "h": 800
+   },
+   "rectDrawn": null,
+   "skipReason": "container"
+  },
+  {
+   "idx": 10,
+   "id": 94,
+   "name": "Fern",
+   "type": "image",
+   "vis": true,
+   "texture": "presets/fern1",
+   "textureHit": true,
+   "passes": 1,
+   "fxFiles": [
+    "effects/foliagesway/effect.json"
+   ],
+   "copybg": true,
+   "chainInput": "own",
+   "blend": 0,
+   "rectDesign": {
+    "x": 687,
+    "y": 991,
+    "w": 299,
+    "h": 512
+   },
+   "rectDrawn": {
+    "x0": 217,
+    "y0": 122,
+    "x1": 311,
+    "y1": 665
+   },
+   "bind": "texture",
+   "glDraws": 3
+  },
+  {
+   "idx": 11,
+   "id": 163,
+   "name": "Fern",
+   "type": "image",
+   "vis": true,
+   "texture": "presets/fern1",
+   "textureHit": true,
+   "passes": 1,
+   "fxFiles": [
+    "effects/foliagesway/effect.json"
+   ],
+   "copybg": true,
+   "chainInput": "own",
+   "blend": 0,
+   "rectDesign": {
+    "x": 1310,
+    "y": 829,
+    "w": 299,
+    "h": 512
+   },
+   "rectDrawn": {
+    "x0": 222,
+    "y0": 206,
+    "x1": 700,
+    "y1": 480
+   },
+   "bind": "texture",
+   "glDraws": 1
+  },
+  {
+   "idx": 12,
+   "id": 1020,
+   "name": "yanbi",
+   "type": "image",
+   "vis": true,
+   "texture": "yanbi",
+   "textureHit": true,
+   "passes": 2,
+   "fxFiles": [
+    "effects/shake/effect.json"
+   ],
+   "copybg": true,
+   "chainInput": "own",
+   "blend": 0,
+   "rectDesign": {
+    "x": 4050,
+    "y": 1136,
+    "w": 527,
+    "h": 248
+   },
+   "rectDrawn": {
+    "x0": 1279,
+    "y0": 359,
+    "x1": 1445,
+    "y1": 437
+   },
+   "bind": "texture",
+   "glDraws": 4
+  },
+  {
+   "idx": 13,
+   "id": 162,
+   "name": "r ear1",
+   "type": "image",
+   "vis": true,
+   "texture": "r ear1",
+   "textureHit": true,
+   "passes": 3,
+   "fxFiles": [
+    "effects/shake/effect.json"
+   ],
+   "copybg": true,
+   "chainInput": "own",
+   "blend": 0,
+   "rectDesign": {
+    "x": 3773,
+    "y": 550,
+    "w": 474,
+    "h": 474
+   },
+   "rectDrawn": {
+    "x0": 1191,
+    "y0": 174,
+    "x1": 1341,
+    "y1": 323
+   },
+   "bind": "texture",
+   "glDraws": 5
+  },
+  {
+   "idx": 14,
+   "id": 222,
+   "name": "new background1",
+   "type": "image",
+   "vis": true,
+   "texture": "¦¦¥¦12",
+   "textureHit": true,
+   "passes": 1,
+   "fxFiles": [
+    "effects/waterripple/effect.json"
+   ],
+   "copybg": true,
+   "chainInput": "own",
+   "blend": 0,
+   "rectDesign": {
+    "x": 0,
+    "y": 0,
+    "w": 6480,
+    "h": 3420
+   },
+   "rectDrawn": {
+    "x0": 0,
+    "y0": 0,
+    "x1": 2046,
+    "y1": 1080
+   },
+   "bind": "texture",
+   "glDraws": 3
+  },
+  {
+   "idx": 15,
+   "id": 313,
+   "name": "back leg body",
+   "type": "image",
+   "vis": true,
+   "texture": "back leg body",
+   "textureHit": true,
+   "passes": 10,
+   "fxFiles": [
+    "effects/pulse/effect.json",
+    "effects/shake/effect.json",
+    "effects/waterwaves/effect.json"
+   ],
+   "copybg": true,
+   "chainInput": "own",
+   "blend": 0,
+   "rectDesign": {
+    "x": 484,
+    "y": 518,
+    "w": 4678,
+    "h": 2904
+   },
+   "rectDrawn": {
+    "x0": 153,
+    "y0": 164,
+    "x1": 1630,
+    "y1": 1081
+   },
+   "bind": "texture",
+   "glDraws": 12
+  },
+  {
+   "idx": 16,
+   "id": 175,
+   "name": "l ear1",
+   "type": "image",
+   "vis": true,
+   "texture": "L ear1",
+   "textureHit": true,
+   "passes": 3,
+   "fxFiles": [
+    "effects/shake/effect.json"
+   ],
+   "copybg": true,
+   "chainInput": "own",
+   "blend": 0,
+   "rectDesign": {
+    "x": 4081,
+    "y": 359,
+    "w": 800,
+    "h": 800
+   },
+   "rectDrawn": {
+    "x0": 1289,
+    "y0": 113,
+    "x1": 1541,
+    "y1": 366
+   },
+   "bind": "texture",
+   "glDraws": 5
+  },
+  {
+   "idx": 17,
+   "id": 257,
+   "name": "page",
+   "type": "solid",
+   "vis": false,
+   "texture": null,
+   "textureHit": null,
+   "passes": 1,
+   "fxFiles": [
+    "effects/perspective/effect.json"
+   ],
+   "copybg": true,
+   "chainInput": "rt",
+   "blend": 0,
+   "rectDesign": {
+    "x": 3726,
+    "y": 1385,
+    "w": 512,
+    "h": 512
+   },
+   "rectDrawn": null,
+   "skipReason": "invisible"
+  },
+  {
+   "idx": 18,
+   "id": 384,
+   "name": "page首",
+   "type": "solid",
+   "vis": false,
+   "texture": null,
+   "textureHit": null,
+   "passes": 1,
+   "fxFiles": [
+    "effects/perspective/effect.json"
+   ],
+   "copybg": true,
+   "chainInput": "rt",
+   "blend": 0,
+   "rectDesign": {
+    "x": 3726,
+    "y": 1385,
+    "w": 512,
+    "h": 512
+   },
+   "rectDrawn": null,
+   "skipReason": "invisible"
+  },
+  {
+   "idx": 19,
+   "id": 321,
+   "name": "panci cover up",
+   "type": "image",
+   "vis": true,
+   "texture": "panci",
+   "textureHit": true,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 3724,
+    "y": 2804,
+    "w": 232,
+    "h": 416
+   },
+   "rectDrawn": {
+    "x0": 1176,
+    "y0": 885,
+    "x1": 1249,
+    "y1": 1017
+   },
+   "bind": "texture",
+   "glDraws": 1
+  },
+  {
+   "idx": 20,
+   "id": 317,
+   "name": "pussy",
+   "type": "image",
+   "vis": false,
+   "texture": "pussy",
+   "textureHit": true,
+   "passes": 2,
+   "fxFiles": [
+    "effects/shake/effect.json"
+   ],
+   "copybg": true,
+   "chainInput": "own",
+   "blend": 0,
+   "rectDesign": {
+    "x": 3724,
+    "y": 2804,
+    "w": 232,
+    "h": 529
+   },
+   "rectDrawn": null,
+   "skipReason": "invisible"
+  },
+  {
+   "idx": 21,
+   "id": 197,
+   "name": "eyelids1",
+   "type": "image",
+   "vis": true,
+   "texture": "eyelids1",
+   "textureHit": true,
+   "passes": 5,
+   "fxFiles": [
+    "effects/shake/effect.json"
+   ],
+   "copybg": true,
+   "chainInput": "own",
+   "blend": 0,
+   "rectDesign": {
+    "x": 3978,
+    "y": 1162,
+    "w": 633,
+    "h": 266
+   },
+   "rectDrawn": {
+    "x0": 1256,
+    "y0": 367,
+    "x1": 1456,
+    "y1": 451
+   },
+   "bind": "texture",
+   "glDraws": 7
+  },
+  {
+   "idx": 22,
+   "id": 187,
+   "name": "eyebrow1",
+   "type": "image",
+   "vis": true,
+   "texture": "eyebrow1",
+   "textureHit": true,
+   "passes": 4,
+   "fxFiles": [
+    "effects/shake/effect.json"
+   ],
+   "copybg": true,
+   "chainInput": "own",
+   "blend": 0,
+   "rectDesign": {
+    "x": 4038,
+    "y": 1177,
+    "w": 500,
+    "h": 143
+   },
+   "rectDrawn": {
+    "x0": 1275,
+    "y0": 372,
+    "x1": 1433,
+    "y1": 417
+   },
+   "bind": "texture",
+   "glDraws": 6
+  },
+  {
+   "idx": 23,
+   "id": 325,
+   "name": "hand book",
+   "type": "image",
+   "vis": true,
+   "texture": "hand book",
+   "textureHit": true,
+   "passes": 4,
+   "fxFiles": [
+    "effects/shake/effect.json"
+   ],
+   "copybg": true,
+   "chainInput": "own",
+   "blend": 0,
+   "rectDesign": {
+    "x": 3520,
+    "y": 1438,
+    "w": 1534,
+    "h": 1573
+   },
+   "rectDrawn": {
+    "x0": 1112,
+    "y0": 454,
+    "x1": 1596,
+    "y1": 951
+   },
+   "bind": "texture",
+   "glDraws": 6
+  },
+  {
+   "idx": 24,
+   "id": 309,
+   "name": "front leg",
+   "type": "image",
+   "vis": true,
+   "texture": "front leg",
+   "textureHit": true,
+   "passes": 2,
+   "fxFiles": [
+    "effects/shake/effect.json"
+   ],
+   "copybg": true,
+   "chainInput": "own",
+   "blend": 0,
+   "rectDesign": {
+    "x": 1184,
+    "y": 1672,
+    "w": 3345,
+    "h": 1750
+   },
+   "rectDrawn": {
+    "x0": 432,
+    "y0": 264,
+    "x1": 1488,
+    "y1": 816
+   },
+   "bind": "texture",
+   "glDraws": 4
+  },
+  {
+   "idx": 25,
+   "id": 243,
+   "name": "Light shafts 0",
+   "type": "particle",
+   "vis": true,
+   "texture": "particle/light/light_shafts_0",
+   "textureHit": true,
+   "passes": 0,
+   "copybg": false,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": null,
+   "rectDrawn": null,
+   "skipReason": "particle-idle"
+  },
+  {
+   "idx": 26,
+   "id": 137,
+   "name": "Light shafts 0",
+   "type": "particle",
+   "vis": true,
+   "texture": "particle/light/light_shafts_0",
+   "textureHit": true,
+   "passes": 0,
+   "copybg": false,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": null,
+   "rectDrawn": null,
+   "skipReason": "particle-idle"
+  },
+  {
+   "idx": 27,
+   "id": 569,
+   "name": "Clock",
+   "type": "text",
+   "vis": false,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 5310,
+    "y": 2868,
+    "w": 333,
+    "h": 153
+   },
+   "rectDrawn": null,
+   "skipReason": "invisible"
+  },
+  {
+   "idx": 28,
+   "id": 579,
+   "name": "Clock",
+   "type": "text",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 5322,
+    "y": 2879,
+    "w": 329,
+    "h": 160
+   },
+   "rectDrawn": {
+    "x0": 1654,
+    "y0": 876,
+    "x1": 1811,
+    "y1": 993
+   },
+   "bind": "transparent",
+   "glDraws": 1
+  },
+  {
+   "idx": 29,
+   "id": 582,
+   "name": "Clock",
+   "type": "text",
+   "vis": false,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 5325,
+    "y": 2910,
+    "w": 266,
+    "h": 156
+   },
+   "rectDrawn": null,
+   "skipReason": "invisible"
+  },
+  {
+   "idx": 30,
+   "id": 281,
+   "name": "in heart 1",
+   "type": "image",
+   "vis": false,
+   "texture": "workshop/2853530212/里面",
+   "textureHit": true,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 6745,
+    "y": 1684,
+    "w": 220,
+    "h": 220
+   },
+   "rectDrawn": null,
+   "skipReason": "invisible"
+  },
+  {
+   "idx": 31,
+   "id": 286,
+   "name": "in heart 2",
+   "type": "image",
+   "vis": false,
+   "texture": "workshop/2853530212/里面",
+   "textureHit": true,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 6836,
+    "y": 2170,
+    "w": 220,
+    "h": 220
+   },
+   "rectDrawn": null,
+   "skipReason": "invisible"
+  },
+  {
+   "idx": 32,
+   "id": 287,
+   "name": "in heart 3",
+   "type": "image",
+   "vis": false,
+   "texture": "workshop/2853530212/里面",
+   "textureHit": true,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 6641,
+    "y": 2630,
+    "w": 220,
+    "h": 220
+   },
+   "rectDrawn": null,
+   "skipReason": "invisible"
+  },
+  {
+   "idx": 33,
+   "id": 288,
+   "name": "heart 1",
+   "type": "image",
+   "vis": true,
+   "texture": "workshop/2853530212/u=3017262874,4007040646&fm=253&fmt=auto&app=138&f=JPG",
+   "textureHit": true,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 4948,
+    "y": 1622,
+    "w": 220,
+    "h": 220
+   },
+   "rectDrawn": {
+    "x0": 1563,
+    "y0": 512,
+    "x1": 1632,
+    "y1": 582
+   },
+   "bind": "texture",
+   "glDraws": 1
+  },
+  {
+   "idx": 34,
+   "id": 292,
+   "name": "heart 2",
+   "type": "image",
+   "vis": true,
+   "texture": "workshop/2853530212/u=3017262874,4007040646&fm=253&fmt=auto&app=138&f=JPG",
+   "textureHit": true,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 5177,
+    "y": 1617,
+    "w": 220,
+    "h": 220
+   },
+   "rectDrawn": {
+    "x0": 1635,
+    "y0": 511,
+    "x1": 1704,
+    "y1": 580
+   },
+   "bind": "texture",
+   "glDraws": 1
+  },
+  {
+   "idx": 35,
+   "id": 293,
+   "name": "heart 3",
+   "type": "image",
+   "vis": true,
+   "texture": "workshop/2853530212/u=3017262874,4007040646&fm=253&fmt=auto&app=138&f=JPG",
+   "textureHit": true,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 5414,
+    "y": 1631,
+    "w": 220,
+    "h": 220
+   },
+   "rectDrawn": {
+    "x0": 1710,
+    "y0": 515,
+    "x1": 1779,
+    "y1": 584
+   },
+   "bind": "texture",
+   "glDraws": 1
+  },
+  {
+   "idx": 36,
+   "id": 295,
+   "name": "ggggg",
+   "type": "text",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 7098,
+    "y": 1022,
+    "w": 2,
+    "h": 2
+   },
+   "rectDrawn": {
+    "x0": 2241,
+    "y0": 323,
+    "x1": 2242,
+    "y1": 323
+   },
+   "bind": "transparent",
+   "glDraws": 1
+  },
+  {
+   "idx": 37,
+   "id": 387,
+   "name": "翻页mp3",
+   "type": "sound",
+   "vis": false,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": false,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": null,
+   "rectDrawn": null,
+   "skipReason": "invisible-config"
+  },
+  {
+   "idx": 38,
+   "id": 952,
+   "name": "可调整组合层",
+   "type": "solid",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": false,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 3180,
+    "y": 3180,
+    "w": 100,
+    "h": 100
+   },
+   "rectDrawn": null,
+   "skipReason": "container"
+  },
+  {
+   "idx": 39,
+   "id": 395,
+   "name": "tuiiiiiiieeeer",
+   "type": "text",
+   "vis": false,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 3757,
+    "y": 1874,
+    "w": 2,
+    "h": 2
+   },
+   "rectDrawn": null,
+   "skipReason": "invisible"
+  },
+  {
+   "idx": 40,
+   "id": 432,
+   "name": "黑底",
+   "type": "solid",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 1,
+   "fxFiles": [
+    "effects/opacity/effect.json"
+   ],
+   "copybg": true,
+   "chainInput": "rt",
+   "blend": 0,
+   "rectDesign": {
+    "x": 2998,
+    "y": 2739,
+    "w": 512,
+    "h": 512
+   },
+   "rectDrawn": {
+    "x0": -90,
+    "y0": 790,
+    "x1": 2145,
+    "y1": 1102
+   },
+   "bind": "rtcopy",
+   "glDraws": 3
+  },
+  {
+   "idx": 41,
+   "id": 458,
+   "name": "新建画布3",
+   "type": "image",
+   "vis": false,
+   "texture": "新建画布3",
+   "textureHit": true,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 1521,
+    "y": 1089,
+    "w": 1900,
+    "h": 900
+   },
+   "rectDrawn": null,
+   "skipReason": "invisible"
+  },
+  {
+   "idx": 42,
+   "id": 452,
+   "name": "kaiju问候.wav",
+   "type": "sound",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": false,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": null,
+   "rectDrawn": null,
+   "skipReason": "degenerate-geometry"
+  },
+  {
+   "idx": 43,
+   "id": 449,
+   "name": "凯尔希",
+   "type": "text",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 1791,
+    "y": 2890,
+    "w": 399,
+    "h": 156
+   },
+   "rectDrawn": {
+    "x0": 566,
+    "y0": 913,
+    "x1": 692,
+    "y1": 962
+   },
+   "bind": "solidcolor",
+   "glDraws": 1
+  },
+  {
+   "idx": 44,
+   "id": 462,
+   "name": "1语言",
+   "type": "text",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 2235,
+    "y": 2994,
+    "w": 1995,
+    "h": 160
+   },
+   "rectDrawn": {
+    "x0": 706,
+    "y0": 946,
+    "x1": 1336,
+    "y1": 996
+   },
+   "bind": "transparent",
+   "glDraws": 1
+  },
+  {
+   "idx": 45,
+   "id": 465,
+   "name": "语言1",
+   "type": "sound",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": false,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": null,
+   "rectDrawn": null,
+   "skipReason": "degenerate-geometry"
+  },
+  {
+   "idx": 46,
+   "id": 463,
+   "name": "2语言",
+   "type": "text",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 2238,
+    "y": 3080,
+    "w": 3279,
+    "h": 160
+   },
+   "rectDrawn": {
+    "x0": 707,
+    "y0": 973,
+    "x1": 1742,
+    "y1": 1023
+   },
+   "bind": "transparent",
+   "glDraws": 1
+  },
+  {
+   "idx": 47,
+   "id": 470,
+   "name": "3语言",
+   "type": "text",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 616,
+    "y": 3050,
+    "w": 3240,
+    "h": 290
+   },
+   "rectDrawn": {
+    "x0": 194,
+    "y0": 963,
+    "x1": 1218,
+    "y1": 1055
+   },
+   "bind": "transparent",
+   "glDraws": 1
+  },
+  {
+   "idx": 48,
+   "id": 472,
+   "name": "语言2",
+   "type": "sound",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": false,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": null,
+   "rectDrawn": null,
+   "skipReason": "degenerate-geometry"
+  },
+  {
+   "idx": 49,
+   "id": 167,
+   "name": "Sakura",
+   "type": "particle",
+   "vis": true,
+   "texture": "particle/nature/rosepetals",
+   "textureHit": true,
+   "passes": 0,
+   "copybg": false,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": null,
+   "rectDrawn": null,
+   "skipReason": "particle-idle"
+  },
+  {
+   "idx": 50,
+   "id": 484,
+   "name": "语言3",
+   "type": "sound",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": false,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": null,
+   "rectDrawn": null,
+   "skipReason": "degenerate-geometry"
+  },
+  {
+   "idx": 51,
+   "id": 478,
+   "name": "xxxx",
+   "type": "text",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 7022,
+    "y": 1202,
+    "w": 264,
+    "h": 153
+   },
+   "rectDrawn": {
+    "x0": 2218,
+    "y0": 380,
+    "x1": 2301,
+    "y1": 428
+   },
+   "bind": "transparent",
+   "glDraws": 1
+  },
+  {
+   "idx": 52,
+   "id": 265,
+   "name": "mkj",
+   "type": "solid",
+   "vis": true,
+   "animGeom": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 2990,
+    "y": 1660,
+    "w": 100,
+    "h": 100
+   },
+   "rectDrawn": {
+    "x0": 381,
+    "y0": 205,
+    "x1": 1539,
+    "y1": 875
+   },
+   "bind": "solidcolor",
+   "glDraws": 1
+  },
+  {
+   "idx": 53,
+   "id": 489,
+   "name": "右-菜单-底色",
+   "type": "solid",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 5490,
+    "y": -196,
+    "w": 1500,
+    "h": 4000
+   },
+   "rectDrawn": {
+    "x0": 1971,
+    "y0": -62,
+    "x1": 2444,
+    "y1": 1201
+   },
+   "bind": "solidcolor",
+   "glDraws": 1
+  },
+  {
+   "idx": 54,
+   "id": 677,
+   "name": "纯色",
+   "type": "solid",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 6340,
+    "y": 1034,
+    "w": 50,
+    "h": 50
+   },
+   "rectDrawn": {
+    "x0": 2010,
+    "y0": 208,
+    "x1": 2466,
+    "y1": 461
+   },
+   "bind": "solidcolor",
+   "glDraws": 1
+  },
+  {
+   "idx": 55,
+   "id": 589,
+   "name": "纯色",
+   "type": "solid",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 6340,
+    "y": 2060,
+    "w": 50,
+    "h": 50
+   },
+   "rectDrawn": {
+    "x0": 2010,
+    "y0": 501,
+    "x1": 2466,
+    "y1": 816
+   },
+   "bind": "solidcolor",
+   "glDraws": 1
+  },
+  {
+   "idx": 56,
+   "id": 585,
+   "name": "纯色",
+   "type": "solid",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 6340,
+    "y": 3002,
+    "w": 50,
+    "h": 50
+   },
+   "rectDrawn": {
+    "x0": 2010,
+    "y0": 845,
+    "x1": 2466,
+    "y1": 1066
+   },
+   "bind": "solidcolor",
+   "glDraws": 1
+  },
+  {
+   "idx": 57,
+   "id": 490,
+   "name": "yyygggy",
+   "type": "solid",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 4917,
+    "y": 1715,
+    "w": 100,
+    "h": 100
+   },
+   "rectDrawn": null,
+   "skipReason": "container"
+  },
+  {
+   "idx": 58,
+   "id": 495,
+   "name": "赞助闪心",
+   "type": "particle",
+   "vis": false,
+   "texture": "workshop/2872021376/particle/Heart",
+   "textureHit": true,
+   "passes": 0,
+   "copybg": false,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": null,
+   "rectDrawn": null,
+   "skipReason": "invisible"
+  },
+  {
+   "idx": 59,
+   "id": 492,
+   "name": "支持 Tim",
+   "type": "text",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 1,
+   "fxFiles": [
+    "effects/workshop/2872021376/twirl/effect.json"
+   ],
+   "copybg": true,
+   "chainInput": "rt",
+   "blend": 0,
+   "rectDesign": {
+    "x": 6026,
+    "y": 2799,
+    "w": 580,
+    "h": 350
+   },
+   "rectDrawn": {
+    "x0": 1864,
+    "y0": 860,
+    "x1": 2125,
+    "y1": 1018
+   },
+   "bind": "rtcopy",
+   "glDraws": 1
+  },
+  {
+   "idx": 60,
+   "id": 326,
+   "name": "记事本",
+   "type": "text",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 1,
+   "fxFiles": [
+    "effects/workshop/2872021376/twirl/effect.json"
+   ],
+   "copybg": true,
+   "chainInput": "rt",
+   "blend": 0,
+   "rectDesign": {
+    "x": 6315,
+    "y": 2211,
+    "w": 2,
+    "h": 2
+   },
+   "rectDrawn": {
+    "x0": 1994,
+    "y0": 698,
+    "x1": 1995,
+    "y1": 699
+   },
+   "bind": "rtcopy",
+   "glDraws": 1
+  },
+  {
+   "idx": 61,
+   "id": 541,
+   "name": "ldfk",
+   "type": "solid",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 0,
+    "y": 0,
+    "w": 6080,
+    "h": 3420
+   },
+   "rectDrawn": null,
+   "skipReason": "logical-helper"
+  },
+  {
+   "idx": 62,
+   "id": 620,
+   "name": "可调整组合层",
+   "type": "solid",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 6362,
+    "y": 661,
+    "w": 900,
+    "h": 790
+   },
+   "rectDrawn": null,
+   "skipReason": "container"
+  },
+  {
+   "idx": 63,
+   "id": 624,
+   "name": "多音符",
+   "type": "image",
+   "vis": true,
+   "texture": "多音符",
+   "textureHit": true,
+   "passes": 1,
+   "fxFiles": [
+    "effects/scroll/effect.json"
+   ],
+   "copybg": true,
+   "chainInput": "own",
+   "blend": 0,
+   "rectDesign": {
+    "x": 6371,
+    "y": 665,
+    "w": 900,
+    "h": 790
+   },
+   "rectDrawn": {
+    "x0": 1998,
+    "y0": 210,
+    "x1": 2310,
+    "y1": 459
+   },
+   "bind": "texture",
+   "glDraws": 3
+  },
+  {
+   "idx": 64,
+   "id": 598,
+   "name": "在播放",
+   "type": "text",
+   "vis": false,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 6952,
+    "y": 1079,
+    "w": 2,
+    "h": 2
+   },
+   "rectDrawn": null,
+   "skipReason": "invisible-config"
+  },
+  {
+   "idx": 65,
+   "id": 636,
+   "name": "patreon",
+   "type": "image",
+   "vis": false,
+   "texture": "壁纸内赞助",
+   "textureHit": true,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 2417,
+    "y": 2024,
+    "w": 620,
+    "h": 220
+   },
+   "rectDrawn": null,
+   "skipReason": "invisible"
+  },
+  {
+   "idx": 66,
+   "id": 615,
+   "name": "待解锁功能",
+   "type": "text",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 6668,
+    "y": 1921,
+    "w": 875,
+    "h": 300
+   },
+   "rectDrawn": {
+    "x0": 2106,
+    "y0": 607,
+    "x1": 2382,
+    "y1": 701
+   },
+   "bind": "transparent",
+   "glDraws": 1
+  },
+  {
+   "idx": 67,
+   "id": 367,
+   "name": "支持语音",
+   "type": "sound",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": false,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": null,
+   "rectDrawn": null,
+   "skipReason": "degenerate-geometry"
+  },
+  {
+   "idx": 68,
+   "id": 369,
+   "name": "解锁语音",
+   "type": "sound",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": false,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": null,
+   "rectDrawn": null,
+   "skipReason": "degenerate-geometry"
+  },
+  {
+   "idx": 69,
+   "id": 413,
+   "name": "文本层",
+   "type": "text",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 6938,
+    "y": 1179,
+    "w": 174,
+    "h": 238
+   },
+   "rectDrawn": {
+    "x0": 2191,
+    "y0": 372,
+    "x1": 2246,
+    "y1": 447
+   },
+   "bind": "transparent",
+   "glDraws": 1
+  },
+  {
+   "idx": 70,
+   "id": 791,
+   "name": "后处理层",
+   "type": "solid",
+   "vis": false,
+   "texture": null,
+   "textureHit": null,
+   "passes": 5,
+   "fxFiles": [
+    "effects/godrays/effect.json"
+   ],
+   "copybg": true,
+   "chainInput": "rt",
+   "blend": 0,
+   "rectDesign": null,
+   "rectDrawn": null,
+   "skipReason": "invisible"
+  },
+  {
+   "idx": 71,
+   "id": 733,
+   "name": "健康壁纸",
+   "type": "image",
+   "vis": false,
+   "texture": "1",
+   "textureHit": true,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 2096,
+    "y": 1170,
+    "w": 1920,
+    "h": 1080
+   },
+   "rectDrawn": null,
+   "skipReason": "invisible"
+  },
+  {
+   "idx": 72,
+   "id": 503,
+   "name": "中-菜单-浮动",
+   "type": "solid",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 5,
+   "fxFiles": [
+    "effects/workshop/2872021376/perspective/effect.json",
+    "effects/pulse/effect.json"
+   ],
+   "copybg": true,
+   "chainInput": "rt",
+   "blend": 0,
+   "rectDesign": {
+    "x": -3239,
+    "y": 762,
+    "w": 100,
+    "h": 100
+   },
+   "rectDrawn": {
+    "x0": -1007,
+    "y0": 256,
+    "x1": -636,
+    "y1": 808
+   },
+   "bind": "rtcopy",
+   "glDraws": 7
+  },
+  {
+   "idx": 73,
+   "id": 514,
+   "name": "设置1-返回",
+   "type": "text",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": -3421,
+    "y": 679,
+    "w": 582,
+    "h": 350
+   },
+   "rectDrawn": {
+    "x0": -1080,
+    "y0": 215,
+    "x1": -897,
+    "y1": 325
+   },
+   "bind": "transparent",
+   "glDraws": 1
+  },
+  {
+   "idx": 74,
+   "id": 562,
+   "name": "设置2-穿上内内",
+   "type": "text",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": -3712,
+    "y": 1108,
+    "w": 1164,
+    "h": 350
+   },
+   "rectDrawn": {
+    "x0": -1172,
+    "y0": 350,
+    "x1": -805,
+    "y1": 460
+   },
+   "bind": "transparent",
+   "glDraws": 1
+  },
+  {
+   "idx": 75,
+   "id": 567,
+   "name": "设置3-我要涩涩",
+   "type": "text",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": -3712,
+    "y": 1455,
+    "w": 1164,
+    "h": 350
+   },
+   "rectDrawn": {
+    "x0": -1172,
+    "y0": 459,
+    "x1": -805,
+    "y1": 570
+   },
+   "bind": "transparent",
+   "glDraws": 1
+  },
+  {
+   "idx": 76,
+   "id": 574,
+   "name": "设置4-开关音乐",
+   "type": "text",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": -3712,
+    "y": 1822,
+    "w": 1164,
+    "h": 350
+   },
+   "rectDrawn": {
+    "x0": -1172,
+    "y0": 575,
+    "x1": -805,
+    "y1": 686
+   },
+   "bind": "transparent",
+   "glDraws": 1
+  },
+  {
+   "idx": 77,
+   "id": 515,
+   "name": "安全模式",
+   "type": "text",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": -3763,
+    "y": 2281,
+    "w": 1164,
+    "h": 350
+   },
+   "rectDrawn": {
+    "x0": -1188,
+    "y0": 720,
+    "x1": -821,
+    "y1": 831
+   },
+   "bind": "transparent",
+   "glDraws": 1
+  },
+  {
+   "idx": 78,
+   "id": 500,
+   "name": "tim logo",
+   "type": "image",
+   "vis": true,
+   "texture": "workshop/2872021376/11111111111",
+   "textureHit": true,
+   "passes": 0,
+   "copybg": true,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": {
+    "x": 5471,
+    "y": 324,
+    "w": 200,
+    "h": 200
+   },
+   "rectDrawn": {
+    "x0": 1690,
+    "y0": 64,
+    "x1": 1829,
+    "y1": 203
+   },
+   "bind": "texture",
+   "glDraws": 1
+  },
+  {
+   "idx": 79,
+   "id": 476,
+   "name": "桥",
+   "type": "sound",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": false,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": null,
+   "rectDrawn": null,
+   "skipReason": "degenerate-geometry"
+  },
+  {
+   "idx": 80,
+   "id": 439,
+   "name": "XR",
+   "type": "sound",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": false,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": null,
+   "rectDrawn": null,
+   "skipReason": "degenerate-geometry"
+  },
+  {
+   "idx": 81,
+   "id": 440,
+   "name": "HF",
+   "type": "sound",
+   "vis": true,
+   "texture": null,
+   "textureHit": null,
+   "passes": 0,
+   "copybg": false,
+   "chainInput": "none",
+   "blend": 0,
+   "rectDesign": null,
+   "rectDrawn": null,
+   "skipReason": "degenerate-geometry"
+  }
+ ],
+ "summary": {
+  "layers": 82,
+  "drawn": 44,
+  "skipped": 38,
+  "skipReasons": {
+   "invisible-config": 3,
+   "degenerate-geometry": 11,
+   "invisible": 16,
+   "container": 4,
+   "particle-idle": 3,
+   "logical-helper": 1
+  },
+  "binds": {
+   "solidcolor": 7,
+   "texture": 20,
+   "transparent": 13,
+   "rtcopy": 4
+  },
+  "renderErr": null,
+  "canvas": {
+   "w": 1920,
+   "h": 1080
+  },
+  "proj": {
+   "w": 6080,
+   "h": 3420
+  },
+  "time": 1
+ },
+ "logs": [
+  "P-61 用户属性绑定：5 处写入 / 10 个绑定层",
+  "① clearBgFx(narrow)：丢弃 0 层效果链 / 保留 25 层（其中 4 层是旧判据会砍的；设计画布 6080×3420）",
+  "P-69 投影 y 口径=fix(世界y=0→屏幕顶，与 MESH_VERT/CPU 预览同式)，四边形 v 翻转 qflip=off（?projy=legacy 回退旧口径）",
+  "P-100 角色层适配档 charfit=auto（缺省：有相机层则不适配，无相机层且超屏才兜底）（?charfit=legacy|off 回退）",
+  "P-107 投影档 projmode=auto（缺省 auto：有 general.orthogonalprojection ⇒ 正交；无矩形（3D 包）⇒ 透视 fov）（?projmode=persp|ortho）",
+  "[P-90] 质量档位 q=off(关闭内部缩比) aa=off pp=high，aa实际落点=off，context antialias=false，实测 SAMPLES=0",
+  "[首帧] #0 wind.mp3 vis=0 tex=- skin=0 fx=0 part=0",
+  "[首帧] . #0 跳过(不可见/容器)",
+  "[首帧] #1 BBB vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] #2 CCC vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] #3 Solid vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] #4 cloud vis=1 tex=1234 skin=0 fx=2 part=0",
+  "[copybg] cloud COPYBG=1 + 链输入=自有贴图 1920x1080",
+  "[首帧] #5 sound line vis=0 tex=- skin=0 fx=1 part=0",
+  "[首帧] . #5 跳过(不可见/容器)",
+  "[首帧] #6 ey22222 vis=1 tex=ey22222 skin=0 fx=2 part=0",
+  "[copybg] ey22222 COPYBG=1 + 链输入=自有贴图 1920x1080",
+  "[首帧] #7 ey00000 vis=0 tex=ey22222 skin=0 fx=2 part=0",
+  "[首帧] . #7 跳过(不可见/容器)",
+  "[首帧] #8 lighthhh vis=1 tex=lighthhh skin=0 fx=3 part=0",
+  "[copybg] lighthhh COPYBG=1 + 链输入=自有贴图 1920x1080",
+  "[首帧] #9 yanddddddd vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] . #9 跳过(不可见/容器)",
+  "[首帧] #10 Fern vis=1 tex=presets/fern1 skin=0 fx=1 part=0",
+  "[copybg] Fern COPYBG=1 + 链输入=自有贴图 1920x1080",
+  "[首帧] #11 Fern vis=1 tex=presets/fern1 skin=0 fx=1 part=0",
+  "[首帧] #12 yanbi vis=1 tex=yanbi skin=0 fx=2 part=0",
+  "[copybg] yanbi COPYBG=1 + 链输入=自有贴图 1920x1080",
+  "[首帧] #13 r ear1 vis=1 tex=r ear1 skin=0 fx=3 part=0",
+  "[copybg] r ear1 COPYBG=1 + 链输入=自有贴图 1920x1080",
+  "[首帧] #14 new background1 vis=1 tex=¦¦¥¦12 skin=0 fx=1 part=0",
+  "[copybg] new background1 COPYBG=1 + 链输入=自有贴图 1920x1080",
+  "[首帧] #15 back leg body vis=1 tex=back leg body skin=0 fx=10 part=0",
+  "[copybg] back leg body COPYBG=1 + 链输入=自有贴图 1920x1080",
+  "[首帧] #16 l ear1 vis=1 tex=L ear1 skin=0 fx=3 part=0",
+  "[copybg] l ear1 COPYBG=1 + 链输入=自有贴图 1920x1080",
+  "[首帧] #17 page vis=0 tex=- skin=0 fx=1 part=0",
+  "[首帧] . #17 跳过(不可见/容器)",
+  "[首帧] #18 page首 vis=0 tex=- skin=0 fx=1 part=0",
+  "[首帧] . #18 跳过(不可见/容器)",
+  "[首帧] #19 panci cover up vis=1 tex=panci skin=0 fx=0 part=0",
+  "[首帧] #20 pussy vis=0 tex=pussy skin=0 fx=2 part=0",
+  "[首帧] . #20 跳过(不可见/容器)",
+  "[首帧] #21 eyelids1 vis=1 tex=eyelids1 skin=0 fx=5 part=0",
+  "[copybg] eyelids1 COPYBG=1 + 链输入=自有贴图 1920x1080",
+  "[首帧] #22 eyebrow1 vis=1 tex=eyebrow1 skin=0 fx=4 part=0",
+  "[copybg] eyebrow1 COPYBG=1 + 链输入=自有贴图 1920x1080",
+  "[首帧] #23 hand book vis=1 tex=hand book skin=0 fx=4 part=0",
+  "[copybg] hand book COPYBG=1 + 链输入=自有贴图 1920x1080",
+  "[首帧] #24 front leg vis=1 tex=front leg skin=0 fx=2 part=0",
+  "[copybg] front leg COPYBG=1 + 链输入=自有贴图 1920x1080",
+  "[首帧] #25 Light shafts 0 vis=1 tex=- skin=0 fx=0 part=1",
+  "[首帧] #26 Light shafts 0 vis=1 tex=- skin=0 fx=0 part=1",
+  "[首帧] #27 Clock vis=0 tex=- skin=0 fx=0 part=0",
+  "[首帧] . #27 跳过(不可见/容器)",
+  "[首帧] #28 Clock vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] #29 Clock vis=0 tex=- skin=0 fx=0 part=0",
+  "[首帧] . #29 跳过(不可见/容器)",
+  "[首帧] #30 in heart 1 vis=0 tex=workshop/2853530212/里面 skin=0 fx=0 part=0",
+  "[首帧] . #30 跳过(不可见/容器)",
+  "[首帧] #31 in heart 2 vis=0 tex=workshop/2853530212/里面 skin=0 fx=0 part=0",
+  "[首帧] . #31 跳过(不可见/容器)",
+  "[首帧] #32 in heart 3 vis=0 tex=workshop/2853530212/里面 skin=0 fx=0 part=0",
+  "[首帧] . #32 跳过(不可见/容器)",
+  "[首帧] #33 heart 1 vis=1 tex=workshop/2853530212/u=3017262874,4007040646&fm=253&fmt=auto&app=138&f=JPG skin=0 fx=0 part=0",
+  "[首帧] #34 heart 2 vis=1 tex=workshop/2853530212/u=3017262874,4007040646&fm=253&fmt=auto&app=138&f=JPG skin=0 fx=0 part=0",
+  "[首帧] #35 heart 3 vis=1 tex=workshop/2853530212/u=3017262874,4007040646&fm=253&fmt=auto&app=138&f=JPG skin=0 fx=0 part=0",
+  "[首帧] #36 ggggg vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] #37 翻页mp3 vis=0 tex=- skin=0 fx=0 part=0",
+  "[首帧] . #37 跳过(不可见/容器)",
+  "[首帧] #38 可调整组合层 vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] . #38 跳过(不可见/容器)",
+  "[首帧] #39 tuiiiiiiieeeer vis=0 tex=- skin=0 fx=0 part=0",
+  "[首帧] . #39 跳过(不可见/容器)",
+  "[首帧] #40 黑底 vis=1 tex=- skin=0 fx=1 part=0",
+  "[copybg] 黑底 COPYBG=1 + 链输入=背景拷贝 1920x1080",
+  "[首帧] #41 新建画布3 vis=0 tex=新建画布3 skin=0 fx=0 part=0",
+  "[首帧] . #41 跳过(不可见/容器)",
+  "[首帧] #42 kaiju问候.wav vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] #43 凯尔希 vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] #44 1语言 vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] #45 语言1 vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] #46 2语言 vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] #47 3语言 vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] #48 语言2 vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] #49 Sakura vis=1 tex=- skin=0 fx=0 part=1",
+  "[首帧] #50 语言3 vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] #51 xxxx vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] #52 mkj vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] #53 右-菜单-底色 vis=1 tex=- skin=0 fx=0 part=0",
+  "[fx0] 右-菜单-底色 srcTex=white(纯色!) texObj=null solid=true color=[0.7019607843137254,0.8588235294117647,0.9450980392156862,0.80000001] size=[1500,4000]",
+  "[首帧] #54 纯色 vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] #55 纯色 vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] #56 纯色 vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] #57 yyygggy vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] . #57 跳过(不可见/容器)",
+  "[首帧] #58 赞助闪心 vis=0 tex=- skin=0 fx=0 part=1",
+  "[首帧] . #58 跳过(不可见/容器)",
+  "[首帧] #59 支持 Tim vis=1 tex=- skin=0 fx=1 part=0",
+  "[copybg] 支持 Tim COPYBG=1 + 链输入=背景拷贝 1920x1080",
+  "[首帧] #60 记事本 vis=1 tex=- skin=0 fx=1 part=0",
+  "[copybg] 记事本 COPYBG=1 + 链输入=背景拷贝 1920x1080",
+  "[首帧] #61 ldfk vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] . #61 跳过(逻辑helper)",
+  "[首帧] #62 可调整组合层 vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] . #62 跳过(不可见/容器)",
+  "[首帧] #63 多音符 vis=1 tex=多音符 skin=0 fx=1 part=0",
+  "[copybg] 多音符 COPYBG=1 + 链输入=自有贴图 1920x1080",
+  "[首帧] #64 在播放 vis=0 tex=- skin=0 fx=0 part=0",
+  "[首帧] . #64 跳过(不可见/容器)",
+  "[首帧] #65 patreon vis=0 tex=壁纸内赞助 skin=0 fx=0 part=0",
+  "[首帧] . #65 跳过(不可见/容器)",
+  "[首帧] #66 待解锁功能 vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] #67 支持语音 vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] #68 解锁语音 vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] #69 文本层 vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] #70 后处理层 vis=0 tex=- skin=0 fx=1 part=0",
+  "[首帧] . #70 跳过(不可见/容器)",
+  "[首帧] #71 健康壁纸 vis=0 tex=1 skin=0 fx=0 part=0",
+  "[首帧] . #71 跳过(不可见/容器)",
+  "[首帧] #72 中-菜单-浮动 vis=1 tex=- skin=0 fx=5 part=0",
+  "[copybg] 中-菜单-浮动 COPYBG=1 + 链输入=背景拷贝 1920x1080",
+  "[首帧] #73 设置1-返回 vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] #74 设置2-穿上内内 vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] #75 设置3-我要涩涩 vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] #76 设置4-开关音乐 vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] #77 安全模式 vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] #78 tim logo vis=1 tex=workshop/2872021376/11111111111 skin=0 fx=0 part=0",
+  "[首帧] #79 桥 vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] #80 XR vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] #81 HF vis=1 tex=- skin=0 fx=0 part=0",
+  "[首帧] 层循环结束（共 82 层）"
+ ],
+ "pkg": {
+  "id": "2887099508",
+  "path": "/root/Desktop/DSHarea/allwallpaper/0923/2887099508/scene.pkg",
+  "entries": 232
+ }
+}

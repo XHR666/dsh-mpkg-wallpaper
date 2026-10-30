@@ -1,0 +1,2697 @@
+{
+ "generatedAt": "2026-09-12T09:48:02.512Z",
+ "rows": [
+  {
+   "id": "3326873240",
+   "path": "/root/Desktop/DSHarea/allwallpaper/dd/3326873240/scene.pkg",
+   "static": {
+    "layers": 62,
+    "visible": 22,
+    "texLayers": 31,
+    "effectLayers": 14,
+    "fxPasses": 29,
+    "particleLayers": 1,
+    "maxcount": 128,
+    "meshLayers": 0,
+    "textLayers": 19,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 22,
+    "decodeFail": 0,
+    "decodeMB": 234
+   },
+   "particleBench": {
+    "layers": 1,
+    "perFrameMsTotal": 0.185,
+    "rows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "perFrameMs": 0.185,
+      "alive": 30
+     }
+    ]
+   },
+   "cost": 703.2
+  },
+  {
+   "id": "3327063360",
+   "path": "/root/Desktop/DSHarea/allwallpaper/dd/3327063360/scene.pkg",
+   "static": {
+    "layers": 69,
+    "visible": 23,
+    "texLayers": 36,
+    "effectLayers": 28,
+    "fxPasses": 65,
+    "particleLayers": 2,
+    "maxcount": 138,
+    "meshLayers": 1,
+    "textLayers": 21,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 19,
+    "decodeFail": 0,
+    "decodeMB": 47.4
+   },
+   "particleBench": {
+    "layers": 2,
+    "perFrameMsTotal": 0.012,
+    "rows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "perFrameMs": 0.012,
+      "alive": 30
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 10,
+      "perFrameMs": 0,
+      "alive": 0
+     }
+    ]
+   },
+   "cost": 622.4
+  },
+  {
+   "id": "3470764447",
+   "path": "/root/Desktop/DSHarea/allwallpaper/dd/3470764447/scene.pkg",
+   "static": {
+    "layers": 41,
+    "visible": 21,
+    "texLayers": 12,
+    "effectLayers": 14,
+    "fxPasses": 30,
+    "particleLayers": 1,
+    "maxcount": 128,
+    "meshLayers": 0,
+    "textLayers": 16,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 8,
+    "decodeFail": 0,
+    "decodeMB": 306.6
+   },
+   "particleBench": {
+    "layers": 1,
+    "perFrameMsTotal": 0.01,
+    "rows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "perFrameMs": 0.01,
+      "alive": 30
+     }
+    ]
+   },
+   "cost": 855.4
+  },
+  {
+   "id": "3544152633",
+   "path": "/root/Desktop/DSHarea/allwallpaper/dd/3544152633/scene.pkg",
+   "static": {
+    "layers": 70,
+    "visible": 31,
+    "texLayers": 31,
+    "effectLayers": 27,
+    "fxPasses": 74,
+    "particleLayers": 16,
+    "maxcount": 12387,
+    "meshLayers": 1,
+    "textLayers": 16,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 37,
+    "decodeFail": 0,
+    "decodeMB": 81.5
+   },
+   "particleBench": {
+    "layers": 16,
+    "perFrameMsTotal": 0.768,
+    "rows": [
+     {
+      "name": "Rain perspective",
+      "maxcount": 512,
+      "perFrameMs": 0.211,
+      "alive": 200
+     },
+     {
+      "name": "Shooting star-blue-2",
+      "maxcount": 20,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "rain_on_the_glass2",
+      "maxcount": 150,
+      "perFrameMs": 0.068,
+      "alive": 148
+     },
+     {
+      "name": "Fog (calm)",
+      "maxcount": 20,
+      "perFrameMs": 0.001,
+      "alive": 1
+     },
+     {
+      "name": "Fireworks 3",
+      "maxcount": 50,
+      "perFrameMs": 0.003,
+      "alive": 2
+     },
+     {
+      "name": "Blinking Stars_01",
+      "maxcount": 750,
+      "perFrameMs": 0.044,
+      "alive": 133
+     },
+     {
+      "name": "reactive Stars",
+      "maxcount": 500,
+      "perFrameMs": 0.078,
+      "alive": 166
+     },
+     {
+      "name": "Shooting_Star_01",
+      "maxcount": 35,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "Moving Stars_02",
+      "maxcount": 85,
+      "perFrameMs": 0.089,
+      "alive": 85
+     },
+     {
+      "name": "Glowing Stars_01",
+      "maxcount": 35,
+      "perFrameMs": 0.009,
+      "alive": 35
+     },
+     {
+      "name": "Glowing Stars_02",
+      "maxcount": 8,
+      "perFrameMs": 0.003,
+      "alive": 8
+     },
+     {
+      "name": "birds",
+      "maxcount": 30,
+      "perFrameMs": 0.045,
+      "alive": 30
+     },
+     {
+      "name": "Star Reactive",
+      "maxcount": 75,
+      "perFrameMs": 0.066,
+      "alive": 75
+     },
+     {
+      "name": "Rain_secondary",
+      "maxcount": 10000,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "Moving Glowing Stars_01",
+      "maxcount": 85,
+      "perFrameMs": 0.061,
+      "alive": 85
+     },
+     {
+      "name": "Vapor (double)",
+      "maxcount": 32,
+      "perFrameMs": 0.09,
+      "alive": 31
+     }
+    ]
+   },
+   "cost": 774.9
+  },
+  {
+   "id": "3554161528",
+   "path": "/root/Desktop/DSHarea/allwallpaper/dd/3554161528/scene.pkg",
+   "static": {
+    "layers": 37,
+    "visible": 32,
+    "texLayers": 15,
+    "effectLayers": 8,
+    "fxPasses": 26,
+    "particleLayers": 13,
+    "maxcount": 1471,
+    "meshLayers": 1,
+    "textLayers": 2,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 21,
+    "decodeFail": 0,
+    "decodeMB": 95.4
+   },
+   "particleBench": {
+    "layers": 13,
+    "perFrameMsTotal": 0.349,
+    "rows": [
+     {
+      "name": "雪景远景",
+      "maxcount": 40,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "落花",
+      "maxcount": 30,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "notes1_simple",
+      "maxcount": 20,
+      "perFrameMs": 0.004,
+      "alive": 3
+     },
+     {
+      "name": "Blinking Stars",
+      "maxcount": 100,
+      "perFrameMs": 0.042,
+      "alive": 100
+     },
+     {
+      "name": "Blinking Stars",
+      "maxcount": 150,
+      "perFrameMs": 0.036,
+      "alive": 133
+     },
+     {
+      "name": "Blinking Stars",
+      "maxcount": 15,
+      "perFrameMs": 0.003,
+      "alive": 15
+     },
+     {
+      "name": "流星",
+      "maxcount": 16,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "雾 2",
+      "maxcount": 20,
+      "perFrameMs": 0.003,
+      "alive": 13
+     },
+     {
+      "name": "落花",
+      "maxcount": 30,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "雪景远景",
+      "maxcount": 40,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 5,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 5,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "cherry blossoms on curso",
+      "maxcount": 1000,
+      "perFrameMs": 0.261,
+      "alive": 162
+     }
+    ]
+   },
+   "cost": 406.1
+  },
+  {
+   "id": "3660962877",
+   "path": "/root/Desktop/DSHarea/allwallpaper/dd/3660962877/scene.pkg",
+   "static": {
+    "layers": 127,
+    "visible": 28,
+    "texLayers": 34,
+    "effectLayers": 44,
+    "fxPasses": 73,
+    "particleLayers": 2,
+    "maxcount": 1128,
+    "meshLayers": 0,
+    "textLayers": 69,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 7,
+    "decodeFail": 0,
+    "decodeMB": 101.2
+   },
+   "particleBench": {
+    "layers": 2,
+    "perFrameMsTotal": 0.178,
+    "rows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "perFrameMs": 0.009,
+      "alive": 30
+     },
+     {
+      "name": "cherry blossoms on curso",
+      "maxcount": 1000,
+      "perFrameMs": 0.169,
+      "alive": 162
+     }
+    ]
+   },
+   "cost": 793.9
+  },
+  {
+   "id": "3669681034",
+   "path": "/root/Desktop/DSHarea/allwallpaper/dd/3669681034/scene.pkg",
+   "static": {
+    "layers": 2,
+    "visible": 2,
+    "texLayers": 1,
+    "effectLayers": 0,
+    "fxPasses": 0,
+    "particleLayers": 0,
+    "maxcount": 0,
+    "meshLayers": 0,
+    "textLayers": 0,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 1,
+    "decodeFail": 0,
+    "decodeMB": 0
+   },
+   "particleBench": {
+    "layers": 0,
+    "perFrameMsTotal": 0,
+    "rows": []
+   },
+   "cost": 0.1
+  },
+  {
+   "id": "3715743282",
+   "path": "/root/Desktop/DSHarea/allwallpaper/dd/3715743282/scene.pkg",
+   "static": {
+    "layers": 9,
+    "visible": 6,
+    "texLayers": 2,
+    "effectLayers": 4,
+    "fxPasses": 8,
+    "particleLayers": 3,
+    "maxcount": 208,
+    "meshLayers": 0,
+    "textLayers": 4,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 5,
+    "decodeFail": 0,
+    "decodeMB": 4.7
+   },
+   "particleBench": {
+    "layers": 3,
+    "perFrameMsTotal": 0.021,
+    "rows": [
+     {
+      "name": "灰烬大",
+      "maxcount": 40,
+      "perFrameMs": 0.002,
+      "alive": 3
+     },
+     {
+      "name": "尘埃",
+      "maxcount": 128,
+      "perFrameMs": 0.019,
+      "alive": 23
+     },
+     {
+      "name": "Ember",
+      "maxcount": 40,
+      "perFrameMs": 0,
+      "alive": 3
+     }
+    ]
+   },
+   "cost": 74.1
+  },
+  {
+   "id": "3719111841",
+   "path": "/root/Desktop/DSHarea/allwallpaper/dd/3719111841/scene.pkg",
+   "static": {
+    "layers": 43,
+    "visible": 32,
+    "texLayers": 26,
+    "effectLayers": 19,
+    "fxPasses": 21,
+    "particleLayers": 8,
+    "maxcount": 1774,
+    "meshLayers": 5,
+    "textLayers": 3,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 43,
+    "decodeFail": 0,
+    "decodeMB": 443.8
+   },
+   "particleBench": {
+    "layers": 8,
+    "perFrameMsTotal": 0.043,
+    "rows": [
+     {
+      "name": "Glass Shards",
+      "maxcount": 50,
+      "perFrameMs": 0.002,
+      "alive": 1
+     },
+     {
+      "name": "Matrix spawnerREADNAME -",
+      "maxcount": 500,
+      "perFrameMs": 0.005,
+      "alive": 66
+     },
+     {
+      "name": "灰烬大",
+      "maxcount": 40,
+      "perFrameMs": 0.001,
+      "alive": 3
+     },
+     {
+      "name": "灰烬光束",
+      "maxcount": 40,
+      "perFrameMs": 0,
+      "alive": 3
+     },
+     {
+      "name": "Bokeh Hex",
+      "maxcount": 500,
+      "perFrameMs": 0.007,
+      "alive": 16
+     },
+     {
+      "name": "Bokeh Cir",
+      "maxcount": 500,
+      "perFrameMs": 0.007,
+      "alive": 16
+     },
+     {
+      "name": "尘埃",
+      "maxcount": 128,
+      "perFrameMs": 0.021,
+      "alive": 23
+     },
+     {
+      "name": "光束 2 (旧)",
+      "maxcount": 16,
+      "perFrameMs": 0,
+      "alive": 0
+     }
+    ]
+   },
+   "cost": 1079.5
+  },
+  {
+   "id": "3721991999",
+   "path": "/root/Desktop/DSHarea/allwallpaper/dd/3721991999/scene.pkg",
+   "static": {
+    "layers": 2,
+    "visible": 2,
+    "texLayers": 1,
+    "effectLayers": 0,
+    "fxPasses": 0,
+    "particleLayers": 1,
+    "maxcount": 128,
+    "meshLayers": 0,
+    "textLayers": 0,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 2,
+    "decodeFail": 0,
+    "decodeMB": 5.5
+   },
+   "particleBench": {
+    "layers": 1,
+    "perFrameMsTotal": 0.005,
+    "rows": [
+     {
+      "name": "尘埃",
+      "maxcount": 128,
+      "perFrameMs": 0.005,
+      "alive": 23
+     }
+    ]
+   },
+   "cost": 11.2
+  },
+  {
+   "id": "3778592720",
+   "path": "/root/Desktop/DSHarea/allwallpaper/dd/3778592720/scene.pkg",
+   "static": {
+    "layers": 5,
+    "visible": 4,
+    "texLayers": 2,
+    "effectLayers": 0,
+    "fxPasses": 0,
+    "particleLayers": 2,
+    "maxcount": 80,
+    "meshLayers": 0,
+    "textLayers": 0,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 3,
+    "decodeFail": 0,
+    "decodeMB": 0.1
+   },
+   "particleBench": {
+    "layers": 2,
+    "perFrameMsTotal": 0.002,
+    "rows": [
+     {
+      "name": "灰烬大",
+      "maxcount": 40,
+      "perFrameMs": 0.002,
+      "alive": 3
+     },
+     {
+      "name": "灰烬大",
+      "maxcount": 40,
+      "perFrameMs": 0,
+      "alive": 3
+     }
+    ]
+   },
+   "cost": 0.5
+  },
+  {
+   "id": "夜莺night——【time_variation_时间变化】alone_孤独の少女【原画：rella]",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/other/夜莺night——【time_variation_时间变化】alone_孤独の少女【原画：rella].mpkg",
+   "static": {
+    "layers": 102,
+    "visible": 54,
+    "texLayers": 37,
+    "effectLayers": 31,
+    "fxPasses": 57,
+    "particleLayers": 14,
+    "maxcount": 3453,
+    "meshLayers": 1,
+    "textLayers": 17,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 27,
+    "decodeFail": 0,
+    "decodeMB": 136.7
+   },
+   "particleBench": {
+    "layers": 14,
+    "perFrameMsTotal": 0.173,
+    "rows": [
+     {
+      "name": "昼夜变化星星1",
+      "maxcount": 500,
+      "perFrameMs": 0.019,
+      "alive": 133
+     },
+     {
+      "name": "night2",
+      "maxcount": 500,
+      "perFrameMs": 0.016,
+      "alive": 133
+     },
+     {
+      "name": "night3",
+      "maxcount": 100,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "流星",
+      "maxcount": 100,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "Stars",
+      "maxcount": 500,
+      "perFrameMs": 0.023,
+      "alive": 133
+     },
+     {
+      "name": "昼夜渐变流星1",
+      "maxcount": 100,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "雨景远景",
+      "maxcount": 512,
+      "perFrameMs": 0.086,
+      "alive": 200
+     },
+     {
+      "name": "雪景远景",
+      "maxcount": 360,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "Fireworks 1",
+      "maxcount": 50,
+      "perFrameMs": 0.001,
+      "alive": 2
+     },
+     {
+      "name": "Fireworks 2",
+      "maxcount": 50,
+      "perFrameMs": 0.001,
+      "alive": 2
+     },
+     {
+      "name": "Fireworks 3",
+      "maxcount": 50,
+      "perFrameMs": 0.001,
+      "alive": 2
+     },
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "perFrameMs": 0.007,
+      "alive": 30
+     },
+     {
+      "name": "zzz",
+      "maxcount": 3,
+      "perFrameMs": 0.001,
+      "alive": 3
+     },
+     {
+      "name": "rain_drop_screen",
+      "maxcount": 500,
+      "perFrameMs": 0.018,
+      "alive": 83
+     }
+    ]
+   },
+   "cost": 742
+  },
+  {
+   "id": "红鸾樱落",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/other/红鸾樱落.mpkg",
+   "static": {
+    "layers": 65,
+    "visible": 36,
+    "texLayers": 24,
+    "effectLayers": 38,
+    "fxPasses": 47,
+    "particleLayers": 9,
+    "maxcount": 1564,
+    "meshLayers": 6,
+    "textLayers": 17,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 36,
+    "decodeFail": 0,
+    "decodeMB": 109.8
+   },
+   "particleBench": {
+    "layers": 9,
+    "perFrameMsTotal": 0.412,
+    "rows": [
+     {
+      "name": "龙烟",
+      "maxcount": 32,
+      "perFrameMs": 0.038,
+      "alive": 32
+     },
+     {
+      "name": "烟......",
+      "maxcount": 32,
+      "perFrameMs": 0.036,
+      "alive": 32
+     },
+     {
+      "name": "眼焰",
+      "maxcount": 32,
+      "perFrameMs": 0.036,
+      "alive": 32
+     },
+     {
+      "name": "眼焰",
+      "maxcount": 32,
+      "perFrameMs": 0.041,
+      "alive": 32
+     },
+     {
+      "name": "樱花 近",
+      "maxcount": 200,
+      "perFrameMs": 0,
+      "alive": 6
+     },
+     {
+      "name": "樱花 远",
+      "maxcount": 200,
+      "perFrameMs": 0,
+      "alive": 6
+     },
+     {
+      "name": "鼠标",
+      "maxcount": 1000,
+      "perFrameMs": 0.26,
+      "alive": 169
+     },
+     {
+      "name": "底—烟",
+      "maxcount": 20,
+      "perFrameMs": 0.001,
+      "alive": 1
+     },
+     {
+      "name": "光",
+      "maxcount": 16,
+      "perFrameMs": 0,
+      "alive": 0
+     }
+    ]
+   },
+   "cost": 624.4
+  },
+  {
+   "id": "伊蕾娜1_8",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/伊蕾娜/伊蕾娜1_8.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "伊蕾娜_04",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/伊蕾娜/伊蕾娜_04.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "伊蕾娜_05",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/伊蕾娜/伊蕾娜_05.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "伊蕾娜_08",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/伊蕾娜/伊蕾娜_08.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "夜莺night——【time_variation时间变化】elaina_伊蕾娜：闲憩微息【魔女之旅】day_night",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/伊蕾娜/夜莺night——【time_variation时间变化】elaina_伊蕾娜：闲憩微息【魔女之旅】day_night.mpkg",
+   "static": {
+    "layers": 41,
+    "visible": 21,
+    "texLayers": 12,
+    "effectLayers": 14,
+    "fxPasses": 30,
+    "particleLayers": 1,
+    "maxcount": 128,
+    "meshLayers": 0,
+    "textLayers": 16,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 8,
+    "decodeFail": 0,
+    "decodeMB": 292.8
+   },
+   "particleBench": {
+    "layers": 1,
+    "perFrameMsTotal": 0.009,
+    "rows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "perFrameMs": 0.009,
+      "alive": 30
+     }
+    ]
+   },
+   "cost": 827.8
+  },
+  {
+   "id": "zmd_08",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/佩丽卡/zmd_08.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "小鸟游星野01_04",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/小鸟游星野/小鸟游星野01_04.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "小鸟游星野01_11",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/小鸟游星野/小鸟游星野01_11.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "小鸟游星野04_2",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/小鸟游星野/小鸟游星野04_2.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "小鸟游星野04_7",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/小鸟游星野/小鸟游星野04_7.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "小鸟游星野11_01",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/小鸟游星野/小鸟游星野11_01.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "小鸟游星野11_10",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/小鸟游星野/小鸟游星野11_10.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "小鸟游星野_01",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/小鸟游星野/小鸟游星野_01.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "小鸟游星野_02",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/小鸟游星野/小鸟游星野_02.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "小鸟游星野_09",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/小鸟游星野/小鸟游星野_09.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "小鸟游星野_11",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/小鸟游星野/小鸟游星野_11.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "小鸟游星野_12",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/小鸟游星野/小鸟游星野_12.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "小鸟游星野_13",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/小鸟游星野/小鸟游星野_13.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "庄方宜_19",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/庄方宜/庄方宜_19.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "庄方宜_2",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/庄方宜/庄方宜_2.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "庄方宜_24",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/庄方宜/庄方宜_24.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "庄方宜_3",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/庄方宜/庄方宜_3.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "庄方宜_4",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/庄方宜/庄方宜_4.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "庄方宜_6",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/庄方宜/庄方宜_6.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "庄方宜_7",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/庄方宜/庄方宜_7.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "洁尔佩塔_4",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洁尔佩塔/洁尔佩塔_4.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "洛琪希1_1",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛琪希/洛琪希1_1.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "洛琪希1_3",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛琪希/洛琪希1_3.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "洛琪希_01",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛琪希/洛琪希_01.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "洛茜_01",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_01.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "洛茜_02",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_02.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "洛茜_03",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_03.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "洛茜_04",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_04.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "洛茜_05",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_05.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "洛茜_06",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_06.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "洛茜_07",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_07.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "洛茜_08",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_08.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "洛茜_09",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_09.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "洛茜_10",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_10.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "洛茜_11",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_11.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "洛茜_12",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_12.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "洛茜_13",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_13.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "夜莺night——【customize自定义】firefly_流萤_星空之誓——夜莺night崩坏星穹铁道",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/流萤/夜莺night——【customize自定义】firefly_流萤_星空之誓——夜莺night崩坏星穹铁道.mpkg",
+   "static": {
+    "layers": 58,
+    "visible": 23,
+    "texLayers": 22,
+    "effectLayers": 5,
+    "fxPasses": 10,
+    "particleLayers": 4,
+    "maxcount": 738,
+    "meshLayers": 0,
+    "textLayers": 22,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 20,
+    "decodeFail": 0,
+    "decodeMB": 112.1
+   },
+   "particleBench": {
+    "layers": 4,
+    "perFrameMsTotal": 0.023,
+    "rows": [
+     {
+      "name": "Stars",
+      "maxcount": 500,
+      "perFrameMs": 0.013,
+      "alive": 133
+     },
+     {
+      "name": "Twinkling shooting star",
+      "maxcount": 100,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 10,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "轨迹 1",
+      "maxcount": 128,
+      "perFrameMs": 0.01,
+      "alive": 30
+     }
+    ]
+   },
+   "cost": 307.8
+  },
+  {
+   "id": "流萤01_03",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/流萤/流萤01_03.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "流萤_06",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/流萤/流萤_06.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "流萤_09",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/流萤/流萤_09.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "砂狼白子02_01",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子02_01.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "砂狼白子02_02",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子02_02.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "砂狼白子02_08",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子02_08.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "砂狼白子02_10",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子02_10.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "砂狼白子11_01",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子11_01.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "砂狼白子11_03",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子11_03.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "砂狼白子11_05",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子11_05.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "砂狼白子_1",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子_1.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "砂狼白子_2",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子_2.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "砂狼白子_3",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子_3.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "砂狼白子_4",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子_4.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "砂狼白子_5",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子_5.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "纳西妲_02",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/纳西妲/纳西妲_02.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "纳西妲_03",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/纳西妲/纳西妲_03.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "纳西妲_04",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/纳西妲/纳西妲_04.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "纳西妲_08",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/纳西妲/纳西妲_08.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "纳西妲_10",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/纳西妲/纳西妲_10.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "zmd_01",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/终末地/zmd_01.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "zmd_12",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/莱万汀/zmd_12.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "夜莺Night——Honkai Star Rail Castorice 遐蝶 冥河永渡 崩坏星穹铁道The Etern",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/遐蝶/夜莺Night——Honkai Star Rail Castorice 遐蝶 冥河永渡 崩坏星穹铁道The Etern.mpkg",
+   "static": {
+    "layers": 41,
+    "visible": 22,
+    "texLayers": 5,
+    "effectLayers": 5,
+    "fxPasses": 12,
+    "particleLayers": 5,
+    "maxcount": 388,
+    "meshLayers": 0,
+    "textLayers": 21,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 6,
+    "decodeFail": 0,
+    "decodeMB": 59.4
+   },
+   "particleBench": {
+    "layers": 5,
+    "perFrameMsTotal": 0.014,
+    "rows": [
+     {
+      "name": "大型",
+      "maxcount": 40,
+      "perFrameMs": 0.001,
+      "alive": 3
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 10,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 10,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "樱花",
+      "maxcount": 200,
+      "perFrameMs": 0.001,
+      "alive": 6
+     },
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "perFrameMs": 0.012,
+      "alive": 30
+     }
+    ]
+   },
+   "cost": 217.2
+  },
+  {
+   "id": "遐蝶_01",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/遐蝶/遐蝶_01.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "遐蝶_02",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/遐蝶/遐蝶_02.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "遐蝶_09",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/遐蝶/遐蝶_09.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "遐蝶_15",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/遐蝶/遐蝶_15.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "夜莺Night——Honkai Star Rail Castorice 遐蝶 冥河永渡 崩坏星穹铁道The Etern",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpapertest1/夜莺Night——Honkai Star Rail Castorice 遐蝶 冥河永渡 崩坏星穹铁道The Etern.mpkg",
+   "static": {
+    "layers": 41,
+    "visible": 22,
+    "texLayers": 5,
+    "effectLayers": 5,
+    "fxPasses": 12,
+    "particleLayers": 5,
+    "maxcount": 388,
+    "meshLayers": 0,
+    "textLayers": 21,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 6,
+    "decodeFail": 0,
+    "decodeMB": 59.4
+   },
+   "particleBench": {
+    "layers": 5,
+    "perFrameMsTotal": 0.009,
+    "rows": [
+     {
+      "name": "大型",
+      "maxcount": 40,
+      "perFrameMs": 0.001,
+      "alive": 3
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 10,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 10,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "樱花",
+      "maxcount": 200,
+      "perFrameMs": 0.001,
+      "alive": 6
+     },
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "perFrameMs": 0.007,
+      "alive": 30
+     }
+    ]
+   },
+   "cost": 217.2
+  },
+  {
+   "id": "夜莺night——【customize自定义】firefly_流萤_星空之誓——夜莺night崩坏星穹铁道",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpapertest1/夜莺night——【customize自定义】firefly_流萤_星空之誓——夜莺night崩坏星穹铁道.mpkg",
+   "static": {
+    "layers": 58,
+    "visible": 23,
+    "texLayers": 22,
+    "effectLayers": 5,
+    "fxPasses": 10,
+    "particleLayers": 4,
+    "maxcount": 738,
+    "meshLayers": 0,
+    "textLayers": 22,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 20,
+    "decodeFail": 0,
+    "decodeMB": 112.1
+   },
+   "particleBench": {
+    "layers": 4,
+    "perFrameMsTotal": 0.027,
+    "rows": [
+     {
+      "name": "Stars",
+      "maxcount": 500,
+      "perFrameMs": 0.02,
+      "alive": 133
+     },
+     {
+      "name": "Twinkling shooting star",
+      "maxcount": 100,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 10,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "轨迹 1",
+      "maxcount": 128,
+      "perFrameMs": 0.007,
+      "alive": 30
+     }
+    ]
+   },
+   "cost": 307.8
+  },
+  {
+   "id": "夜莺night——【time_variation_时间变化】alone_孤独の少女【原画：rella]",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpapertest1/夜莺night——【time_variation_时间变化】alone_孤独の少女【原画：rella].mpkg",
+   "static": {
+    "layers": 102,
+    "visible": 54,
+    "texLayers": 37,
+    "effectLayers": 31,
+    "fxPasses": 57,
+    "particleLayers": 14,
+    "maxcount": 3453,
+    "meshLayers": 1,
+    "textLayers": 17,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 27,
+    "decodeFail": 0,
+    "decodeMB": 136.7
+   },
+   "particleBench": {
+    "layers": 14,
+    "perFrameMsTotal": 0.232,
+    "rows": [
+     {
+      "name": "昼夜变化星星1",
+      "maxcount": 500,
+      "perFrameMs": 0.018,
+      "alive": 133
+     },
+     {
+      "name": "night2",
+      "maxcount": 500,
+      "perFrameMs": 0.019,
+      "alive": 133
+     },
+     {
+      "name": "night3",
+      "maxcount": 100,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "流星",
+      "maxcount": 100,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "Stars",
+      "maxcount": 500,
+      "perFrameMs": 0.013,
+      "alive": 133
+     },
+     {
+      "name": "昼夜渐变流星1",
+      "maxcount": 100,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "雨景远景",
+      "maxcount": 512,
+      "perFrameMs": 0.145,
+      "alive": 200
+     },
+     {
+      "name": "雪景远景",
+      "maxcount": 360,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "Fireworks 1",
+      "maxcount": 50,
+      "perFrameMs": 0.001,
+      "alive": 2
+     },
+     {
+      "name": "Fireworks 2",
+      "maxcount": 50,
+      "perFrameMs": 0.001,
+      "alive": 2
+     },
+     {
+      "name": "Fireworks 3",
+      "maxcount": 50,
+      "perFrameMs": 0.001,
+      "alive": 2
+     },
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "perFrameMs": 0.012,
+      "alive": 30
+     },
+     {
+      "name": "zzz",
+      "maxcount": 3,
+      "perFrameMs": 0.001,
+      "alive": 3
+     },
+     {
+      "name": "rain_drop_screen",
+      "maxcount": 500,
+      "perFrameMs": 0.021,
+      "alive": 83
+     }
+    ]
+   },
+   "cost": 742
+  },
+  {
+   "id": "夜莺night——【time_variation时间变化】elaina_伊蕾娜：闲憩微息【魔女之旅】day_night",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpapertest1/夜莺night——【time_variation时间变化】elaina_伊蕾娜：闲憩微息【魔女之旅】day_night.mpkg",
+   "static": {
+    "layers": 41,
+    "visible": 21,
+    "texLayers": 12,
+    "effectLayers": 14,
+    "fxPasses": 30,
+    "particleLayers": 1,
+    "maxcount": 128,
+    "meshLayers": 0,
+    "textLayers": 16,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 8,
+    "decodeFail": 0,
+    "decodeMB": 292.8
+   },
+   "particleBench": {
+    "layers": 1,
+    "perFrameMsTotal": 0.009,
+    "rows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "perFrameMs": 0.009,
+      "alive": 30
+     }
+    ]
+   },
+   "cost": 827.8
+  },
+  {
+   "id": "红鸾樱落",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpapertest1/红鸾樱落.mpkg",
+   "static": {
+    "layers": 65,
+    "visible": 36,
+    "texLayers": 24,
+    "effectLayers": 38,
+    "fxPasses": 47,
+    "particleLayers": 9,
+    "maxcount": 1564,
+    "meshLayers": 6,
+    "textLayers": 17,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 36,
+    "decodeFail": 0,
+    "decodeMB": 109.8
+   },
+   "particleBench": {
+    "layers": 9,
+    "perFrameMsTotal": 0.263,
+    "rows": [
+     {
+      "name": "龙烟",
+      "maxcount": 32,
+      "perFrameMs": 0.026,
+      "alive": 32
+     },
+     {
+      "name": "烟......",
+      "maxcount": 32,
+      "perFrameMs": 0.03,
+      "alive": 32
+     },
+     {
+      "name": "眼焰",
+      "maxcount": 32,
+      "perFrameMs": 0.024,
+      "alive": 32
+     },
+     {
+      "name": "眼焰",
+      "maxcount": 32,
+      "perFrameMs": 0.029,
+      "alive": 32
+     },
+     {
+      "name": "樱花 近",
+      "maxcount": 200,
+      "perFrameMs": 0,
+      "alive": 6
+     },
+     {
+      "name": "樱花 远",
+      "maxcount": 200,
+      "perFrameMs": 0,
+      "alive": 6
+     },
+     {
+      "name": "鼠标",
+      "maxcount": 1000,
+      "perFrameMs": 0.154,
+      "alive": 169
+     },
+     {
+      "name": "底—烟",
+      "maxcount": 20,
+      "perFrameMs": 0,
+      "alive": 1
+     },
+     {
+      "name": "光",
+      "maxcount": 16,
+      "perFrameMs": 0,
+      "alive": 0
+     }
+    ]
+   },
+   "cost": 624.4
+  },
+  {
+   "id": "2aeac838640589c66efc315e821c44b6",
+   "path": "/root/.dsh-mpkg-wallpaper/2aeac838640589c66efc315e821c44b6.mpkg",
+   "textures": null,
+   "err": "no scene.json"
+  },
+  {
+   "id": "5a85a54b12b64bc882d1e7bab0f8e837",
+   "path": "/root/.dsh-mpkg-wallpaper/5a85a54b12b64bc882d1e7bab0f8e837.mpkg",
+   "static": {
+    "layers": 41,
+    "visible": 21,
+    "texLayers": 12,
+    "effectLayers": 14,
+    "fxPasses": 30,
+    "particleLayers": 1,
+    "maxcount": 128,
+    "meshLayers": 0,
+    "textLayers": 16,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 8,
+    "decodeFail": 0,
+    "decodeMB": 292.8
+   },
+   "particleBench": {
+    "layers": 1,
+    "perFrameMsTotal": 0.008,
+    "rows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "perFrameMs": 0.008,
+      "alive": 30
+     }
+    ]
+   },
+   "cost": 827.8
+  },
+  {
+   "id": "aef86642c01a9db43979dedc142711d2",
+   "path": "/root/.dsh-mpkg-wallpaper/aef86642c01a9db43979dedc142711d2.mpkg",
+   "static": {
+    "layers": 0
+   },
+   "textures": null
+  },
+  {
+   "id": "d5007a52866682e2210d9d855d170c80",
+   "path": "/root/.dsh-mpkg-wallpaper/d5007a52866682e2210d9d855d170c80.mpkg",
+   "static": {
+    "layers": 58,
+    "visible": 23,
+    "texLayers": 22,
+    "effectLayers": 5,
+    "fxPasses": 10,
+    "particleLayers": 4,
+    "maxcount": 738,
+    "meshLayers": 0,
+    "textLayers": 22,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 20,
+    "decodeFail": 0,
+    "decodeMB": 112.1
+   },
+   "particleBench": {
+    "layers": 4,
+    "perFrameMsTotal": 0.02,
+    "rows": [
+     {
+      "name": "Stars",
+      "maxcount": 500,
+      "perFrameMs": 0.013,
+      "alive": 133
+     },
+     {
+      "name": "Twinkling shooting star",
+      "maxcount": 100,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 10,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "轨迹 1",
+      "maxcount": 128,
+      "perFrameMs": 0.007,
+      "alive": 30
+     }
+    ]
+   },
+   "cost": 307.8
+  },
+  {
+   "id": "f643f908ae8800b413e9e4d02b9d7858",
+   "path": "/root/.dsh-mpkg-wallpaper/f643f908ae8800b413e9e4d02b9d7858.mpkg",
+   "static": {
+    "layers": 41,
+    "visible": 21,
+    "texLayers": 12,
+    "effectLayers": 14,
+    "fxPasses": 30,
+    "particleLayers": 1,
+    "maxcount": 128,
+    "meshLayers": 0,
+    "textLayers": 16,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 8,
+    "decodeFail": 0,
+    "decodeMB": 292.8
+   },
+   "particleBench": {
+    "layers": 1,
+    "perFrameMsTotal": 0.009,
+    "rows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "perFrameMs": 0.009,
+      "alive": 30
+     }
+    ]
+   },
+   "cost": 827.8
+  },
+  {
+   "id": "3326873240",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3326873240/scene.pkg",
+   "static": {
+    "layers": 62,
+    "visible": 22,
+    "texLayers": 31,
+    "effectLayers": 14,
+    "fxPasses": 29,
+    "particleLayers": 1,
+    "maxcount": 128,
+    "meshLayers": 0,
+    "textLayers": 19,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 22,
+    "decodeFail": 0,
+    "decodeMB": 234
+   },
+   "particleBench": {
+    "layers": 1,
+    "perFrameMsTotal": 0.012,
+    "rows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "perFrameMs": 0.012,
+      "alive": 30
+     }
+    ]
+   },
+   "cost": 703.2
+  },
+  {
+   "id": "3327063360",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3327063360/scene.pkg",
+   "static": {
+    "layers": 69,
+    "visible": 23,
+    "texLayers": 36,
+    "effectLayers": 28,
+    "fxPasses": 65,
+    "particleLayers": 2,
+    "maxcount": 138,
+    "meshLayers": 1,
+    "textLayers": 21,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 19,
+    "decodeFail": 0,
+    "decodeMB": 47.4
+   },
+   "particleBench": {
+    "layers": 2,
+    "perFrameMsTotal": 0.009,
+    "rows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "perFrameMs": 0.009,
+      "alive": 30
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 10,
+      "perFrameMs": 0,
+      "alive": 0
+     }
+    ]
+   },
+   "cost": 622.4
+  },
+  {
+   "id": "3470764447",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3470764447/scene.pkg",
+   "static": {
+    "layers": 41,
+    "visible": 21,
+    "texLayers": 12,
+    "effectLayers": 14,
+    "fxPasses": 30,
+    "particleLayers": 1,
+    "maxcount": 128,
+    "meshLayers": 0,
+    "textLayers": 16,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 8,
+    "decodeFail": 0,
+    "decodeMB": 306.6
+   },
+   "particleBench": {
+    "layers": 1,
+    "perFrameMsTotal": 0.009,
+    "rows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "perFrameMs": 0.009,
+      "alive": 30
+     }
+    ]
+   },
+   "cost": 855.4
+  },
+  {
+   "id": "3544152633",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3544152633/scene.pkg",
+   "static": {
+    "layers": 70,
+    "visible": 31,
+    "texLayers": 31,
+    "effectLayers": 27,
+    "fxPasses": 74,
+    "particleLayers": 16,
+    "maxcount": 12387,
+    "meshLayers": 1,
+    "textLayers": 16,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 37,
+    "decodeFail": 0,
+    "decodeMB": 81.5
+   },
+   "particleBench": {
+    "layers": 16,
+    "perFrameMsTotal": 0.436,
+    "rows": [
+     {
+      "name": "Rain perspective",
+      "maxcount": 512,
+      "perFrameMs": 0.083,
+      "alive": 200
+     },
+     {
+      "name": "Shooting star-blue-2",
+      "maxcount": 20,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "rain_on_the_glass2",
+      "maxcount": 150,
+      "perFrameMs": 0.048,
+      "alive": 148
+     },
+     {
+      "name": "Fog (calm)",
+      "maxcount": 20,
+      "perFrameMs": 0,
+      "alive": 1
+     },
+     {
+      "name": "Fireworks 3",
+      "maxcount": 50,
+      "perFrameMs": 0.001,
+      "alive": 2
+     },
+     {
+      "name": "Blinking Stars_01",
+      "maxcount": 750,
+      "perFrameMs": 0.01,
+      "alive": 133
+     },
+     {
+      "name": "reactive Stars",
+      "maxcount": 500,
+      "perFrameMs": 0.073,
+      "alive": 166
+     },
+     {
+      "name": "Shooting_Star_01",
+      "maxcount": 35,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "Moving Stars_02",
+      "maxcount": 85,
+      "perFrameMs": 0.06,
+      "alive": 85
+     },
+     {
+      "name": "Glowing Stars_01",
+      "maxcount": 35,
+      "perFrameMs": 0.007,
+      "alive": 35
+     },
+     {
+      "name": "Glowing Stars_02",
+      "maxcount": 8,
+      "perFrameMs": 0.001,
+      "alive": 8
+     },
+     {
+      "name": "birds",
+      "maxcount": 30,
+      "perFrameMs": 0.029,
+      "alive": 30
+     },
+     {
+      "name": "Star Reactive",
+      "maxcount": 75,
+      "perFrameMs": 0.031,
+      "alive": 75
+     },
+     {
+      "name": "Rain_secondary",
+      "maxcount": 10000,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "Moving Glowing Stars_01",
+      "maxcount": 85,
+      "perFrameMs": 0.054,
+      "alive": 85
+     },
+     {
+      "name": "Vapor (double)",
+      "maxcount": 32,
+      "perFrameMs": 0.039,
+      "alive": 31
+     }
+    ]
+   },
+   "cost": 774.9
+  },
+  {
+   "id": "3554161528",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3554161528/scene.pkg",
+   "static": {
+    "layers": 37,
+    "visible": 32,
+    "texLayers": 15,
+    "effectLayers": 8,
+    "fxPasses": 26,
+    "particleLayers": 13,
+    "maxcount": 1471,
+    "meshLayers": 1,
+    "textLayers": 2,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 21,
+    "decodeFail": 0,
+    "decodeMB": 95.4
+   },
+   "particleBench": {
+    "layers": 13,
+    "perFrameMsTotal": 0.191,
+    "rows": [
+     {
+      "name": "雪景远景",
+      "maxcount": 40,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "落花",
+      "maxcount": 30,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "notes1_simple",
+      "maxcount": 20,
+      "perFrameMs": 0.002,
+      "alive": 3
+     },
+     {
+      "name": "Blinking Stars",
+      "maxcount": 100,
+      "perFrameMs": 0.01,
+      "alive": 100
+     },
+     {
+      "name": "Blinking Stars",
+      "maxcount": 150,
+      "perFrameMs": 0.011,
+      "alive": 133
+     },
+     {
+      "name": "Blinking Stars",
+      "maxcount": 15,
+      "perFrameMs": 0.003,
+      "alive": 15
+     },
+     {
+      "name": "流星",
+      "maxcount": 16,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "雾 2",
+      "maxcount": 20,
+      "perFrameMs": 0.001,
+      "alive": 13
+     },
+     {
+      "name": "落花",
+      "maxcount": 30,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "雪景远景",
+      "maxcount": 40,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 5,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 5,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "cherry blossoms on curso",
+      "maxcount": 1000,
+      "perFrameMs": 0.164,
+      "alive": 162
+     }
+    ]
+   },
+   "cost": 406.1
+  },
+  {
+   "id": "3660962877",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3660962877/scene.pkg",
+   "static": {
+    "layers": 127,
+    "visible": 28,
+    "texLayers": 34,
+    "effectLayers": 44,
+    "fxPasses": 73,
+    "particleLayers": 2,
+    "maxcount": 1128,
+    "meshLayers": 0,
+    "textLayers": 69,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 7,
+    "decodeFail": 0,
+    "decodeMB": 101.2
+   },
+   "particleBench": {
+    "layers": 2,
+    "perFrameMsTotal": 0.147,
+    "rows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "perFrameMs": 0.012,
+      "alive": 30
+     },
+     {
+      "name": "cherry blossoms on curso",
+      "maxcount": 1000,
+      "perFrameMs": 0.135,
+      "alive": 162
+     }
+    ]
+   },
+   "cost": 793.9
+  },
+  {
+   "id": "3669681034",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3669681034/scene.pkg",
+   "static": {
+    "layers": 2,
+    "visible": 2,
+    "texLayers": 1,
+    "effectLayers": 0,
+    "fxPasses": 0,
+    "particleLayers": 0,
+    "maxcount": 0,
+    "meshLayers": 0,
+    "textLayers": 0,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 1,
+    "decodeFail": 0,
+    "decodeMB": 0
+   },
+   "particleBench": {
+    "layers": 0,
+    "perFrameMsTotal": 0,
+    "rows": []
+   },
+   "cost": 0.1
+  },
+  {
+   "id": "3715743282",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3715743282/scene.pkg",
+   "static": {
+    "layers": 9,
+    "visible": 6,
+    "texLayers": 2,
+    "effectLayers": 4,
+    "fxPasses": 8,
+    "particleLayers": 3,
+    "maxcount": 208,
+    "meshLayers": 0,
+    "textLayers": 4,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 5,
+    "decodeFail": 0,
+    "decodeMB": 4.7
+   },
+   "particleBench": {
+    "layers": 3,
+    "perFrameMsTotal": 0.009,
+    "rows": [
+     {
+      "name": "灰烬大",
+      "maxcount": 40,
+      "perFrameMs": 0.002,
+      "alive": 3
+     },
+     {
+      "name": "尘埃",
+      "maxcount": 128,
+      "perFrameMs": 0.007,
+      "alive": 23
+     },
+     {
+      "name": "Ember",
+      "maxcount": 40,
+      "perFrameMs": 0,
+      "alive": 3
+     }
+    ]
+   },
+   "cost": 74.1
+  },
+  {
+   "id": "3719111841",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3719111841/scene.pkg",
+   "static": {
+    "layers": 43,
+    "visible": 32,
+    "texLayers": 26,
+    "effectLayers": 19,
+    "fxPasses": 21,
+    "particleLayers": 8,
+    "maxcount": 1774,
+    "meshLayers": 5,
+    "textLayers": 3,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 43,
+    "decodeFail": 0,
+    "decodeMB": 443.8
+   },
+   "particleBench": {
+    "layers": 8,
+    "perFrameMsTotal": 0.012,
+    "rows": [
+     {
+      "name": "Glass Shards",
+      "maxcount": 50,
+      "perFrameMs": 0,
+      "alive": 1
+     },
+     {
+      "name": "Matrix spawnerREADNAME -",
+      "maxcount": 500,
+      "perFrameMs": 0.002,
+      "alive": 66
+     },
+     {
+      "name": "灰烬大",
+      "maxcount": 40,
+      "perFrameMs": 0,
+      "alive": 3
+     },
+     {
+      "name": "灰烬光束",
+      "maxcount": 40,
+      "perFrameMs": 0,
+      "alive": 3
+     },
+     {
+      "name": "Bokeh Hex",
+      "maxcount": 500,
+      "perFrameMs": 0.002,
+      "alive": 16
+     },
+     {
+      "name": "Bokeh Cir",
+      "maxcount": 500,
+      "perFrameMs": 0.002,
+      "alive": 16
+     },
+     {
+      "name": "尘埃",
+      "maxcount": 128,
+      "perFrameMs": 0.006,
+      "alive": 23
+     },
+     {
+      "name": "光束 2 (旧)",
+      "maxcount": 16,
+      "perFrameMs": 0,
+      "alive": 0
+     }
+    ]
+   },
+   "cost": 1079.5
+  },
+  {
+   "id": "3721991999",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3721991999/scene.pkg",
+   "static": {
+    "layers": 2,
+    "visible": 2,
+    "texLayers": 1,
+    "effectLayers": 0,
+    "fxPasses": 0,
+    "particleLayers": 1,
+    "maxcount": 128,
+    "meshLayers": 0,
+    "textLayers": 0,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 2,
+    "decodeFail": 0,
+    "decodeMB": 5.5
+   },
+   "particleBench": {
+    "layers": 1,
+    "perFrameMsTotal": 0.005,
+    "rows": [
+     {
+      "name": "尘埃",
+      "maxcount": 128,
+      "perFrameMs": 0.005,
+      "alive": 23
+     }
+    ]
+   },
+   "cost": 11.2
+  },
+  {
+   "id": "3778592720",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3778592720/scene.pkg",
+   "static": {
+    "layers": 5,
+    "visible": 4,
+    "texLayers": 2,
+    "effectLayers": 0,
+    "fxPasses": 0,
+    "particleLayers": 2,
+    "maxcount": 80,
+    "meshLayers": 0,
+    "textLayers": 0,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 3,
+    "decodeFail": 0,
+    "decodeMB": 0.1
+   },
+   "particleBench": {
+    "layers": 2,
+    "perFrameMsTotal": 0.001,
+    "rows": [
+     {
+      "name": "灰烬大",
+      "maxcount": 40,
+      "perFrameMs": 0.001,
+      "alive": 3
+     },
+     {
+      "name": "灰烬大",
+      "maxcount": 40,
+      "perFrameMs": 0,
+      "alive": 3
+     }
+    ]
+   },
+   "cost": 0.5
+  },
+  {
+   "id": "夜莺Night——Honkai Star Rail Castorice 遐蝶 冥河永渡 崩坏星穹铁道The Etern",
+   "path": "/mnt/sdcard/wallpapertest1/夜莺Night——Honkai Star Rail Castorice 遐蝶 冥河永渡 崩坏星穹铁道The Etern.mpkg",
+   "static": {
+    "layers": 41,
+    "visible": 22,
+    "texLayers": 5,
+    "effectLayers": 5,
+    "fxPasses": 12,
+    "particleLayers": 5,
+    "maxcount": 388,
+    "meshLayers": 0,
+    "textLayers": 21,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 6,
+    "decodeFail": 0,
+    "decodeMB": 59.4
+   },
+   "particleBench": {
+    "layers": 5,
+    "perFrameMsTotal": 0.006,
+    "rows": [
+     {
+      "name": "大型",
+      "maxcount": 40,
+      "perFrameMs": 0.001,
+      "alive": 3
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 10,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 10,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "樱花",
+      "maxcount": 200,
+      "perFrameMs": 0,
+      "alive": 6
+     },
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "perFrameMs": 0.005,
+      "alive": 30
+     }
+    ]
+   },
+   "cost": 217.2
+  },
+  {
+   "id": "夜莺night——【customize自定义】firefly_流萤_星空之誓——夜莺night崩坏星穹铁道",
+   "path": "/mnt/sdcard/wallpapertest1/夜莺night——【customize自定义】firefly_流萤_星空之誓——夜莺night崩坏星穹铁道.mpkg",
+   "static": {
+    "layers": 58,
+    "visible": 23,
+    "texLayers": 22,
+    "effectLayers": 5,
+    "fxPasses": 10,
+    "particleLayers": 4,
+    "maxcount": 738,
+    "meshLayers": 0,
+    "textLayers": 22,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 20,
+    "decodeFail": 0,
+    "decodeMB": 112.1
+   },
+   "particleBench": {
+    "layers": 4,
+    "perFrameMsTotal": 0.017,
+    "rows": [
+     {
+      "name": "Stars",
+      "maxcount": 500,
+      "perFrameMs": 0.011,
+      "alive": 133
+     },
+     {
+      "name": "Twinkling shooting star",
+      "maxcount": 100,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 10,
+      "perFrameMs": 0,
+      "alive": 0
+     },
+     {
+      "name": "轨迹 1",
+      "maxcount": 128,
+      "perFrameMs": 0.006,
+      "alive": 30
+     }
+    ]
+   },
+   "cost": 307.8
+  },
+  {
+   "id": "夜莺night——【time_variation时间变化】elaina_伊蕾娜：闲憩微息【魔女之旅】day_night",
+   "path": "/mnt/sdcard/wallpapertest1/夜莺night——【time_variation时间变化】elaina_伊蕾娜：闲憩微息【魔女之旅】day_night.mpkg",
+   "static": {
+    "layers": 41,
+    "visible": 21,
+    "texLayers": 12,
+    "effectLayers": 14,
+    "fxPasses": 30,
+    "particleLayers": 1,
+    "maxcount": 128,
+    "meshLayers": 0,
+    "textLayers": 16,
+    "videoLayers": 0
+   },
+   "textures": {
+    "decodeOk": 8,
+    "decodeFail": 0,
+    "decodeMB": 292.8
+   },
+   "particleBench": {
+    "layers": 1,
+    "perFrameMsTotal": 0.008,
+    "rows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "perFrameMs": 0.008,
+      "alive": 30
+     }
+    ]
+   },
+   "cost": 827.8
+  }
+ ]
+}

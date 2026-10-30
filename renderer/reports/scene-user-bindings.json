@@ -1,0 +1,147 @@
+{
+ "generatedAt": "2026-10-16T16:01:19.419Z",
+ "total": 28,
+ "bloom": 4,
+ "rows": [
+  {
+   "pkg": "3544152633",
+   "field": "camerashake",
+   "user": "\"camerashake\""
+  },
+  {
+   "pkg": "3660962877",
+   "field": "cameraparallax",
+   "user": "{\r\n\t\t\t\t\"condition\" : \"1\",\r\n\t\t\t\t\"name\" : \"brbbrmouseparallax\""
+  },
+  {
+   "pkg": "3660962877",
+   "field": "cameraparallaxmouseinfluence",
+   "user": "\"lensparallaxsize\""
+  },
+  {
+   "pkg": "3660962877",
+   "field": "camerashake",
+   "user": "\"brbbrcentralship\""
+  },
+  {
+   "pkg": "3660962877",
+   "field": "zoom",
+   "user": "\"newproperty30\""
+  },
+  {
+   "pkg": "3719111841",
+   "field": "cameraparallax",
+   "user": "\"parallax\""
+  },
+  {
+   "pkg": "3719111841",
+   "field": "camerashake",
+   "user": "\"shake\""
+  },
+  {
+   "pkg": "2887099508",
+   "field": "bloom",
+   "user": "\"highlightneedpostprocessinginset\""
+  },
+  {
+   "pkg": "2902406982",
+   "field": "bloom",
+   "user": "\"hdr\""
+  },
+  {
+   "pkg": "3151551777",
+   "field": "camerashake",
+   "user": "\"trainshake\""
+  },
+  {
+   "pkg": "3463520581",
+   "field": "camerashake",
+   "user": "\"cameramovement\""
+  },
+  {
+   "pkg": "3589454154",
+   "field": "bloomhdriterations",
+   "user": "\"hdr2\""
+  },
+  {
+   "pkg": "3589454154",
+   "field": "bloomhdrscatter",
+   "user": "\"hdr1\""
+  },
+  {
+   "pkg": "3589454154",
+   "field": "bloomhdrstrength",
+   "user": "\"hdr\""
+  },
+  {
+   "pkg": "3589454154",
+   "field": "bloomhdrthreshold",
+   "user": "\"hdr3\""
+  },
+  {
+   "pkg": "3679620104",
+   "field": "cameraparallax",
+   "user": "\"newproperty\""
+  },
+  {
+   "pkg": "3679620104",
+   "field": "camerashake",
+   "user": "\"newproperty1\""
+  },
+  {
+   "pkg": "3690417937",
+   "field": "bloom",
+   "user": "\"bloom\""
+  },
+  {
+   "pkg": "3690417937",
+   "field": "cameraparallax",
+   "user": "\"parallax\""
+  },
+  {
+   "pkg": "3195212886",
+   "field": "cameraparallaxmouseinfluence",
+   "user": "\"newproperty20\""
+  },
+  {
+   "pkg": "3299228616",
+   "field": "bloom",
+   "user": "\"hdr\""
+  },
+  {
+   "pkg": "3448877775",
+   "field": "cameraparallax",
+   "user": "\"hrbigb3\""
+  },
+  {
+   "pkg": "3462491575",
+   "field": "cameraparallax",
+   "user": "{\r\n\t\t\t\t\"condition\" : \"0\",\r\n\t\t\t\t\"name\" : \"hrbbrmouseparallax\""
+  },
+  {
+   "pkg": "3462491575",
+   "field": "cameraparallaxmouseinfluence",
+   "user": "\"brmouseparallaximpactvalue\""
+  },
+  {
+   "pkg": "3509243656",
+   "field": "bloomhdrscatter",
+   "user": "\"hdr1\""
+  },
+  {
+   "pkg": "3509243656",
+   "field": "bloomhdrstrength",
+   "user": "\"hdr\""
+  },
+  {
+   "pkg": "3509243656",
+   "field": "camerashakeamplitude",
+   "user": "\"lensshakeamplitude\""
+  },
+  {
+   "pkg": "3509243656",
+   "field": "camerashakespeed",
+   "user": "\"lensshakespeed\""
+  }
+ ]
+}

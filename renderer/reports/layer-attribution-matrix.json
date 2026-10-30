@@ -1,0 +1,3803 @@
+{
+ "generatedAt": "2026-10-05T11:56:09.969Z",
+ "note": "离线层归因矩阵（C0 工具全库扫；真机一致性见 layer-attribution-consistency 12/0）",
+ "roots": [
+  "allwallpaper/dd",
+  "allwallpaper/0923",
+  "allwallpaper/0917",
+  "allwallpaper/wallpaperE",
+  "allwallpaper/1004"
+ ],
+ "corpus": {
+  "containers": 187,
+  "maxMB": 250
+ },
+ "runs": [
+  {
+   "offset": 0,
+   "limit": 60,
+   "startedAt": "2026-10-05T11:56:09.970Z",
+   "done": 60,
+   "skipped": [],
+   "lowMem": 0,
+   "finishedAt": "2026-10-05T11:56:37.609Z"
+  },
+  {
+   "offset": 60,
+   "limit": 65,
+   "startedAt": "2026-10-05T11:56:48.039Z",
+   "done": 65,
+   "skipped": [],
+   "lowMem": 0,
+   "finishedAt": "2026-10-05T11:56:54.939Z"
+  },
+  {
+   "offset": 125,
+   "limit": 62,
+   "startedAt": "2026-10-05T11:56:55.408Z",
+   "done": 62,
+   "skipped": [],
+   "lowMem": 0,
+   "finishedAt": "2026-10-05T11:57:01.749Z"
+  },
+  {
+   "offset": 125,
+   "limit": 62,
+   "startedAt": "2026-10-05T11:57:20.588Z",
+   "done": 62,
+   "skipped": [],
+   "lowMem": 0,
+   "finishedAt": "2026-10-05T11:57:20.589Z"
+  }
+ ],
+ "rows": {
+  "allwallpaper/0917/3195212886/scene.pkg": {
+   "id": "3195212886",
+   "rel": "allwallpaper/0917/3195212886/scene.pkg",
+   "layers": 90,
+   "drawn": 58,
+   "skipped": 32,
+   "skipReasons": {
+    "invisible": 29,
+    "invisible-config": 2,
+    "not-drawn": 1
+   },
+   "binds": {
+    "texture": 40,
+    "transparent": 16,
+    "particle": 2
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "notDrawn": [
+    {
+     "name": "Trails 2",
+     "type": "particle",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    }
+   ],
+   "renderErr": null
+  },
+  "allwallpaper/0917/3233141951/scene.pkg": {
+   "id": "3233141951",
+   "rel": "allwallpaper/0917/3233141951/scene.pkg",
+   "layers": 65,
+   "drawn": 33,
+   "skipped": 32,
+   "skipReasons": {
+    "invisible": 26,
+    "invisible-config": 6
+   },
+   "binds": {
+    "texture": 23,
+    "transparent": 4,
+    "particle": 6
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/0917/3250755486/scene.pkg": {
+   "id": "3250755486",
+   "rel": "allwallpaper/0917/3250755486/scene.pkg",
+   "layers": 2,
+   "drawn": 2,
+   "skipped": 0,
+   "skipReasons": {},
+   "binds": {
+    "texture": 2
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/0917/3299228616/scene.pkg": {
+   "id": "3299228616",
+   "rel": "allwallpaper/0917/3299228616/scene.pkg",
+   "layers": 271,
+   "drawn": 12,
+   "skipped": 259,
+   "skipReasons": {
+    "degenerate-geometry": 2,
+    "container": 3,
+    "invisible": 146,
+    "invisible-config": 108
+   },
+   "binds": {
+    "texture": 3,
+    "particle": 7,
+    "transparent": 2
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/0917/3351163962/scene.pkg": {
+   "id": "3351163962",
+   "rel": "allwallpaper/0917/3351163962/scene.pkg",
+   "layers": 136,
+   "drawn": 16,
+   "skipped": 120,
+   "skipReasons": {
+    "degenerate-geometry": 31,
+    "invisible": 63,
+    "invisible-config": 26
+   },
+   "binds": {
+    "solidcolor": 1,
+    "texture": 8,
+    "transparent": 6,
+    "particle": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/0917/3448877775/scene.pkg": {
+   "id": "3448877775",
+   "rel": "allwallpaper/0917/3448877775/scene.pkg",
+   "layers": 103,
+   "drawn": 26,
+   "skipped": 77,
+   "skipReasons": {
+    "invisible": 44,
+    "invisible-config": 15,
+    "degenerate-geometry": 14,
+    "logical-helper": 1,
+    "not-drawn": 2,
+    "container": 1
+   },
+   "binds": {
+    "texture": 15,
+    "particle": 4,
+    "solidcolor": 1,
+    "transparent": 6
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "notDrawn": [
+    {
+     "name": "Trails 2",
+     "type": "particle",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    },
+    {
+     "name": "zzz",
+     "type": "particle",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    }
+   ],
+   "renderErr": null
+  },
+  "allwallpaper/0917/3462491575/scene.pkg": {
+   "id": "3462491575",
+   "rel": "allwallpaper/0917/3462491575/scene.pkg",
+   "layers": 75,
+   "drawn": 41,
+   "skipped": 34,
+   "skipReasons": {
+    "logical-helper": 1,
+    "invisible": 18,
+    "degenerate-geometry": 11,
+    "not-drawn": 1,
+    "invisible-config": 3
+   },
+   "binds": {
+    "texture": 34,
+    "particle": 3,
+    "transparent": 4
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "notDrawn": [
+    {
+     "name": "Trails 2",
+     "type": "particle",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    }
+   ],
+   "renderErr": null
+  },
+  "allwallpaper/0917/3509243656/scene.pkg": {
+   "id": "3509243656",
+   "rel": "allwallpaper/0917/3509243656/scene.pkg",
+   "layers": 142,
+   "drawn": 37,
+   "skipped": 105,
+   "skipReasons": {
+    "invisible": 35,
+    "degenerate-geometry": 46,
+    "logical-helper": 1,
+    "invisible-config": 10,
+    "not-drawn": 13
+   },
+   "binds": {
+    "transparent": 17,
+    "texture": 18,
+    "particle": 2
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "notDrawn": [
+    {
+     "name": "tt3",
+     "type": "solid",
+     "particle": false,
+     "tex": 0,
+     "fx": 0
+    },
+    {
+     "name": "tt3d",
+     "type": "solid",
+     "particle": false,
+     "tex": 0,
+     "fx": 0
+    },
+    {
+     "name": "tt2",
+     "type": "solid",
+     "particle": false,
+     "tex": 0,
+     "fx": 0
+    },
+    {
+     "name": "tt2d",
+     "type": "solid",
+     "particle": false,
+     "tex": 0,
+     "fx": 0
+    },
+    {
+     "name": "tt1",
+     "type": "solid",
+     "particle": false,
+     "tex": 0,
+     "fx": 0
+    },
+    {
+     "name": "tt1d",
+     "type": "solid",
+     "particle": false,
+     "tex": 0,
+     "fx": 0
+    },
+    {
+     "name": "LOAD2",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    },
+    {
+     "name": "LOAD-S",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    },
+    {
+     "name": "LOAD1",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    },
+    {
+     "name": "LOAD-A",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    },
+    {
+     "name": "kk",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    },
+    {
+     "name": "LOAD-P",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    },
+    {
+     "name": "kk",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    }
+   ],
+   "renderErr": null
+  },
+  "allwallpaper/0917/3588181703/scene.pkg": {
+   "id": "3588181703",
+   "rel": "allwallpaper/0917/3588181703/scene.pkg",
+   "layers": 1,
+   "drawn": 1,
+   "skipped": 0,
+   "skipReasons": {},
+   "binds": {
+    "texture": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/0923/2887099508/scene.pkg": {
+   "id": "2887099508",
+   "rel": "allwallpaper/0923/2887099508/scene.pkg",
+   "layers": 82,
+   "drawn": 46,
+   "skipped": 36,
+   "skipReasons": {
+    "invisible-config": 3,
+    "degenerate-geometry": 11,
+    "invisible": 16,
+    "container": 4,
+    "not-drawn": 1,
+    "logical-helper": 1
+   },
+   "binds": {
+    "solidcolor": 7,
+    "texture": 20,
+    "particle": 2,
+    "transparent": 13,
+    "rtcopy": 4
+   },
+   "copybg": {
+    "n": 64,
+    "withTex": 28,
+    "noTexNoFx": 28,
+    "noTexFx": 8,
+    "rtcopy": 4
+   },
+   "notDrawn": [
+    {
+     "name": "Light shafts 0",
+     "type": "particle",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    }
+   ],
+   "renderErr": null
+  },
+  "allwallpaper/0923/2902406982/scene.pkg": {
+   "id": "2902406982",
+   "rel": "allwallpaper/0923/2902406982/scene.pkg",
+   "layers": 140,
+   "drawn": 82,
+   "skipped": 58,
+   "skipReasons": {
+    "invisible": 51,
+    "container": 6,
+    "invisible-config": 1
+   },
+   "binds": {
+    "texture": 53,
+    "transparent": 27,
+    "particle": 1,
+    "solidcolor": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/0923/2981249186/scene.pkg": {
+   "id": "2981249186",
+   "rel": "allwallpaper/0923/2981249186/scene.pkg",
+   "layers": 12,
+   "drawn": 5,
+   "skipped": 7,
+   "skipReasons": {
+    "particle-idle": 1,
+    "not-drawn": 2,
+    "invisible-config": 3,
+    "invisible": 1
+   },
+   "binds": {
+    "texture": 4,
+    "particle": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "notDrawn": [
+    {
+     "name": "Shooting star",
+     "type": "particle",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    },
+    {
+     "name": "Shooting star",
+     "type": "particle",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    }
+   ],
+   "renderErr": null
+  },
+  "allwallpaper/0923/3122339805/scene.pkg": {
+   "id": "3122339805",
+   "rel": "allwallpaper/0923/3122339805/scene.pkg",
+   "layers": 190,
+   "drawn": 95,
+   "skipped": 95,
+   "skipReasons": {
+    "invisible-config": 88,
+    "invisible": 7
+   },
+   "binds": {
+    "solidcolor": 11,
+    "texture": 13,
+    "transparent": 71
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/0923/3151551777/scene.pkg": {
+   "id": "3151551777",
+   "rel": "allwallpaper/0923/3151551777/scene.pkg",
+   "layers": 133,
+   "drawn": 41,
+   "skipped": 92,
+   "skipReasons": {
+    "invisible": 47,
+    "degenerate-geometry": 18,
+    "invisible-config": 27
+   },
+   "binds": {
+    "texture": 23,
+    "particle": 11,
+    "transparent": 7
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/0923/3278399262/scene.pkg": {
+   "id": "3278399262",
+   "rel": "allwallpaper/0923/3278399262/scene.pkg",
+   "layers": 3,
+   "drawn": 3,
+   "skipped": 0,
+   "skipReasons": {},
+   "binds": {
+    "texture": 1,
+    "particle": 2
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/0923/3448290956/scene.pkg": {
+   "id": "3448290956",
+   "rel": "allwallpaper/0923/3448290956/scene.pkg",
+   "layers": 40,
+   "drawn": 28,
+   "skipped": 12,
+   "skipReasons": {
+    "degenerate-geometry": 6,
+    "invisible": 3,
+    "invisible-config": 2,
+    "not-drawn": 1
+   },
+   "binds": {
+    "texture": 25,
+    "transparent": 2,
+    "solidcolor": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "notDrawn": [
+    {
+     "name": "轨迹 1",
+     "type": "particle",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    }
+   ],
+   "renderErr": null
+  },
+  "allwallpaper/0923/3463520581/scene.pkg": {
+   "id": "3463520581",
+   "rel": "allwallpaper/0923/3463520581/scene.pkg",
+   "layers": 74,
+   "drawn": 42,
+   "skipped": 32,
+   "skipReasons": {
+    "invisible": 2,
+    "invisible-config": 30
+   },
+   "binds": {
+    "texture": 36,
+    "particle": 4,
+    "transparent": 2
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/0923/3479521040/scene.pkg": {
+   "id": "3479521040",
+   "rel": "allwallpaper/0923/3479521040/scene.pkg",
+   "layers": 40,
+   "drawn": 29,
+   "skipped": 11,
+   "skipReasons": {
+    "degenerate-geometry": 6,
+    "invisible-config": 4,
+    "invisible": 1
+   },
+   "binds": {
+    "solidcolor": 1,
+    "particle": 8,
+    "texture": 18,
+    "transparent": 2
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/0923/3521337568/scene.pkg": {
+   "id": "3521337568",
+   "rel": "allwallpaper/0923/3521337568/scene.pkg",
+   "layers": 32,
+   "drawn": 14,
+   "skipped": 18,
+   "skipReasons": {
+    "degenerate-geometry": 8,
+    "particle-idle": 3,
+    "invisible": 6,
+    "invisible-config": 1
+   },
+   "binds": {
+    "solidcolor": 2,
+    "texture": 9,
+    "particle": 3
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/0923/3572877776/scene.pkg": {
+   "id": "3572877776",
+   "rel": "allwallpaper/0923/3572877776/scene.pkg",
+   "layers": 137,
+   "drawn": 133,
+   "skipped": 4,
+   "skipReasons": {
+    "logical-helper": 1,
+    "container": 3
+   },
+   "binds": {
+    "texture": 126,
+    "transparent": 7
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/0923/3582367840/scene.pkg": {
+   "id": "3582367840",
+   "rel": "allwallpaper/0923/3582367840/scene.pkg",
+   "layers": 16,
+   "drawn": 15,
+   "skipped": 1,
+   "skipReasons": {
+    "invisible-config": 1
+   },
+   "binds": {
+    "texture": 14,
+    "particle": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/0923/3589454154/scene.pkg": {
+   "id": "3589454154",
+   "rel": "allwallpaper/0923/3589454154/scene.pkg",
+   "layers": 130,
+   "drawn": 48,
+   "skipped": 82,
+   "skipReasons": {
+    "invisible": 20,
+    "not-drawn": 37,
+    "invisible-config": 8,
+    "degenerate-geometry": 17
+   },
+   "binds": {
+    "transparent": 26,
+    "texture": 22
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "notDrawn": [
+    {
+     "name": "sun",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    },
+    {
+     "name": "sun",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    },
+    {
+     "name": "scene",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    },
+    {
+     "name": "r8",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    },
+    {
+     "name": "r7",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    },
+    {
+     "name": "r6",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    },
+    {
+     "name": "r5",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    },
+    {
+     "name": "r4",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    },
+    {
+     "name": "r3",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    },
+    {
+     "name": "r2",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    },
+    {
+     "name": "r1",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    },
+    {
+     "name": "o",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    },
+    {
+     "name": "l1",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    },
+    {
+     "name": "l2",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    },
+    {
+     "name": "l3",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    },
+    {
+     "name": "l4",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    },
+    {
+     "name": "l5",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    },
+    {
+     "name": "l6",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    },
+    {
+     "name": "l7",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    },
+    {
+     "name": "l8",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    },
+    {
+     "name": "dr8",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 1
+    },
+    {
+     "name": "dr7",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 1
+    },
+    {
+     "name": "dr6",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 1
+    },
+    {
+     "name": "dr5",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 1
+    },
+    {
+     "name": "dr4",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 1
+    },
+    {
+     "name": "dr3",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 1
+    },
+    {
+     "name": "dr2",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 1
+    },
+    {
+     "name": "dr1",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 1
+    },
+    {
+     "name": "do",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 1
+    },
+    {
+     "name": "dl1",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 1
+    },
+    {
+     "name": "dl2",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 1
+    },
+    {
+     "name": "dl3",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 1
+    },
+    {
+     "name": "dl4",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 1
+    },
+    {
+     "name": "dl5",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 1
+    },
+    {
+     "name": "dl6",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 1
+    },
+    {
+     "name": "dl7",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 1
+    },
+    {
+     "name": "dl8",
+     "type": "image",
+     "particle": false,
+     "tex": 1,
+     "fx": 1
+    }
+   ],
+   "renderErr": null
+  },
+  "allwallpaper/0923/3593919489/scene.pkg": {
+   "id": "3593919489",
+   "rel": "allwallpaper/0923/3593919489/scene.pkg",
+   "layers": 20,
+   "drawn": 17,
+   "skipped": 3,
+   "skipReasons": {
+    "not-drawn": 1,
+    "particle-idle": 1,
+    "invisible-config": 1
+   },
+   "binds": {
+    "texture": 7,
+    "particle": 2,
+    "transparent": 8
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "notDrawn": [
+    {
+     "name": "光束 1 (旧)",
+     "type": "particle",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    }
+   ],
+   "renderErr": null
+  },
+  "allwallpaper/0923/3602673806/scene.pkg": {
+   "id": "3602673806",
+   "rel": "allwallpaper/0923/3602673806/scene.pkg",
+   "layers": 17,
+   "drawn": 15,
+   "skipped": 2,
+   "skipReasons": {
+    "container": 1,
+    "invisible-config": 1
+   },
+   "binds": {
+    "texture": 11,
+    "transparent": 2,
+    "particle": 2
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/0923/3622495963/scene.pkg": {
+   "id": "3622495963",
+   "rel": "allwallpaper/0923/3622495963/scene.pkg",
+   "layers": 26,
+   "drawn": 21,
+   "skipped": 5,
+   "skipReasons": {
+    "container": 1,
+    "invisible": 2,
+    "degenerate-geometry": 1,
+    "invisible-config": 1
+   },
+   "binds": {
+    "texture": 18,
+    "particle": 3
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/0923/3648434762/scene.pkg": {
+   "id": "3648434762",
+   "rel": "allwallpaper/0923/3648434762/scene.pkg",
+   "layers": 11,
+   "drawn": 11,
+   "skipped": 0,
+   "skipReasons": {},
+   "binds": {
+    "texture": 1,
+    "particle": 9,
+    "transparent": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/0923/3653641024/scene.pkg": {
+   "id": "3653641024",
+   "rel": "allwallpaper/0923/3653641024/scene.pkg",
+   "layers": 41,
+   "drawn": 18,
+   "skipped": 23,
+   "skipReasons": {
+    "invisible": 2,
+    "invisible-config": 20,
+    "degenerate-geometry": 1
+   },
+   "binds": {
+    "texture": 9,
+    "particle": 2,
+    "transparent": 5,
+    "solidcolor": 2
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/0923/3668498439/scene.pkg": {
+   "id": "3668498439",
+   "rel": "allwallpaper/0923/3668498439/scene.pkg",
+   "layers": 8,
+   "drawn": 8,
+   "skipped": 0,
+   "skipReasons": {},
+   "binds": {
+    "texture": 6,
+    "transparent": 1,
+    "particle": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/0923/3679620104/scene.pkg": {
+   "id": "3679620104",
+   "rel": "allwallpaper/0923/3679620104/scene.pkg",
+   "layers": 3,
+   "drawn": 2,
+   "skipped": 1,
+   "skipReasons": {
+    "invisible-config": 1
+   },
+   "binds": {
+    "texture": 2
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/0923/3687818927/scene.pkg": {
+   "id": "3687818927",
+   "rel": "allwallpaper/0923/3687818927/scene.pkg",
+   "layers": 18,
+   "drawn": 15,
+   "skipped": 3,
+   "skipReasons": {
+    "invisible": 3
+   },
+   "binds": {
+    "texture": 10,
+    "particle": 4,
+    "transparent": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/0923/3690417937/scene.pkg": {
+   "id": "3690417937",
+   "rel": "allwallpaper/0923/3690417937/scene.pkg",
+   "layers": 29,
+   "drawn": 20,
+   "skipped": 9,
+   "skipReasons": {
+    "degenerate-geometry": 4,
+    "not-drawn": 2,
+    "particle-budget": 2,
+    "invisible": 1
+   },
+   "binds": {
+    "texture": 4,
+    "particle": 16
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "notDrawn": [
+    {
+     "name": "Ocean bubbles",
+     "type": "particle",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    },
+    {
+     "name": "Ocean bubbles",
+     "type": "particle",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    }
+   ],
+   "renderErr": null
+  },
+  "allwallpaper/0923/3696234311/scene.pkg": {
+   "id": "3696234311",
+   "rel": "allwallpaper/0923/3696234311/scene.pkg",
+   "layers": 2,
+   "drawn": 2,
+   "skipped": 0,
+   "skipReasons": {},
+   "binds": {
+    "texture": 1,
+    "particle": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/0923/3714466840/scene.pkg": {
+   "id": "3714466840",
+   "rel": "allwallpaper/0923/3714466840/scene.pkg",
+   "layers": 4,
+   "drawn": 3,
+   "skipped": 1,
+   "skipReasons": {
+    "invisible-config": 1
+   },
+   "binds": {
+    "texture": 1,
+    "solidcolor": 1,
+    "transparent": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/0923/3737270471/scene.pkg": {
+   "id": "3737270471",
+   "rel": "allwallpaper/0923/3737270471/scene.pkg",
+   "layers": 3,
+   "drawn": 3,
+   "skipped": 0,
+   "skipReasons": {},
+   "binds": {
+    "texture": 1,
+    "particle": 1,
+    "transparent": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/0923/3806006894/scene.pkg": {
+   "id": "3806006894",
+   "rel": "allwallpaper/0923/3806006894/scene.pkg",
+   "layers": 5,
+   "drawn": 5,
+   "skipped": 0,
+   "skipReasons": {},
+   "binds": {
+    "texture": 4,
+    "particle": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/0923/833227004/scene.pkg": {
+   "id": "833227004",
+   "rel": "allwallpaper/0923/833227004/scene.pkg",
+   "layers": 1,
+   "drawn": 1,
+   "skipped": 0,
+   "skipReasons": {},
+   "binds": {
+    "texture": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/1004/-爱伦坡.mpkg": {
+   "id": "1004",
+   "rel": "allwallpaper/1004/-爱伦坡.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/1004/丛雨.mpkg": {
+   "id": "1004",
+   "rel": "allwallpaper/1004/丛雨.mpkg",
+   "layers": 4,
+   "drawn": 4,
+   "skipped": 0,
+   "skipReasons": {},
+   "binds": {
+    "texture": 1,
+    "particle": 3
+   },
+   "copybg": {
+    "n": 1,
+    "withTex": 1,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/1004/夜莺night——blue_archive_小鸟游星野_窗畔弦歌.mpkg": {
+   "id": "1004",
+   "rel": "allwallpaper/1004/夜莺night——blue_archive_小鸟游星野_窗畔弦歌.mpkg",
+   "layers": 126,
+   "drawn": 19,
+   "skipped": 107,
+   "skipReasons": {
+    "degenerate-geometry": 9,
+    "invisible": 60,
+    "invisible-config": 37,
+    "not-drawn": 1
+   },
+   "binds": {
+    "texture": 8,
+    "transparent": 6,
+    "particle": 5
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "notDrawn": [
+    {
+     "name": "Trails 2",
+     "type": "particle",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    }
+   ],
+   "renderErr": null
+  },
+  "allwallpaper/1004/夜莺night——【parallax_视差】blue_archive_妃咲_kisaki_月下独酌【蔚蓝档案】.mpkg": {
+   "id": "1004",
+   "rel": "allwallpaper/1004/夜莺night——【parallax_视差】blue_archive_妃咲_kisaki_月下独酌【蔚蓝档案】.mpkg",
+   "layers": 46,
+   "drawn": 19,
+   "skipped": 27,
+   "skipReasons": {
+    "degenerate-geometry": 8,
+    "invisible": 16,
+    "invisible-config": 2,
+    "not-drawn": 1
+   },
+   "binds": {
+    "texture": 13,
+    "particle": 2,
+    "transparent": 4
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "notDrawn": [
+    {
+     "name": "Trails 2",
+     "type": "particle",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    }
+   ],
+   "renderErr": null
+  },
+  "allwallpaper/1004/藤田ことね 131522864_p0.mpkg": {
+   "id": "1004",
+   "rel": "allwallpaper/1004/藤田ことね 131522864_p0.mpkg",
+   "layers": 1,
+   "drawn": 1,
+   "skipped": 0,
+   "skipReasons": {},
+   "binds": {
+    "texture": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/1004/逆流茶会-姐妹日常 (x-ray).mpkg": {
+   "id": "1004",
+   "rel": "allwallpaper/1004/逆流茶会-姐妹日常 (x-ray).mpkg",
+   "layers": 2,
+   "drawn": 1,
+   "skipped": 1,
+   "skipReasons": {
+    "invisible": 1
+   },
+   "binds": {
+    "texture": 1
+   },
+   "copybg": {
+    "n": 2,
+    "withTex": 2,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/dd/3326873240/scene.pkg": {
+   "id": "3326873240",
+   "rel": "allwallpaper/dd/3326873240/scene.pkg",
+   "layers": 62,
+   "drawn": 22,
+   "skipped": 40,
+   "skipReasons": {
+    "invisible": 17,
+    "invisible-config": 21,
+    "not-drawn": 1,
+    "logical-helper": 1
+   },
+   "binds": {
+    "transparent": 15,
+    "texture": 7
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "notDrawn": [
+    {
+     "name": "Trails 2",
+     "type": "particle",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    }
+   ],
+   "renderErr": null
+  },
+  "allwallpaper/dd/3327063360/scene.pkg": {
+   "id": "3327063360",
+   "rel": "allwallpaper/dd/3327063360/scene.pkg",
+   "layers": 69,
+   "drawn": 13,
+   "skipped": 56,
+   "skipReasons": {
+    "invisible": 28,
+    "degenerate-geometry": 7,
+    "invisible-config": 21
+   },
+   "binds": {
+    "texture": 6,
+    "transparent": 6,
+    "particle": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/dd/3544152633/scene.pkg": {
+   "id": "3544152633",
+   "rel": "allwallpaper/dd/3544152633/scene.pkg",
+   "layers": 70,
+   "drawn": 36,
+   "skipped": 34,
+   "skipReasons": {
+    "degenerate-geometry": 2,
+    "invisible": 22,
+    "invisible-config": 10
+   },
+   "binds": {
+    "texture": 16,
+    "particle": 16,
+    "solidcolor": 3,
+    "transparent": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/dd/3554161528/scene.pkg": {
+   "id": "3554161528",
+   "rel": "allwallpaper/dd/3554161528/scene.pkg",
+   "layers": 37,
+   "drawn": 22,
+   "skipped": 15,
+   "skipReasons": {
+    "degenerate-geometry": 5,
+    "particle-idle": 4,
+    "container": 1,
+    "invisible-config": 5
+   },
+   "binds": {
+    "texture": 11,
+    "particle": 9,
+    "transparent": 2
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/dd/3660962877/scene.pkg": {
+   "id": "3660962877",
+   "rel": "allwallpaper/dd/3660962877/scene.pkg",
+   "layers": 127,
+   "drawn": 21,
+   "skipped": 106,
+   "skipReasons": {
+    "invisible": 76,
+    "invisible-config": 29,
+    "not-drawn": 1
+   },
+   "binds": {
+    "texture": 9,
+    "transparent": 11,
+    "particle": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "notDrawn": [
+    {
+     "name": "Trails 2",
+     "type": "particle",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    }
+   ],
+   "renderErr": null
+  },
+  "allwallpaper/dd/3669681034/scene.pkg": {
+   "id": "3669681034",
+   "rel": "allwallpaper/dd/3669681034/scene.pkg",
+   "layers": 2,
+   "drawn": 2,
+   "skipped": 0,
+   "skipReasons": {},
+   "binds": {
+    "texture": 1,
+    "transparent": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/dd/3715743282/scene.pkg": {
+   "id": "3715743282",
+   "rel": "allwallpaper/dd/3715743282/scene.pkg",
+   "layers": 9,
+   "drawn": 6,
+   "skipped": 3,
+   "skipReasons": {
+    "invisible": 3
+   },
+   "binds": {
+    "texture": 3,
+    "particle": 3
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/dd/3719111841/scene.pkg": {
+   "id": "3719111841",
+   "rel": "allwallpaper/dd/3719111841/scene.pkg",
+   "layers": 43,
+   "drawn": 33,
+   "skipped": 10,
+   "skipReasons": {
+    "invisible": 4,
+    "degenerate-geometry": 2,
+    "invisible-config": 4
+   },
+   "binds": {
+    "texture": 26,
+    "particle": 7
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/dd/3721991999/scene.pkg": {
+   "id": "3721991999",
+   "rel": "allwallpaper/dd/3721991999/scene.pkg",
+   "layers": 2,
+   "drawn": 2,
+   "skipped": 0,
+   "skipReasons": {},
+   "binds": {
+    "texture": 1,
+    "particle": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/dd/3778592720/scene.pkg": {
+   "id": "3778592720",
+   "rel": "allwallpaper/dd/3778592720/scene.pkg",
+   "layers": 5,
+   "drawn": 4,
+   "skipped": 1,
+   "skipReasons": {
+    "invisible-config": 1
+   },
+   "binds": {
+    "texture": 2,
+    "particle": 2
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/other/夜莺night——【time_variation_时间变化】alone_孤独の少女【原画：rella].mpkg": {
+   "id": "other",
+   "rel": "allwallpaper/wallpaperE/other/夜莺night——【time_variation_时间变化】alone_孤独の少女【原画：rella].mpkg",
+   "layers": 102,
+   "drawn": 21,
+   "skipped": 81,
+   "skipReasons": {
+    "invisible": 38,
+    "invisible-config": 24,
+    "degenerate-geometry": 15,
+    "logical-helper": 1,
+    "not-drawn": 2,
+    "container": 1
+   },
+   "binds": {
+    "texture": 13,
+    "particle": 1,
+    "solidcolor": 1,
+    "transparent": 6
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "notDrawn": [
+    {
+     "name": "Trails 2",
+     "type": "particle",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    },
+    {
+     "name": "zzz",
+     "type": "particle",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    }
+   ],
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/other/红鸾樱落.mpkg": {
+   "id": "other",
+   "rel": "allwallpaper/wallpaperE/other/红鸾樱落.mpkg",
+   "layers": 65,
+   "drawn": 31,
+   "skipped": 34,
+   "skipReasons": {
+    "invisible": 25,
+    "invisible-config": 6,
+    "degenerate-geometry": 3
+   },
+   "binds": {
+    "texture": 24,
+    "particle": 6,
+    "transparent": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/伊蕾娜/伊蕾娜1_8.mpkg": {
+   "id": "伊蕾娜",
+   "rel": "allwallpaper/wallpaperE/伊蕾娜/伊蕾娜1_8.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/伊蕾娜/伊蕾娜_04.mpkg": {
+   "id": "伊蕾娜",
+   "rel": "allwallpaper/wallpaperE/伊蕾娜/伊蕾娜_04.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/伊蕾娜/伊蕾娜_05.mpkg": {
+   "id": "伊蕾娜",
+   "rel": "allwallpaper/wallpaperE/伊蕾娜/伊蕾娜_05.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/伊蕾娜/伊蕾娜_08.mpkg": {
+   "id": "伊蕾娜",
+   "rel": "allwallpaper/wallpaperE/伊蕾娜/伊蕾娜_08.mpkg",
+   "layers": 4,
+   "drawn": 1,
+   "skipped": 3,
+   "skipReasons": {
+    "particle-no-def": 3
+   },
+   "binds": {
+    "texture": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/佩丽卡/zmd_08.mpkg": {
+   "id": "佩丽卡",
+   "rel": "allwallpaper/wallpaperE/佩丽卡/zmd_08.mpkg",
+   "layers": 23,
+   "drawn": 11,
+   "skipped": 12,
+   "skipReasons": {
+    "particle-no-def": 5,
+    "degenerate-geometry": 2,
+    "invisible": 3,
+    "not-drawn": 1,
+    "invisible-config": 1
+   },
+   "binds": {
+    "texture": 9,
+    "transparent": 2
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "notDrawn": [
+    {
+     "name": "4th flare",
+     "type": "image",
+     "particle": false,
+     "tex": 0,
+     "fx": 0
+    }
+   ],
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/佩丽卡/佩丽卡1_01.mpkg": {
+   "id": "佩丽卡",
+   "rel": "allwallpaper/wallpaperE/佩丽卡/佩丽卡1_01.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/佩丽卡/佩丽卡1_02.mpkg": {
+   "id": "佩丽卡",
+   "rel": "allwallpaper/wallpaperE/佩丽卡/佩丽卡1_02.mpkg",
+   "layers": 23,
+   "drawn": 11,
+   "skipped": 12,
+   "skipReasons": {
+    "particle-no-def": 5,
+    "degenerate-geometry": 2,
+    "invisible": 3,
+    "not-drawn": 1,
+    "invisible-config": 1
+   },
+   "binds": {
+    "texture": 9,
+    "transparent": 2
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "notDrawn": [
+    {
+     "name": "4th flare",
+     "type": "image",
+     "particle": false,
+     "tex": 0,
+     "fx": 0
+    }
+   ],
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/佩丽卡/佩丽卡1_03.mpkg": {
+   "id": "佩丽卡",
+   "rel": "allwallpaper/wallpaperE/佩丽卡/佩丽卡1_03.mpkg",
+   "layers": 25,
+   "drawn": 11,
+   "skipped": 14,
+   "skipReasons": {
+    "degenerate-geometry": 2,
+    "not-drawn": 2,
+    "invisible": 4,
+    "invisible-config": 6
+   },
+   "binds": {
+    "texture": 5,
+    "solidcolor": 3,
+    "transparent": 3
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "notDrawn": [
+    {
+     "name": "daoyin",
+     "type": "image",
+     "particle": false,
+     "tex": 0,
+     "fx": 8
+    },
+    {
+     "name": "blik shaw",
+     "type": "image",
+     "particle": false,
+     "tex": 0,
+     "fx": 8
+    }
+   ],
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/佩丽卡/佩丽卡1_04.mpkg": {
+   "id": "佩丽卡",
+   "rel": "allwallpaper/wallpaperE/佩丽卡/佩丽卡1_04.mpkg",
+   "layers": 2,
+   "drawn": 1,
+   "skipped": 1,
+   "skipReasons": {
+    "particle-no-def": 1
+   },
+   "binds": {
+    "transparent": 1
+   },
+   "copybg": {
+    "n": 1,
+    "withTex": 0,
+    "noTexNoFx": 1,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/佩丽卡/佩丽卡1_05.mpkg": {
+   "id": "佩丽卡",
+   "rel": "allwallpaper/wallpaperE/佩丽卡/佩丽卡1_05.mpkg",
+   "layers": 14,
+   "drawn": 10,
+   "skipped": 4,
+   "skipReasons": {
+    "particle-no-def": 4
+   },
+   "binds": {
+    "transparent": 10
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/佩丽卡/佩丽卡1_06.mpkg": {
+   "id": "佩丽卡",
+   "rel": "allwallpaper/wallpaperE/佩丽卡/佩丽卡1_06.mpkg",
+   "layers": 12,
+   "drawn": 5,
+   "skipped": 7,
+   "skipReasons": {
+    "particle-no-def": 6,
+    "degenerate-geometry": 1
+   },
+   "binds": {
+    "transparent": 2,
+    "texture": 3
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/佩丽卡/佩丽卡1_08.mpkg": {
+   "id": "佩丽卡",
+   "rel": "allwallpaper/wallpaperE/佩丽卡/佩丽卡1_08.mpkg",
+   "layers": 8,
+   "drawn": 2,
+   "skipped": 6,
+   "skipReasons": {
+    "not-drawn": 1,
+    "particle-no-def": 5
+   },
+   "binds": {
+    "transparent": 1,
+    "rtcopy": 1
+   },
+   "copybg": {
+    "n": 3,
+    "withTex": 0,
+    "noTexNoFx": 2,
+    "noTexFx": 1,
+    "rtcopy": 1
+   },
+   "notDrawn": [
+    {
+     "name": "Simple Visualizer",
+     "type": "image",
+     "particle": false,
+     "tex": 0,
+     "fx": 0
+    }
+   ],
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/佩丽卡/佩丽卡1_09.mpkg": {
+   "id": "佩丽卡",
+   "rel": "allwallpaper/wallpaperE/佩丽卡/佩丽卡1_09.mpkg",
+   "layers": 7,
+   "drawn": 4,
+   "skipped": 3,
+   "skipReasons": {
+    "particle-no-def": 2,
+    "invisible-config": 1
+   },
+   "binds": {
+    "transparent": 1,
+    "texture": 3
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/佩丽卡/佩丽卡1_10.mpkg": {
+   "id": "佩丽卡",
+   "rel": "allwallpaper/wallpaperE/佩丽卡/佩丽卡1_10.mpkg",
+   "layers": 2,
+   "drawn": 2,
+   "skipped": 0,
+   "skipReasons": {},
+   "binds": {
+    "transparent": 1,
+    "texture": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/卡提希娅/卡提希娅_02.mpkg": {
+   "id": "卡提希娅",
+   "rel": "allwallpaper/wallpaperE/卡提希娅/卡提希娅_02.mpkg",
+   "layers": 41,
+   "drawn": 33,
+   "skipped": 8,
+   "skipReasons": {
+    "particle-no-def": 7,
+    "invisible-config": 1
+   },
+   "binds": {
+    "texture": 24,
+    "transparent": 9
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/卡提希娅/卡提希娅_03.mpkg": {
+   "id": "卡提希娅",
+   "rel": "allwallpaper/wallpaperE/卡提希娅/卡提希娅_03.mpkg",
+   "layers": 9,
+   "drawn": 6,
+   "skipped": 3,
+   "skipReasons": {
+    "particle-no-def": 2,
+    "container": 1
+   },
+   "binds": {
+    "transparent": 2,
+    "texture": 4
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/卡提希娅/卡提希娅_04.mpkg": {
+   "id": "卡提希娅",
+   "rel": "allwallpaper/wallpaperE/卡提希娅/卡提希娅_04.mpkg",
+   "layers": 10,
+   "drawn": 6,
+   "skipped": 4,
+   "skipReasons": {
+    "particle-no-def": 3,
+    "container": 1
+   },
+   "binds": {
+    "transparent": 2,
+    "texture": 4
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/卡提希娅/卡提希娅_05.mpkg": {
+   "id": "卡提希娅",
+   "rel": "allwallpaper/wallpaperE/卡提希娅/卡提希娅_05.mpkg",
+   "layers": 1,
+   "drawn": 1,
+   "skipped": 0,
+   "skipReasons": {},
+   "binds": {
+    "texture": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/卡提希娅/卡提希娅_07.mpkg": {
+   "id": "卡提希娅",
+   "rel": "allwallpaper/wallpaperE/卡提希娅/卡提希娅_07.mpkg",
+   "layers": 9,
+   "drawn": 6,
+   "skipped": 3,
+   "skipReasons": {
+    "particle-no-def": 2,
+    "container": 1
+   },
+   "binds": {
+    "transparent": 2,
+    "texture": 4
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/卡提希娅/卡提希娅_08.mpkg": {
+   "id": "卡提希娅",
+   "rel": "allwallpaper/wallpaperE/卡提希娅/卡提希娅_08.mpkg",
+   "layers": 2,
+   "drawn": 0,
+   "skipped": 2,
+   "skipReasons": {
+    "invisible-config": 1,
+    "particle-no-def": 1
+   },
+   "binds": {},
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/卡提希娅/卡提希娅_09.mpkg": {
+   "id": "卡提希娅",
+   "rel": "allwallpaper/wallpaperE/卡提希娅/卡提希娅_09.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/卡提希娅/卡提希娅_10.mpkg": {
+   "id": "卡提希娅",
+   "rel": "allwallpaper/wallpaperE/卡提希娅/卡提希娅_10.mpkg",
+   "layers": 11,
+   "drawn": 6,
+   "skipped": 5,
+   "skipReasons": {
+    "particle-no-def": 4,
+    "container": 1
+   },
+   "binds": {
+    "transparent": 2,
+    "texture": 4
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野01_04.mpkg": {
+   "id": "小鸟游星野",
+   "rel": "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野01_04.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野01_11.mpkg": {
+   "id": "小鸟游星野",
+   "rel": "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野01_11.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野04_2.mpkg": {
+   "id": "小鸟游星野",
+   "rel": "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野04_2.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野04_7.mpkg": {
+   "id": "小鸟游星野",
+   "rel": "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野04_7.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野11_01.mpkg": {
+   "id": "小鸟游星野",
+   "rel": "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野11_01.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野11_10.mpkg": {
+   "id": "小鸟游星野",
+   "rel": "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野11_10.mpkg",
+   "layers": 2,
+   "drawn": 2,
+   "skipped": 0,
+   "skipReasons": {},
+   "binds": {
+    "texture": 1,
+    "transparent": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野_02.mpkg": {
+   "id": "小鸟游星野",
+   "rel": "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野_02.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野_09.mpkg": {
+   "id": "小鸟游星野",
+   "rel": "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野_09.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野_11.mpkg": {
+   "id": "小鸟游星野",
+   "rel": "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野_11.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野_12.mpkg": {
+   "id": "小鸟游星野",
+   "rel": "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野_12.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野_13.mpkg": {
+   "id": "小鸟游星野",
+   "rel": "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野_13.mpkg",
+   "layers": 1,
+   "drawn": 1,
+   "skipped": 0,
+   "skipReasons": {},
+   "binds": {
+    "texture": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/庄方宜/庄方宜_19.mpkg": {
+   "id": "庄方宜",
+   "rel": "allwallpaper/wallpaperE/庄方宜/庄方宜_19.mpkg",
+   "layers": 1,
+   "drawn": 1,
+   "skipped": 0,
+   "skipReasons": {},
+   "binds": {
+    "texture": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/庄方宜/庄方宜_2.mpkg": {
+   "id": "庄方宜",
+   "rel": "allwallpaper/wallpaperE/庄方宜/庄方宜_2.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/庄方宜/庄方宜_24.mpkg": {
+   "id": "庄方宜",
+   "rel": "allwallpaper/wallpaperE/庄方宜/庄方宜_24.mpkg",
+   "layers": 1,
+   "drawn": 1,
+   "skipped": 0,
+   "skipReasons": {},
+   "binds": {
+    "texture": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/庄方宜/庄方宜_3.mpkg": {
+   "id": "庄方宜",
+   "rel": "allwallpaper/wallpaperE/庄方宜/庄方宜_3.mpkg",
+   "layers": 2,
+   "drawn": 1,
+   "skipped": 1,
+   "skipReasons": {
+    "particle-no-def": 1
+   },
+   "binds": {
+    "texture": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/庄方宜/庄方宜_4.mpkg": {
+   "id": "庄方宜",
+   "rel": "allwallpaper/wallpaperE/庄方宜/庄方宜_4.mpkg",
+   "layers": 2,
+   "drawn": 1,
+   "skipped": 1,
+   "skipReasons": {
+    "particle-no-def": 1
+   },
+   "binds": {
+    "transparent": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/庄方宜/庄方宜_6.mpkg": {
+   "id": "庄方宜",
+   "rel": "allwallpaper/wallpaperE/庄方宜/庄方宜_6.mpkg",
+   "layers": 3,
+   "drawn": 1,
+   "skipped": 2,
+   "skipReasons": {
+    "particle-no-def": 1,
+    "invisible-config": 1
+   },
+   "binds": {
+    "transparent": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/庄方宜/庄方宜_7.mpkg": {
+   "id": "庄方宜",
+   "rel": "allwallpaper/wallpaperE/庄方宜/庄方宜_7.mpkg",
+   "layers": 15,
+   "drawn": 11,
+   "skipped": 4,
+   "skipReasons": {
+    "invisible": 1,
+    "not-drawn": 1,
+    "invisible-config": 2
+   },
+   "binds": {
+    "transparent": 2,
+    "texture": 8,
+    "solidcolor": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "notDrawn": [
+    {
+     "name": "Vinyl Cover",
+     "type": "image",
+     "particle": false,
+     "tex": 0,
+     "fx": 3
+    }
+   ],
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/洁尔佩塔/洁尔佩塔_4.mpkg": {
+   "id": "洁尔佩塔",
+   "rel": "allwallpaper/wallpaperE/洁尔佩塔/洁尔佩塔_4.mpkg",
+   "layers": 8,
+   "drawn": 6,
+   "skipped": 2,
+   "skipReasons": {
+    "particle-no-def": 2
+   },
+   "binds": {
+    "texture": 5,
+    "transparent": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/洛琪希/洛琪希1_3.mpkg": {
+   "id": "洛琪希",
+   "rel": "allwallpaper/wallpaperE/洛琪希/洛琪希1_3.mpkg",
+   "layers": 3,
+   "drawn": 1,
+   "skipped": 2,
+   "skipReasons": {
+    "particle-no-def": 2
+   },
+   "binds": {
+    "rtcopy": 1
+   },
+   "copybg": {
+    "n": 1,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 1,
+    "rtcopy": 1
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/洛茜/洛茜_02.mpkg": {
+   "id": "洛茜",
+   "rel": "allwallpaper/wallpaperE/洛茜/洛茜_02.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/洛茜/洛茜_03.mpkg": {
+   "id": "洛茜",
+   "rel": "allwallpaper/wallpaperE/洛茜/洛茜_03.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/洛茜/洛茜_04.mpkg": {
+   "id": "洛茜",
+   "rel": "allwallpaper/wallpaperE/洛茜/洛茜_04.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/洛茜/洛茜_05.mpkg": {
+   "id": "洛茜",
+   "rel": "allwallpaper/wallpaperE/洛茜/洛茜_05.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/洛茜/洛茜_06.mpkg": {
+   "id": "洛茜",
+   "rel": "allwallpaper/wallpaperE/洛茜/洛茜_06.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/洛茜/洛茜_07.mpkg": {
+   "id": "洛茜",
+   "rel": "allwallpaper/wallpaperE/洛茜/洛茜_07.mpkg",
+   "layers": 16,
+   "drawn": 12,
+   "skipped": 4,
+   "skipReasons": {
+    "invisible": 2,
+    "particle-no-def": 2
+   },
+   "binds": {
+    "texture": 2,
+    "transparent": 10
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/洛茜/洛茜_08.mpkg": {
+   "id": "洛茜",
+   "rel": "allwallpaper/wallpaperE/洛茜/洛茜_08.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/洛茜/洛茜_09.mpkg": {
+   "id": "洛茜",
+   "rel": "allwallpaper/wallpaperE/洛茜/洛茜_09.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/洛茜/洛茜_10.mpkg": {
+   "id": "洛茜",
+   "rel": "allwallpaper/wallpaperE/洛茜/洛茜_10.mpkg",
+   "layers": 2,
+   "drawn": 1,
+   "skipped": 1,
+   "skipReasons": {
+    "particle-no-def": 1
+   },
+   "binds": {
+    "texture": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/洛茜/洛茜_11.mpkg": {
+   "id": "洛茜",
+   "rel": "allwallpaper/wallpaperE/洛茜/洛茜_11.mpkg",
+   "layers": 24,
+   "drawn": 22,
+   "skipped": 2,
+   "skipReasons": {
+    "invisible-config": 1,
+    "degenerate-geometry": 1
+   },
+   "binds": {
+    "transparent": 20,
+    "texture": 2
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/洛茜/洛茜_12.mpkg": {
+   "id": "洛茜",
+   "rel": "allwallpaper/wallpaperE/洛茜/洛茜_12.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/洛茜/洛茜_13.mpkg": {
+   "id": "洛茜",
+   "rel": "allwallpaper/wallpaperE/洛茜/洛茜_13.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/流萤/夜莺night——【customize自定义】firefly_流萤_星空之誓——夜莺night崩坏星穹铁道.mpkg": {
+   "id": "流萤",
+   "rel": "allwallpaper/wallpaperE/流萤/夜莺night——【customize自定义】firefly_流萤_星空之誓——夜莺night崩坏星穹铁道.mpkg",
+   "layers": 58,
+   "drawn": 19,
+   "skipped": 39,
+   "skipReasons": {
+    "degenerate-geometry": 8,
+    "invisible": 15,
+    "invisible-config": 15,
+    "not-drawn": 1
+   },
+   "binds": {
+    "texture": 8,
+    "particle": 3,
+    "transparent": 7,
+    "solidcolor": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "notDrawn": [
+    {
+     "name": "轨迹 1",
+     "type": "particle",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    }
+   ],
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/流萤/流萤01_03.mpkg": {
+   "id": "流萤",
+   "rel": "allwallpaper/wallpaperE/流萤/流萤01_03.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/流萤/流萤_06.mpkg": {
+   "id": "流萤",
+   "rel": "allwallpaper/wallpaperE/流萤/流萤_06.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/流萤/流萤_09.mpkg": {
+   "id": "流萤",
+   "rel": "allwallpaper/wallpaperE/流萤/流萤_09.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/白洲梓/白洲梓1_01.mpkg": {
+   "id": "白洲梓",
+   "rel": "allwallpaper/wallpaperE/白洲梓/白洲梓1_01.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/白洲梓/白洲梓1_02.mpkg": {
+   "id": "白洲梓",
+   "rel": "allwallpaper/wallpaperE/白洲梓/白洲梓1_02.mpkg",
+   "layers": 7,
+   "drawn": 3,
+   "skipped": 4,
+   "skipReasons": {
+    "degenerate-geometry": 1,
+    "invisible": 1,
+    "particle-no-def": 2
+   },
+   "binds": {
+    "solidcolor": 1,
+    "texture": 2
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/白洲梓/白洲梓1_03.mpkg": {
+   "id": "白洲梓",
+   "rel": "allwallpaper/wallpaperE/白洲梓/白洲梓1_03.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/白洲梓/白洲梓1_04.mpkg": {
+   "id": "白洲梓",
+   "rel": "allwallpaper/wallpaperE/白洲梓/白洲梓1_04.mpkg",
+   "layers": 5,
+   "drawn": 3,
+   "skipped": 2,
+   "skipReasons": {
+    "particle-no-def": 2
+   },
+   "binds": {
+    "rtcopy": 2,
+    "transparent": 1
+   },
+   "copybg": {
+    "n": 3,
+    "withTex": 0,
+    "noTexNoFx": 1,
+    "noTexFx": 2,
+    "rtcopy": 2
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/白洲梓/白洲梓1_05.mpkg": {
+   "id": "白洲梓",
+   "rel": "allwallpaper/wallpaperE/白洲梓/白洲梓1_05.mpkg",
+   "layers": 10,
+   "drawn": 6,
+   "skipped": 4,
+   "skipReasons": {
+    "not-drawn": 1,
+    "particle-no-def": 1,
+    "degenerate-geometry": 2
+   },
+   "binds": {
+    "transparent": 6
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "notDrawn": [
+    {
+     "name": "c7884e6807cf62bb85f8d8b6",
+     "type": "image",
+     "particle": false,
+     "tex": 0,
+     "fx": 0
+    }
+   ],
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/白洲梓/白洲梓1_06.mpkg": {
+   "id": "白洲梓",
+   "rel": "allwallpaper/wallpaperE/白洲梓/白洲梓1_06.mpkg",
+   "layers": 4,
+   "drawn": 1,
+   "skipped": 3,
+   "skipReasons": {
+    "particle-no-def": 2,
+    "degenerate-geometry": 1
+   },
+   "binds": {
+    "texture": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/白洲梓/白洲梓1_07.mpkg": {
+   "id": "白洲梓",
+   "rel": "allwallpaper/wallpaperE/白洲梓/白洲梓1_07.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/白洲梓/白洲梓1_08.mpkg": {
+   "id": "白洲梓",
+   "rel": "allwallpaper/wallpaperE/白洲梓/白洲梓1_08.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/白洲梓/白洲梓1_09.mpkg": {
+   "id": "白洲梓",
+   "rel": "allwallpaper/wallpaperE/白洲梓/白洲梓1_09.mpkg",
+   "layers": 18,
+   "drawn": 16,
+   "skipped": 2,
+   "skipReasons": {
+    "particle-no-def": 1,
+    "invisible-config": 1
+   },
+   "binds": {
+    "texture": 14,
+    "transparent": 2
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/白洲梓/白洲梓1_10.mpkg": {
+   "id": "白洲梓",
+   "rel": "allwallpaper/wallpaperE/白洲梓/白洲梓1_10.mpkg",
+   "layers": 2,
+   "drawn": 1,
+   "skipped": 1,
+   "skipReasons": {
+    "particle-no-def": 1
+   },
+   "binds": {
+    "transparent": 1
+   },
+   "copybg": {
+    "n": 1,
+    "withTex": 0,
+    "noTexNoFx": 1,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/白洲梓/白洲梓_02.mpkg": {
+   "id": "白洲梓",
+   "rel": "allwallpaper/wallpaperE/白洲梓/白洲梓_02.mpkg",
+   "layers": 6,
+   "drawn": 4,
+   "skipped": 2,
+   "skipReasons": {
+    "particle-no-def": 1,
+    "invisible-config": 1
+   },
+   "binds": {
+    "transparent": 3,
+    "texture": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/白洲梓/白洲梓_03.mpkg": {
+   "id": "白洲梓",
+   "rel": "allwallpaper/wallpaperE/白洲梓/白洲梓_03.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/白洲梓/白洲梓_05.mpkg": {
+   "id": "白洲梓",
+   "rel": "allwallpaper/wallpaperE/白洲梓/白洲梓_05.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/白洲梓/白洲梓_07.mpkg": {
+   "id": "白洲梓",
+   "rel": "allwallpaper/wallpaperE/白洲梓/白洲梓_07.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/白洲梓/白洲梓_08.mpkg": {
+   "id": "白洲梓",
+   "rel": "allwallpaper/wallpaperE/白洲梓/白洲梓_08.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/白洲梓/白洲梓_09.mpkg": {
+   "id": "白洲梓",
+   "rel": "allwallpaper/wallpaperE/白洲梓/白洲梓_09.mpkg",
+   "layers": 1,
+   "drawn": 1,
+   "skipped": 0,
+   "skipReasons": {},
+   "binds": {
+    "transparent": 1
+   },
+   "copybg": {
+    "n": 1,
+    "withTex": 0,
+    "noTexNoFx": 1,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/砂狼白子/砂狼白子02_01.mpkg": {
+   "id": "砂狼白子",
+   "rel": "allwallpaper/wallpaperE/砂狼白子/砂狼白子02_01.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/砂狼白子/砂狼白子02_02.mpkg": {
+   "id": "砂狼白子",
+   "rel": "allwallpaper/wallpaperE/砂狼白子/砂狼白子02_02.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/砂狼白子/砂狼白子02_08.mpkg": {
+   "id": "砂狼白子",
+   "rel": "allwallpaper/wallpaperE/砂狼白子/砂狼白子02_08.mpkg",
+   "layers": 9,
+   "drawn": 9,
+   "skipped": 0,
+   "skipReasons": {},
+   "binds": {
+    "transparent": 4,
+    "texture": 5
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/砂狼白子/砂狼白子02_10.mpkg": {
+   "id": "砂狼白子",
+   "rel": "allwallpaper/wallpaperE/砂狼白子/砂狼白子02_10.mpkg",
+   "layers": 3,
+   "drawn": 2,
+   "skipped": 1,
+   "skipReasons": {
+    "invisible-config": 1
+   },
+   "binds": {
+    "transparent": 2
+   },
+   "copybg": {
+    "n": 2,
+    "withTex": 0,
+    "noTexNoFx": 2,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/砂狼白子/砂狼白子11_01.mpkg": {
+   "id": "砂狼白子",
+   "rel": "allwallpaper/wallpaperE/砂狼白子/砂狼白子11_01.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/砂狼白子/砂狼白子11_03.mpkg": {
+   "id": "砂狼白子",
+   "rel": "allwallpaper/wallpaperE/砂狼白子/砂狼白子11_03.mpkg",
+   "layers": 69,
+   "drawn": 2,
+   "skipped": 67,
+   "skipReasons": {
+    "invisible": 28,
+    "degenerate-geometry": 4,
+    "invisible-config": 34,
+    "particle-no-def": 1
+   },
+   "binds": {
+    "texture": 2
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/砂狼白子/砂狼白子11_05.mpkg": {
+   "id": "砂狼白子",
+   "rel": "allwallpaper/wallpaperE/砂狼白子/砂狼白子11_05.mpkg",
+   "layers": 6,
+   "drawn": 4,
+   "skipped": 2,
+   "skipReasons": {
+    "invisible": 1,
+    "particle-no-def": 1
+   },
+   "binds": {
+    "transparent": 2,
+    "texture": 2
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/砂狼白子/砂狼白子_1.mpkg": {
+   "id": "砂狼白子",
+   "rel": "allwallpaper/wallpaperE/砂狼白子/砂狼白子_1.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/砂狼白子/砂狼白子_2.mpkg": {
+   "id": "砂狼白子",
+   "rel": "allwallpaper/wallpaperE/砂狼白子/砂狼白子_2.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/砂狼白子/砂狼白子_3.mpkg": {
+   "id": "砂狼白子",
+   "rel": "allwallpaper/wallpaperE/砂狼白子/砂狼白子_3.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/砂狼白子/砂狼白子_4.mpkg": {
+   "id": "砂狼白子",
+   "rel": "allwallpaper/wallpaperE/砂狼白子/砂狼白子_4.mpkg",
+   "layers": 4,
+   "drawn": 3,
+   "skipped": 1,
+   "skipReasons": {
+    "particle-no-def": 1
+   },
+   "binds": {
+    "transparent": 1,
+    "texture": 2
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/砂狼白子/砂狼白子_5.mpkg": {
+   "id": "砂狼白子",
+   "rel": "allwallpaper/wallpaperE/砂狼白子/砂狼白子_5.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/纳西妲/纳西妲_02.mpkg": {
+   "id": "纳西妲",
+   "rel": "allwallpaper/wallpaperE/纳西妲/纳西妲_02.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/纳西妲/纳西妲_03.mpkg": {
+   "id": "纳西妲",
+   "rel": "allwallpaper/wallpaperE/纳西妲/纳西妲_03.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/纳西妲/纳西妲_04.mpkg": {
+   "id": "纳西妲",
+   "rel": "allwallpaper/wallpaperE/纳西妲/纳西妲_04.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/纳西妲/纳西妲_08.mpkg": {
+   "id": "纳西妲",
+   "rel": "allwallpaper/wallpaperE/纳西妲/纳西妲_08.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/纳西妲/纳西妲_10.mpkg": {
+   "id": "纳西妲",
+   "rel": "allwallpaper/wallpaperE/纳西妲/纳西妲_10.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/芙宁娜/芙宁娜1_01.mpkg": {
+   "id": "芙宁娜",
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜1_01.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/芙宁娜/芙宁娜1_03.mpkg": {
+   "id": "芙宁娜",
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜1_03.mpkg",
+   "layers": 9,
+   "drawn": 1,
+   "skipped": 8,
+   "skipReasons": {
+    "degenerate-geometry": 1,
+    "particle-no-def": 7
+   },
+   "binds": {
+    "rtcopy": 1
+   },
+   "copybg": {
+    "n": 1,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 1,
+    "rtcopy": 1
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/芙宁娜/芙宁娜1_04.mpkg": {
+   "id": "芙宁娜",
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜1_04.mpkg",
+   "layers": 5,
+   "drawn": 2,
+   "skipped": 3,
+   "skipReasons": {
+    "particle-no-def": 2,
+    "invisible-config": 1
+   },
+   "binds": {
+    "texture": 2
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/芙宁娜/芙宁娜1_05.mpkg": {
+   "id": "芙宁娜",
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜1_05.mpkg",
+   "layers": 3,
+   "drawn": 1,
+   "skipped": 2,
+   "skipReasons": {
+    "particle-no-def": 2
+   },
+   "binds": {
+    "texture": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/芙宁娜/芙宁娜1_06.mpkg": {
+   "id": "芙宁娜",
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜1_06.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/芙宁娜/芙宁娜1_07.mpkg": {
+   "id": "芙宁娜",
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜1_07.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/芙宁娜/芙宁娜1_08.mpkg": {
+   "id": "芙宁娜",
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜1_08.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/芙宁娜/芙宁娜1_09.mpkg": {
+   "id": "芙宁娜",
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜1_09.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/芙宁娜/芙宁娜1_10.mpkg": {
+   "id": "芙宁娜",
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜1_10.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/芙宁娜/芙宁娜1_11.mpkg": {
+   "id": "芙宁娜",
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜1_11.mpkg",
+   "layers": 1,
+   "drawn": 1,
+   "skipped": 0,
+   "skipReasons": {},
+   "binds": {
+    "texture": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/芙宁娜/芙宁娜2_01.mpkg": {
+   "id": "芙宁娜",
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜2_01.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/芙宁娜/芙宁娜2_03.mpkg": {
+   "id": "芙宁娜",
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜2_03.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/芙宁娜/芙宁娜2_04.mpkg": {
+   "id": "芙宁娜",
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜2_04.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/芙宁娜/芙宁娜_01.mpkg": {
+   "id": "芙宁娜",
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜_01.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/芙宁娜/芙宁娜_02.mpkg": {
+   "id": "芙宁娜",
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜_02.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/芙宁娜/芙宁娜_03.mpkg": {
+   "id": "芙宁娜",
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜_03.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/芙宁娜/芙宁娜_04.mpkg": {
+   "id": "芙宁娜",
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜_04.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/芙宁娜/芙宁娜_05.mpkg": {
+   "id": "芙宁娜",
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜_05.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/芙宁娜/芙宁娜_06.mpkg": {
+   "id": "芙宁娜",
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜_06.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/芙宁娜/芙宁娜_07.mpkg": {
+   "id": "芙宁娜",
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜_07.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/芙宁娜/芙宁娜_08.mpkg": {
+   "id": "芙宁娜",
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜_08.mpkg",
+   "layers": 5,
+   "drawn": 2,
+   "skipped": 3,
+   "skipReasons": {
+    "particle-no-def": 2,
+    "invisible-config": 1
+   },
+   "binds": {
+    "texture": 2
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/芙宁娜/芙宁娜_09.mpkg": {
+   "id": "芙宁娜",
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜_09.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/莱万汀/zmd_12.mpkg": {
+   "id": "莱万汀",
+   "rel": "allwallpaper/wallpaperE/莱万汀/zmd_12.mpkg",
+   "layers": 3,
+   "drawn": 2,
+   "skipped": 1,
+   "skipReasons": {
+    "particle-no-def": 1
+   },
+   "binds": {
+    "transparent": 2
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_01.mpkg": {
+   "id": "蔚蓝档案",
+   "rel": "allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_01.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_02.mpkg": {
+   "id": "蔚蓝档案",
+   "rel": "allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_02.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_03.mpkg": {
+   "id": "蔚蓝档案",
+   "rel": "allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_03.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_04.mpkg": {
+   "id": "蔚蓝档案",
+   "rel": "allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_04.mpkg",
+   "layers": 1,
+   "drawn": 1,
+   "skipped": 0,
+   "skipReasons": {},
+   "binds": {
+    "transparent": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_05.mpkg": {
+   "id": "蔚蓝档案",
+   "rel": "allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_05.mpkg",
+   "layers": 20,
+   "drawn": 12,
+   "skipped": 8,
+   "skipReasons": {
+    "invisible": 1,
+    "particle-no-def": 6,
+    "degenerate-geometry": 1
+   },
+   "binds": {
+    "transparent": 6,
+    "texture": 6
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_06.mpkg": {
+   "id": "蔚蓝档案",
+   "rel": "allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_06.mpkg",
+   "layers": 7,
+   "drawn": 4,
+   "skipped": 3,
+   "skipReasons": {
+    "invisible-config": 3
+   },
+   "binds": {
+    "transparent": 1,
+    "solidcolor": 3
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/遐蝶/夜莺Night——Honkai Star Rail Castorice 遐蝶 冥河永渡 崩坏星穹铁道The Etern.mpkg": {
+   "id": "遐蝶",
+   "rel": "allwallpaper/wallpaperE/遐蝶/夜莺Night——Honkai Star Rail Castorice 遐蝶 冥河永渡 崩坏星穹铁道The Etern.mpkg",
+   "layers": 41,
+   "drawn": 16,
+   "skipped": 25,
+   "skipReasons": {
+    "degenerate-geometry": 8,
+    "invisible-config": 2,
+    "invisible": 14,
+    "not-drawn": 1
+   },
+   "binds": {
+    "texture": 4,
+    "transparent": 8,
+    "particle": 4
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "notDrawn": [
+    {
+     "name": "Trails 2",
+     "type": "particle",
+     "particle": false,
+     "tex": 1,
+     "fx": 0
+    }
+   ],
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/遐蝶/遐蝶_01.mpkg": {
+   "id": "遐蝶",
+   "rel": "allwallpaper/wallpaperE/遐蝶/遐蝶_01.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/遐蝶/遐蝶_02.mpkg": {
+   "id": "遐蝶",
+   "rel": "allwallpaper/wallpaperE/遐蝶/遐蝶_02.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/遐蝶/遐蝶_09.mpkg": {
+   "id": "遐蝶",
+   "rel": "allwallpaper/wallpaperE/遐蝶/遐蝶_09.mpkg",
+   "layers": 45,
+   "drawn": 33,
+   "skipped": 12,
+   "skipReasons": {
+    "invisible": 1,
+    "particle-no-def": 9,
+    "not-drawn": 1,
+    "invisible-config": 1
+   },
+   "binds": {
+    "texture": 28,
+    "transparent": 5
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "notDrawn": [
+    {
+     "name": "蝶",
+     "type": "image",
+     "particle": false,
+     "tex": 0,
+     "fx": 1
+    }
+   ],
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/遐蝶/遐蝶_15.mpkg": {
+   "id": "遐蝶",
+   "rel": "allwallpaper/wallpaperE/遐蝶/遐蝶_15.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/陈千语/陈千语_01.mpkg": {
+   "id": "陈千语",
+   "rel": "allwallpaper/wallpaperE/陈千语/陈千语_01.mpkg",
+   "layers": 11,
+   "drawn": 11,
+   "skipped": 0,
+   "skipReasons": {},
+   "binds": {
+    "transparent": 2,
+    "texture": 9
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/陈千语/陈千语_02.mpkg": {
+   "id": "陈千语",
+   "rel": "allwallpaper/wallpaperE/陈千语/陈千语_02.mpkg",
+   "layers": 7,
+   "drawn": 6,
+   "skipped": 1,
+   "skipReasons": {
+    "invisible-config": 1
+   },
+   "binds": {
+    "transparent": 2,
+    "texture": 4
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/陈千语/陈千语_03.mpkg": {
+   "id": "陈千语",
+   "rel": "allwallpaper/wallpaperE/陈千语/陈千语_03.mpkg",
+   "layers": 17,
+   "drawn": 16,
+   "skipped": 1,
+   "skipReasons": {
+    "particle-no-def": 1
+   },
+   "binds": {
+    "texture": 16
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/陈千语/陈千语_04.mpkg": {
+   "id": "陈千语",
+   "rel": "allwallpaper/wallpaperE/陈千语/陈千语_04.mpkg",
+   "layers": 4,
+   "drawn": 1,
+   "skipped": 3,
+   "skipReasons": {
+    "particle-no-def": 3
+   },
+   "binds": {
+    "transparent": 1
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/陈千语/陈千语_05.mpkg": {
+   "id": "陈千语",
+   "rel": "allwallpaper/wallpaperE/陈千语/陈千语_05.mpkg",
+   "layers": 14,
+   "drawn": 10,
+   "skipped": 4,
+   "skipReasons": {
+    "particle-no-def": 4
+   },
+   "binds": {
+    "transparent": 10
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/陈千语/陈千语_06.mpkg": {
+   "id": "陈千语",
+   "rel": "allwallpaper/wallpaperE/陈千语/陈千语_06.mpkg",
+   "skipped": "no-scene-json"
+  },
+  "allwallpaper/wallpaperE/陈千语/陈千语_07.mpkg": {
+   "id": "陈千语",
+   "rel": "allwallpaper/wallpaperE/陈千语/陈千语_07.mpkg",
+   "layers": 5,
+   "drawn": 3,
+   "skipped": 2,
+   "skipReasons": {
+    "particle-no-def": 1,
+    "degenerate-geometry": 1
+   },
+   "binds": {
+    "texture": 3
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "renderErr": null
+  },
+  "allwallpaper/wallpaperE/陈千语/陈千语_08.mpkg": {
+   "id": "陈千语",
+   "rel": "allwallpaper/wallpaperE/陈千语/陈千语_08.mpkg",
+   "layers": 7,
+   "drawn": 4,
+   "skipped": 3,
+   "skipReasons": {
+    "degenerate-geometry": 1,
+    "not-drawn": 1,
+    "particle-no-def": 1
+   },
+   "binds": {
+    "transparent": 4
+   },
+   "copybg": {
+    "n": 0,
+    "withTex": 0,
+    "noTexNoFx": 0,
+    "noTexFx": 0,
+    "rtcopy": 0
+   },
+   "notDrawn": [
+    {
+     "name": "Simple Visualizer",
+     "type": "image",
+     "particle": false,
+     "tex": 0,
+     "fx": 0
+    }
+   ],
+   "renderErr": null
+  }
+ },
+ "aggregates": {
+  "skipReasons": {
+   "invisible": 887,
+   "invisible-config": 599,
+   "not-drawn": 78,
+   "degenerate-geometry": 263,
+   "container": 25,
+   "logical-helper": 7,
+   "particle-idle": 9,
+   "particle-budget": 2,
+   "particle-no-def": 112
+  },
+  "binds": {
+   "texture": 935,
+   "transparent": 433,
+   "particle": 164,
+   "solidcolor": 41,
+   "rtcopy": 9
+  },
+  "copybg": {
+   "pkgs": 11,
+   "n": 80,
+   "withTex": 31,
+   "noTexNoFx": 36,
+   "noTexFx": 13,
+   "rtcopy": 9
+  },
+  "samples": {
+   "skip:invisible": [
+    {
+     "pkg": "3195212886",
+     "n": 29
+    },
+    {
+     "pkg": "3233141951",
+     "n": 26
+    }
+   ],
+   "skip:invisible-config": [
+    {
+     "pkg": "3195212886",
+     "n": 2
+    },
+    {
+     "pkg": "3233141951",
+     "n": 6
+    }
+   ],
+   "skip:not-drawn": [
+    {
+     "pkg": "3195212886",
+     "n": 1
+    },
+    {
+     "pkg": "3448877775",
+     "n": 2
+    }
+   ],
+   "bind:texture": [
+    {
+     "pkg": "3195212886",
+     "n": 40
+    },
+    {
+     "pkg": "3233141951",
+     "n": 23
+    }
+   ],
+   "bind:transparent": [
+    {
+     "pkg": "3195212886",
+     "n": 16
+    },
+    {
+     "pkg": "3233141951",
+     "n": 4
+    }
+   ],
+   "bind:particle": [
+    {
+     "pkg": "3195212886",
+     "n": 2
+    },
+    {
+     "pkg": "3233141951",
+     "n": 6
+    }
+   ],
+   "skip:degenerate-geometry": [
+    {
+     "pkg": "3299228616",
+     "n": 2
+    },
+    {
+     "pkg": "3351163962",
+     "n": 31
+    }
+   ],
+   "skip:container": [
+    {
+     "pkg": "3299228616",
+     "n": 3
+    },
+    {
+     "pkg": "3448877775",
+     "n": 1
+    }
+   ],
+   "bind:solidcolor": [
+    {
+     "pkg": "3351163962",
+     "n": 1
+    },
+    {
+     "pkg": "3448877775",
+     "n": 1
+    }
+   ],
+   "skip:logical-helper": [
+    {
+     "pkg": "3448877775",
+     "n": 1
+    },
+    {
+     "pkg": "3462491575",
+     "n": 1
+    }
+   ],
+   "bind:rtcopy": [
+    {
+     "pkg": "2887099508",
+     "n": 4
+    },
+    {
+     "pkg": "佩丽卡",
+     "n": 1
+    }
+   ],
+   "skip:particle-idle": [
+    {
+     "pkg": "2981249186",
+     "n": 1
+    },
+    {
+     "pkg": "3521337568",
+     "n": 3
+    }
+   ],
+   "skip:particle-budget": [
+    {
+     "pkg": "3690417937",
+     "n": 2
+    }
+   ],
+   "skip:particle-no-def": [
+    {
+     "pkg": "伊蕾娜",
+     "n": 3
+    },
+    {
+     "pkg": "佩丽卡",
+     "n": 5
+    }
+   ]
+  }
+ }
+}

@@ -1,0 +1,97 @@
+{
+ "at": "2026-09-29T14:50:14.898Z",
+ "offline": {
+  "pkg": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/other/夜莺night——【time_variation_时间变化】alone_孤独の少女【原画：rella].mpkg",
+  "exists": true,
+  "mb": 49.2,
+  "magic": "PKGM0018",
+  "entries": 132,
+  "hasScene": true,
+  "sceneLayers": 102,
+  "layer": {
+   "name": "纯色",
+   "image": "models/util/solidlayer.json",
+   "hasColorField": false,
+   "color": "(无 color 字段 ⇒ WE 语义 = 白 1 1 1)",
+   "colorBlendMode": 11,
+   "size": "1000.00000 1000.00000",
+   "scale": "1.13092 1.00000 1.00000",
+   "origin": "1051.47913 1901.15430 0.00000",
+   "visible": {
+    "user": "tiao",
+    "value": true
+   },
+   "effects": [
+    "effects/workshop/3082978660/enhanced_simple_audio_bars/effect.json"
+   ],
+   "particle": null,
+   "hasParent": false
+  },
+  "layerIdx": 51,
+  "hasVideoEntry": false,
+  "hasSolidLayerModel": false,
+  "hasUtilModel": false,
+  "solidLayerNames": [
+   "纯色",
+   "morning1",
+   "day1",
+   "dusk1",
+   "night1",
+   "清晨滤镜",
+   "白天滤镜",
+   "黄昏滤镜",
+   "夜晚滤镜",
+   "昼夜变化",
+   "Audio Bars"
+  ],
+  "clearColor": "0.00000 0.00000 0.00000",
+  "clearenabled": true
+ },
+ "launchNote": "有头 DISPLAY=:0",
+ "variants": [
+  {
+   "key": "full",
+   "desc": "整场景（默认档）",
+   "q": "",
+   "pageErrors": [
+    "探针级异常: page.goto: NS_ERROR_CONNECTION_REFUSED\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:8902/webloader/?type=scene&id=mpkg-sweep&res=1080p&_t=1790693412754&pkgpath=%2Froot%2FDesktop%2FDSHarea%2Fallwa"
+   ],
+   "state": null,
+   "pixel": null,
+   "url": "http://127.0.0.1:8902/webloader/?type=scene&id=mpkg-sweep&res=1080p&_t=1790693412754&pkgpath=%2Froot%2FDesktop%2FDSHarea%2Fallwallpaper%2FwallpaperE%2Fother%2F%E5%A4%9C%E8%8E%BAnight%E2%80%94%E2%80%94%E3%80%90time_variation_%E6%97%B6%E9%97%B4%E5%8F%98%E5%8C%96%E3%80%91alone_%E5%AD%A4%E7%8B%AC%E3%81%AE%E5%B0%91%E5%A5%B3%E3%80%90%E5%8E%9F%E7%94%BB%EF%BC%9Arella%5D.mpkg"
+  },
+  {
+   "key": "ln-only",
+   "desc": "?ln=<下标>：**只留「纯色」这一层**（其余非容器层全隐）",
+   "q": "&ln=51",
+   "pageErrors": [
+    "探针级异常: page.goto: NS_ERROR_CONNECTION_REFUSED\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:8902/webloader/?type=scene&id=mpkg-sweep&res=1080p&_t=1790693413332&ln=51&pkgpath=%2Froot%2FDesktop%2FDSHarea%2"
+   ],
+   "state": null,
+   "pixel": null,
+   "url": "http://127.0.0.1:8902/webloader/?type=scene&id=mpkg-sweep&res=1080p&_t=1790693413332&ln=51&pkgpath=%2Froot%2FDesktop%2FDSHarea%2Fallwallpaper%2FwallpaperE%2Fother%2F%E5%A4%9C%E8%8E%BAnight%E2%80%94%E2%80%94%E3%80%90time_variation_%E6%97%B6%E9%97%B4%E5%8F%98%E5%8C%96%E3%80%91alone_%E5%AD%A4%E7%8B%AC%E3%81%AE%E5%B0%91%E5%A5%B3%E3%80%90%E5%8E%9F%E7%94%BB%EF%BC%9Arella%5D.mpkg"
+  },
+  {
+   "key": "ln-only-white",
+   "desc": "?ln=<下标>&whitefallback=1：同一层的白块 A/B（证明兜底分支）",
+   "q": "&ln=51&whitefallback=1",
+   "pageErrors": [
+    "探针级异常: page.goto: NS_ERROR_CONNECTION_REFUSED\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:8902/webloader/?type=scene&id=mpkg-sweep&res=1080p&_t=1790693413813&ln=51&whitefallback=1&pkgpath=%2Froot%2FDes"
+   ],
+   "state": null,
+   "pixel": null,
+   "url": "http://127.0.0.1:8902/webloader/?type=scene&id=mpkg-sweep&res=1080p&_t=1790693413813&ln=51&whitefallback=1&pkgpath=%2Froot%2FDesktop%2FDSHarea%2Fallwallpaper%2FwallpaperE%2Fother%2F%E5%A4%9C%E8%8E%BAnight%E2%80%94%E2%80%94%E3%80%90time_variation_%E6%97%B6%E9%97%B4%E5%8F%98%E5%8C%96%E3%80%91alone_%E5%AD%A4%E7%8B%AC%E3%81%AE%E5%B0%91%E5%A5%B3%E3%80%90%E5%8E%9F%E7%94%BB%EF%BC%9Arella%5D.mpkg"
+  },
+  {
+   "key": "isolate-only",
+   "desc": "?isolate=纯色（层名隔离，容器保留）",
+   "q": "&isolate=%E7%BA%AF%E8%89%B2",
+   "pageErrors": [
+    "探针级异常: page.goto: NS_ERROR_CONNECTION_REFUSED\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:8902/webloader/?type=scene&id=mpkg-sweep&res=1080p&_t=1790693414322&isolate=%E7%BA%AF%E8%89%B2&pkgpath=%2Froot%"
+   ],
+   "state": null,
+   "pixel": null,
+   "url": "http://127.0.0.1:8902/webloader/?type=scene&id=mpkg-sweep&res=1080p&_t=1790693414322&isolate=%E7%BA%AF%E8%89%B2&pkgpath=%2Froot%2FDesktop%2FDSHarea%2Fallwallpaper%2FwallpaperE%2Fother%2F%E5%A4%9C%E8%8E%BAnight%E2%80%94%E2%80%94%E3%80%90time_variation_%E6%97%B6%E9%97%B4%E5%8F%98%E5%8C%96%E3%80%91alone_%E5%AD%A4%E7%8B%AC%E3%81%AE%E5%B0%91%E5%A5%B3%E3%80%90%E5%8E%9F%E7%94%BB%EF%BC%9Arella%5D.mpkg"
+  }
+ ]
+}

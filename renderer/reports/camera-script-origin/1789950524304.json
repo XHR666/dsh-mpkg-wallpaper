@@ -1,0 +1,2628 @@
+{
+ "tool": "camera-script-origin-probe",
+ "schemaVersion": 1,
+ "generatedAt": "2026-09-21T00:28:44.304Z",
+ "epochMs": 1789950524304,
+ "env": {
+  "mpwRoot": "/root/Desktop/DSHarea",
+  "repoRoot": "/root/Desktop/DSHarea/we-scene-demo",
+  "node": "v24.19.0",
+  "canvas": [
+   3840,
+   2160
+  ],
+  "ticks": 3,
+  "userPropsMode": "project",
+  "abVariant": true,
+  "idFilter": null,
+  "peakRssMb": 117.8,
+  "elapsedMs": 1569
+ },
+ "corpus": {
+  "packs": 98,
+  "looseScenes": 171,
+  "packsWithoutSceneJson": 45,
+  "cameraObjects": 16,
+  "hits": 14
+ },
+ "criteria": {
+  "cameraObject": "scene.json objects[] 里 typeof o.camera === 'string'（与 core/we-scene-bundle.js:1513 同判据）",
+  "hit": "相机对象的 origin 或 zoom 是 {script:<字符串>} 节点",
+  "staticSnapshot": "不跑脚本时该属性节点的 .value（= 渲染器今天解析到的 authored 值）",
+  "host": "elysia/scene-scripts.js applySceneScripts + createScriptCache（离线；只 import 不修改）"
+ },
+ "checks": {
+  "pass": 14,
+  "fail": 0,
+  "skip": 0,
+  "failures": [],
+  "items": [
+   {
+    "name": "① 语料枚举非空（包容器 98 / 散装 scene.json 171）",
+    "ok": true,
+    "detail": "语料根 /root/Desktop/DSHarea"
+   },
+   {
+    "name": "② 没有读不动的包（读不了会打印是哪个包，并退 1）",
+    "ok": true,
+    "detail": "0 个"
+   },
+   {
+    "name": "③ 没有 scene.json 坏掉的包",
+    "ok": true,
+    "detail": "0 个"
+   },
+   {
+    "name": "④ 没有 scene.json 坏掉的散装场景",
+    "ok": true,
+    "detail": "0 个"
+   },
+   {
+    "name": "⑤ 命中判据自洽（每条命中都真的带脚本原文，且 hitReason 与实测字段一致）",
+    "ok": true,
+    "detail": "14 个包 / 14 个相机对象，脚本字段 [\"origin\"]"
+   },
+   {
+    "name": "⑥ 每条命中都能被宿主求值（隔离趟缓存里有该脚本源、编译无错、init 未失败、update 未抛错）",
+    "ok": true,
+    "detail": "全部 14 条"
+   },
+   {
+    "name": "⑦ 隔离跑（只留相机对象）也求值成功，无宿主错误",
+    "ok": true,
+    "detail": "0 条有错"
+   },
+   {
+    "name": "⑧ 反向自证·空宿主：每条命中的值都与静态快照**逐字相同**（⇒ 差是宿主算出来的）",
+    "ok": true,
+    "detail": "14/14 条相同"
+   },
+   {
+    "name": "⑨ 反向自证·隔离：相机自己的脚本就能造出这个差（隔离值 ≠ 静态）",
+    "ok": true,
+    "detail": "14/14 条 ≠ 静态"
+   },
+   {
+    "name": "⑩ 反向自证·变异：挪动绑定的用户属性后求值结果必须跟着变",
+    "ok": true,
+    "detail": "14/14 条跟着变"
+   },
+   {
+    "name": "⑪ 与渲染器同一判据交叉一致（lib.parseScene().cameraNode.id 命中同一个对象）",
+    "ok": true,
+    "detail": "14/14 条一致"
+   },
+   {
+    "name": "⑫ Δ 如实（落盘的 deltaVec == 求值向量 − 静态向量，逐分量 1e-9 内；任一侧解析不出分量即判红，不放过）",
+    "ok": true,
+    "detail": "校验 14 条"
+   },
+   {
+    "name": "⑬ 命中确实改变了取景（至少一条 求值 ≠ 静态；全等则本工具无话可说 ⇒ 应显式 SKIP 而不是报通过）",
+    "ok": true,
+    "detail": "14/14 条 ≠ 静态"
+   },
+   {
+    "name": "⑭ applySceneScripts 调用本身没有抛异常（抛了 = 工具自身出错 ⇒ 退 1，并打印是哪个包）",
+    "ok": true,
+    "detail": "0 个包"
+   }
+  ]
+ },
+ "objects": [
+  {
+   "id": "0917/3448877775",
+   "kind": "pack",
+   "file": "allwallpaper/0917/3448877775/scene.pkg",
+   "cameraObjectId": 1297271,
+   "camera": "default",
+   "name": "",
+   "originScript": true,
+   "zoomScript": false,
+   "scriptKeys": [
+    "origin"
+   ],
+   "hitReason": "origin.script"
+  },
+  {
+   "id": "0917/3462491575",
+   "kind": "pack",
+   "file": "allwallpaper/0917/3462491575/scene.pkg",
+   "cameraObjectId": 1297271,
+   "camera": "default",
+   "name": "",
+   "originScript": true,
+   "zoomScript": false,
+   "scriptKeys": [
+    "origin"
+   ],
+   "hitReason": "origin.script"
+  },
+  {
+   "id": "0917/3509243656",
+   "kind": "pack",
+   "file": "allwallpaper/0917/3509243656/scene.pkg",
+   "cameraObjectId": 443,
+   "camera": "default",
+   "name": "",
+   "originScript": false,
+   "zoomScript": false,
+   "scriptKeys": [],
+   "hitReason": null
+  },
+  {
+   "id": "dd/3326873240",
+   "kind": "pack",
+   "file": "allwallpaper/dd/3326873240/scene.pkg",
+   "cameraObjectId": 1297271,
+   "camera": "default",
+   "name": "",
+   "originScript": true,
+   "zoomScript": false,
+   "scriptKeys": [
+    "origin"
+   ],
+   "hitReason": "origin.script"
+  },
+  {
+   "id": "dd/3327063360",
+   "kind": "pack",
+   "file": "allwallpaper/dd/3327063360/scene.pkg",
+   "cameraObjectId": 1297271,
+   "camera": "default",
+   "name": "",
+   "originScript": true,
+   "zoomScript": false,
+   "scriptKeys": [
+    "origin"
+   ],
+   "hitReason": "origin.script"
+  },
+  {
+   "id": "dd/3470764447",
+   "kind": "pack",
+   "file": "allwallpaper/dd/3470764447/scene.pkg",
+   "cameraObjectId": 1297271,
+   "camera": "default",
+   "name": "",
+   "originScript": true,
+   "zoomScript": false,
+   "scriptKeys": [
+    "origin"
+   ],
+   "hitReason": "origin.script"
+  },
+  {
+   "id": "dd/3554161528",
+   "kind": "pack",
+   "file": "allwallpaper/dd/3554161528/scene.pkg",
+   "cameraObjectId": 3727,
+   "camera": "default",
+   "name": "",
+   "originScript": false,
+   "zoomScript": false,
+   "scriptKeys": [],
+   "hitReason": null
+  },
+  {
+   "id": "wallpaperE/other/夜莺night——【time_variation_时间变化】alone_孤独の少女【原画：rella]",
+   "kind": "pack",
+   "file": "allwallpaper/wallpaperE/other/夜莺night——【time_variation_时间变化】alone_孤独の少女【原画：rella].mpkg",
+   "cameraObjectId": 1297271,
+   "camera": "default",
+   "name": "",
+   "originScript": true,
+   "zoomScript": false,
+   "scriptKeys": [
+    "origin"
+   ],
+   "hitReason": "origin.script"
+  },
+  {
+   "id": "wallpaperE/伊蕾娜/夜莺night——【time_variation时间变化】elaina_伊蕾娜：闲憩微息【魔女之旅】day_night",
+   "kind": "pack",
+   "file": "allwallpaper/wallpaperE/伊蕾娜/夜莺night——【time_variation时间变化】elaina_伊蕾娜：闲憩微息【魔女之旅】day_night.mpkg",
+   "cameraObjectId": 1297271,
+   "camera": "default",
+   "name": "",
+   "originScript": true,
+   "zoomScript": false,
+   "scriptKeys": [
+    "origin"
+   ],
+   "hitReason": "origin.script"
+  },
+  {
+   "id": "wallpaperE/流萤/夜莺night——【customize自定义】firefly_流萤_星空之誓——夜莺night崩坏星穹铁道",
+   "kind": "pack",
+   "file": "allwallpaper/wallpaperE/流萤/夜莺night——【customize自定义】firefly_流萤_星空之誓——夜莺night崩坏星穹铁道.mpkg",
+   "cameraObjectId": 1297271,
+   "camera": "default",
+   "name": "",
+   "originScript": true,
+   "zoomScript": false,
+   "scriptKeys": [
+    "origin"
+   ],
+   "hitReason": "origin.script"
+  },
+  {
+   "id": "wallpaperE/砂狼白子/砂狼白子11_03",
+   "kind": "pack",
+   "file": "allwallpaper/wallpaperE/砂狼白子/砂狼白子11_03.mpkg",
+   "cameraObjectId": 1297271,
+   "camera": "default",
+   "name": "",
+   "originScript": true,
+   "zoomScript": false,
+   "scriptKeys": [
+    "origin"
+   ],
+   "hitReason": "origin.script"
+  },
+  {
+   "id": "wallpaperE/遐蝶/夜莺Night——Honkai Star Rail Castorice 遐蝶 冥河永渡 崩坏星穹铁道The Etern",
+   "kind": "pack",
+   "file": "allwallpaper/wallpaperE/遐蝶/夜莺Night——Honkai Star Rail Castorice 遐蝶 冥河永渡 崩坏星穹铁道The Etern.mpkg",
+   "cameraObjectId": 1297271,
+   "camera": "default",
+   "name": "",
+   "originScript": true,
+   "zoomScript": false,
+   "scriptKeys": [
+    "origin"
+   ],
+   "hitReason": "origin.script"
+  },
+  {
+   "id": "wallpapertest1/夜莺Night——Honkai Star Rail Castorice 遐蝶 冥河永渡 崩坏星穹铁道The Etern",
+   "kind": "pack",
+   "file": "allwallpaper/wallpapertest1/夜莺Night——Honkai Star Rail Castorice 遐蝶 冥河永渡 崩坏星穹铁道The Etern.mpkg",
+   "cameraObjectId": 1297271,
+   "camera": "default",
+   "name": "",
+   "originScript": true,
+   "zoomScript": false,
+   "scriptKeys": [
+    "origin"
+   ],
+   "hitReason": "origin.script"
+  },
+  {
+   "id": "wallpapertest1/夜莺night——【customize自定义】firefly_流萤_星空之誓——夜莺night崩坏星穹铁道",
+   "kind": "pack",
+   "file": "allwallpaper/wallpapertest1/夜莺night——【customize自定义】firefly_流萤_星空之誓——夜莺night崩坏星穹铁道.mpkg",
+   "cameraObjectId": 1297271,
+   "camera": "default",
+   "name": "",
+   "originScript": true,
+   "zoomScript": false,
+   "scriptKeys": [
+    "origin"
+   ],
+   "hitReason": "origin.script"
+  },
+  {
+   "id": "wallpapertest1/夜莺night——【time_variation_时间变化】alone_孤独の少女【原画：rella]",
+   "kind": "pack",
+   "file": "allwallpaper/wallpapertest1/夜莺night——【time_variation_时间变化】alone_孤独の少女【原画：rella].mpkg",
+   "cameraObjectId": 1297271,
+   "camera": "default",
+   "name": "",
+   "originScript": true,
+   "zoomScript": false,
+   "scriptKeys": [
+    "origin"
+   ],
+   "hitReason": "origin.script"
+  },
+  {
+   "id": "wallpapertest1/夜莺night——【time_variation时间变化】elaina_伊蕾娜：闲憩微息【魔女之旅】day_night",
+   "kind": "pack",
+   "file": "allwallpaper/wallpapertest1/夜莺night——【time_variation时间变化】elaina_伊蕾娜：闲憩微息【魔女之旅】day_night.mpkg",
+   "cameraObjectId": 1297271,
+   "camera": "default",
+   "name": "",
+   "originScript": true,
+   "zoomScript": false,
+   "scriptKeys": [
+    "origin"
+   ],
+   "hitReason": "origin.script"
+  }
+ ],
+ "rows": [
+  {
+   "pkgId": "0917/3448877775",
+   "kind": "pack",
+   "file": "allwallpaper/0917/3448877775/scene.pkg",
+   "hitReason": "origin.script",
+   "cameraObjectId": 1297271,
+   "camera": "default",
+   "cameraName": "",
+   "script": {
+    "key": "origin",
+    "chars": 781,
+    "sha256": "151da98895ccdaed35fc14326b216b91b87afa7cd94c8a8dbfe12dec297667fd",
+    "source": "// 使用严格模式\n'use strict';\n\n// 创建脚本属性\nexport var scriptProperties = createScriptProperties ()\n  // 添加 X 坐标的滑块属性\n  .addSlider ( {\n    name: 'x', // 属性名称\n    label: 'X', // 属性标签\n    value: 0.5, // 属性默认值\n    min: 0, // 滑块最小值\n    max: 1, // 滑块最大值\n    integer: false // 是否使用整数\n  })\n  // 添加 Y 坐标的滑块属性\n  .addSlider ( {\n    name: 'y', // 属性名称\n    label: 'Y', // 属性标签\n    value: 0.5, // 属性默认值\n    min: 0, // 滑块最小值\n    max: 1, // 滑块最大值\n    integer: false // 是否使用整数\n  })\n  // 完成脚本属性的创建\n  .finish ();\n\n/**\n * 更新组件的坐标值\n * @param {Vec3} value - 组件的原始坐标值\n * @return {Vec3} - 更新后的坐标值\n */\nexport function update (value) {\n  // 将 X 坐标乘以画布的宽度\n  value.x = scriptProperties.x * engine.canvasSize.x;\n  // 将 Y 坐标乘以画布的高度\n  value.y = scriptProperties.y * engine.canvasSize.y;\n  // 返回更新后的坐标值\n  return value;\n}\n",
+    "preview": "// 使用严格模式 'use strict'; // 创建脚本属性 export var scriptProperties = createScriptProperties () // 添加 X 坐标的滑块属性 .addSlider ( { name: 'x', // 属性名称 label: 'X', // 属性标签 value: 0.5, // 属性默认值 min: 0, // 滑块最小值 ma"
+   },
+   "scriptProperties": {
+    "x": {
+     "user": "x3",
+     "value": 0.5
+    },
+    "y": {
+     "user": "y1",
+     "value": 0.5
+    }
+   },
+   "userProps": {
+    "source": "project.json(盘上) general.properties 默认值(145 项)",
+    "count": 145,
+    "bound": [
+     "x3",
+     "y1"
+    ]
+   },
+   "static": {
+    "origin": "2434.38477 725.25134 500.00000",
+    "originVec": [
+     2434.38477,
+     725.25134,
+     500
+    ],
+    "zoom": 1,
+    "zoomKind": "object{user,value}",
+    "fov": 50
+   },
+   "eval": {
+    "origin": "0.000000 0.000000 500.000000",
+    "originVec": [
+     0,
+     0,
+     500
+    ],
+    "deltaVec": [
+     -2434.38477,
+     -725.25134,
+     0
+    ],
+    "equalsStatic": false,
+    "changedKeys": [
+     {
+      "key": "origin",
+      "beforeVal": "2434.38477 725.25134 500.00000",
+      "afterVal": "0.000000 0.000000 500.000000",
+      "beforeJson": "{\"script\":\"// 使用严格模式\\n'use strict';\\n\\n// 创建脚本属性\\nexport var scriptProperties = ",
+      "afterJson": "{\"script\":\"// 使用严格模式\\n'use strict';\\n\\n// 创建脚本属性\\nexport var scriptProperties = "
+     }
+    ],
+    "hostErrors": [],
+    "hostThrew": null,
+    "scriptLogs": [
+     "Initial animation speed set to 1",
+     "Initial particle speed set to 1",
+     "Initial playback speed set to 2"
+    ],
+    "entry": {
+     "compiled": true,
+     "compileError": null,
+     "disabled": false,
+     "initError": null,
+     "initialized": false,
+     "updateErrors": 0,
+     "hasInit": false,
+     "hasUpdate": true,
+     "hasApplyUserProperties": false
+    },
+    "cacheSize": 20
+   },
+   "abNoUserProps": {
+    "origin": "1920.000000 1080.000000 500.000000",
+    "originVec": [
+     1920,
+     1080,
+     500
+    ],
+    "deltaVec": [
+     -514.3847700000001,
+     354.74866,
+     0
+    ],
+    "hostErrors": [],
+    "hostThrew": null
+   },
+   "noHost": {
+    "origin": "2434.38477 725.25134 500.00000",
+    "equalsStatic": true,
+    "changedKeys": []
+   },
+   "isolate": {
+    "origin": "0.000000 0.000000 500.000000",
+    "originVec": [
+     0,
+     0,
+     500
+    ],
+    "equalsFull": true,
+    "equalsStatic": false,
+    "hostErrors": [],
+    "entry": {
+     "compiled": true,
+     "compileError": null,
+     "disabled": false,
+     "initError": null,
+     "initialized": false,
+     "updateErrors": 0,
+     "hasInit": false,
+     "hasUpdate": true,
+     "hasApplyUserProperties": false
+    },
+    "hostThrew": null
+   },
+   "mutate": {
+    "props": {
+     "x3": 0.25,
+     "y1": 0.25
+    },
+    "origin": "960.000000 540.000000 500.000000",
+    "deltaVsIsolate": [
+     960,
+     540,
+     0
+    ],
+    "moved": true,
+    "hostErrors": [],
+    "hostThrew": null
+   },
+   "rendererCrossCheck": {
+    "parseSceneCameraNodeId": 1297271,
+    "match": true,
+    "error": null
+   }
+  },
+  {
+   "pkgId": "0917/3462491575",
+   "kind": "pack",
+   "file": "allwallpaper/0917/3462491575/scene.pkg",
+   "hitReason": "origin.script",
+   "cameraObjectId": 1297271,
+   "camera": "default",
+   "cameraName": "",
+   "script": {
+    "key": "origin",
+    "chars": 781,
+    "sha256": "151da98895ccdaed35fc14326b216b91b87afa7cd94c8a8dbfe12dec297667fd",
+    "source": "// 使用严格模式\n'use strict';\n\n// 创建脚本属性\nexport var scriptProperties = createScriptProperties ()\n  // 添加 X 坐标的滑块属性\n  .addSlider ( {\n    name: 'x', // 属性名称\n    label: 'X', // 属性标签\n    value: 0.5, // 属性默认值\n    min: 0, // 滑块最小值\n    max: 1, // 滑块最大值\n    integer: false // 是否使用整数\n  })\n  // 添加 Y 坐标的滑块属性\n  .addSlider ( {\n    name: 'y', // 属性名称\n    label: 'Y', // 属性标签\n    value: 0.5, // 属性默认值\n    min: 0, // 滑块最小值\n    max: 1, // 滑块最大值\n    integer: false // 是否使用整数\n  })\n  // 完成脚本属性的创建\n  .finish ();\n\n/**\n * 更新组件的坐标值\n * @param {Vec3} value - 组件的原始坐标值\n * @return {Vec3} - 更新后的坐标值\n */\nexport function update (value) {\n  // 将 X 坐标乘以画布的宽度\n  value.x = scriptProperties.x * engine.canvasSize.x;\n  // 将 Y 坐标乘以画布的高度\n  value.y = scriptProperties.y * engine.canvasSize.y;\n  // 返回更新后的坐标值\n  return value;\n}\n",
+    "preview": "// 使用严格模式 'use strict'; // 创建脚本属性 export var scriptProperties = createScriptProperties () // 添加 X 坐标的滑块属性 .addSlider ( { name: 'x', // 属性名称 label: 'X', // 属性标签 value: 0.5, // 属性默认值 min: 0, // 滑块最小值 ma"
+   },
+   "scriptProperties": {
+    "x": {
+     "user": "x3",
+     "value": 0.5
+    },
+    "y": {
+     "user": "y1",
+     "value": 0.5
+    }
+   },
+   "userProps": {
+    "source": "project.json(盘上) general.properties 默认值(95 项)",
+    "count": 95,
+    "bound": [
+     "x3",
+     "y1"
+    ]
+   },
+   "static": {
+    "origin": "2434.38477 725.25110 500.00003",
+    "originVec": [
+     2434.38477,
+     725.2511,
+     500.00003
+    ],
+    "zoom": 1,
+    "zoomKind": "object{user,value}",
+    "fov": 50
+   },
+   "eval": {
+    "origin": "0.000000 0.000000 500.000030",
+    "originVec": [
+     0,
+     0,
+     500.00003
+    ],
+    "deltaVec": [
+     -2434.38477,
+     -725.2511,
+     0
+    ],
+    "equalsStatic": false,
+    "changedKeys": [
+     {
+      "key": "origin",
+      "beforeVal": "2434.38477 725.25110 500.00003",
+      "afterVal": "0.000000 0.000000 500.000030",
+      "beforeJson": "{\"script\":\"// 使用严格模式\\n'use strict';\\n\\n// 创建脚本属性\\nexport var scriptProperties = ",
+      "afterJson": "{\"script\":\"// 使用严格模式\\n'use strict';\\n\\n// 创建脚本属性\\nexport var scriptProperties = "
+     }
+    ],
+    "hostErrors": [],
+    "hostThrew": null,
+    "scriptLogs": [],
+    "entry": {
+     "compiled": true,
+     "compileError": null,
+     "disabled": false,
+     "initError": null,
+     "initialized": false,
+     "updateErrors": 0,
+     "hasInit": false,
+     "hasUpdate": true,
+     "hasApplyUserProperties": false
+    },
+    "cacheSize": 9
+   },
+   "abNoUserProps": {
+    "origin": "1920.000000 1080.000000 500.000030",
+    "originVec": [
+     1920,
+     1080,
+     500.00003
+    ],
+    "deltaVec": [
+     -514.3847700000001,
+     354.74890000000005,
+     0
+    ],
+    "hostErrors": [],
+    "hostThrew": null
+   },
+   "noHost": {
+    "origin": "2434.38477 725.25110 500.00003",
+    "equalsStatic": true,
+    "changedKeys": []
+   },
+   "isolate": {
+    "origin": "0.000000 0.000000 500.000030",
+    "originVec": [
+     0,
+     0,
+     500.00003
+    ],
+    "equalsFull": true,
+    "equalsStatic": false,
+    "hostErrors": [],
+    "entry": {
+     "compiled": true,
+     "compileError": null,
+     "disabled": false,
+     "initError": null,
+     "initialized": false,
+     "updateErrors": 0,
+     "hasInit": false,
+     "hasUpdate": true,
+     "hasApplyUserProperties": false
+    },
+    "hostThrew": null
+   },
+   "mutate": {
+    "props": {
+     "x3": 0.25,
+     "y1": 0.25
+    },
+    "origin": "960.000000 540.000000 500.000030",
+    "deltaVsIsolate": [
+     960,
+     540,
+     0
+    ],
+    "moved": true,
+    "hostErrors": [],
+    "hostThrew": null
+   },
+   "rendererCrossCheck": {
+    "parseSceneCameraNodeId": 1297271,
+    "match": true,
+    "error": null
+   }
+  },
+  {
+   "pkgId": "dd/3326873240",
+   "kind": "pack",
+   "file": "allwallpaper/dd/3326873240/scene.pkg",
+   "hitReason": "origin.script",
+   "cameraObjectId": 1297271,
+   "camera": "default",
+   "cameraName": "",
+   "script": {
+    "key": "origin",
+    "chars": 781,
+    "sha256": "151da98895ccdaed35fc14326b216b91b87afa7cd94c8a8dbfe12dec297667fd",
+    "source": "// 使用严格模式\n'use strict';\n\n// 创建脚本属性\nexport var scriptProperties = createScriptProperties ()\n  // 添加 X 坐标的滑块属性\n  .addSlider ( {\n    name: 'x', // 属性名称\n    label: 'X', // 属性标签\n    value: 0.5, // 属性默认值\n    min: 0, // 滑块最小值\n    max: 1, // 滑块最大值\n    integer: false // 是否使用整数\n  })\n  // 添加 Y 坐标的滑块属性\n  .addSlider ( {\n    name: 'y', // 属性名称\n    label: 'Y', // 属性标签\n    value: 0.5, // 属性默认值\n    min: 0, // 滑块最小值\n    max: 1, // 滑块最大值\n    integer: false // 是否使用整数\n  })\n  // 完成脚本属性的创建\n  .finish ();\n\n/**\n * 更新组件的坐标值\n * @param {Vec3} value - 组件的原始坐标值\n * @return {Vec3} - 更新后的坐标值\n */\nexport function update (value) {\n  // 将 X 坐标乘以画布的宽度\n  value.x = scriptProperties.x * engine.canvasSize.x;\n  // 将 Y 坐标乘以画布的高度\n  value.y = scriptProperties.y * engine.canvasSize.y;\n  // 返回更新后的坐标值\n  return value;\n}\n",
+    "preview": "// 使用严格模式 'use strict'; // 创建脚本属性 export var scriptProperties = createScriptProperties () // 添加 X 坐标的滑块属性 .addSlider ( { name: 'x', // 属性名称 label: 'X', // 属性标签 value: 0.5, // 属性默认值 min: 0, // 滑块最小值 ma"
+   },
+   "scriptProperties": {
+    "x": {
+     "user": "x3",
+     "value": 0.5
+    },
+    "y": {
+     "user": "y1",
+     "value": 0.5
+    }
+   },
+   "userProps": {
+    "source": "project.json(盘上) general.properties 默认值(104 项)",
+    "count": 104,
+    "bound": [
+     "x3",
+     "y1"
+    ]
+   },
+   "static": {
+    "origin": "2434.38477 725.25134 500.00000",
+    "originVec": [
+     2434.38477,
+     725.25134,
+     500
+    ],
+    "zoom": 1,
+    "zoomKind": "object{user,value}",
+    "fov": 50
+   },
+   "eval": {
+    "origin": "0.000000 0.000000 500.000000",
+    "originVec": [
+     0,
+     0,
+     500
+    ],
+    "deltaVec": [
+     -2434.38477,
+     -725.25134,
+     0
+    ],
+    "equalsStatic": false,
+    "changedKeys": [
+     {
+      "key": "origin",
+      "beforeVal": "2434.38477 725.25134 500.00000",
+      "afterVal": "0.000000 0.000000 500.000000",
+      "beforeJson": "{\"script\":\"// 使用严格模式\\n'use strict';\\n\\n// 创建脚本属性\\nexport var scriptProperties = ",
+      "afterJson": "{\"script\":\"// 使用严格模式\\n'use strict';\\n\\n// 创建脚本属性\\nexport var scriptProperties = "
+     }
+    ],
+    "hostErrors": [],
+    "hostThrew": null,
+    "scriptLogs": [],
+    "entry": {
+     "compiled": true,
+     "compileError": null,
+     "disabled": false,
+     "initError": null,
+     "initialized": false,
+     "updateErrors": 0,
+     "hasInit": false,
+     "hasUpdate": true,
+     "hasApplyUserProperties": false
+    },
+    "cacheSize": 53
+   },
+   "abNoUserProps": {
+    "origin": "1920.000000 1080.000000 500.000000",
+    "originVec": [
+     1920,
+     1080,
+     500
+    ],
+    "deltaVec": [
+     -514.3847700000001,
+     354.74866,
+     0
+    ],
+    "hostErrors": [],
+    "hostThrew": null
+   },
+   "noHost": {
+    "origin": "2434.38477 725.25134 500.00000",
+    "equalsStatic": true,
+    "changedKeys": []
+   },
+   "isolate": {
+    "origin": "0.000000 0.000000 500.000000",
+    "originVec": [
+     0,
+     0,
+     500
+    ],
+    "equalsFull": true,
+    "equalsStatic": false,
+    "hostErrors": [],
+    "entry": {
+     "compiled": true,
+     "compileError": null,
+     "disabled": false,
+     "initError": null,
+     "initialized": false,
+     "updateErrors": 0,
+     "hasInit": false,
+     "hasUpdate": true,
+     "hasApplyUserProperties": false
+    },
+    "hostThrew": null
+   },
+   "mutate": {
+    "props": {
+     "x3": 0.25,
+     "y1": 0.25
+    },
+    "origin": "960.000000 540.000000 500.000000",
+    "deltaVsIsolate": [
+     960,
+     540,
+     0
+    ],
+    "moved": true,
+    "hostErrors": [],
+    "hostThrew": null
+   },
+   "rendererCrossCheck": {
+    "parseSceneCameraNodeId": 1297271,
+    "match": true,
+    "error": null
+   }
+  },
+  {
+   "pkgId": "dd/3327063360",
+   "kind": "pack",
+   "file": "allwallpaper/dd/3327063360/scene.pkg",
+   "hitReason": "origin.script",
+   "cameraObjectId": 1297271,
+   "camera": "default",
+   "cameraName": "",
+   "script": {
+    "key": "origin",
+    "chars": 781,
+    "sha256": "151da98895ccdaed35fc14326b216b91b87afa7cd94c8a8dbfe12dec297667fd",
+    "source": "// 使用严格模式\n'use strict';\n\n// 创建脚本属性\nexport var scriptProperties = createScriptProperties ()\n  // 添加 X 坐标的滑块属性\n  .addSlider ( {\n    name: 'x', // 属性名称\n    label: 'X', // 属性标签\n    value: 0.5, // 属性默认值\n    min: 0, // 滑块最小值\n    max: 1, // 滑块最大值\n    integer: false // 是否使用整数\n  })\n  // 添加 Y 坐标的滑块属性\n  .addSlider ( {\n    name: 'y', // 属性名称\n    label: 'Y', // 属性标签\n    value: 0.5, // 属性默认值\n    min: 0, // 滑块最小值\n    max: 1, // 滑块最大值\n    integer: false // 是否使用整数\n  })\n  // 完成脚本属性的创建\n  .finish ();\n\n/**\n * 更新组件的坐标值\n * @param {Vec3} value - 组件的原始坐标值\n * @return {Vec3} - 更新后的坐标值\n */\nexport function update (value) {\n  // 将 X 坐标乘以画布的宽度\n  value.x = scriptProperties.x * engine.canvasSize.x;\n  // 将 Y 坐标乘以画布的高度\n  value.y = scriptProperties.y * engine.canvasSize.y;\n  // 返回更新后的坐标值\n  return value;\n}\n",
+    "preview": "// 使用严格模式 'use strict'; // 创建脚本属性 export var scriptProperties = createScriptProperties () // 添加 X 坐标的滑块属性 .addSlider ( { name: 'x', // 属性名称 label: 'X', // 属性标签 value: 0.5, // 属性默认值 min: 0, // 滑块最小值 ma"
+   },
+   "scriptProperties": {
+    "x": {
+     "user": "x3",
+     "value": 0.5
+    },
+    "y": {
+     "user": "y1",
+     "value": 0.5
+    }
+   },
+   "userProps": {
+    "source": "project.json(盘上) general.properties 默认值(102 项)",
+    "count": 102,
+    "bound": [
+     "x3",
+     "y1"
+    ]
+   },
+   "static": {
+    "origin": "2434.38477 725.25116 500.00000",
+    "originVec": [
+     2434.38477,
+     725.25116,
+     500
+    ],
+    "zoom": 1,
+    "zoomKind": "object{user,value}",
+    "fov": 50
+   },
+   "eval": {
+    "origin": "0.000000 0.000000 500.000000",
+    "originVec": [
+     0,
+     0,
+     500
+    ],
+    "deltaVec": [
+     -2434.38477,
+     -725.25116,
+     0
+    ],
+    "equalsStatic": false,
+    "changedKeys": [
+     {
+      "key": "origin",
+      "beforeVal": "2434.38477 725.25116 500.00000",
+      "afterVal": "0.000000 0.000000 500.000000",
+      "beforeJson": "{\"script\":\"// 使用严格模式\\n'use strict';\\n\\n// 创建脚本属性\\nexport var scriptProperties = ",
+      "afterJson": "{\"script\":\"// 使用严格模式\\n'use strict';\\n\\n// 创建脚本属性\\nexport var scriptProperties = "
+     }
+    ],
+    "hostErrors": [],
+    "hostThrew": null,
+    "scriptLogs": [],
+    "entry": {
+     "compiled": true,
+     "compileError": null,
+     "disabled": false,
+     "initError": null,
+     "initialized": false,
+     "updateErrors": 0,
+     "hasInit": false,
+     "hasUpdate": true,
+     "hasApplyUserProperties": false
+    },
+    "cacheSize": 49
+   },
+   "abNoUserProps": {
+    "origin": "1920.000000 1080.000000 500.000000",
+    "originVec": [
+     1920,
+     1080,
+     500
+    ],
+    "deltaVec": [
+     -514.3847700000001,
+     354.74884,
+     0
+    ],
+    "hostErrors": [],
+    "hostThrew": null
+   },
+   "noHost": {
+    "origin": "2434.38477 725.25116 500.00000",
+    "equalsStatic": true,
+    "changedKeys": []
+   },
+   "isolate": {
+    "origin": "0.000000 0.000000 500.000000",
+    "originVec": [
+     0,
+     0,
+     500
+    ],
+    "equalsFull": true,
+    "equalsStatic": false,
+    "hostErrors": [],
+    "entry": {
+     "compiled": true,
+     "compileError": null,
+     "disabled": false,
+     "initError": null,
+     "initialized": false,
+     "updateErrors": 0,
+     "hasInit": false,
+     "hasUpdate": true,
+     "hasApplyUserProperties": false
+    },
+    "hostThrew": null
+   },
+   "mutate": {
+    "props": {
+     "x3": 0.25,
+     "y1": 0.25
+    },
+    "origin": "960.000000 540.000000 500.000000",
+    "deltaVsIsolate": [
+     960,
+     540,
+     0
+    ],
+    "moved": true,
+    "hostErrors": [],
+    "hostThrew": null
+   },
+   "rendererCrossCheck": {
+    "parseSceneCameraNodeId": 1297271,
+    "match": true,
+    "error": null
+   }
+  },
+  {
+   "pkgId": "dd/3470764447",
+   "kind": "pack",
+   "file": "allwallpaper/dd/3470764447/scene.pkg",
+   "hitReason": "origin.script",
+   "cameraObjectId": 1297271,
+   "camera": "default",
+   "cameraName": "",
+   "script": {
+    "key": "origin",
+    "chars": 781,
+    "sha256": "151da98895ccdaed35fc14326b216b91b87afa7cd94c8a8dbfe12dec297667fd",
+    "source": "// 使用严格模式\n'use strict';\n\n// 创建脚本属性\nexport var scriptProperties = createScriptProperties ()\n  // 添加 X 坐标的滑块属性\n  .addSlider ( {\n    name: 'x', // 属性名称\n    label: 'X', // 属性标签\n    value: 0.5, // 属性默认值\n    min: 0, // 滑块最小值\n    max: 1, // 滑块最大值\n    integer: false // 是否使用整数\n  })\n  // 添加 Y 坐标的滑块属性\n  .addSlider ( {\n    name: 'y', // 属性名称\n    label: 'Y', // 属性标签\n    value: 0.5, // 属性默认值\n    min: 0, // 滑块最小值\n    max: 1, // 滑块最大值\n    integer: false // 是否使用整数\n  })\n  // 完成脚本属性的创建\n  .finish ();\n\n/**\n * 更新组件的坐标值\n * @param {Vec3} value - 组件的原始坐标值\n * @return {Vec3} - 更新后的坐标值\n */\nexport function update (value) {\n  // 将 X 坐标乘以画布的宽度\n  value.x = scriptProperties.x * engine.canvasSize.x;\n  // 将 Y 坐标乘以画布的高度\n  value.y = scriptProperties.y * engine.canvasSize.y;\n  // 返回更新后的坐标值\n  return value;\n}\n",
+    "preview": "// 使用严格模式 'use strict'; // 创建脚本属性 export var scriptProperties = createScriptProperties () // 添加 X 坐标的滑块属性 .addSlider ( { name: 'x', // 属性名称 label: 'X', // 属性标签 value: 0.5, // 属性默认值 min: 0, // 滑块最小值 ma"
+   },
+   "scriptProperties": {
+    "x": {
+     "user": "x3",
+     "value": 0.5
+    },
+    "y": {
+     "user": "y1",
+     "value": 0.5
+    }
+   },
+   "userProps": {
+    "source": "project.json(盘上) general.properties 默认值(103 项)",
+    "count": 103,
+    "bound": [
+     "x3",
+     "y1"
+    ]
+   },
+   "static": {
+    "origin": "2434.38477 725.25134 500.00000",
+    "originVec": [
+     2434.38477,
+     725.25134,
+     500
+    ],
+    "zoom": 1,
+    "zoomKind": "object{user,value}",
+    "fov": 50
+   },
+   "eval": {
+    "origin": "0.000000 0.000000 500.000000",
+    "originVec": [
+     0,
+     0,
+     500
+    ],
+    "deltaVec": [
+     -2434.38477,
+     -725.25134,
+     0
+    ],
+    "equalsStatic": false,
+    "changedKeys": [
+     {
+      "key": "origin",
+      "beforeVal": "2434.38477 725.25134 500.00000",
+      "afterVal": "0.000000 0.000000 500.000000",
+      "beforeJson": "{\"script\":\"// 使用严格模式\\n'use strict';\\n\\n// 创建脚本属性\\nexport var scriptProperties = ",
+      "afterJson": "{\"script\":\"// 使用严格模式\\n'use strict';\\n\\n// 创建脚本属性\\nexport var scriptProperties = "
+     }
+    ],
+    "hostErrors": [],
+    "hostThrew": null,
+    "scriptLogs": [],
+    "entry": {
+     "compiled": true,
+     "compileError": null,
+     "disabled": false,
+     "initError": null,
+     "initialized": false,
+     "updateErrors": 0,
+     "hasInit": false,
+     "hasUpdate": true,
+     "hasApplyUserProperties": false
+    },
+    "cacheSize": 14
+   },
+   "abNoUserProps": {
+    "origin": "1920.000000 1080.000000 500.000000",
+    "originVec": [
+     1920,
+     1080,
+     500
+    ],
+    "deltaVec": [
+     -514.3847700000001,
+     354.74866,
+     0
+    ],
+    "hostErrors": [],
+    "hostThrew": null
+   },
+   "noHost": {
+    "origin": "2434.38477 725.25134 500.00000",
+    "equalsStatic": true,
+    "changedKeys": []
+   },
+   "isolate": {
+    "origin": "0.000000 0.000000 500.000000",
+    "originVec": [
+     0,
+     0,
+     500
+    ],
+    "equalsFull": true,
+    "equalsStatic": false,
+    "hostErrors": [],
+    "entry": {
+     "compiled": true,
+     "compileError": null,
+     "disabled": false,
+     "initError": null,
+     "initialized": false,
+     "updateErrors": 0,
+     "hasInit": false,
+     "hasUpdate": true,
+     "hasApplyUserProperties": false
+    },
+    "hostThrew": null
+   },
+   "mutate": {
+    "props": {
+     "x3": 0.25,
+     "y1": 0.25
+    },
+    "origin": "960.000000 540.000000 500.000000",
+    "deltaVsIsolate": [
+     960,
+     540,
+     0
+    ],
+    "moved": true,
+    "hostErrors": [],
+    "hostThrew": null
+   },
+   "rendererCrossCheck": {
+    "parseSceneCameraNodeId": 1297271,
+    "match": true,
+    "error": null
+   }
+  },
+  {
+   "pkgId": "wallpaperE/other/夜莺night——【time_variation_时间变化】alone_孤独の少女【原画：rella]",
+   "kind": "pack",
+   "file": "allwallpaper/wallpaperE/other/夜莺night——【time_variation_时间变化】alone_孤独の少女【原画：rella].mpkg",
+   "hitReason": "origin.script",
+   "cameraObjectId": 1297271,
+   "camera": "default",
+   "cameraName": "",
+   "script": {
+    "key": "origin",
+    "chars": 781,
+    "sha256": "151da98895ccdaed35fc14326b216b91b87afa7cd94c8a8dbfe12dec297667fd",
+    "source": "// 使用严格模式\n'use strict';\n\n// 创建脚本属性\nexport var scriptProperties = createScriptProperties ()\n  // 添加 X 坐标的滑块属性\n  .addSlider ( {\n    name: 'x', // 属性名称\n    label: 'X', // 属性标签\n    value: 0.5, // 属性默认值\n    min: 0, // 滑块最小值\n    max: 1, // 滑块最大值\n    integer: false // 是否使用整数\n  })\n  // 添加 Y 坐标的滑块属性\n  .addSlider ( {\n    name: 'y', // 属性名称\n    label: 'Y', // 属性标签\n    value: 0.5, // 属性默认值\n    min: 0, // 滑块最小值\n    max: 1, // 滑块最大值\n    integer: false // 是否使用整数\n  })\n  // 完成脚本属性的创建\n  .finish ();\n\n/**\n * 更新组件的坐标值\n * @param {Vec3} value - 组件的原始坐标值\n * @return {Vec3} - 更新后的坐标值\n */\nexport function update (value) {\n  // 将 X 坐标乘以画布的宽度\n  value.x = scriptProperties.x * engine.canvasSize.x;\n  // 将 Y 坐标乘以画布的高度\n  value.y = scriptProperties.y * engine.canvasSize.y;\n  // 返回更新后的坐标值\n  return value;\n}\n",
+    "preview": "// 使用严格模式 'use strict'; // 创建脚本属性 export var scriptProperties = createScriptProperties () // 添加 X 坐标的滑块属性 .addSlider ( { name: 'x', // 属性名称 label: 'X', // 属性标签 value: 0.5, // 属性默认值 min: 0, // 滑块最小值 ma"
+   },
+   "scriptProperties": {
+    "x": {
+     "user": "x3",
+     "value": 0.5
+    },
+    "y": {
+     "user": "y1",
+     "value": 0.5
+    }
+   },
+   "userProps": {
+    "source": "project.json(包内) general.properties 默认值(143 项)",
+    "count": 143,
+    "bound": [
+     "x3",
+     "y1"
+    ]
+   },
+   "static": {
+    "origin": "2434.38477 725.25134 500.00000",
+    "originVec": [
+     2434.38477,
+     725.25134,
+     500
+    ],
+    "zoom": 1,
+    "zoomKind": "object{user,value}",
+    "fov": 50
+   },
+   "eval": {
+    "origin": "0.000000 0.000000 500.000000",
+    "originVec": [
+     0,
+     0,
+     500
+    ],
+    "deltaVec": [
+     -2434.38477,
+     -725.25134,
+     0
+    ],
+    "equalsStatic": false,
+    "changedKeys": [
+     {
+      "key": "origin",
+      "beforeVal": "2434.38477 725.25134 500.00000",
+      "afterVal": "0.000000 0.000000 500.000000",
+      "beforeJson": "{\"script\":\"// 使用严格模式\\n'use strict';\\n\\n// 创建脚本属性\\nexport var scriptProperties = ",
+      "afterJson": "{\"script\":\"// 使用严格模式\\n'use strict';\\n\\n// 创建脚本属性\\nexport var scriptProperties = "
+     }
+    ],
+    "hostErrors": [],
+    "hostThrew": null,
+    "scriptLogs": [
+     "Initial animation speed set to 100",
+     "Initial particle speed set to 100",
+     "Initial playback speed set to 2"
+    ],
+    "entry": {
+     "compiled": true,
+     "compileError": null,
+     "disabled": false,
+     "initError": null,
+     "initialized": false,
+     "updateErrors": 0,
+     "hasInit": false,
+     "hasUpdate": true,
+     "hasApplyUserProperties": false
+    },
+    "cacheSize": 20
+   },
+   "abNoUserProps": {
+    "origin": "1920.000000 1080.000000 500.000000",
+    "originVec": [
+     1920,
+     1080,
+     500
+    ],
+    "deltaVec": [
+     -514.3847700000001,
+     354.74866,
+     0
+    ],
+    "hostErrors": [],
+    "hostThrew": null
+   },
+   "noHost": {
+    "origin": "2434.38477 725.25134 500.00000",
+    "equalsStatic": true,
+    "changedKeys": []
+   },
+   "isolate": {
+    "origin": "0.000000 0.000000 500.000000",
+    "originVec": [
+     0,
+     0,
+     500
+    ],
+    "equalsFull": true,
+    "equalsStatic": false,
+    "hostErrors": [],
+    "entry": {
+     "compiled": true,
+     "compileError": null,
+     "disabled": false,
+     "initError": null,
+     "initialized": false,
+     "updateErrors": 0,
+     "hasInit": false,
+     "hasUpdate": true,
+     "hasApplyUserProperties": false
+    },
+    "hostThrew": null
+   },
+   "mutate": {
+    "props": {
+     "x3": 0.25,
+     "y1": 0.25
+    },
+    "origin": "960.000000 540.000000 500.000000",
+    "deltaVsIsolate": [
+     960,
+     540,
+     0
+    ],
+    "moved": true,
+    "hostErrors": [],
+    "hostThrew": null
+   },
+   "rendererCrossCheck": {
+    "parseSceneCameraNodeId": 1297271,
+    "match": true,
+    "error": null
+   }
+  },
+  {
+   "pkgId": "wallpaperE/伊蕾娜/夜莺night——【time_variation时间变化】elaina_伊蕾娜：闲憩微息【魔女之旅】day_night",
+   "kind": "pack",
+   "file": "allwallpaper/wallpaperE/伊蕾娜/夜莺night——【time_variation时间变化】elaina_伊蕾娜：闲憩微息【魔女之旅】day_night.mpkg",
+   "hitReason": "origin.script",
+   "cameraObjectId": 1297271,
+   "camera": "default",
+   "cameraName": "",
+   "script": {
+    "key": "origin",
+    "chars": 781,
+    "sha256": "151da98895ccdaed35fc14326b216b91b87afa7cd94c8a8dbfe12dec297667fd",
+    "source": "// 使用严格模式\n'use strict';\n\n// 创建脚本属性\nexport var scriptProperties = createScriptProperties ()\n  // 添加 X 坐标的滑块属性\n  .addSlider ( {\n    name: 'x', // 属性名称\n    label: 'X', // 属性标签\n    value: 0.5, // 属性默认值\n    min: 0, // 滑块最小值\n    max: 1, // 滑块最大值\n    integer: false // 是否使用整数\n  })\n  // 添加 Y 坐标的滑块属性\n  .addSlider ( {\n    name: 'y', // 属性名称\n    label: 'Y', // 属性标签\n    value: 0.5, // 属性默认值\n    min: 0, // 滑块最小值\n    max: 1, // 滑块最大值\n    integer: false // 是否使用整数\n  })\n  // 完成脚本属性的创建\n  .finish ();\n\n/**\n * 更新组件的坐标值\n * @param {Vec3} value - 组件的原始坐标值\n * @return {Vec3} - 更新后的坐标值\n */\nexport function update (value) {\n  // 将 X 坐标乘以画布的宽度\n  value.x = scriptProperties.x * engine.canvasSize.x;\n  // 将 Y 坐标乘以画布的高度\n  value.y = scriptProperties.y * engine.canvasSize.y;\n  // 返回更新后的坐标值\n  return value;\n}\n",
+    "preview": "// 使用严格模式 'use strict'; // 创建脚本属性 export var scriptProperties = createScriptProperties () // 添加 X 坐标的滑块属性 .addSlider ( { name: 'x', // 属性名称 label: 'X', // 属性标签 value: 0.5, // 属性默认值 min: 0, // 滑块最小值 ma"
+   },
+   "scriptProperties": {
+    "x": {
+     "user": "x3",
+     "value": 0.5
+    },
+    "y": {
+     "user": "y1",
+     "value": 0.5
+    }
+   },
+   "userProps": {
+    "source": "project.json(包内) general.properties 默认值(100 项)",
+    "count": 100,
+    "bound": [
+     "x3",
+     "y1"
+    ]
+   },
+   "static": {
+    "origin": "2434.38477 725.25134 500.00000",
+    "originVec": [
+     2434.38477,
+     725.25134,
+     500
+    ],
+    "zoom": 1,
+    "zoomKind": "object{user,value}",
+    "fov": 50
+   },
+   "eval": {
+    "origin": "0.000000 0.000000 500.000000",
+    "originVec": [
+     0,
+     0,
+     500
+    ],
+    "deltaVec": [
+     -2434.38477,
+     -725.25134,
+     0
+    ],
+    "equalsStatic": false,
+    "changedKeys": [
+     {
+      "key": "origin",
+      "beforeVal": "2434.38477 725.25134 500.00000",
+      "afterVal": "0.000000 0.000000 500.000000",
+      "beforeJson": "{\"script\":\"// 使用严格模式\\n'use strict';\\n\\n// 创建脚本属性\\nexport var scriptProperties = ",
+      "afterJson": "{\"script\":\"// 使用严格模式\\n'use strict';\\n\\n// 创建脚本属性\\nexport var scriptProperties = "
+     }
+    ],
+    "hostErrors": [],
+    "hostThrew": null,
+    "scriptLogs": [],
+    "entry": {
+     "compiled": true,
+     "compileError": null,
+     "disabled": false,
+     "initError": null,
+     "initialized": false,
+     "updateErrors": 0,
+     "hasInit": false,
+     "hasUpdate": true,
+     "hasApplyUserProperties": false
+    },
+    "cacheSize": 14
+   },
+   "abNoUserProps": {
+    "origin": "1920.000000 1080.000000 500.000000",
+    "originVec": [
+     1920,
+     1080,
+     500
+    ],
+    "deltaVec": [
+     -514.3847700000001,
+     354.74866,
+     0
+    ],
+    "hostErrors": [],
+    "hostThrew": null
+   },
+   "noHost": {
+    "origin": "2434.38477 725.25134 500.00000",
+    "equalsStatic": true,
+    "changedKeys": []
+   },
+   "isolate": {
+    "origin": "0.000000 0.000000 500.000000",
+    "originVec": [
+     0,
+     0,
+     500
+    ],
+    "equalsFull": true,
+    "equalsStatic": false,
+    "hostErrors": [],
+    "entry": {
+     "compiled": true,
+     "compileError": null,
+     "disabled": false,
+     "initError": null,
+     "initialized": false,
+     "updateErrors": 0,
+     "hasInit": false,
+     "hasUpdate": true,
+     "hasApplyUserProperties": false
+    },
+    "hostThrew": null
+   },
+   "mutate": {
+    "props": {
+     "x3": 0.25,
+     "y1": 0.25
+    },
+    "origin": "960.000000 540.000000 500.000000",
+    "deltaVsIsolate": [
+     960,
+     540,
+     0
+    ],
+    "moved": true,
+    "hostErrors": [],
+    "hostThrew": null
+   },
+   "rendererCrossCheck": {
+    "parseSceneCameraNodeId": 1297271,
+    "match": true,
+    "error": null
+   }
+  },
+  {
+   "pkgId": "wallpaperE/流萤/夜莺night——【customize自定义】firefly_流萤_星空之誓——夜莺night崩坏星穹铁道",
+   "kind": "pack",
+   "file": "allwallpaper/wallpaperE/流萤/夜莺night——【customize自定义】firefly_流萤_星空之誓——夜莺night崩坏星穹铁道.mpkg",
+   "hitReason": "origin.script",
+   "cameraObjectId": 1297271,
+   "camera": "default",
+   "cameraName": "",
+   "script": {
+    "key": "origin",
+    "chars": 781,
+    "sha256": "151da98895ccdaed35fc14326b216b91b87afa7cd94c8a8dbfe12dec297667fd",
+    "source": "// 使用严格模式\n'use strict';\n\n// 创建脚本属性\nexport var scriptProperties = createScriptProperties ()\n  // 添加 X 坐标的滑块属性\n  .addSlider ( {\n    name: 'x', // 属性名称\n    label: 'X', // 属性标签\n    value: 0.5, // 属性默认值\n    min: 0, // 滑块最小值\n    max: 1, // 滑块最大值\n    integer: false // 是否使用整数\n  })\n  // 添加 Y 坐标的滑块属性\n  .addSlider ( {\n    name: 'y', // 属性名称\n    label: 'Y', // 属性标签\n    value: 0.5, // 属性默认值\n    min: 0, // 滑块最小值\n    max: 1, // 滑块最大值\n    integer: false // 是否使用整数\n  })\n  // 完成脚本属性的创建\n  .finish ();\n\n/**\n * 更新组件的坐标值\n * @param {Vec3} value - 组件的原始坐标值\n * @return {Vec3} - 更新后的坐标值\n */\nexport function update (value) {\n  // 将 X 坐标乘以画布的宽度\n  value.x = scriptProperties.x * engine.canvasSize.x;\n  // 将 Y 坐标乘以画布的高度\n  value.y = scriptProperties.y * engine.canvasSize.y;\n  // 返回更新后的坐标值\n  return value;\n}\n",
+    "preview": "// 使用严格模式 'use strict'; // 创建脚本属性 export var scriptProperties = createScriptProperties () // 添加 X 坐标的滑块属性 .addSlider ( { name: 'x', // 属性名称 label: 'X', // 属性标签 value: 0.5, // 属性默认值 min: 0, // 滑块最小值 ma"
+   },
+   "scriptProperties": {
+    "x": {
+     "user": "x3",
+     "value": 0.5
+    },
+    "y": {
+     "user": "y1",
+     "value": 0.5
+    }
+   },
+   "userProps": {
+    "source": "project.json(包内) general.properties 默认值(95 项)",
+    "count": 95,
+    "bound": [
+     "x3",
+     "y1"
+    ]
+   },
+   "static": {
+    "origin": "2434.38477 725.25110 500.00003",
+    "originVec": [
+     2434.38477,
+     725.2511,
+     500.00003
+    ],
+    "zoom": 1,
+    "zoomKind": "object{user,value}",
+    "fov": 50
+   },
+   "eval": {
+    "origin": "0.000000 0.000000 500.000030",
+    "originVec": [
+     0,
+     0,
+     500.00003
+    ],
+    "deltaVec": [
+     -2434.38477,
+     -725.2511,
+     0
+    ],
+    "equalsStatic": false,
+    "changedKeys": [
+     {
+      "key": "origin",
+      "beforeVal": "2434.38477 725.25110 500.00003",
+      "afterVal": "0.000000 0.000000 500.000030",
+      "beforeJson": "{\"script\":\"// 使用严格模式\\n'use strict';\\n\\n// 创建脚本属性\\nexport var scriptProperties = ",
+      "afterJson": "{\"script\":\"// 使用严格模式\\n'use strict';\\n\\n// 创建脚本属性\\nexport var scriptProperties = "
+     }
+    ],
+    "hostErrors": [],
+    "hostThrew": null,
+    "scriptLogs": [],
+    "entry": {
+     "compiled": true,
+     "compileError": null,
+     "disabled": false,
+     "initError": null,
+     "initialized": false,
+     "updateErrors": 0,
+     "hasInit": false,
+     "hasUpdate": true,
+     "hasApplyUserProperties": false
+    },
+    "cacheSize": 43
+   },
+   "abNoUserProps": {
+    "origin": "1920.000000 1080.000000 500.000030",
+    "originVec": [
+     1920,
+     1080,
+     500.00003
+    ],
+    "deltaVec": [
+     -514.3847700000001,
+     354.74890000000005,
+     0
+    ],
+    "hostErrors": [],
+    "hostThrew": null
+   },
+   "noHost": {
+    "origin": "2434.38477 725.25110 500.00003",
+    "equalsStatic": true,
+    "changedKeys": []
+   },
+   "isolate": {
+    "origin": "0.000000 0.000000 500.000030",
+    "originVec": [
+     0,
+     0,
+     500.00003
+    ],
+    "equalsFull": true,
+    "equalsStatic": false,
+    "hostErrors": [],
+    "entry": {
+     "compiled": true,
+     "compileError": null,
+     "disabled": false,
+     "initError": null,
+     "initialized": false,
+     "updateErrors": 0,
+     "hasInit": false,
+     "hasUpdate": true,
+     "hasApplyUserProperties": false
+    },
+    "hostThrew": null
+   },
+   "mutate": {
+    "props": {
+     "x3": 0.25,
+     "y1": 0.25
+    },
+    "origin": "960.000000 540.000000 500.000030",
+    "deltaVsIsolate": [
+     960,
+     540,
+     0
+    ],
+    "moved": true,
+    "hostErrors": [],
+    "hostThrew": null
+   },
+   "rendererCrossCheck": {
+    "parseSceneCameraNodeId": 1297271,
+    "match": true,
+    "error": null
+   }
+  },
+  {
+   "pkgId": "wallpaperE/砂狼白子/砂狼白子11_03",
+   "kind": "pack",
+   "file": "allwallpaper/wallpaperE/砂狼白子/砂狼白子11_03.mpkg",
+   "hitReason": "origin.script",
+   "cameraObjectId": 1297271,
+   "camera": "default",
+   "cameraName": "",
+   "script": {
+    "key": "origin",
+    "chars": 781,
+    "sha256": "151da98895ccdaed35fc14326b216b91b87afa7cd94c8a8dbfe12dec297667fd",
+    "source": "// 使用严格模式\n'use strict';\n\n// 创建脚本属性\nexport var scriptProperties = createScriptProperties ()\n  // 添加 X 坐标的滑块属性\n  .addSlider ( {\n    name: 'x', // 属性名称\n    label: 'X', // 属性标签\n    value: 0.5, // 属性默认值\n    min: 0, // 滑块最小值\n    max: 1, // 滑块最大值\n    integer: false // 是否使用整数\n  })\n  // 添加 Y 坐标的滑块属性\n  .addSlider ( {\n    name: 'y', // 属性名称\n    label: 'Y', // 属性标签\n    value: 0.5, // 属性默认值\n    min: 0, // 滑块最小值\n    max: 1, // 滑块最大值\n    integer: false // 是否使用整数\n  })\n  // 完成脚本属性的创建\n  .finish ();\n\n/**\n * 更新组件的坐标值\n * @param {Vec3} value - 组件的原始坐标值\n * @return {Vec3} - 更新后的坐标值\n */\nexport function update (value) {\n  // 将 X 坐标乘以画布的宽度\n  value.x = scriptProperties.x * engine.canvasSize.x;\n  // 将 Y 坐标乘以画布的高度\n  value.y = scriptProperties.y * engine.canvasSize.y;\n  // 返回更新后的坐标值\n  return value;\n}\n",
+    "preview": "// 使用严格模式 'use strict'; // 创建脚本属性 export var scriptProperties = createScriptProperties () // 添加 X 坐标的滑块属性 .addSlider ( { name: 'x', // 属性名称 label: 'X', // 属性标签 value: 0.5, // 属性默认值 min: 0, // 滑块最小值 ma"
+   },
+   "scriptProperties": {
+    "x": {
+     "user": "x3",
+     "value": 0.5
+    },
+    "y": {
+     "user": "y1",
+     "value": 0.5
+    }
+   },
+   "userProps": {
+    "source": "project.json(包内) general.properties 默认值(102 项)",
+    "count": 102,
+    "bound": [
+     "x3",
+     "y1"
+    ]
+   },
+   "static": {
+    "origin": "2434.38477 725.25116 500.00000",
+    "originVec": [
+     2434.38477,
+     725.25116,
+     500
+    ],
+    "zoom": 1,
+    "zoomKind": "object{user,value}",
+    "fov": 50
+   },
+   "eval": {
+    "origin": "0.000000 0.000000 500.000000",
+    "originVec": [
+     0,
+     0,
+     500
+    ],
+    "deltaVec": [
+     -2434.38477,
+     -725.25116,
+     0
+    ],
+    "equalsStatic": false,
+    "changedKeys": [
+     {
+      "key": "origin",
+      "beforeVal": "2434.38477 725.25116 500.00000",
+      "afterVal": "0.000000 0.000000 500.000000",
+      "beforeJson": "{\"script\":\"// 使用严格模式\\n'use strict';\\n\\n// 创建脚本属性\\nexport var scriptProperties = ",
+      "afterJson": "{\"script\":\"// 使用严格模式\\n'use strict';\\n\\n// 创建脚本属性\\nexport var scriptProperties = "
+     }
+    ],
+    "hostErrors": [],
+    "hostThrew": null,
+    "scriptLogs": [],
+    "entry": {
+     "compiled": true,
+     "compileError": null,
+     "disabled": false,
+     "initError": null,
+     "initialized": false,
+     "updateErrors": 0,
+     "hasInit": false,
+     "hasUpdate": true,
+     "hasApplyUserProperties": false
+    },
+    "cacheSize": 49
+   },
+   "abNoUserProps": {
+    "origin": "1920.000000 1080.000000 500.000000",
+    "originVec": [
+     1920,
+     1080,
+     500
+    ],
+    "deltaVec": [
+     -514.3847700000001,
+     354.74884,
+     0
+    ],
+    "hostErrors": [],
+    "hostThrew": null
+   },
+   "noHost": {
+    "origin": "2434.38477 725.25116 500.00000",
+    "equalsStatic": true,
+    "changedKeys": []
+   },
+   "isolate": {
+    "origin": "0.000000 0.000000 500.000000",
+    "originVec": [
+     0,
+     0,
+     500
+    ],
+    "equalsFull": true,
+    "equalsStatic": false,
+    "hostErrors": [],
+    "entry": {
+     "compiled": true,
+     "compileError": null,
+     "disabled": false,
+     "initError": null,
+     "initialized": false,
+     "updateErrors": 0,
+     "hasInit": false,
+     "hasUpdate": true,
+     "hasApplyUserProperties": false
+    },
+    "hostThrew": null
+   },
+   "mutate": {
+    "props": {
+     "x3": 0.25,
+     "y1": 0.25
+    },
+    "origin": "960.000000 540.000000 500.000000",
+    "deltaVsIsolate": [
+     960,
+     540,
+     0
+    ],
+    "moved": true,
+    "hostErrors": [],
+    "hostThrew": null
+   },
+   "rendererCrossCheck": {
+    "parseSceneCameraNodeId": 1297271,
+    "match": true,
+    "error": null
+   }
+  },
+  {
+   "pkgId": "wallpaperE/遐蝶/夜莺Night——Honkai Star Rail Castorice 遐蝶 冥河永渡 崩坏星穹铁道The Etern",
+   "kind": "pack",
+   "file": "allwallpaper/wallpaperE/遐蝶/夜莺Night——Honkai Star Rail Castorice 遐蝶 冥河永渡 崩坏星穹铁道The Etern.mpkg",
+   "hitReason": "origin.script",
+   "cameraObjectId": 1297271,
+   "camera": "default",
+   "cameraName": "",
+   "script": {
+    "key": "origin",
+    "chars": 781,
+    "sha256": "151da98895ccdaed35fc14326b216b91b87afa7cd94c8a8dbfe12dec297667fd",
+    "source": "// 使用严格模式\n'use strict';\n\n// 创建脚本属性\nexport var scriptProperties = createScriptProperties ()\n  // 添加 X 坐标的滑块属性\n  .addSlider ( {\n    name: 'x', // 属性名称\n    label: 'X', // 属性标签\n    value: 0.5, // 属性默认值\n    min: 0, // 滑块最小值\n    max: 1, // 滑块最大值\n    integer: false // 是否使用整数\n  })\n  // 添加 Y 坐标的滑块属性\n  .addSlider ( {\n    name: 'y', // 属性名称\n    label: 'Y', // 属性标签\n    value: 0.5, // 属性默认值\n    min: 0, // 滑块最小值\n    max: 1, // 滑块最大值\n    integer: false // 是否使用整数\n  })\n  // 完成脚本属性的创建\n  .finish ();\n\n/**\n * 更新组件的坐标值\n * @param {Vec3} value - 组件的原始坐标值\n * @return {Vec3} - 更新后的坐标值\n */\nexport function update (value) {\n  // 将 X 坐标乘以画布的宽度\n  value.x = scriptProperties.x * engine.canvasSize.x;\n  // 将 Y 坐标乘以画布的高度\n  value.y = scriptProperties.y * engine.canvasSize.y;\n  // 返回更新后的坐标值\n  return value;\n}\n",
+    "preview": "// 使用严格模式 'use strict'; // 创建脚本属性 export var scriptProperties = createScriptProperties () // 添加 X 坐标的滑块属性 .addSlider ( { name: 'x', // 属性名称 label: 'X', // 属性标签 value: 0.5, // 属性默认值 min: 0, // 滑块最小值 ma"
+   },
+   "scriptProperties": {
+    "x": {
+     "user": "x3",
+     "value": 0.5
+    },
+    "y": {
+     "user": "y1",
+     "value": 0.5
+    }
+   },
+   "userProps": {
+    "source": "project.json(包内) general.properties 默认值(80 项)",
+    "count": 80,
+    "bound": [
+     "x3",
+     "y1"
+    ]
+   },
+   "static": {
+    "origin": "2434.38477 725.25110 500.00003",
+    "originVec": [
+     2434.38477,
+     725.2511,
+     500.00003
+    ],
+    "zoom": 1,
+    "zoomKind": "object{user,value}",
+    "fov": 50
+   },
+   "eval": {
+    "origin": "0.000000 0.000000 500.000030",
+    "originVec": [
+     0,
+     0,
+     500.00003
+    ],
+    "deltaVec": [
+     -2434.38477,
+     -725.2511,
+     0
+    ],
+    "equalsStatic": false,
+    "changedKeys": [
+     {
+      "key": "origin",
+      "beforeVal": "2434.38477 725.25110 500.00003",
+      "afterVal": "0.000000 0.000000 500.000030",
+      "beforeJson": "{\"script\":\"// 使用严格模式\\n'use strict';\\n\\n// 创建脚本属性\\nexport var scriptProperties = ",
+      "afterJson": "{\"script\":\"// 使用严格模式\\n'use strict';\\n\\n// 创建脚本属性\\nexport var scriptProperties = "
+     }
+    ],
+    "hostErrors": [],
+    "hostThrew": null,
+    "scriptLogs": [
+     "Paused at 0 seconds.",
+     "Waiting..."
+    ],
+    "entry": {
+     "compiled": true,
+     "compileError": null,
+     "disabled": false,
+     "initError": null,
+     "initialized": false,
+     "updateErrors": 0,
+     "hasInit": false,
+     "hasUpdate": true,
+     "hasApplyUserProperties": false
+    },
+    "cacheSize": 8
+   },
+   "abNoUserProps": {
+    "origin": "1920.000000 1080.000000 500.000030",
+    "originVec": [
+     1920,
+     1080,
+     500.00003
+    ],
+    "deltaVec": [
+     -514.3847700000001,
+     354.74890000000005,
+     0
+    ],
+    "hostErrors": [],
+    "hostThrew": null
+   },
+   "noHost": {
+    "origin": "2434.38477 725.25110 500.00003",
+    "equalsStatic": true,
+    "changedKeys": []
+   },
+   "isolate": {
+    "origin": "0.000000 0.000000 500.000030",
+    "originVec": [
+     0,
+     0,
+     500.00003
+    ],
+    "equalsFull": true,
+    "equalsStatic": false,
+    "hostErrors": [],
+    "entry": {
+     "compiled": true,
+     "compileError": null,
+     "disabled": false,
+     "initError": null,
+     "initialized": false,
+     "updateErrors": 0,
+     "hasInit": false,
+     "hasUpdate": true,
+     "hasApplyUserProperties": false
+    },
+    "hostThrew": null
+   },
+   "mutate": {
+    "props": {
+     "x3": 0.25,
+     "y1": 0.25
+    },
+    "origin": "960.000000 540.000000 500.000030",
+    "deltaVsIsolate": [
+     960,
+     540,
+     0
+    ],
+    "moved": true,
+    "hostErrors": [],
+    "hostThrew": null
+   },
+   "rendererCrossCheck": {
+    "parseSceneCameraNodeId": 1297271,
+    "match": true,
+    "error": null
+   }
+  },
+  {
+   "pkgId": "wallpapertest1/夜莺Night——Honkai Star Rail Castorice 遐蝶 冥河永渡 崩坏星穹铁道The Etern",
+   "kind": "pack",
+   "file": "allwallpaper/wallpapertest1/夜莺Night——Honkai Star Rail Castorice 遐蝶 冥河永渡 崩坏星穹铁道The Etern.mpkg",
+   "hitReason": "origin.script",
+   "cameraObjectId": 1297271,
+   "camera": "default",
+   "cameraName": "",
+   "script": {
+    "key": "origin",
+    "chars": 781,
+    "sha256": "151da98895ccdaed35fc14326b216b91b87afa7cd94c8a8dbfe12dec297667fd",
+    "source": "// 使用严格模式\n'use strict';\n\n// 创建脚本属性\nexport var scriptProperties = createScriptProperties ()\n  // 添加 X 坐标的滑块属性\n  .addSlider ( {\n    name: 'x', // 属性名称\n    label: 'X', // 属性标签\n    value: 0.5, // 属性默认值\n    min: 0, // 滑块最小值\n    max: 1, // 滑块最大值\n    integer: false // 是否使用整数\n  })\n  // 添加 Y 坐标的滑块属性\n  .addSlider ( {\n    name: 'y', // 属性名称\n    label: 'Y', // 属性标签\n    value: 0.5, // 属性默认值\n    min: 0, // 滑块最小值\n    max: 1, // 滑块最大值\n    integer: false // 是否使用整数\n  })\n  // 完成脚本属性的创建\n  .finish ();\n\n/**\n * 更新组件的坐标值\n * @param {Vec3} value - 组件的原始坐标值\n * @return {Vec3} - 更新后的坐标值\n */\nexport function update (value) {\n  // 将 X 坐标乘以画布的宽度\n  value.x = scriptProperties.x * engine.canvasSize.x;\n  // 将 Y 坐标乘以画布的高度\n  value.y = scriptProperties.y * engine.canvasSize.y;\n  // 返回更新后的坐标值\n  return value;\n}\n",
+    "preview": "// 使用严格模式 'use strict'; // 创建脚本属性 export var scriptProperties = createScriptProperties () // 添加 X 坐标的滑块属性 .addSlider ( { name: 'x', // 属性名称 label: 'X', // 属性标签 value: 0.5, // 属性默认值 min: 0, // 滑块最小值 ma"
+   },
+   "scriptProperties": {
+    "x": {
+     "user": "x3",
+     "value": 0.5
+    },
+    "y": {
+     "user": "y1",
+     "value": 0.5
+    }
+   },
+   "userProps": {
+    "source": "project.json(包内) general.properties 默认值(80 项)",
+    "count": 80,
+    "bound": [
+     "x3",
+     "y1"
+    ]
+   },
+   "static": {
+    "origin": "2434.38477 725.25110 500.00003",
+    "originVec": [
+     2434.38477,
+     725.2511,
+     500.00003
+    ],
+    "zoom": 1,
+    "zoomKind": "object{user,value}",
+    "fov": 50
+   },
+   "eval": {
+    "origin": "0.000000 0.000000 500.000030",
+    "originVec": [
+     0,
+     0,
+     500.00003
+    ],
+    "deltaVec": [
+     -2434.38477,
+     -725.2511,
+     0
+    ],
+    "equalsStatic": false,
+    "changedKeys": [
+     {
+      "key": "origin",
+      "beforeVal": "2434.38477 725.25110 500.00003",
+      "afterVal": "0.000000 0.000000 500.000030",
+      "beforeJson": "{\"script\":\"// 使用严格模式\\n'use strict';\\n\\n// 创建脚本属性\\nexport var scriptProperties = ",
+      "afterJson": "{\"script\":\"// 使用严格模式\\n'use strict';\\n\\n// 创建脚本属性\\nexport var scriptProperties = "
+     }
+    ],
+    "hostErrors": [],
+    "hostThrew": null,
+    "scriptLogs": [
+     "Paused at 0 seconds.",
+     "Waiting..."
+    ],
+    "entry": {
+     "compiled": true,
+     "compileError": null,
+     "disabled": false,
+     "initError": null,
+     "initialized": false,
+     "updateErrors": 0,
+     "hasInit": false,
+     "hasUpdate": true,
+     "hasApplyUserProperties": false
+    },
+    "cacheSize": 8
+   },
+   "abNoUserProps": {
+    "origin": "1920.000000 1080.000000 500.000030",
+    "originVec": [
+     1920,
+     1080,
+     500.00003
+    ],
+    "deltaVec": [
+     -514.3847700000001,
+     354.74890000000005,
+     0
+    ],
+    "hostErrors": [],
+    "hostThrew": null
+   },
+   "noHost": {
+    "origin": "2434.38477 725.25110 500.00003",
+    "equalsStatic": true,
+    "changedKeys": []
+   },
+   "isolate": {
+    "origin": "0.000000 0.000000 500.000030",
+    "originVec": [
+     0,
+     0,
+     500.00003
+    ],
+    "equalsFull": true,
+    "equalsStatic": false,
+    "hostErrors": [],
+    "entry": {
+     "compiled": true,
+     "compileError": null,
+     "disabled": false,
+     "initError": null,
+     "initialized": false,
+     "updateErrors": 0,
+     "hasInit": false,
+     "hasUpdate": true,
+     "hasApplyUserProperties": false
+    },
+    "hostThrew": null
+   },
+   "mutate": {
+    "props": {
+     "x3": 0.25,
+     "y1": 0.25
+    },
+    "origin": "960.000000 540.000000 500.000030",
+    "deltaVsIsolate": [
+     960,
+     540,
+     0
+    ],
+    "moved": true,
+    "hostErrors": [],
+    "hostThrew": null
+   },
+   "rendererCrossCheck": {
+    "parseSceneCameraNodeId": 1297271,
+    "match": true,
+    "error": null
+   }
+  },
+  {
+   "pkgId": "wallpapertest1/夜莺night——【customize自定义】firefly_流萤_星空之誓——夜莺night崩坏星穹铁道",
+   "kind": "pack",
+   "file": "allwallpaper/wallpapertest1/夜莺night——【customize自定义】firefly_流萤_星空之誓——夜莺night崩坏星穹铁道.mpkg",
+   "hitReason": "origin.script",
+   "cameraObjectId": 1297271,
+   "camera": "default",
+   "cameraName": "",
+   "script": {
+    "key": "origin",
+    "chars": 781,
+    "sha256": "151da98895ccdaed35fc14326b216b91b87afa7cd94c8a8dbfe12dec297667fd",
+    "source": "// 使用严格模式\n'use strict';\n\n// 创建脚本属性\nexport var scriptProperties = createScriptProperties ()\n  // 添加 X 坐标的滑块属性\n  .addSlider ( {\n    name: 'x', // 属性名称\n    label: 'X', // 属性标签\n    value: 0.5, // 属性默认值\n    min: 0, // 滑块最小值\n    max: 1, // 滑块最大值\n    integer: false // 是否使用整数\n  })\n  // 添加 Y 坐标的滑块属性\n  .addSlider ( {\n    name: 'y', // 属性名称\n    label: 'Y', // 属性标签\n    value: 0.5, // 属性默认值\n    min: 0, // 滑块最小值\n    max: 1, // 滑块最大值\n    integer: false // 是否使用整数\n  })\n  // 完成脚本属性的创建\n  .finish ();\n\n/**\n * 更新组件的坐标值\n * @param {Vec3} value - 组件的原始坐标值\n * @return {Vec3} - 更新后的坐标值\n */\nexport function update (value) {\n  // 将 X 坐标乘以画布的宽度\n  value.x = scriptProperties.x * engine.canvasSize.x;\n  // 将 Y 坐标乘以画布的高度\n  value.y = scriptProperties.y * engine.canvasSize.y;\n  // 返回更新后的坐标值\n  return value;\n}\n",
+    "preview": "// 使用严格模式 'use strict'; // 创建脚本属性 export var scriptProperties = createScriptProperties () // 添加 X 坐标的滑块属性 .addSlider ( { name: 'x', // 属性名称 label: 'X', // 属性标签 value: 0.5, // 属性默认值 min: 0, // 滑块最小值 ma"
+   },
+   "scriptProperties": {
+    "x": {
+     "user": "x3",
+     "value": 0.5
+    },
+    "y": {
+     "user": "y1",
+     "value": 0.5
+    }
+   },
+   "userProps": {
+    "source": "project.json(包内) general.properties 默认值(95 项)",
+    "count": 95,
+    "bound": [
+     "x3",
+     "y1"
+    ]
+   },
+   "static": {
+    "origin": "2434.38477 725.25110 500.00003",
+    "originVec": [
+     2434.38477,
+     725.2511,
+     500.00003
+    ],
+    "zoom": 1,
+    "zoomKind": "object{user,value}",
+    "fov": 50
+   },
+   "eval": {
+    "origin": "0.000000 0.000000 500.000030",
+    "originVec": [
+     0,
+     0,
+     500.00003
+    ],
+    "deltaVec": [
+     -2434.38477,
+     -725.2511,
+     0
+    ],
+    "equalsStatic": false,
+    "changedKeys": [
+     {
+      "key": "origin",
+      "beforeVal": "2434.38477 725.25110 500.00003",
+      "afterVal": "0.000000 0.000000 500.000030",
+      "beforeJson": "{\"script\":\"// 使用严格模式\\n'use strict';\\n\\n// 创建脚本属性\\nexport var scriptProperties = ",
+      "afterJson": "{\"script\":\"// 使用严格模式\\n'use strict';\\n\\n// 创建脚本属性\\nexport var scriptProperties = "
+     }
+    ],
+    "hostErrors": [],
+    "hostThrew": null,
+    "scriptLogs": [],
+    "entry": {
+     "compiled": true,
+     "compileError": null,
+     "disabled": false,
+     "initError": null,
+     "initialized": false,
+     "updateErrors": 0,
+     "hasInit": false,
+     "hasUpdate": true,
+     "hasApplyUserProperties": false
+    },
+    "cacheSize": 43
+   },
+   "abNoUserProps": {
+    "origin": "1920.000000 1080.000000 500.000030",
+    "originVec": [
+     1920,
+     1080,
+     500.00003
+    ],
+    "deltaVec": [
+     -514.3847700000001,
+     354.74890000000005,
+     0
+    ],
+    "hostErrors": [],
+    "hostThrew": null
+   },
+   "noHost": {
+    "origin": "2434.38477 725.25110 500.00003",
+    "equalsStatic": true,
+    "changedKeys": []
+   },
+   "isolate": {
+    "origin": "0.000000 0.000000 500.000030",
+    "originVec": [
+     0,
+     0,
+     500.00003
+    ],
+    "equalsFull": true,
+    "equalsStatic": false,
+    "hostErrors": [],
+    "entry": {
+     "compiled": true,
+     "compileError": null,
+     "disabled": false,
+     "initError": null,
+     "initialized": false,
+     "updateErrors": 0,
+     "hasInit": false,
+     "hasUpdate": true,
+     "hasApplyUserProperties": false
+    },
+    "hostThrew": null
+   },
+   "mutate": {
+    "props": {
+     "x3": 0.25,
+     "y1": 0.25
+    },
+    "origin": "960.000000 540.000000 500.000030",
+    "deltaVsIsolate": [
+     960,
+     540,
+     0
+    ],
+    "moved": true,
+    "hostErrors": [],
+    "hostThrew": null
+   },
+   "rendererCrossCheck": {
+    "parseSceneCameraNodeId": 1297271,
+    "match": true,
+    "error": null
+   }
+  },
+  {
+   "pkgId": "wallpapertest1/夜莺night——【time_variation_时间变化】alone_孤独の少女【原画：rella]",
+   "kind": "pack",
+   "file": "allwallpaper/wallpapertest1/夜莺night——【time_variation_时间变化】alone_孤独の少女【原画：rella].mpkg",
+   "hitReason": "origin.script",
+   "cameraObjectId": 1297271,
+   "camera": "default",
+   "cameraName": "",
+   "script": {
+    "key": "origin",
+    "chars": 781,
+    "sha256": "151da98895ccdaed35fc14326b216b91b87afa7cd94c8a8dbfe12dec297667fd",
+    "source": "// 使用严格模式\n'use strict';\n\n// 创建脚本属性\nexport var scriptProperties = createScriptProperties ()\n  // 添加 X 坐标的滑块属性\n  .addSlider ( {\n    name: 'x', // 属性名称\n    label: 'X', // 属性标签\n    value: 0.5, // 属性默认值\n    min: 0, // 滑块最小值\n    max: 1, // 滑块最大值\n    integer: false // 是否使用整数\n  })\n  // 添加 Y 坐标的滑块属性\n  .addSlider ( {\n    name: 'y', // 属性名称\n    label: 'Y', // 属性标签\n    value: 0.5, // 属性默认值\n    min: 0, // 滑块最小值\n    max: 1, // 滑块最大值\n    integer: false // 是否使用整数\n  })\n  // 完成脚本属性的创建\n  .finish ();\n\n/**\n * 更新组件的坐标值\n * @param {Vec3} value - 组件的原始坐标值\n * @return {Vec3} - 更新后的坐标值\n */\nexport function update (value) {\n  // 将 X 坐标乘以画布的宽度\n  value.x = scriptProperties.x * engine.canvasSize.x;\n  // 将 Y 坐标乘以画布的高度\n  value.y = scriptProperties.y * engine.canvasSize.y;\n  // 返回更新后的坐标值\n  return value;\n}\n",
+    "preview": "// 使用严格模式 'use strict'; // 创建脚本属性 export var scriptProperties = createScriptProperties () // 添加 X 坐标的滑块属性 .addSlider ( { name: 'x', // 属性名称 label: 'X', // 属性标签 value: 0.5, // 属性默认值 min: 0, // 滑块最小值 ma"
+   },
+   "scriptProperties": {
+    "x": {
+     "user": "x3",
+     "value": 0.5
+    },
+    "y": {
+     "user": "y1",
+     "value": 0.5
+    }
+   },
+   "userProps": {
+    "source": "project.json(包内) general.properties 默认值(143 项)",
+    "count": 143,
+    "bound": [
+     "x3",
+     "y1"
+    ]
+   },
+   "static": {
+    "origin": "2434.38477 725.25134 500.00000",
+    "originVec": [
+     2434.38477,
+     725.25134,
+     500
+    ],
+    "zoom": 1,
+    "zoomKind": "object{user,value}",
+    "fov": 50
+   },
+   "eval": {
+    "origin": "0.000000 0.000000 500.000000",
+    "originVec": [
+     0,
+     0,
+     500
+    ],
+    "deltaVec": [
+     -2434.38477,
+     -725.25134,
+     0
+    ],
+    "equalsStatic": false,
+    "changedKeys": [
+     {
+      "key": "origin",
+      "beforeVal": "2434.38477 725.25134 500.00000",
+      "afterVal": "0.000000 0.000000 500.000000",
+      "beforeJson": "{\"script\":\"// 使用严格模式\\n'use strict';\\n\\n// 创建脚本属性\\nexport var scriptProperties = ",
+      "afterJson": "{\"script\":\"// 使用严格模式\\n'use strict';\\n\\n// 创建脚本属性\\nexport var scriptProperties = "
+     }
+    ],
+    "hostErrors": [],
+    "hostThrew": null,
+    "scriptLogs": [
+     "Initial animation speed set to 100",
+     "Initial particle speed set to 100",
+     "Initial playback speed set to 2"
+    ],
+    "entry": {
+     "compiled": true,
+     "compileError": null,
+     "disabled": false,
+     "initError": null,
+     "initialized": false,
+     "updateErrors": 0,
+     "hasInit": false,
+     "hasUpdate": true,
+     "hasApplyUserProperties": false
+    },
+    "cacheSize": 20
+   },
+   "abNoUserProps": {
+    "origin": "1920.000000 1080.000000 500.000000",
+    "originVec": [
+     1920,
+     1080,
+     500
+    ],
+    "deltaVec": [
+     -514.3847700000001,
+     354.74866,
+     0
+    ],
+    "hostErrors": [],
+    "hostThrew": null
+   },
+   "noHost": {
+    "origin": "2434.38477 725.25134 500.00000",
+    "equalsStatic": true,
+    "changedKeys": []
+   },
+   "isolate": {
+    "origin": "0.000000 0.000000 500.000000",
+    "originVec": [
+     0,
+     0,
+     500
+    ],
+    "equalsFull": true,
+    "equalsStatic": false,
+    "hostErrors": [],
+    "entry": {
+     "compiled": true,
+     "compileError": null,
+     "disabled": false,
+     "initError": null,
+     "initialized": false,
+     "updateErrors": 0,
+     "hasInit": false,
+     "hasUpdate": true,
+     "hasApplyUserProperties": false
+    },
+    "hostThrew": null
+   },
+   "mutate": {
+    "props": {
+     "x3": 0.25,
+     "y1": 0.25
+    },
+    "origin": "960.000000 540.000000 500.000000",
+    "deltaVsIsolate": [
+     960,
+     540,
+     0
+    ],
+    "moved": true,
+    "hostErrors": [],
+    "hostThrew": null
+   },
+   "rendererCrossCheck": {
+    "parseSceneCameraNodeId": 1297271,
+    "match": true,
+    "error": null
+   }
+  },
+  {
+   "pkgId": "wallpapertest1/夜莺night——【time_variation时间变化】elaina_伊蕾娜：闲憩微息【魔女之旅】day_night",
+   "kind": "pack",
+   "file": "allwallpaper/wallpapertest1/夜莺night——【time_variation时间变化】elaina_伊蕾娜：闲憩微息【魔女之旅】day_night.mpkg",
+   "hitReason": "origin.script",
+   "cameraObjectId": 1297271,
+   "camera": "default",
+   "cameraName": "",
+   "script": {
+    "key": "origin",
+    "chars": 781,
+    "sha256": "151da98895ccdaed35fc14326b216b91b87afa7cd94c8a8dbfe12dec297667fd",
+    "source": "// 使用严格模式\n'use strict';\n\n// 创建脚本属性\nexport var scriptProperties = createScriptProperties ()\n  // 添加 X 坐标的滑块属性\n  .addSlider ( {\n    name: 'x', // 属性名称\n    label: 'X', // 属性标签\n    value: 0.5, // 属性默认值\n    min: 0, // 滑块最小值\n    max: 1, // 滑块最大值\n    integer: false // 是否使用整数\n  })\n  // 添加 Y 坐标的滑块属性\n  .addSlider ( {\n    name: 'y', // 属性名称\n    label: 'Y', // 属性标签\n    value: 0.5, // 属性默认值\n    min: 0, // 滑块最小值\n    max: 1, // 滑块最大值\n    integer: false // 是否使用整数\n  })\n  // 完成脚本属性的创建\n  .finish ();\n\n/**\n * 更新组件的坐标值\n * @param {Vec3} value - 组件的原始坐标值\n * @return {Vec3} - 更新后的坐标值\n */\nexport function update (value) {\n  // 将 X 坐标乘以画布的宽度\n  value.x = scriptProperties.x * engine.canvasSize.x;\n  // 将 Y 坐标乘以画布的高度\n  value.y = scriptProperties.y * engine.canvasSize.y;\n  // 返回更新后的坐标值\n  return value;\n}\n",
+    "preview": "// 使用严格模式 'use strict'; // 创建脚本属性 export var scriptProperties = createScriptProperties () // 添加 X 坐标的滑块属性 .addSlider ( { name: 'x', // 属性名称 label: 'X', // 属性标签 value: 0.5, // 属性默认值 min: 0, // 滑块最小值 ma"
+   },
+   "scriptProperties": {
+    "x": {
+     "user": "x3",
+     "value": 0.5
+    },
+    "y": {
+     "user": "y1",
+     "value": 0.5
+    }
+   },
+   "userProps": {
+    "source": "project.json(包内) general.properties 默认值(100 项)",
+    "count": 100,
+    "bound": [
+     "x3",
+     "y1"
+    ]
+   },
+   "static": {
+    "origin": "2434.38477 725.25134 500.00000",
+    "originVec": [
+     2434.38477,
+     725.25134,
+     500
+    ],
+    "zoom": 1,
+    "zoomKind": "object{user,value}",
+    "fov": 50
+   },
+   "eval": {
+    "origin": "0.000000 0.000000 500.000000",
+    "originVec": [
+     0,
+     0,
+     500
+    ],
+    "deltaVec": [
+     -2434.38477,
+     -725.25134,
+     0
+    ],
+    "equalsStatic": false,
+    "changedKeys": [
+     {
+      "key": "origin",
+      "beforeVal": "2434.38477 725.25134 500.00000",
+      "afterVal": "0.000000 0.000000 500.000000",
+      "beforeJson": "{\"script\":\"// 使用严格模式\\n'use strict';\\n\\n// 创建脚本属性\\nexport var scriptProperties = ",
+      "afterJson": "{\"script\":\"// 使用严格模式\\n'use strict';\\n\\n// 创建脚本属性\\nexport var scriptProperties = "
+     }
+    ],
+    "hostErrors": [],
+    "hostThrew": null,
+    "scriptLogs": [],
+    "entry": {
+     "compiled": true,
+     "compileError": null,
+     "disabled": false,
+     "initError": null,
+     "initialized": false,
+     "updateErrors": 0,
+     "hasInit": false,
+     "hasUpdate": true,
+     "hasApplyUserProperties": false
+    },
+    "cacheSize": 14
+   },
+   "abNoUserProps": {
+    "origin": "1920.000000 1080.000000 500.000000",
+    "originVec": [
+     1920,
+     1080,
+     500
+    ],
+    "deltaVec": [
+     -514.3847700000001,
+     354.74866,
+     0
+    ],
+    "hostErrors": [],
+    "hostThrew": null
+   },
+   "noHost": {
+    "origin": "2434.38477 725.25134 500.00000",
+    "equalsStatic": true,
+    "changedKeys": []
+   },
+   "isolate": {
+    "origin": "0.000000 0.000000 500.000000",
+    "originVec": [
+     0,
+     0,
+     500
+    ],
+    "equalsFull": true,
+    "equalsStatic": false,
+    "hostErrors": [],
+    "entry": {
+     "compiled": true,
+     "compileError": null,
+     "disabled": false,
+     "initError": null,
+     "initialized": false,
+     "updateErrors": 0,
+     "hasInit": false,
+     "hasUpdate": true,
+     "hasApplyUserProperties": false
+    },
+    "hostThrew": null
+   },
+   "mutate": {
+    "props": {
+     "x3": 0.25,
+     "y1": 0.25
+    },
+    "origin": "960.000000 540.000000 500.000000",
+    "deltaVsIsolate": [
+     960,
+     540,
+     0
+    ],
+    "moved": true,
+    "hostErrors": [],
+    "hostThrew": null
+   },
+   "rendererCrossCheck": {
+    "parseSceneCameraNodeId": 1297271,
+    "match": true,
+    "error": null
+   }
+  }
+ ],
+ "noSceneJson": [
+  {
+   "id": "wallpaperE/伊蕾娜/伊蕾娜1_8",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/伊蕾娜/伊蕾娜_04",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/伊蕾娜/伊蕾娜_05",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/小鸟游星野/小鸟游星野01_04",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/小鸟游星野/小鸟游星野01_11",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/小鸟游星野/小鸟游星野04_2",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/小鸟游星野/小鸟游星野04_7",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/小鸟游星野/小鸟游星野11_01",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/小鸟游星野/小鸟游星野_01",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/小鸟游星野/小鸟游星野_02",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/小鸟游星野/小鸟游星野_09",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/小鸟游星野/小鸟游星野_11",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/小鸟游星野/小鸟游星野_12",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/庄方宜/庄方宜_2",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/洛琪希/洛琪希1_1",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/洛琪希/洛琪希_01",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/洛茜/洛茜_01",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/洛茜/洛茜_02",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/洛茜/洛茜_03",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/洛茜/洛茜_04",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/洛茜/洛茜_05",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/洛茜/洛茜_06",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/洛茜/洛茜_08",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/洛茜/洛茜_09",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/洛茜/洛茜_12",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/洛茜/洛茜_13",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/流萤/流萤01_03",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/流萤/流萤_06",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/流萤/流萤_09",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/砂狼白子/砂狼白子02_01",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/砂狼白子/砂狼白子02_02",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/砂狼白子/砂狼白子11_01",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/砂狼白子/砂狼白子_1",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/砂狼白子/砂狼白子_2",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/砂狼白子/砂狼白子_3",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/砂狼白子/砂狼白子_5",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/纳西妲/纳西妲_02",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/纳西妲/纳西妲_03",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/纳西妲/纳西妲_04",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/纳西妲/纳西妲_08",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/纳西妲/纳西妲_10",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/终末地/zmd_01",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/遐蝶/遐蝶_01",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/遐蝶/遐蝶_02",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  },
+  {
+   "id": "wallpaperE/遐蝶/遐蝶_15",
+   "magic": "PKGM0014",
+   "entryCount": 3
+  }
+ ],
+ "readErrors": [],
+ "sceneErrors": [],
+ "looseErrors": []
+}

@@ -1,0 +1,37 @@
+{
+ "source": "/root/Desktop/DSHarea/allwallpaper/0923/3662790108/project.json",
+ "topKeys": [
+  "approved",
+  "contentrating",
+  "description",
+  "file",
+  "general",
+  "preview",
+  "ratingsex",
+  "ratingviolence",
+  "tags",
+  "title",
+  "type",
+  "version",
+  "visibility",
+  "workshopid",
+  "workshopurl"
+ ],
+ "typeHistogram": {
+  "scene": 1,
+  "bool": 71,
+  "scenetexture": 24,
+  "usershortcut": 20,
+  "combo": 3,
+  "slider": 35,
+  "color": 9,
+  "group": 12,
+  "textinput": 3
+ },
+ "general": {
+  "properties": "{'_0': {'index': 0, 'order': 100, 'text': \"<big><p align='center'><font color='#33CCFF'>感谢订阅！喜欢点个赞吧~<br/>作者会开心一整天\", 'value': ''}, '_012': {'index': 20, 'order': 120, 'text': '行星标签 Planet Labels', 'typ",
+  "supportsaudioprocessing": "True",
+  "supportsvideo": "True",
+  "supportsvideoflags": "2"
+ }
+}

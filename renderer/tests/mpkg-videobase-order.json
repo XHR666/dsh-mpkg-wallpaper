@@ -1,0 +1,74 @@
+{
+ "at": "2026-09-22T23:09:32.242Z",
+ "pkg": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_10.mpkg",
+ "res": "720p",
+ "launchNote": "有头 DISPLAY=:0",
+ "results": [
+  {
+   "variant": "as-is",
+   "patchInfo": {
+    "applied": false
+   },
+   "state": {
+    "firstFrame": true,
+    "layers": 3,
+    "video": {
+     "rs": 0,
+     "ns": 1,
+     "w": 0,
+     "h": 0,
+     "err": null,
+     "ct": 0
+    },
+    "logHits": [
+     "🎬 视频底层已加入（最底层叠加）：wallpaper.mp4",
+     "scene.json 解析: 3 layers",
+     "✅ 首帧完成 71ms"
+    ]
+   },
+   "pixel": {
+    "w": 960,
+    "h": 540,
+    "meanL": 178.642,
+    "maxL": 255,
+    "stdL": 6.867,
+    "litFrac": 1
+   },
+   "pageErrors": []
+  },
+  {
+   "variant": "moved",
+   "patchInfo": {
+    "applied": false,
+    "why": "找不到块边界（endMark=false startMark=false）",
+    "blockBytes": 0
+   },
+   "state": {
+    "firstFrame": true,
+    "layers": 3,
+    "video": {
+     "rs": 0,
+     "ns": 1,
+     "w": 0,
+     "h": 0,
+     "err": null,
+     "ct": 0
+    },
+    "logHits": [
+     "🎬 视频底层已加入（最底层叠加）：wallpaper.mp4",
+     "scene.json 解析: 3 layers",
+     "✅ 首帧完成 58ms"
+    ]
+   },
+   "pixel": {
+    "w": 960,
+    "h": 540,
+    "meanL": 178.642,
+    "maxL": 255,
+    "stdL": 6.867,
+    "litFrac": 1
+   },
+   "pageErrors": []
+  }
+ ]
+}

@@ -1,0 +1,85 @@
+{
+ "pkg": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/卡提希娅/卡提希娅_09.mpkg",
+ "res": "720p",
+ "launchNote": "有头 DISPLAY=:0",
+ "reachMs": 1052,
+ "state": {
+  "noScene": {
+   "path": "video",
+   "entry": "bilibili-吃面面用勺-欢迎转载.mp4",
+   "names": "bilibili-吃面面用勺-欢迎转载.mp4, preview.gif, project.json",
+   "at": 1790168126001
+  },
+  "firstFrame": false,
+  "layers": null,
+  "video": {
+   "rs": 0,
+   "ns": 1,
+   "w": 0,
+   "h": 0,
+   "dur": null,
+   "paused": false,
+   "ct": 0,
+   "src": "blob:http://127.0.0.1:8899/deb",
+   "err": null
+  },
+  "hook": {
+   "calls": 1,
+   "retries": 0,
+   "gaveUp": 0,
+   "byLabel": {
+    "视频壁纸包": {
+     "calls": 1,
+     "retries": 0,
+     "gaveUp": 0
+    }
+   }
+  }
+ },
+ "after": {
+  "noScene": {
+   "path": "video",
+   "entry": "bilibili-吃面面用勺-欢迎转载.mp4",
+   "names": "bilibili-吃面面用勺-欢迎转载.mp4, preview.gif, project.json",
+   "at": 1790168126001
+  },
+  "firstFrame": true,
+  "layers": null,
+  "video": {
+   "rs": 4,
+   "ns": 1,
+   "w": 3840,
+   "h": 2160,
+   "dur": 5.53,
+   "paused": false,
+   "ct": 2.88,
+   "src": "blob:http://127.0.0.1:8899/deb",
+   "err": null
+  },
+  "hook": {
+   "calls": 1,
+   "retries": 1,
+   "gaveUp": 0,
+   "byLabel": {
+    "视频壁纸包": {
+     "calls": 1,
+     "retries": 1,
+     "gaveUp": 0
+    }
+   }
+  }
+ },
+ "pixels": {
+  "w": 1400,
+  "h": 788,
+  "meanL": 82.748,
+  "stdL": 64.05,
+  "litFrac": 0.8858
+ },
+ "logs": [
+  "⚠ 容器里没有 scene.json（不是场景包）⇒ 按**纯视频壁纸**播放：bilibili-吃面面用勺-欢迎转载.mp4（8.2MB）",
+  "🔁 视频壁纸包：blob 首次 load 挂住（rs=0），第 1/2 次补 load()（上游 Firefox Bug 2056444）",
+  "视频已加载 3840x2160"
+ ],
+ "pageErrors": []
+}

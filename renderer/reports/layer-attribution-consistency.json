@@ -1,0 +1,140 @@
+{
+ "generatedAt": "2026-10-16T15:57:48.780Z",
+ "tool": "tests/layer-attribution-consistency.mjs",
+ "time": 20,
+ "packages": [
+  {
+   "id": "2887099508",
+   "offline": {
+    "summary": {
+     "layers": 82,
+     "drawn": 48,
+     "skipped": 34,
+     "skipReasons": {
+      "invisible-config": 3,
+      "degenerate-geometry": 11,
+      "invisible": 14,
+      "container": 4,
+      "not-drawn": 1,
+      "logical-helper": 1
+     },
+     "binds": {
+      "solidcolor": 7,
+      "texture": 20,
+      "particle": 2,
+      "transparent": 15,
+      "rtcopy": 4
+     },
+     "renderErr": null,
+     "canvas": {
+      "w": 1920,
+      "h": 1080
+     },
+     "proj": {
+      "w": 6080,
+      "h": 3420
+     },
+     "time": 20
+    }
+   },
+   "clearColor": {
+    "enabled": true,
+    "l": 0.7,
+    "rgb": [
+     0.7,
+     0.7,
+     0.7
+    ]
+   }
+  },
+  {
+   "id": "3327063360",
+   "offline": {
+    "summary": {
+     "layers": 69,
+     "drawn": 28,
+     "skipped": 41,
+     "skipReasons": {
+      "invisible": 12,
+      "degenerate-geometry": 4,
+      "invisible-config": 25
+     },
+     "binds": {
+      "texture": 22,
+      "transparent": 5,
+      "particle": 1
+     },
+     "renderErr": null,
+     "canvas": {
+      "w": 1920,
+      "h": 1080
+     },
+     "proj": {
+      "w": 3840,
+      "h": 2160
+     },
+     "time": 20
+    }
+   },
+   "clearColor": {
+    "enabled": true,
+    "l": 0.154,
+    "rgb": [
+     0.11373,
+     0.15686,
+     0.24314
+    ]
+   }
+  },
+  {
+   "id": "3326873240",
+   "offline": {
+    "summary": {
+     "layers": 62,
+     "drawn": 29,
+     "skipped": 33,
+     "skipReasons": {
+      "invisible": 5,
+      "invisible-config": 26,
+      "not-drawn": 1,
+      "logical-helper": 1
+     },
+     "binds": {
+      "transparent": 11,
+      "texture": 18
+     },
+     "renderErr": null,
+     "canvas": {
+      "w": 1920,
+      "h": 1080
+     },
+     "proj": {
+      "w": 3840,
+      "h": 2160
+     },
+     "time": 20
+    }
+   },
+   "clearColor": {
+    "enabled": true,
+    "l": 0,
+    "rgb": [
+     0,
+     0,
+     0
+    ]
+   }
+  }
+ ],
+ "divergences": [],
+ "glSkip": {
+  "launchNote": "有头起不来（browserType.launch: Failed to launch the browser process.\nBrowser logs:\n\n<launching> /root）⇒ 回落无头 · 无头",
+  "gl": {
+   "webgl2": false,
+   "webgl1": false,
+   "ver2": null,
+   "ver1": null,
+   "renderer": null
+  }
+ }
+}

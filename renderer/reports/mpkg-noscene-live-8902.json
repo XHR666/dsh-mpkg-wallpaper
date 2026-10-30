@@ -1,0 +1,84 @@
+{
+ "pkg": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/佩丽卡/佩丽卡1_01.mpkg",
+ "res": "720p",
+ "launchNote": "有头 DISPLAY=:0",
+ "reachMs": 1075,
+ "state": {
+  "noScene": {
+   "path": "video",
+   "entry": "32.mp4",
+   "names": "32.mp4, preview.gif, project.json",
+   "at": 1790152971264
+  },
+  "firstFrame": false,
+  "layers": null,
+  "video": {
+   "rs": 4,
+   "ns": 1,
+   "w": 3624,
+   "h": 4832,
+   "dur": 6.67,
+   "paused": false,
+   "ct": 0,
+   "src": "blob:http://127.0.0.1:8902/30a",
+   "err": null
+  },
+  "hook": {
+   "calls": 1,
+   "retries": 0,
+   "gaveUp": 0,
+   "byLabel": {
+    "视频壁纸包": {
+     "calls": 1,
+     "retries": 0,
+     "gaveUp": 0
+    }
+   }
+  }
+ },
+ "after": {
+  "noScene": {
+   "path": "video",
+   "entry": "32.mp4",
+   "names": "32.mp4, preview.gif, project.json",
+   "at": 1790152971264
+  },
+  "firstFrame": false,
+  "layers": null,
+  "video": {
+   "rs": 4,
+   "ns": 1,
+   "w": 3624,
+   "h": 4832,
+   "dur": 6.67,
+   "paused": false,
+   "ct": 3.96,
+   "src": "blob:http://127.0.0.1:8902/30a",
+   "err": null
+  },
+  "hook": {
+   "calls": 1,
+   "retries": 0,
+   "gaveUp": 0,
+   "byLabel": {
+    "视频壁纸包": {
+     "calls": 1,
+     "retries": 0,
+     "gaveUp": 0
+    }
+   }
+  }
+ },
+ "pixels": {
+  "w": 1400,
+  "h": 788,
+  "meanL": 128.767,
+  "stdL": 86.91,
+  "litFrac": 0.956
+ },
+ "logs": [
+  "⚠ 容器里没有 scene.json（不是场景包）⇒ 按**纯视频壁纸**播放：32.mp4（10.0MB）",
+  "视频已加载 3624x4832"
+ ],
+ "pageErrors": []
+}

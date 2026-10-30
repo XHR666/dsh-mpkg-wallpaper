@@ -1,0 +1,104 @@
+{
+ "pkg": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓1_10.mpkg",
+ "res": "720p",
+ "launchNote": "有头 DISPLAY=:0",
+ "gl": true,
+ "settleMs": 2604,
+ "state": {
+  "firstFrame": true,
+  "videos": [
+   {
+    "css": "position: fixed; left: 0px; top: 0px; width: 2px; height: 2px; opacity: 0.01; pointer-events: none; z-index: -1;",
+    "src": "blob:http://127.0.0.1:8899/299d9665-8c29-49dc-9a62-0b0085399",
+    "currentSrc": "blob:http://127.0.0.1:8899/299d9665-8c29-49dc-9a62-0b0085399",
+    "rs": 0,
+    "ns": 1,
+    "w": 0,
+    "h": 0,
+    "dur": null,
+    "ct": 0,
+    "paused": false,
+    "preload": "auto",
+    "muted": true,
+    "loop": true,
+    "connected": true,
+    "parent": "BODY",
+    "rect": {
+     "w": 2,
+     "h": 2
+    },
+    "err": null,
+    "buffered": []
+   }
+  ],
+  "layers": 3,
+  "layerNames": [
+   "__videoBase",
+   "90524298_p0",
+   "Sakura"
+  ]
+ },
+ "logHits": [
+  "🎬 视频底层已加入（最底层叠加）：wallpaper.mp4",
+  "  #0 __videoBase      tex=__videoBase px=[0,1280]x[0,720]",
+  "⚠ [首帧] #0 __videoBase vis=1 tex=__videoBase skin=0 fx=0 part=0",
+  "⚠ [首帧] #1 90524298_p0 vis=1 tex=- skin=0 fx=0 part=0",
+  "⚠ [首帧] #2 Sakura vis=1 tex=- skin=0 fx=0 part=1",
+  "⚠ [首帧] 层循环结束（共 3 层）",
+  "✅ 首帧完成 349ms"
+ ],
+ "blobBytes": {
+  "ok": true,
+  "status": 200,
+  "bytes": 22256547,
+  "headHex": "00000018667479706d70343200000000",
+  "headAscii": "....ftypmp42...."
+ },
+ "freshElement": {
+  "sameUrlNewElement": {
+   "rs": 4,
+   "ns": 1,
+   "w": 1636,
+   "h": 1156,
+   "dur": 30,
+   "events": [
+    "loadstart",
+    "progress",
+    "suspend",
+    "loadedmetadata",
+    "loadeddata",
+    "canplay",
+    "playing"
+   ],
+   "playState": "ok"
+  },
+  "sameBytesNewBlob": {
+   "rs": 0,
+   "ns": 1,
+   "w": 0,
+   "h": 0,
+   "dur": null,
+   "events": [
+    "loadstart",
+    "progress",
+    "suspend"
+   ],
+   "playState": "pending"
+  },
+  "reloadOriginal": {
+   "before": {
+    "rs": 0,
+    "ns": 1
+   },
+   "after": {
+    "rs": 4,
+    "ns": 1,
+    "w": 1636,
+    "h": 1156,
+    "dur": 30,
+    "err": null
+   }
+  },
+  "bytes": 22256547
+ }
+}

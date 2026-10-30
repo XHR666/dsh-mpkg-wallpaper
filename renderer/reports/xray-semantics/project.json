@@ -1,0 +1,53 @@
+{
+	"contentrating" : "Mature",
+	"description" : "",
+	"file" : "scene.json",
+	"general" : 
+	{
+		"properties" : 
+		{
+			"newproperty" : 
+			{
+				"index" : 0,
+				"options" : 
+				[
+					{
+						"label" : "1",
+						"value" : "1"
+					},
+					{
+						"label" : "2",
+						"value" : "2"
+					}
+				],
+				"order" : 100,
+				"text" : "图片更换",
+				"type" : "combo",
+				"value" : "1"
+			},
+			"schemecolor" : 
+			{
+				"order" : 0,
+				"text" : "ui_browse_properties_scheme_color",
+				"type" : "color",
+				"value" : "0 0 0"
+			},
+			"xray" : 
+			{
+				"index" : 1,
+				"order" : 101,
+				"text" : "(x-ray)",
+				"type" : "bool",
+				"value" : false
+			}
+		}
+	},
+	"preview" : "preview.jpg",
+	"tags" : [ "Anime" ],
+	"title" : "逆流茶会-姐妹日常 (x-ray)",
+	"type" : "Scene",
+	"version" : 2,
+	"visibility" : "public",
+	"workshopid" : "2855015351",
+	"workshopurl" : "steam://url/CommunityFilePage/2855015351"
+}

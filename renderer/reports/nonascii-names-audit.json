@@ -1,0 +1,30 @@
+{
+ "generatedAt": "2026-10-16T15:57:56.001Z",
+ "containers": 199,
+ "nonAsciiEntries": 1653,
+ "nonAsciiRefs": 1418,
+ "refHits": 1219,
+ "refMiss": [
+  "other obj[100].sound → \"sounds/ 明透.mp3\"",
+  "other obj[64].sound → \"sounds/曾经火遍大江南北的神曲女声柔情版《三国恋》翻唱-浅影阿_-BV1",
+  "other obj[64].sound → \"sounds/浮光.mp3\"",
+  "other obj[64].sound → \"sounds/花曇り - 佐藤千亜妃.mp3\"",
+  "other obj[64].sound → \"sounds/风铃.mp3\"",
+  "伊蕾娜 obj[0].image → \"models/HD电脑壁纸.json\"",
+  "伊蕾娜 obj[39].sound → \"sounds/“我一言不发，只是等待着你”  嘘月  -ヨルシカ【Hi-Res",
+  "佩丽卡 obj[0].image → \"models/《明日方舟：终末地》佩丽卡8k电脑桌面壁纸_花猫壁纸(huama",
+  "佩丽卡 obj[9].image → \"models/《明日方舟：终末地》佩丽卡8k电脑桌面壁纸_花猫壁纸(huama",
+  "佩丽卡 obj[10].image → \"models/《明日方舟：终末地》佩丽卡8k电脑桌面壁纸_花猫壁纸(huama",
+  "佩丽卡 obj[12].image → \"models/《明日方舟：终末地》佩丽卡8k电脑桌面壁纸_花猫壁纸(huama",
+  "佩丽卡 obj[13].image → \"models/《明日方舟：终末地》佩丽卡8k电脑桌面壁纸_花猫壁纸(huama"
+ ],
+ "fontRefsUnresolved": [
+  "2887099508 obj[27].font → \"fonts/三极萌萌简体.ttf\"",
+  "砂狼白子 obj[24].font → \"fonts/书法字体.ttf\"",
+  "砂狼白子 obj[25].font → \"fonts/书法字体.ttf\"",
+  "砂狼白子 obj[26].font → \"fonts/书法字体.ttf\"",
+  "砂狼白子 obj[28].font → \"fonts/书法字体.ttf\"",
+  "砂狼白子 obj[35].font → \"fonts/书法字体.ttf\"",
+  "砂狼白子 obj[39].font → \"fonts/书法字体.ttf\""
+ ]
+}

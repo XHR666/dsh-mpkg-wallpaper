@@ -1,0 +1,62 @@
+{
+ "pkg": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_04.mpkg",
+ "res": "720p",
+ "launchNote": "有头 DISPLAY=:0",
+ "firstFrameMs": 2218,
+ "stalled": {
+  "rs": 4,
+  "ns": 1,
+  "w": 2560,
+  "h": 1440,
+  "dur": 30,
+  "paused": false,
+  "ct": 1.69,
+  "buffered": 30,
+  "err": null
+ },
+ "pixelsStalled": {
+  "w": 1400,
+  "h": 788,
+  "meanL": 8.887,
+  "maxL": 255,
+  "stdL": 36.24,
+  "litFrac": 0.0783
+ },
+ "auto": {
+  "waitedMs": 774,
+  "video": {
+   "rs": 4,
+   "ns": 1,
+   "w": 2560,
+   "h": 1440,
+   "dur": 30,
+   "paused": false,
+   "ct": 4.54,
+   "buffered": 30,
+   "err": null
+  },
+  "hook": {
+   "calls": 1,
+   "retries": 1,
+   "gaveUp": 0,
+   "byLabel": {
+    "视频底层": {
+     "calls": 1,
+     "retries": 1,
+     "gaveUp": 0
+    }
+   }
+  },
+  "pixels": {
+   "w": 1400,
+   "h": 788,
+   "meanL": 8.873,
+   "maxL": 255,
+   "stdL": 36.218,
+   "litFrac": 0.0782
+  },
+  "logs": [
+   "🔁 视频底层：blob 首次 load 挂住（rs=0），第 1/2 次补 load()（上游 Firefox Bug 2056444）"
+  ]
+ }
+}

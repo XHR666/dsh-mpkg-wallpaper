@@ -1,0 +1,45 @@
+{
+ "generatedAt": "2026-10-04T10:46:55.143Z",
+ "note": "P-230 A/B：default（fx=0 copybg 层不换入）vs legacy（P-199 总是换）；campose=legacy、settle 6s、1280x720",
+ "rows": [
+  {
+   "id": "2887099508",
+   "default": {
+    "meanL": 164.82,
+    "stdL": 27.69,
+    "uniq": 66199
+   },
+   "legacy": {
+    "meanL": 128.05,
+    "stdL": 45.63,
+    "uniq": 30257
+   }
+  },
+  {
+   "id": "3327063360",
+   "default": {
+    "meanL": 82.98,
+    "stdL": 59.85,
+    "uniq": 99999
+   },
+   "legacy": {
+    "meanL": 85.64,
+    "stdL": 59.79,
+    "uniq": 99999
+   }
+  },
+  {
+   "id": "3326873240",
+   "default": {
+    "meanL": 88.09,
+    "stdL": 57.04,
+    "uniq": 51625
+   },
+   "legacy": {
+    "meanL": 89.34,
+    "stdL": 56.12,
+    "uniq": 51276
+   }
+  }
+ ]
+}

@@ -1,0 +1,1237 @@
+{
+ "pkg": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/白洲梓/白洲梓1_10.mpkg",
+ "entry": "wallpaper.mp4",
+ "entryBytes": 22256547,
+ "browser": "firefox",
+ "launchNote": "有头 DISPLAY=:0",
+ "variants": [
+  {
+   "name": "V1-HTTP直供(2x2)",
+   "playErr": null,
+   "playState": "ok",
+   "blobNote": null,
+   "events": [
+    [
+     "emptied",
+     24
+    ],
+    [
+     "waiting",
+     24
+    ],
+    [
+     "loadstart",
+     24
+    ],
+    [
+     "progress",
+     469
+    ],
+    [
+     "durationchange",
+     669
+    ],
+    [
+     "resize",
+     669
+    ],
+    [
+     "loadedmetadata",
+     669
+    ],
+    [
+     "progress",
+     670
+    ],
+    [
+     "suspend",
+     670
+    ],
+    [
+     "loadeddata",
+     727
+    ],
+    [
+     "canplay",
+     727
+    ],
+    [
+     "playing",
+     727
+    ],
+    [
+     "canplaythrough",
+     727
+    ]
+   ],
+   "firstNonZero": {
+    "at": 401,
+    "rs": 0,
+    "ns": 2,
+    "w": 0,
+    "h": 0,
+    "dur": null,
+    "ct": 0,
+    "err": null
+   },
+   "final": {
+    "rs": 4,
+    "ns": 1,
+    "w": 1636,
+    "h": 1156,
+    "dur": 30,
+    "ct": 0.05,
+    "err": null
+   },
+   "ticks": [
+    [
+     401,
+     0,
+     2
+    ],
+    [
+     815,
+     4,
+     1
+    ]
+   ],
+   "srcPrefix": "/__vidbytes",
+   "endedAfterMs": 816
+  },
+  {
+   "name": "V6-blob页面原样(2x2)",
+   "playErr": null,
+   "playState": "pending",
+   "blobNote": {
+    "via": "new Blob([buf])",
+    "bytes": 22256547
+   },
+   "events": [
+    [
+     "emptied",
+     731
+    ],
+    [
+     "waiting",
+     731
+    ],
+    [
+     "loadstart",
+     731
+    ],
+    [
+     "progress",
+     750
+    ],
+    [
+     "suspend",
+     750
+    ]
+   ],
+   "firstNonZero": null,
+   "final": {
+    "rs": 0,
+    "ns": 1,
+    "w": 0,
+    "h": 0,
+    "dur": null,
+    "ct": 0,
+    "err": null
+   },
+   "ticks": [
+    [
+     401,
+     0,
+     1
+    ],
+    [
+     802,
+     0,
+     1
+    ],
+    [
+     1249,
+     0,
+     1
+    ],
+    [
+     1651,
+     0,
+     1
+    ],
+    [
+     2051,
+     0,
+     1
+    ],
+    [
+     2453,
+     0,
+     1
+    ],
+    [
+     2854,
+     0,
+     1
+    ],
+    [
+     3255,
+     0,
+     1
+    ],
+    [
+     3659,
+     0,
+     1
+    ],
+    [
+     4083,
+     0,
+     1
+    ],
+    [
+     4484,
+     0,
+     1
+    ],
+    [
+     4885,
+     0,
+     1
+    ],
+    [
+     5285,
+     0,
+     1
+    ],
+    [
+     5686,
+     0,
+     1
+    ],
+    [
+     6086,
+     0,
+     1
+    ],
+    [
+     6486,
+     0,
+     1
+    ],
+    [
+     6890,
+     0,
+     1
+    ],
+    [
+     7291,
+     0,
+     1
+    ]
+   ],
+   "srcPrefix": "blob:http://127.0.0.1:88",
+   "endedAfterMs": 7294
+  },
+  {
+   "name": "V7-blob放大(320x180)",
+   "playErr": null,
+   "playState": "pending",
+   "blobNote": {
+    "via": "new Blob([buf])",
+    "bytes": 22256547
+   },
+   "events": [
+    [
+     "emptied",
+     648
+    ],
+    [
+     "waiting",
+     648
+    ],
+    [
+     "loadstart",
+     648
+    ],
+    [
+     "progress",
+     657
+    ],
+    [
+     "suspend",
+     657
+    ]
+   ],
+   "firstNonZero": null,
+   "final": {
+    "rs": 0,
+    "ns": 1,
+    "w": 0,
+    "h": 0,
+    "dur": null,
+    "ct": 0,
+    "err": null
+   },
+   "ticks": [
+    [
+     405,
+     0,
+     1
+    ],
+    [
+     806,
+     0,
+     1
+    ],
+    [
+     1207,
+     0,
+     1
+    ],
+    [
+     1606,
+     0,
+     1
+    ],
+    [
+     2011,
+     0,
+     1
+    ],
+    [
+     2411,
+     0,
+     1
+    ],
+    [
+     2812,
+     0,
+     1
+    ],
+    [
+     3216,
+     0,
+     1
+    ],
+    [
+     3652,
+     0,
+     1
+    ],
+    [
+     4056,
+     0,
+     1
+    ],
+    [
+     4463,
+     0,
+     1
+    ],
+    [
+     4880,
+     0,
+     1
+    ],
+    [
+     5282,
+     0,
+     1
+    ],
+    [
+     5685,
+     0,
+     1
+    ],
+    [
+     6086,
+     0,
+     1
+    ],
+    [
+     6486,
+     0,
+     1
+    ],
+    [
+     6887,
+     0,
+     1
+    ],
+    [
+     7287,
+     0,
+     1
+    ]
+   ],
+   "srcPrefix": "blob:http://127.0.0.1:88",
+   "endedAfterMs": 7290
+  },
+  {
+   "name": "V2-HTTP放大(320x180)",
+   "playErr": null,
+   "playState": "ok",
+   "blobNote": null,
+   "events": [
+    [
+     "emptied",
+     8
+    ],
+    [
+     "waiting",
+     8
+    ],
+    [
+     "loadstart",
+     8
+    ],
+    [
+     "progress",
+     399
+    ],
+    [
+     "progress",
+     568
+    ],
+    [
+     "suspend",
+     568
+    ],
+    [
+     "durationchange",
+     568
+    ],
+    [
+     "resize",
+     569
+    ],
+    [
+     "loadedmetadata",
+     569
+    ],
+    [
+     "loadeddata",
+     601
+    ],
+    [
+     "canplay",
+     601
+    ],
+    [
+     "playing",
+     601
+    ],
+    [
+     "canplaythrough",
+     601
+    ]
+   ],
+   "firstNonZero": {
+    "at": 401,
+    "rs": 0,
+    "ns": 2,
+    "w": 0,
+    "h": 0,
+    "dur": null,
+    "ct": 0,
+    "err": null
+   },
+   "final": {
+    "rs": 4,
+    "ns": 1,
+    "w": 1636,
+    "h": 1156,
+    "dur": 30,
+    "ct": 0.17,
+    "err": null
+   },
+   "ticks": [
+    [
+     401,
+     0,
+     2
+    ],
+    [
+     808,
+     4,
+     1
+    ]
+   ],
+   "srcPrefix": "/__vidbytes",
+   "endedAfterMs": 810
+  },
+  {
+   "name": "V3-HTTP只load不play",
+   "playErr": null,
+   "playState": "not-called",
+   "blobNote": null,
+   "events": [
+    [
+     "emptied",
+     4
+    ],
+    [
+     "loadstart",
+     4
+    ],
+    [
+     "progress",
+     349
+    ],
+    [
+     "durationchange",
+     530
+    ],
+    [
+     "resize",
+     530
+    ],
+    [
+     "loadedmetadata",
+     530
+    ],
+    [
+     "progress",
+     531
+    ],
+    [
+     "suspend",
+     531
+    ],
+    [
+     "loadeddata",
+     570
+    ],
+    [
+     "canplay",
+     570
+    ],
+    [
+     "canplaythrough",
+     570
+    ]
+   ],
+   "firstNonZero": {
+    "at": 400,
+    "rs": 0,
+    "ns": 2,
+    "w": 0,
+    "h": 0,
+    "dur": null,
+    "ct": 0,
+    "err": null
+   },
+   "final": {
+    "rs": 4,
+    "ns": 1,
+    "w": 1636,
+    "h": 1156,
+    "dur": 30,
+    "ct": 0,
+    "err": null
+   },
+   "ticks": [
+    [
+     400,
+     0,
+     2
+    ],
+    [
+     801,
+     4,
+     1
+    ]
+   ],
+   "srcPrefix": "/__vidbytes",
+   "endedAfterMs": 804
+  },
+  {
+   "name": "V5-HTTP preload=auto",
+   "playErr": null,
+   "playState": "ok",
+   "blobNote": null,
+   "events": [
+    [
+     "emptied",
+     5
+    ],
+    [
+     "waiting",
+     5
+    ],
+    [
+     "loadstart",
+     5
+    ],
+    [
+     "progress",
+     360
+    ],
+    [
+     "durationchange",
+     540
+    ],
+    [
+     "resize",
+     540
+    ],
+    [
+     "loadedmetadata",
+     541
+    ],
+    [
+     "progress",
+     543
+    ],
+    [
+     "suspend",
+     543
+    ],
+    [
+     "loadeddata",
+     573
+    ],
+    [
+     "canplay",
+     573
+    ],
+    [
+     "playing",
+     573
+    ],
+    [
+     "canplaythrough",
+     573
+    ]
+   ],
+   "firstNonZero": {
+    "at": 401,
+    "rs": 0,
+    "ns": 2,
+    "w": 0,
+    "h": 0,
+    "dur": null,
+    "ct": 0,
+    "err": null
+   },
+   "final": {
+    "rs": 4,
+    "ns": 1,
+    "w": 1636,
+    "h": 1156,
+    "dur": 30,
+    "ct": 0.21,
+    "err": null
+   },
+   "ticks": [
+    [
+     401,
+     0,
+     2
+    ],
+    [
+     803,
+     4,
+     1
+    ]
+   ],
+   "srcPrefix": "/__vidbytes",
+   "endedAfterMs": 804
+  },
+  {
+   "name": "V4-HTTP参照物(小h264)",
+   "playErr": null,
+   "playState": "ok",
+   "blobNote": null,
+   "events": [
+    [
+     "emptied",
+     11
+    ],
+    [
+     "waiting",
+     11
+    ],
+    [
+     "loadstart",
+     11
+    ],
+    [
+     "progress",
+     25
+    ],
+    [
+     "durationchange",
+     28
+    ],
+    [
+     "resize",
+     28
+    ],
+    [
+     "loadedmetadata",
+     28
+    ],
+    [
+     "progress",
+     28
+    ],
+    [
+     "suspend",
+     28
+    ],
+    [
+     "loadeddata",
+     35
+    ],
+    [
+     "canplay",
+     35
+    ],
+    [
+     "playing",
+     35
+    ],
+    [
+     "canplaythrough",
+     35
+    ]
+   ],
+   "firstNonZero": {
+    "at": 401,
+    "rs": 4,
+    "ns": 1,
+    "w": 320,
+    "h": 240,
+    "dur": 2,
+    "ct": 0.34,
+    "err": null
+   },
+   "final": {
+    "rs": 4,
+    "ns": 1,
+    "w": 320,
+    "h": 240,
+    "dur": 2,
+    "ct": 0.34,
+    "err": null
+   },
+   "ticks": [
+    [
+     400,
+     4,
+     1
+    ]
+   ],
+   "srcPrefix": "/__vidtiny",
+   "endedAfterMs": 401
+  },
+  {
+   "name": "V8-blob参照物(小h264)",
+   "playErr": null,
+   "playState": "ok",
+   "blobNote": {
+    "via": "new Blob([buf])",
+    "bytes": 14694
+   },
+   "events": [
+    [
+     "emptied",
+     19
+    ],
+    [
+     "waiting",
+     19
+    ],
+    [
+     "loadstart",
+     19
+    ],
+    [
+     "progress",
+     35
+    ],
+    [
+     "suspend",
+     35
+    ],
+    [
+     "durationchange",
+     39
+    ],
+    [
+     "resize",
+     39
+    ],
+    [
+     "loadedmetadata",
+     40
+    ],
+    [
+     "loadeddata",
+     49
+    ],
+    [
+     "canplay",
+     49
+    ],
+    [
+     "playing",
+     49
+    ],
+    [
+     "canplaythrough",
+     50
+    ]
+   ],
+   "firstNonZero": {
+    "at": 413,
+    "rs": 4,
+    "ns": 1,
+    "w": 320,
+    "h": 240,
+    "dur": 2,
+    "ct": 0.34,
+    "err": null
+   },
+   "final": {
+    "rs": 4,
+    "ns": 1,
+    "w": 320,
+    "h": 240,
+    "dur": 2,
+    "ct": 0.34,
+    "err": null
+   },
+   "ticks": [
+    [
+     413,
+     4,
+     1
+    ]
+   ],
+   "srcPrefix": "blob:http://127.0.0.1:88",
+   "endedAfterMs": 414
+  },
+  {
+   "name": "V9-Response.blob(2x2)",
+   "playErr": null,
+   "playState": "pending",
+   "blobNote": {
+    "via": "new Blob([buf])",
+    "bytes": 22256547
+   },
+   "events": [
+    [
+     "emptied",
+     672
+    ],
+    [
+     "waiting",
+     672
+    ],
+    [
+     "loadstart",
+     672
+    ],
+    [
+     "progress",
+     686
+    ],
+    [
+     "suspend",
+     686
+    ]
+   ],
+   "firstNonZero": null,
+   "final": {
+    "rs": 0,
+    "ns": 1,
+    "w": 0,
+    "h": 0,
+    "dur": null,
+    "ct": 0,
+    "err": null
+   },
+   "ticks": [
+    [
+     401,
+     0,
+     1
+    ],
+    [
+     804,
+     0,
+     1
+    ],
+    [
+     1205,
+     0,
+     1
+    ],
+    [
+     1604,
+     0,
+     1
+    ],
+    [
+     2006,
+     0,
+     1
+    ],
+    [
+     2407,
+     0,
+     1
+    ],
+    [
+     2808,
+     0,
+     1
+    ],
+    [
+     3209,
+     0,
+     1
+    ],
+    [
+     3609,
+     0,
+     1
+    ],
+    [
+     4012,
+     0,
+     1
+    ],
+    [
+     4417,
+     0,
+     1
+    ],
+    [
+     4818,
+     0,
+     1
+    ],
+    [
+     5218,
+     0,
+     1
+    ],
+    [
+     5618,
+     0,
+     1
+    ],
+    [
+     6020,
+     0,
+     1
+    ],
+    [
+     6420,
+     0,
+     1
+    ],
+    [
+     6821,
+     0,
+     1
+    ],
+    [
+     7220,
+     0,
+     1
+    ]
+   ],
+   "srcPrefix": "blob:http://127.0.0.1:88",
+   "endedAfterMs": 7221
+  },
+  {
+   "name": "V11-data URL(2x2)",
+   "playErr": null,
+   "playState": "pending",
+   "blobNote": {
+    "via": "new Blob([buf])",
+    "bytes": 22256547
+   },
+   "events": [
+    [
+     "emptied",
+     750
+    ],
+    [
+     "waiting",
+     750
+    ],
+    [
+     "loadstart",
+     750
+    ],
+    [
+     "progress",
+     763
+    ],
+    [
+     "suspend",
+     763
+    ]
+   ],
+   "firstNonZero": null,
+   "final": {
+    "rs": 0,
+    "ns": 1,
+    "w": 0,
+    "h": 0,
+    "dur": null,
+    "ct": 0,
+    "err": null
+   },
+   "ticks": [
+    [
+     401,
+     0,
+     1
+    ],
+    [
+     801,
+     0,
+     1
+    ],
+    [
+     1233,
+     0,
+     1
+    ],
+    [
+     1633,
+     0,
+     1
+    ],
+    [
+     2034,
+     0,
+     1
+    ],
+    [
+     2434,
+     0,
+     1
+    ],
+    [
+     2836,
+     0,
+     1
+    ],
+    [
+     3237,
+     0,
+     1
+    ],
+    [
+     3639,
+     0,
+     1
+    ],
+    [
+     4038,
+     0,
+     1
+    ],
+    [
+     4441,
+     0,
+     1
+    ],
+    [
+     4841,
+     0,
+     1
+    ],
+    [
+     5245,
+     0,
+     1
+    ],
+    [
+     5646,
+     0,
+     1
+    ],
+    [
+     6068,
+     0,
+     1
+    ],
+    [
+     6468,
+     0,
+     1
+    ],
+    [
+     6869,
+     0,
+     1
+    ],
+    [
+     7270,
+     0,
+     1
+    ]
+   ],
+   "srcPrefix": "blob:http://127.0.0.1:88",
+   "endedAfterMs": 7270
+  },
+  {
+   "name": "V10-File构造(2x2)",
+   "playErr": null,
+   "playState": "pending",
+   "blobNote": {
+    "via": "new Blob([buf])",
+    "bytes": 22256547
+   },
+   "events": [
+    [
+     "emptied",
+     700
+    ],
+    [
+     "waiting",
+     700
+    ],
+    [
+     "loadstart",
+     700
+    ],
+    [
+     "stalled",
+     3859
+    ]
+   ],
+   "firstNonZero": {
+    "at": 402,
+    "rs": 0,
+    "ns": 2,
+    "w": 0,
+    "h": 0,
+    "dur": null,
+    "ct": 0,
+    "err": null
+   },
+   "final": {
+    "rs": 0,
+    "ns": 2,
+    "w": 0,
+    "h": 0,
+    "dur": null,
+    "ct": 0,
+    "err": null
+   },
+   "ticks": [
+    [
+     402,
+     0,
+     2
+    ],
+    [
+     803,
+     0,
+     2
+    ],
+    [
+     1202,
+     0,
+     2
+    ],
+    [
+     1603,
+     0,
+     2
+    ],
+    [
+     2052,
+     0,
+     2
+    ],
+    [
+     2452,
+     0,
+     2
+    ],
+    [
+     2852,
+     0,
+     2
+    ],
+    [
+     3253,
+     0,
+     2
+    ],
+    [
+     3658,
+     0,
+     2
+    ],
+    [
+     4059,
+     0,
+     2
+    ],
+    [
+     4469,
+     0,
+     2
+    ],
+    [
+     4870,
+     0,
+     2
+    ],
+    [
+     5271,
+     0,
+     2
+    ],
+    [
+     5674,
+     0,
+     2
+    ],
+    [
+     6074,
+     0,
+     2
+    ],
+    [
+     6478,
+     0,
+     2
+    ],
+    [
+     6880,
+     0,
+     2
+    ],
+    [
+     7283,
+     0,
+     2
+    ]
+   ],
+   "srcPrefix": "blob:http://127.0.0.1:88",
+   "endedAfterMs": 7283
+  }
+ ],
+ "caps": {
+  "ua": "Mozilla/5.0 (X11; Linux x86_64; rv:153.0) Gecko/20100101 Firefox/153.0",
+  "engine": "firefox",
+  "canPlayMp4": "maybe",
+  "canPlayAvc1": "probably",
+  "canPlayAvc1High": "probably",
+  "canPlayWebm": "probably",
+  "mseAvc1": true
+ }
+}

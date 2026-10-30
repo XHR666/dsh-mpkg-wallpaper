@@ -1,7 +1,7 @@
 // tools/corner-continuity-test.mjs —— 2026-11-02 任务②③「Apple 连续圆角 + 内外圆角同心」判据
 //
-// 任务②（连续圆角）：corner-shape: squircle（超椭圆，曲率连续）只包在
-//   @supports (corner-shape: squircle) 里 ⇒ 不支持的环境零生成、观感维持现状；
+// 任务②（连续圆角）：corner-shape: superellipse(4)（超椭圆，曲率连续）只包在
+//   @supports (corner-shape: superellipse(4)) 里 ⇒ 不支持的环境零生成、观感维持现状；
 //   半径族 --mpw-r-lg/md/sm（16/10/6px）单点定义在 body，引用处逐值等于旧字面量 ⇒ 观感零变化；
 //   不做 clip-path/mask 回退层（红线：含 fixed 后代的容器禁 transform/filter 家族与裁剪）。
 // 任务③（内外同心）：容器定义 --mpw-r-outer / --mpw-gap（padding 同样读 gap），内层半径 =
@@ -62,12 +62,12 @@ let css = cssFloat()
 let bare = stripComments(css)
 {
   const tokenBody = ruleBody(css, 'body {\n\t--mpw-r-lg')
-  ok('A1 半径族 + 曲率档位单点定义（--mpw-r-lg/md/sm = 16/10/6px + --mpw-corner-shape: squircle）',
+  ok('A1 半径族 + 曲率档位单点定义（--mpw-r-lg/md/sm = 16/10/6px + --mpw-corner-shape: superellipse(4)）',
     decl(tokenBody, '--mpw-r-lg') === '16px' && decl(tokenBody, '--mpw-r-md') === '10px'
-    && decl(tokenBody, '--mpw-r-sm') === '6px' && decl(tokenBody, '--mpw-corner-shape') === 'squircle',
+    && decl(tokenBody, '--mpw-r-sm') === '6px' && decl(tokenBody, '--mpw-corner-shape') === 'superellipse',
     JSON.stringify(tokenBody && tokenBody.replace(/\s+/g, ' ').slice(0, 120)))
 
-  const supIdx = bare.indexOf('@supports (corner-shape: squircle)')
+  const supIdx = bare.indexOf('@supports (corner-shape: superellipse(4))')
   let supEnd = -1
   if (supIdx >= 0) {
     const b0 = bare.indexOf('{', supIdx)
@@ -77,7 +77,7 @@ let bare = stripComments(css)
   }
   const csHits = [...bare.matchAll(/[^-\w]corner-shape\s*:/g)].map((m) => m.index)
   const outside = csHits.filter((i) => i < supIdx || i >= supEnd)
-  ok('A2 每一处 corner-shape 声明都在 @supports (corner-shape: squircle) 块内（不支持环境零生成）',
+  ok('A2 每一处 corner-shape 声明都在 @supports (corner-shape: superellipse(4)) 块内（不支持环境零生成）',
     supIdx >= 0 && supEnd > supIdx && outside.length === 0,
     'hits=' + csHits.length + ' outside=' + JSON.stringify(outside))
 
@@ -142,14 +142,14 @@ console.log('\n== C. 例外登记（值级账本，双向防腐）==')
   /* 账本扫 float:on 真产物（注释已剥；其它档位若出现新字面量值，C1 会红并在此登记） */
   const bareDlg = ''
   /* 每个字面量 px 值必须有登记理由；登记了的值必须仍在产物出现（账本不许腐烂）。
-     999px/50% = 胶囊/正圆（不套 token，squircle 也不应用）；0/inherit = 清零/继承语义。 */
+     999px/50% = 胶囊/正圆（不套 token，superellipse 也不应用）；0/inherit = 清零/继承语义。 */
   const REGISTRY = {
     '2px': 'tab 激活下划线（2px 高细条）',
     '3px': '进度条轨道/填充（6px 高细条）',
     '4px': '导航图标微图',
     '8px': '现役次高频档（缩略图/网格单元/行内按钮等 19 处）：介于 sm(6)/md(10) 之间，为防观感变化保留字面量；内缩间距 ≥ 外半径的组合（如 scanSel 内缩 10px）同心退化为 0，保留 8px 观感',
     '11px': '开关轨道胶囊（高 22px，半径=高/2）',
-    '999px': '胶囊/正圆（now-playing 徽标等）：半径=半高，squircle 会把正圆改形故不套 token',
+    '999px': '胶囊/正圆（now-playing 徽标等）：半径=半高，superellipse 会把正圆改形故不套 token',
     '14px': '设置页玻璃容器 + better-sidebar 面板适配（现值保留）',
     '15px': '预设 chip（现值保留）',
     '16px': '大开关轨道胶囊（高 32px，半径=高/2）',
@@ -177,7 +177,7 @@ console.log('\n== D. 红线（回退层不做）+ 应用面抽查 ==')
     (bare.match(/clip-path\s*:/g) || []).length === 0, '')
   ok('D2 产物零 mask 声明（同上）',
     (bare.match(/(^|[^-\w])mask\s*:/g) || []).length === 0, '')
-  const supIdx = bare.indexOf('@supports (corner-shape: squircle)')
+  const supIdx = bare.indexOf('@supports (corner-shape: superellipse(4))')
   const supEnd = bare.indexOf('}', bare.indexOf('corner-shape: var(--mpw-corner-shape);', supIdx)) // 应用面块结束
   ok('D3 应用面含设置面板控件与悬浮外壳（.mpw_input 与 body[data-mpw-float] 外壳都在 @supports 块内）',
     supIdx >= 0
@@ -192,8 +192,8 @@ const MUTANTS = [
       '\tborder: 1px solid var(--dsw-alias-border-l2); border-radius: 10px;\n\tbackground: var(--dsw-alias-bg-module-platform); color: var(--dsw-alias-label-primary);'),
     verify: (s) => s.indexOf('border-radius: 10px;\n\tbackground: var(--dsw-alias-bg-module-platform)') >= 0 },
   { id: 'M2', what: '拆掉 @supports 包裹 ⇒ A2 必红', expect: ['A2'],
-    patch: (s) => s.replace('@supports (corner-shape: squircle) {', '/* M2: wrapper removed */'),
-    verify: (s) => s.indexOf('@supports (corner-shape: squircle) {') < 0 },
+    patch: (s) => s.replace('@supports (corner-shape: superellipse(4)) {', '/* M2: wrapper removed */'),
+    verify: (s) => s.indexOf('@supports (corner-shape: superellipse(4)) {') < 0 },
   { id: 'M3', what: '.mpw_tab 内半径改回硬编码 8px（同心契约破坏）⇒ B2 必红', expect: ['B2'],
     patch: (s) => s.replace('\tborder-radius: max(0px, calc(var(--mpw-r-outer, 12px) - var(--mpw-gap, 4px)));', '\tborder-radius: 8px; /* M3 */'),
     verify: (s) => s.split('border-radius: 8px; /* M3 */').length === 2 },
@@ -209,7 +209,7 @@ function runChecks(clientPath) {
     const c = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({ float: true }) : '')
     cancelWorldTimers()
     const b = stripComments(c)
-    const supIdx = b.indexOf('@supports (corner-shape: squircle)')
+    const supIdx = b.indexOf('@supports (corner-shape: superellipse(4))')
     let supEnd = -1
     if (supIdx >= 0) {
       const b0 = b.indexOf('{', supIdx)

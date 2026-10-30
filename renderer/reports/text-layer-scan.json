@@ -1,0 +1,1335 @@
+{
+ "generatedAt": "2026-10-05T11:51:35.036Z",
+ "packages": 187,
+ "textLayers": 929,
+ "scriptText": 680,
+ "userCondition": 2,
+ "emptyText": 17,
+ "degenerateSize": 29,
+ "note": "parse 口径（真 parseScene）；正则版坏数据已废弃",
+ "rows": [
+  {
+   "rel": "allwallpaper/0917/3195212886/scene.pkg",
+   "pkg": "3195212886",
+   "textLayers": 10,
+   "scriptText": 6,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/0917/3233141951/scene.pkg",
+   "pkg": "3233141951",
+   "textLayers": 17,
+   "scriptText": 16,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/0917/3250755486/scene.pkg",
+   "pkg": "3250755486",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/0917/3299228616/scene.pkg",
+   "pkg": "3299228616",
+   "textLayers": 60,
+   "scriptText": 60,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/0917/3351163962/scene.pkg",
+   "pkg": "3351163962",
+   "textLayers": 53,
+   "scriptText": 32,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 2
+  },
+  {
+   "rel": "allwallpaper/0917/3448877775/scene.pkg",
+   "pkg": "3448877775",
+   "textLayers": 17,
+   "scriptText": 15,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/0917/3462491575/scene.pkg",
+   "pkg": "3462491575",
+   "textLayers": 17,
+   "scriptText": 16,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/0917/3509243656/scene.pkg",
+   "pkg": "3509243656",
+   "textLayers": 53,
+   "scriptText": 37,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 7
+  },
+  {
+   "rel": "allwallpaper/0917/3588181703/scene.pkg",
+   "pkg": "3588181703",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/0923/2887099508/scene.pkg",
+   "pkg": "2887099508",
+   "textLayers": 20,
+   "scriptText": 11,
+   "userCondition": 0,
+   "emptyText": 3,
+   "degenerateSize": 4
+  },
+  {
+   "rel": "allwallpaper/0923/2902406982/scene.pkg",
+   "pkg": "2902406982",
+   "textLayers": 97,
+   "scriptText": 31,
+   "userCondition": 0,
+   "emptyText": 13,
+   "degenerateSize": 13
+  },
+  {
+   "rel": "allwallpaper/0923/2981249186/scene.pkg",
+   "pkg": "2981249186",
+   "textLayers": 6,
+   "scriptText": 6,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/0923/3122339805/scene.pkg",
+   "pkg": "3122339805",
+   "textLayers": 100,
+   "scriptText": 35,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 2
+  },
+  {
+   "rel": "allwallpaper/0923/3151551777/scene.pkg",
+   "pkg": "3151551777",
+   "textLayers": 34,
+   "scriptText": 24,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/0923/3278399262/scene.pkg",
+   "pkg": "3278399262",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/0923/3448290956/scene.pkg",
+   "pkg": "3448290956",
+   "textLayers": 4,
+   "scriptText": 3,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/0923/3463520581/scene.pkg",
+   "pkg": "3463520581",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/0923/3479521040/scene.pkg",
+   "pkg": "3479521040",
+   "textLayers": 3,
+   "scriptText": 2,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/0923/3521337568/scene.pkg",
+   "pkg": "3521337568",
+   "textLayers": 1,
+   "scriptText": 1,
+   "userCondition": 1,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/0923/3572877776/scene.pkg",
+   "pkg": "3572877776",
+   "textLayers": 7,
+   "scriptText": 5,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/0923/3582367840/scene.pkg",
+   "pkg": "3582367840",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/0923/3589454154/scene.pkg",
+   "pkg": "3589454154",
+   "textLayers": 17,
+   "scriptText": 10,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/0923/3593919489/scene.pkg",
+   "pkg": "3593919489",
+   "textLayers": 7,
+   "scriptText": 5,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/0923/3602673806/scene.pkg",
+   "pkg": "3602673806",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/0923/3622495963/scene.pkg",
+   "pkg": "3622495963",
+   "textLayers": 2,
+   "scriptText": 2,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/0923/3648434762/scene.pkg",
+   "pkg": "3648434762",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/0923/3653641024/scene.pkg",
+   "pkg": "3653641024",
+   "textLayers": 4,
+   "scriptText": 4,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/0923/3668498439/scene.pkg",
+   "pkg": "3668498439",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/0923/3679620104/scene.pkg",
+   "pkg": "3679620104",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/0923/3687818927/scene.pkg",
+   "pkg": "3687818927",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/0923/3690417937/scene.pkg",
+   "pkg": "3690417937",
+   "textLayers": 1,
+   "scriptText": 1,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/0923/3696234311/scene.pkg",
+   "pkg": "3696234311",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/0923/3714466840/scene.pkg",
+   "pkg": "3714466840",
+   "textLayers": 1,
+   "scriptText": 1,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/0923/3737270471/scene.pkg",
+   "pkg": "3737270471",
+   "textLayers": 1,
+   "scriptText": 1,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/0923/3806006894/scene.pkg",
+   "pkg": "3806006894",
+   "textLayers": 3,
+   "scriptText": 3,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/0923/833227004/scene.pkg",
+   "pkg": "833227004",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/1004/-爱伦坡.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/1004/丛雨.mpkg",
+   "pkg": "1004",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/1004/夜莺night——blue_archive_小鸟游星野_窗畔弦歌.mpkg",
+   "pkg": "1004",
+   "textLayers": 72,
+   "scriptText": 65,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/1004/夜莺night——【parallax_视差】blue_archive_妃咲_kisaki_月下独酌【蔚蓝档案】.mpkg",
+   "pkg": "1004",
+   "textLayers": 17,
+   "scriptText": 16,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/1004/藤田ことね 131522864_p0.mpkg",
+   "pkg": "1004",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/1004/逆流茶会-姐妹日常 (x-ray).mpkg",
+   "pkg": "1004",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/dd/3326873240/scene.pkg",
+   "pkg": "3326873240",
+   "textLayers": 19,
+   "scriptText": 17,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/dd/3327063360/scene.pkg",
+   "pkg": "3327063360",
+   "textLayers": 21,
+   "scriptText": 19,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/dd/3544152633/scene.pkg",
+   "pkg": "3544152633",
+   "textLayers": 16,
+   "scriptText": 12,
+   "userCondition": 0,
+   "emptyText": 1,
+   "degenerateSize": 1
+  },
+  {
+   "rel": "allwallpaper/dd/3554161528/scene.pkg",
+   "pkg": "3554161528",
+   "textLayers": 2,
+   "scriptText": 2,
+   "userCondition": 1,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/dd/3660962877/scene.pkg",
+   "pkg": "3660962877",
+   "textLayers": 69,
+   "scriptText": 62,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/dd/3669681034/scene.pkg",
+   "pkg": "3669681034",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/dd/3715743282/scene.pkg",
+   "pkg": "3715743282",
+   "textLayers": 4,
+   "scriptText": 2,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/dd/3719111841/scene.pkg",
+   "pkg": "3719111841",
+   "textLayers": 3,
+   "scriptText": 3,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/dd/3721991999/scene.pkg",
+   "pkg": "3721991999",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/dd/3778592720/scene.pkg",
+   "pkg": "3778592720",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/other/夜莺night——【time_variation_时间变化】alone_孤独の少女【原画：rella].mpkg",
+   "pkg": "other",
+   "textLayers": 17,
+   "scriptText": 15,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/other/红鸾樱落.mpkg",
+   "pkg": "other",
+   "textLayers": 17,
+   "scriptText": 16,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/伊蕾娜/伊蕾娜1_8.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/伊蕾娜/伊蕾娜_04.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/伊蕾娜/伊蕾娜_05.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/伊蕾娜/伊蕾娜_08.mpkg",
+   "pkg": "伊蕾娜",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/佩丽卡/zmd_08.mpkg",
+   "pkg": "佩丽卡",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/佩丽卡/佩丽卡1_01.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/佩丽卡/佩丽卡1_02.mpkg",
+   "pkg": "佩丽卡",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/佩丽卡/佩丽卡1_03.mpkg",
+   "pkg": "佩丽卡",
+   "textLayers": 3,
+   "scriptText": 3,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/佩丽卡/佩丽卡1_04.mpkg",
+   "pkg": "佩丽卡",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/佩丽卡/佩丽卡1_05.mpkg",
+   "pkg": "佩丽卡",
+   "textLayers": 6,
+   "scriptText": 6,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/佩丽卡/佩丽卡1_06.mpkg",
+   "pkg": "佩丽卡",
+   "textLayers": 3,
+   "scriptText": 3,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/佩丽卡/佩丽卡1_08.mpkg",
+   "pkg": "佩丽卡",
+   "textLayers": 1,
+   "scriptText": 1,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/佩丽卡/佩丽卡1_09.mpkg",
+   "pkg": "佩丽卡",
+   "textLayers": 2,
+   "scriptText": 2,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/佩丽卡/佩丽卡1_10.mpkg",
+   "pkg": "佩丽卡",
+   "textLayers": 1,
+   "scriptText": 1,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/卡提希娅/卡提希娅_02.mpkg",
+   "pkg": "卡提希娅",
+   "textLayers": 3,
+   "scriptText": 3,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/卡提希娅/卡提希娅_03.mpkg",
+   "pkg": "卡提希娅",
+   "textLayers": 3,
+   "scriptText": 3,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/卡提希娅/卡提希娅_04.mpkg",
+   "pkg": "卡提希娅",
+   "textLayers": 3,
+   "scriptText": 3,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/卡提希娅/卡提希娅_05.mpkg",
+   "pkg": "卡提希娅",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/卡提希娅/卡提希娅_07.mpkg",
+   "pkg": "卡提希娅",
+   "textLayers": 3,
+   "scriptText": 3,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/卡提希娅/卡提希娅_08.mpkg",
+   "pkg": "卡提希娅",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/卡提希娅/卡提希娅_09.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/卡提希娅/卡提希娅_10.mpkg",
+   "pkg": "卡提希娅",
+   "textLayers": 3,
+   "scriptText": 3,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野01_04.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野01_11.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野04_2.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野04_7.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野11_01.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野11_10.mpkg",
+   "pkg": "小鸟游星野",
+   "textLayers": 1,
+   "scriptText": 1,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野_02.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野_09.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野_11.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野_12.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/小鸟游星野/小鸟游星野_13.mpkg",
+   "pkg": "小鸟游星野",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/庄方宜/庄方宜_19.mpkg",
+   "pkg": "庄方宜",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/庄方宜/庄方宜_2.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/庄方宜/庄方宜_24.mpkg",
+   "pkg": "庄方宜",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/庄方宜/庄方宜_3.mpkg",
+   "pkg": "庄方宜",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/庄方宜/庄方宜_4.mpkg",
+   "pkg": "庄方宜",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/庄方宜/庄方宜_6.mpkg",
+   "pkg": "庄方宜",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/庄方宜/庄方宜_7.mpkg",
+   "pkg": "庄方宜",
+   "textLayers": 4,
+   "scriptText": 3,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/洁尔佩塔/洁尔佩塔_4.mpkg",
+   "pkg": "洁尔佩塔",
+   "textLayers": 4,
+   "scriptText": 3,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/洛琪希/洛琪希1_3.mpkg",
+   "pkg": "洛琪希",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/洛茜/洛茜_02.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/洛茜/洛茜_03.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/洛茜/洛茜_04.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/洛茜/洛茜_05.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/洛茜/洛茜_06.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/洛茜/洛茜_07.mpkg",
+   "pkg": "洛茜",
+   "textLayers": 11,
+   "scriptText": 9,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/洛茜/洛茜_08.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/洛茜/洛茜_09.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/洛茜/洛茜_10.mpkg",
+   "pkg": "洛茜",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/洛茜/洛茜_11.mpkg",
+   "pkg": "洛茜",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/洛茜/洛茜_12.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/洛茜/洛茜_13.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/流萤/夜莺night——【customize自定义】firefly_流萤_星空之誓——夜莺night崩坏星穹铁道.mpkg",
+   "pkg": "流萤",
+   "textLayers": 22,
+   "scriptText": 21,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/流萤/流萤01_03.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/流萤/流萤_06.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/流萤/流萤_09.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/白洲梓/白洲梓1_01.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/白洲梓/白洲梓1_02.mpkg",
+   "pkg": "白洲梓",
+   "textLayers": 1,
+   "scriptText": 1,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/白洲梓/白洲梓1_03.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/白洲梓/白洲梓1_04.mpkg",
+   "pkg": "白洲梓",
+   "textLayers": 1,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/白洲梓/白洲梓1_05.mpkg",
+   "pkg": "白洲梓",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/白洲梓/白洲梓1_06.mpkg",
+   "pkg": "白洲梓",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/白洲梓/白洲梓1_07.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/白洲梓/白洲梓1_08.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/白洲梓/白洲梓1_09.mpkg",
+   "pkg": "白洲梓",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/白洲梓/白洲梓1_10.mpkg",
+   "pkg": "白洲梓",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/白洲梓/白洲梓_02.mpkg",
+   "pkg": "白洲梓",
+   "textLayers": 1,
+   "scriptText": 1,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/白洲梓/白洲梓_03.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/白洲梓/白洲梓_05.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/白洲梓/白洲梓_07.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/白洲梓/白洲梓_08.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/白洲梓/白洲梓_09.mpkg",
+   "pkg": "白洲梓",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/砂狼白子/砂狼白子02_01.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/砂狼白子/砂狼白子02_02.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/砂狼白子/砂狼白子02_08.mpkg",
+   "pkg": "砂狼白子",
+   "textLayers": 1,
+   "scriptText": 1,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/砂狼白子/砂狼白子02_10.mpkg",
+   "pkg": "砂狼白子",
+   "textLayers": 1,
+   "scriptText": 1,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/砂狼白子/砂狼白子11_01.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/砂狼白子/砂狼白子11_03.mpkg",
+   "pkg": "砂狼白子",
+   "textLayers": 21,
+   "scriptText": 19,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/砂狼白子/砂狼白子11_05.mpkg",
+   "pkg": "砂狼白子",
+   "textLayers": 3,
+   "scriptText": 3,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/砂狼白子/砂狼白子_1.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/砂狼白子/砂狼白子_2.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/砂狼白子/砂狼白子_3.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/砂狼白子/砂狼白子_4.mpkg",
+   "pkg": "砂狼白子",
+   "textLayers": 2,
+   "scriptText": 2,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/砂狼白子/砂狼白子_5.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/纳西妲/纳西妲_02.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/纳西妲/纳西妲_03.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/纳西妲/纳西妲_04.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/纳西妲/纳西妲_08.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/纳西妲/纳西妲_10.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜1_01.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜1_03.mpkg",
+   "pkg": "芙宁娜",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜1_04.mpkg",
+   "pkg": "芙宁娜",
+   "textLayers": 1,
+   "scriptText": 1,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜1_05.mpkg",
+   "pkg": "芙宁娜",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜1_06.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜1_07.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜1_08.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜1_09.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜1_10.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜1_11.mpkg",
+   "pkg": "芙宁娜",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜2_01.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜2_03.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜2_04.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜_01.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜_02.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜_03.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜_04.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜_05.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜_06.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜_07.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜_08.mpkg",
+   "pkg": "芙宁娜",
+   "textLayers": 1,
+   "scriptText": 1,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/芙宁娜/芙宁娜_09.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/莱万汀/zmd_12.mpkg",
+   "pkg": "莱万汀",
+   "textLayers": 1,
+   "scriptText": 1,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_01.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_02.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_03.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_04.mpkg",
+   "pkg": "蔚蓝档案",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_05.mpkg",
+   "pkg": "蔚蓝档案",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_06.mpkg",
+   "pkg": "蔚蓝档案",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/遐蝶/夜莺Night——Honkai Star Rail Castorice 遐蝶 冥河永渡 崩坏星穹铁道The Etern.mpkg",
+   "pkg": "遐蝶",
+   "textLayers": 21,
+   "scriptText": 16,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/遐蝶/遐蝶_01.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/遐蝶/遐蝶_02.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/遐蝶/遐蝶_09.mpkg",
+   "pkg": "遐蝶",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/遐蝶/遐蝶_15.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/陈千语/陈千语_01.mpkg",
+   "pkg": "陈千语",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/陈千语/陈千语_02.mpkg",
+   "pkg": "陈千语",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/陈千语/陈千语_03.mpkg",
+   "pkg": "陈千语",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/陈千语/陈千语_04.mpkg",
+   "pkg": "陈千语",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/陈千语/陈千语_05.mpkg",
+   "pkg": "陈千语",
+   "textLayers": 6,
+   "scriptText": 6,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/陈千语/陈千语_06.mpkg",
+   "skipped": "no-scene-json"
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/陈千语/陈千语_07.mpkg",
+   "pkg": "陈千语",
+   "textLayers": 0,
+   "scriptText": 0,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  },
+  {
+   "rel": "allwallpaper/wallpaperE/陈千语/陈千语_08.mpkg",
+   "pkg": "陈千语",
+   "textLayers": 3,
+   "scriptText": 3,
+   "userCondition": 0,
+   "emptyText": 0,
+   "degenerateSize": 0
+  }
+ ]
+}

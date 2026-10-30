@@ -1,0 +1,414 @@
+{
+ "pkg": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/蔚蓝档案/蔚蓝档案_04.mpkg",
+ "launchNote": "有头 DISPLAY=:0",
+ "variants": [
+  {
+   "name": "扫面同形(type=scene/res=dpr)",
+   "url": "http://127.0.0.1:8902/webloader/?type=scene&id=mpkg-sweep&res=dpr&pkgpath=%2Froot%2FDesktop%2FDSHarea%2Fallwallpaper%2FwallpaperE%2F%E8%94%9A%E8%93%9D%E6%A1%A3%E6%A1%88%2F%E8%94%9A%E8%93%9D%E6%A1%A3%E6%A1%88_04.mpkg",
+   "samples": [
+    {
+     "atMs": 3269,
+     "video": {
+      "rs": 0,
+      "ns": 1,
+      "w": 0,
+      "h": 0,
+      "dur": null,
+      "paused": false,
+      "ct": 0,
+      "err": null
+     },
+     "canvas": {
+      "w": 960,
+      "h": 540
+     },
+     "layers": 2,
+     "firstFrame": true,
+     "pixels": {
+      "w": 960,
+      "h": 540,
+      "meanL": 93.316,
+      "maxL": 255,
+      "stdL": 67.861,
+      "litFrac": 0.9209
+     }
+    },
+    {
+     "atMs": 6051,
+     "video": {
+      "rs": 4,
+      "ns": 1,
+      "w": 2560,
+      "h": 1440,
+      "dur": 30,
+      "paused": false,
+      "ct": 2.12,
+      "err": null
+     },
+     "canvas": {
+      "w": 960,
+      "h": 540
+     },
+     "layers": 2,
+     "firstFrame": true,
+     "pixels": {
+      "w": 960,
+      "h": 540,
+      "meanL": 12.586,
+      "maxL": 255,
+      "stdL": 42.748,
+      "litFrac": 0.1074
+     }
+    },
+    {
+     "atMs": 9932,
+     "video": {
+      "rs": 4,
+      "ns": 1,
+      "w": 2560,
+      "h": 1440,
+      "dur": 30,
+      "paused": false,
+      "ct": 6.1,
+      "err": null
+     },
+     "canvas": {
+      "w": 960,
+      "h": 540
+     },
+     "layers": 2,
+     "firstFrame": true,
+     "pixels": {
+      "w": 960,
+      "h": 540,
+      "meanL": 12.572,
+      "maxL": 255,
+      "stdL": 42.718,
+      "litFrac": 0.1074
+     }
+    },
+    {
+     "atMs": 14791,
+     "video": {
+      "rs": 4,
+      "ns": 1,
+      "w": 2560,
+      "h": 1440,
+      "dur": 30,
+      "paused": false,
+      "ct": 10.47,
+      "err": null
+     },
+     "canvas": {
+      "w": 960,
+      "h": 540
+     },
+     "layers": 2,
+     "firstFrame": true,
+     "pixels": {
+      "w": 960,
+      "h": 540,
+      "meanL": 12.56,
+      "maxL": 255,
+      "stdL": 42.71,
+      "litFrac": 0.1073
+     }
+    }
+   ],
+   "hook": {
+    "calls": 1,
+    "retries": 1,
+    "gaveUp": 0,
+    "byLabel": {
+     "视频底层": {
+      "calls": 1,
+      "retries": 1,
+      "gaveUp": 0
+     }
+    }
+   },
+   "logs": [
+    "🎬 视频底层已加入（最底层叠加）：wallpaper.mp4",
+    "scene.json 解析: 2 layers",
+    "⚠ [we-scene][P-68] 视频分辨率档位 ?res=dpr → dpr 画布 960x540，视频上传上限 960x540，节流 16.67ms(tier-default)，smoothing=high",
+    "分辨率档位 ?res=dpr → dpr 960x540，视频上传上限 960x540，节流 60fps",
+    "  #0 __videoBase      tex=__videoBase px=[0,960]x[0,540]",
+    "⚠ [首帧] #0 __videoBase vis=1 tex=__videoBase skin=0 fx=0 part=0",
+    "⚠ [首帧] #1 1737600502062_1 vis=1 tex=- skin=0 fx=0 part=0",
+    "⚠ [首帧] 层循环结束（共 2 层）"
+   ]
+  },
+  {
+   "name": "探针同形(无 type/res=720p)",
+   "url": "http://127.0.0.1:8899/?pkgpath=%2Froot%2FDesktop%2FDSHarea%2Fallwallpaper%2FwallpaperE%2F%E8%94%9A%E8%93%9D%E6%A1%A3%E6%A1%88%2F%E8%94%9A%E8%93%9D%E6%A1%A3%E6%A1%88_04.mpkg&res=720p",
+   "samples": [
+    {
+     "atMs": 3220,
+     "video": {
+      "rs": 0,
+      "ns": 1,
+      "w": 0,
+      "h": 0,
+      "dur": null,
+      "paused": false,
+      "ct": 0,
+      "err": null
+     },
+     "canvas": {
+      "w": 1280,
+      "h": 720
+     },
+     "layers": 2,
+     "firstFrame": true,
+     "pixels": {
+      "w": 960,
+      "h": 540,
+      "meanL": 75.594,
+      "maxL": 255,
+      "stdL": 65.189,
+      "litFrac": 0.8736
+     }
+    },
+    {
+     "atMs": 6249,
+     "video": {
+      "rs": 4,
+      "ns": 1,
+      "w": 2560,
+      "h": 1440,
+      "dur": 30,
+      "paused": false,
+      "ct": 1.7,
+      "err": null
+     },
+     "canvas": {
+      "w": 1280,
+      "h": 720
+     },
+     "layers": 2,
+     "firstFrame": true,
+     "pixels": {
+      "w": 960,
+      "h": 540,
+      "meanL": 13.665,
+      "maxL": 255,
+      "stdL": 43.965,
+      "litFrac": 0.1238
+     }
+    },
+    {
+     "atMs": 10319,
+     "video": {
+      "rs": 4,
+      "ns": 1,
+      "w": 2560,
+      "h": 1440,
+      "dur": 30,
+      "paused": false,
+      "ct": 5.7,
+      "err": null
+     },
+     "canvas": {
+      "w": 1280,
+      "h": 720
+     },
+     "layers": 2,
+     "firstFrame": true,
+     "pixels": {
+      "w": 960,
+      "h": 540,
+      "meanL": 13.665,
+      "maxL": 255,
+      "stdL": 43.965,
+      "litFrac": 0.1238
+     }
+    },
+    {
+     "atMs": 15176,
+     "video": {
+      "rs": 4,
+      "ns": 1,
+      "w": 2560,
+      "h": 1440,
+      "dur": 30,
+      "paused": false,
+      "ct": 10.69,
+      "err": null
+     },
+     "canvas": {
+      "w": 1280,
+      "h": 720
+     },
+     "layers": 2,
+     "firstFrame": true,
+     "pixels": {
+      "w": 960,
+      "h": 540,
+      "meanL": 13.665,
+      "maxL": 255,
+      "stdL": 43.965,
+      "litFrac": 0.1238
+     }
+    }
+   ],
+   "hook": {
+    "calls": 1,
+    "retries": 1,
+    "gaveUp": 0,
+    "byLabel": {
+     "视频底层": {
+      "calls": 1,
+      "retries": 1,
+      "gaveUp": 0
+     }
+    }
+   },
+   "logs": [
+    "🎬 视频底层已加入（最底层叠加）：wallpaper.mp4",
+    "scene.json 解析: 2 layers",
+    "⚠ [we-scene][P-68] 视频分辨率档位 ?res=720p → 720p 画布 1280x720，视频上传上限 1280x720，节流 33ms(tier-legacy)，smoothing=low [legacy 逐位兼容]",
+    "分辨率档位 ?res=720p → 720p 1280x720，视频上传上限 1280x720，节流 33ms(legacy) [legacy 逐位兼容]",
+    "  #0 __videoBase      tex=__videoBase px=[0,1280]x[0,720]",
+    "⚠ [首帧] #0 __videoBase vis=1 tex=__videoBase skin=0 fx=0 part=0",
+    "⚠ [首帧] #1 1737600502062_1 vis=1 tex=- skin=0 fx=0 part=0",
+    "⚠ [首帧] 层循环结束（共 2 层）"
+   ]
+  },
+  {
+   "name": "扫面次序(先摘外壳再截)",
+   "url": "http://127.0.0.1:8902/webloader/?type=scene&id=mpkg-sweep&res=dpr&pkgpath=%2Froot%2FDesktop%2FDSHarea%2Fallwallpaper%2FwallpaperE%2F%E8%94%9A%E8%93%9D%E6%A1%A3%E6%A1%88%2F%E8%94%9A%E8%93%9D%E6%A1%A3%E6%A1%88_04.mpkg",
+   "samples": [
+    {
+     "atMs": 4113,
+     "video": {
+      "rs": 0,
+      "ns": 1,
+      "w": 0,
+      "h": 0,
+      "dur": null,
+      "paused": false,
+      "ct": 0,
+      "err": null
+     },
+     "canvas": {
+      "w": 960,
+      "h": 540
+     },
+     "layers": 2,
+     "firstFrame": true,
+     "pixels": {
+      "w": 960,
+      "h": 540,
+      "meanL": 0,
+      "maxL": 0,
+      "stdL": 0,
+      "litFrac": 0
+     }
+    },
+    {
+     "atMs": 5988,
+     "video": {
+      "rs": 4,
+      "ns": 1,
+      "w": 2560,
+      "h": 1440,
+      "dur": 30,
+      "paused": false,
+      "ct": 2,
+      "err": null
+     },
+     "canvas": {
+      "w": 960,
+      "h": 540
+     },
+     "layers": 2,
+     "firstFrame": true,
+     "pixels": {
+      "w": 960,
+      "h": 540,
+      "meanL": 0,
+      "maxL": 0,
+      "stdL": 0,
+      "litFrac": 0
+     }
+    },
+    {
+     "atMs": 9804,
+     "video": {
+      "rs": 4,
+      "ns": 1,
+      "w": 2560,
+      "h": 1440,
+      "dur": 30,
+      "paused": false,
+      "ct": 5.87,
+      "err": null
+     },
+     "canvas": {
+      "w": 960,
+      "h": 540
+     },
+     "layers": 2,
+     "firstFrame": true,
+     "pixels": {
+      "w": 960,
+      "h": 540,
+      "meanL": 0,
+      "maxL": 0,
+      "stdL": 0,
+      "litFrac": 0
+     }
+    },
+    {
+     "atMs": 14782,
+     "video": {
+      "rs": 4,
+      "ns": 1,
+      "w": 2560,
+      "h": 1440,
+      "dur": 30,
+      "paused": false,
+      "ct": 9.88,
+      "err": null
+     },
+     "canvas": {
+      "w": 960,
+      "h": 540
+     },
+     "layers": 2,
+     "firstFrame": true,
+     "pixels": {
+      "w": 960,
+      "h": 540,
+      "meanL": 0,
+      "maxL": 0,
+      "stdL": 0,
+      "litFrac": 0
+     }
+    }
+   ],
+   "hook": {
+    "calls": 1,
+    "retries": 1,
+    "gaveUp": 0,
+    "byLabel": {
+     "视频底层": {
+      "calls": 1,
+      "retries": 1,
+      "gaveUp": 0
+     }
+    }
+   },
+   "logs": [
+    "🎬 视频底层已加入（最底层叠加）：wallpaper.mp4",
+    "scene.json 解析: 2 layers",
+    "⚠ [we-scene][P-68] 视频分辨率档位 ?res=dpr → dpr 画布 960x540，视频上传上限 960x540，节流 16.67ms(tier-default)，smoothing=high",
+    "分辨率档位 ?res=dpr → dpr 960x540，视频上传上限 960x540，节流 60fps",
+    "  #0 __videoBase      tex=__videoBase px=[0,960]x[0,540]",
+    "⚠ [首帧] #0 __videoBase vis=1 tex=__videoBase skin=0 fx=0 part=0",
+    "⚠ [首帧] #1 1737600502062_1 vis=1 tex=- skin=0 fx=0 part=0",
+    "⚠ [首帧] 层循环结束（共 2 层）"
+   ]
+  }
+ ]
+}

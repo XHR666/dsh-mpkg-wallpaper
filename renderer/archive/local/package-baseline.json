@@ -1,0 +1,7298 @@
+{
+ "generatedAt": "2026-09-12T18:44:26.965Z",
+ "rows": [
+  {
+   "id": "3326873240",
+   "path": "/root/Desktop/DSHarea/allwallpaper/dd/3326873240/scene.pkg",
+   "fileMB": 235.4,
+   "issues": [
+    {
+     "key": "TRANSPARENT_FALLBACK",
+     "detail": "myLayer,193,纯色,组件,1054"
+    }
+   ],
+   "container": {
+    "magic": "PKGV0023",
+    "entries": 104,
+    "sizeMB": 235.4,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 62,
+    "visible": 17,
+    "containers": 0,
+    "image": 31,
+    "video": 0,
+    "particle": 1,
+    "text": 19,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 49,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 4,
+    "animated": 3
+   },
+   "textures": {
+    "referenced": 27,
+    "pkgHit": 27,
+    "decodeOk": 25,
+    "decodeFail": 0,
+    "bytesMB": 240,
+    "formats": {
+     "0": 7,
+     "4": 18
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 1,
+    "maxcount": 128,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "alive": 20
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 16,
+    "skippedLayers": 45,
+    "skippedNames": [
+     "mddn",
+     "dusk",
+     "day",
+     "night",
+     "Media Info (ROUND)",
+     "Holder (hide before publish)",
+     "Clock Container",
+     "Clock",
+     "Text Container",
+     "Background",
+     "Rounded Corners",
+     "Progress Bar"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [
+     "myLayer",
+     193,
+     "纯色",
+     "组件",
+     1054,
+     "帧率位置",
+     893,
+     1297271
+    ],
+    "meshDrawn": [],
+    "draws": 18,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 223.4,
+    "decodeMs": 367.3,
+    "auditMs": 22.9
+   }
+  },
+  {
+   "id": "3327063360",
+   "path": "/root/Desktop/DSHarea/allwallpaper/dd/3327063360/scene.pkg",
+   "fileMB": 59.5,
+   "issues": [
+    {
+     "key": "TRANSPARENT_FALLBACK",
+     "detail": "纯色"
+    }
+   ],
+   "container": {
+    "magic": "PKGV0022",
+    "entries": 124,
+    "sizeMB": 59.5,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 69,
+    "visible": 14,
+    "containers": 1,
+    "image": 36,
+    "video": 0,
+    "particle": 2,
+    "text": 21,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 58,
+    "attachment": 0,
+    "puppet": 1,
+    "alignNonCenter": 4,
+    "animated": 2
+   },
+   "textures": {
+    "referenced": 35,
+    "pkgHit": 35,
+    "decodeOk": 23,
+    "decodeFail": 0,
+    "bytesMB": 54.4,
+    "formats": {
+     "0": 4,
+     "4": 15,
+     "6": 3,
+     "9": 1
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 2,
+    "maxcount": 138,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "alive": null,
+      "hidden": true
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 10,
+      "alive": 10
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 8,
+    "skippedLayers": 55,
+    "skippedNames": [
+     "伊蕾娜",
+     "背景蒙版",
+     "帧率三角阴影",
+     "帧率三角高光",
+     "帧率三角",
+     "日三角阴影",
+     "日三角高光",
+     "三角 倒",
+     "文字三角阴影",
+     "文字三角高光",
+     "文字三角",
+     "主三角阴影"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [
+     "纯色"
+    ],
+    "meshDrawn": [],
+    "draws": 12,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 69.2,
+    "decodeMs": 190.1,
+    "auditMs": 24.8
+   }
+  },
+  {
+   "id": "3470764447",
+   "path": "/root/Desktop/DSHarea/allwallpaper/dd/3470764447/scene.pkg",
+   "fileMB": 320.6,
+   "issues": [],
+   "container": {
+    "magic": "PKGV0022",
+    "entries": 54,
+    "sizeMB": 320.6,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 41,
+    "visible": 15,
+    "containers": 1,
+    "image": 12,
+    "video": 0,
+    "particle": 1,
+    "text": 16,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 31,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 1,
+    "animated": 1
+   },
+   "textures": {
+    "referenced": 9,
+    "pkgHit": 9,
+    "decodeOk": 9,
+    "decodeFail": 0,
+    "bytesMB": 307.6,
+    "formats": {
+     "0": 6,
+     "4": 3
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 1,
+    "maxcount": 128,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "alive": 20
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 7,
+    "skippedLayers": 27,
+    "skippedNames": [
+     "myLayer",
+     "mddn",
+     "morning",
+     "day",
+     "dusk",
+     "night",
+     "可调整组合层",
+     "纯色",
+     "Audio Bars",
+     "Clock",
+     "Date",
+     "Day"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "meshDrawn": [],
+    "draws": 7,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 343.3,
+    "decodeMs": 344.6,
+    "auditMs": 12.2
+   }
+  },
+  {
+   "id": "3544152633",
+   "path": "/root/Desktop/DSHarea/allwallpaper/dd/3544152633/scene.pkg",
+   "fileMB": 42.4,
+   "issues": [],
+   "container": {
+    "magic": "PKGV0023",
+    "entries": 255,
+    "sizeMB": 42.4,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 70,
+    "visible": 31,
+    "containers": 6,
+    "image": 31,
+    "video": 0,
+    "particle": 16,
+    "text": 16,
+    "sound": 0,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 15,
+    "attachment": 0,
+    "puppet": 1,
+    "alignNonCenter": 4,
+    "animated": 3
+   },
+   "textures": {
+    "referenced": 53,
+    "pkgHit": 53,
+    "decodeOk": 37,
+    "decodeFail": 0,
+    "bytesMB": 81.4,
+    "formats": {
+     "0": 29,
+     "8": 3,
+     "9": 5
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 16,
+    "maxcount": 12387,
+    "spriteSheets": 3,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "Rain perspective",
+      "maxcount": 512,
+      "alive": 199
+     },
+     {
+      "name": "Shooting star-blue-2",
+      "maxcount": 20,
+      "alive": 8
+     },
+     {
+      "name": "rain_on_the_glass2",
+      "maxcount": 150,
+      "alive": 146
+     },
+     {
+      "name": "Fog (calm)",
+      "maxcount": 20,
+      "alive": 6
+     },
+     {
+      "name": "Fireworks 3",
+      "maxcount": 50,
+      "alive": 1
+     },
+     {
+      "name": "Blinking Stars_01",
+      "maxcount": 750,
+      "alive": 240
+     },
+     {
+      "name": "reactive Stars",
+      "maxcount": 500,
+      "alive": 297
+     },
+     {
+      "name": "Shooting_Star_01",
+      "maxcount": 35,
+      "alive": 32
+     },
+     {
+      "name": "Moving Stars_02",
+      "maxcount": 85,
+      "alive": 83
+     },
+     {
+      "name": "Glowing Stars_01",
+      "maxcount": 35,
+      "alive": 34
+     },
+     {
+      "name": "Glowing Stars_02",
+      "maxcount": 8,
+      "alive": 8
+     },
+     {
+      "name": "birds",
+      "maxcount": 30,
+      "alive": 25
+     },
+     {
+      "name": "Star Reactive",
+      "maxcount": 75,
+      "alive": 75
+     },
+     {
+      "name": "Rain_secondary",
+      "maxcount": 10000,
+      "alive": 9941
+     },
+     {
+      "name": "Moving Glowing Stars_01",
+      "maxcount": 85,
+      "alive": 82
+     },
+     {
+      "name": "Vapor (double)",
+      "maxcount": 32,
+      "alive": 26
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 24,
+    "skippedLayers": 40,
+    "skippedNames": [
+     "Audio bar",
+     "Clouds",
+     "Clock",
+     "Date",
+     "DAY DATE TIME (EN)",
+     "DAY DATE TIME (JP)",
+     "---------------------------------------",
+     "----MUSIC PLAYER---- (DO NOT TOUCH ME)",
+     "PLAYER ASSET MOVER. DRAG TO REPOSITION",
+     "playeroutlineanim",
+     "playerthumbnailbackgroundexception",
+     "playerboundsexception"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "meshDrawn": [
+     "girl"
+    ],
+    "draws": 26,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 51.4,
+    "decodeMs": 344.8,
+    "auditMs": 1626.8
+   }
+  },
+  {
+   "id": "3554161528",
+   "path": "/root/Desktop/DSHarea/allwallpaper/dd/3554161528/scene.pkg",
+   "fileMB": 22.5,
+   "issues": [
+    {
+     "key": "TRANSPARENT_FALLBACK",
+     "detail": "纯色"
+    }
+   ],
+   "container": {
+    "magic": "PKGV0022",
+    "entries": 134,
+    "sizeMB": 22.5,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 37,
+    "visible": 32,
+    "containers": 3,
+    "image": 15,
+    "video": 0,
+    "particle": 13,
+    "text": 2,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 19,
+    "attachment": 0,
+    "puppet": 1,
+    "alignNonCenter": 0,
+    "animated": 1
+   },
+   "textures": {
+    "referenced": 26,
+    "pkgHit": 26,
+    "decodeOk": 21,
+    "decodeFail": 0,
+    "bytesMB": 95.4,
+    "formats": {
+     "0": 7,
+     "4": 8,
+     "8": 3,
+     "9": 3
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 13,
+    "maxcount": 1471,
+    "spriteSheets": 5,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "雪景远景",
+      "maxcount": 40,
+      "alive": null,
+      "unverifiable": true
+     },
+     {
+      "name": "落花",
+      "maxcount": 30,
+      "alive": 30
+     },
+     {
+      "name": "notes1_simple",
+      "maxcount": 20,
+      "alive": 7
+     },
+     {
+      "name": "Blinking Stars",
+      "maxcount": 100,
+      "alive": 100
+     },
+     {
+      "name": "Blinking Stars",
+      "maxcount": 150,
+      "alive": 147
+     },
+     {
+      "name": "Blinking Stars",
+      "maxcount": 15,
+      "alive": 15
+     },
+     {
+      "name": "流星",
+      "maxcount": 16,
+      "alive": 1
+     },
+     {
+      "name": "雾 2",
+      "maxcount": 20,
+      "alive": 17
+     },
+     {
+      "name": "落花",
+      "maxcount": 30,
+      "alive": 30
+     },
+     {
+      "name": "雪景远景",
+      "maxcount": 40,
+      "alive": null,
+      "unverifiable": true
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 5,
+      "alive": 5
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 5,
+      "alive": 5
+     },
+     {
+      "name": "cherry blossoms on cursor",
+      "maxcount": 1000,
+      "alive": 163
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 16,
+    "skippedLayers": 8,
+    "skippedNames": [
+     "可调整组合层",
+     "纯色",
+     "Desktop_2025_(mp3cut.net).mp3"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [
+     "纯色"
+    ],
+    "meshDrawn": [
+     "人物"
+    ],
+    "draws": 26,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 27.9,
+    "decodeMs": 579.3,
+    "auditMs": 190.9
+   }
+  },
+  {
+   "id": "3660962877",
+   "path": "/root/Desktop/DSHarea/allwallpaper/dd/3660962877/scene.pkg",
+   "fileMB": 113.6,
+   "issues": [
+    {
+     "key": "TRANSPARENT_FALLBACK",
+     "detail": "纯色,组件,1054,帧率位置,893"
+    }
+   ],
+   "container": {
+    "magic": "PKGV0023",
+    "entries": 68,
+    "sizeMB": 113.6,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 127,
+    "visible": 16,
+    "containers": 0,
+    "image": 34,
+    "video": 0,
+    "particle": 2,
+    "text": 69,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 110,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 27,
+    "animated": 1
+   },
+   "textures": {
+    "referenced": 31,
+    "pkgHit": 31,
+    "decodeOk": 8,
+    "decodeFail": 0,
+    "bytesMB": 102.2,
+    "formats": {
+     "0": 4,
+     "4": 3,
+     "9": 1
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 2,
+    "maxcount": 1128,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "alive": 20
+     },
+     {
+      "name": "cherry blossoms on cursor",
+      "maxcount": 1000,
+      "alive": 163
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 16,
+    "skippedLayers": 111,
+    "skippedNames": [
+     "纯色",
+     "组件镜像",
+     484,
+     "文本1",
+     "文本2",
+     "帧率位置",
+     "帧率显示",
+     491,
+     "早中晚英文",
+     "早中晚",
+     "横Clock",
+     "Clock"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [
+     "纯色",
+     "组件",
+     1054,
+     "帧率位置",
+     893,
+     691
+    ],
+    "meshDrawn": [],
+    "draws": 24,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 120.3,
+    "decodeMs": 217.1,
+    "auditMs": 97.9
+   }
+  },
+  {
+   "id": "3669681034",
+   "path": "/root/Desktop/DSHarea/allwallpaper/dd/3669681034/scene.pkg",
+   "fileMB": 94.2,
+   "issues": [
+    {
+     "key": "TRANSPARENT_FALLBACK",
+     "detail": "松本文紀 - 親愛なるあの日々へ.flac"
+    }
+   ],
+   "container": {
+    "magic": "PKGV0023",
+    "entries": 21,
+    "sizeMB": 94.2,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 2,
+    "visible": 2,
+    "containers": 0,
+    "image": 1,
+    "video": 0,
+    "particle": 0,
+    "text": 0,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 0,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 0,
+    "animated": 0
+   },
+   "textures": {
+    "referenced": 1,
+    "pkgHit": 1,
+    "decodeOk": 1,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {
+     "0": 1
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 2,
+    "skippedLayers": 0,
+    "skippedNames": [],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [
+     "松本文紀 - 親愛なるあの日々へ.flac"
+    ],
+    "meshDrawn": [],
+    "draws": 2,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 122.6,
+    "decodeMs": 8.4,
+    "auditMs": 3.7
+   }
+  },
+  {
+   "id": "3715743282",
+   "path": "/root/Desktop/DSHarea/allwallpaper/dd/3715743282/scene.pkg",
+   "fileMB": 3.7,
+   "issues": [],
+   "container": {
+    "magic": "PKGV0023",
+    "entries": 26,
+    "sizeMB": 3.7,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 9,
+    "visible": 6,
+    "containers": 0,
+    "image": 2,
+    "video": 0,
+    "particle": 3,
+    "text": 4,
+    "sound": 0,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 0,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 0,
+    "animated": 0
+   },
+   "textures": {
+    "referenced": 5,
+    "pkgHit": 5,
+    "decodeOk": 5,
+    "decodeFail": 0,
+    "bytesMB": 4.7,
+    "formats": {
+     "0": 5
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 3,
+    "maxcount": 208,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "灰烬大",
+      "maxcount": 40,
+      "alive": 39
+     },
+     {
+      "name": "尘埃",
+      "maxcount": 128,
+      "alive": 66
+     },
+     {
+      "name": "Ember",
+      "maxcount": 40,
+      "alive": 39
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 3,
+    "skippedLayers": 3,
+    "skippedNames": [
+     "D a y",
+     "欢迎回家",
+     "时间"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "meshDrawn": [],
+    "draws": 6,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 5.1,
+    "decodeMs": 14.4,
+    "auditMs": 54.9
+   }
+  },
+  {
+   "id": "3719111841",
+   "path": "/root/Desktop/DSHarea/allwallpaper/dd/3719111841/scene.pkg",
+   "fileMB": 69.5,
+   "issues": [],
+   "container": {
+    "magic": "PKGV0024",
+    "entries": 147,
+    "sizeMB": 69.5,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 43,
+    "visible": 31,
+    "containers": 0,
+    "image": 26,
+    "video": 0,
+    "particle": 8,
+    "text": 3,
+    "sound": 4,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 22,
+    "attachment": 19,
+    "puppet": 5,
+    "alignNonCenter": 0,
+    "animated": 0
+   },
+   "textures": {
+    "referenced": 44,
+    "pkgHit": 44,
+    "decodeOk": 43,
+    "decodeFail": 0,
+    "bytesMB": 443.8,
+    "formats": {
+     "0": 5,
+     "4": 24,
+     "8": 2,
+     "9": 12
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 8,
+    "maxcount": 1774,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "Glass Shards",
+      "maxcount": 50,
+      "alive": 45
+     },
+     {
+      "name": "Matrix spawnerREADNAME --> (place top left corner, duplicate once and move second layer  x origin -30)",
+      "maxcount": 500,
+      "alive": 499
+     },
+     {
+      "name": "灰烬大",
+      "maxcount": 40,
+      "alive": 38
+     },
+     {
+      "name": "灰烬光束",
+      "maxcount": 40,
+      "alive": 19
+     },
+     {
+      "name": "Bokeh Hex",
+      "maxcount": 500,
+      "alive": 20
+     },
+     {
+      "name": "Bokeh Cir",
+      "maxcount": 500,
+      "alive": 20
+     },
+     {
+      "name": "尘埃",
+      "maxcount": 128,
+      "alive": 66
+     },
+     {
+      "name": "光束 2 (旧)",
+      "maxcount": 16,
+      "alive": null,
+      "hidden": true
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 25,
+    "skippedLayers": 12,
+    "skippedNames": [
+     "凯尔希_无底",
+     "背景暗色",
+     "音频线Audio Spectrum Visualizer",
+     "Clock",
+     "D a y",
+     "Date",
+     "塞壬唱片-MSR,Robert Wolf - Дом.mp3",
+     "塞壬唱片-MSR,Robert Wolf - 走过漫漫时空.mp3",
+     "塞壬唱片-MSR,松林凜 - Innocence (Instrumental).mp3",
+     "塞壬唱片-MSR,ユリカリパブリック,松林凜 - Innocence.mp3",
+     "光束 2 (旧)",
+     "后处理层"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "meshDrawn": [
+     "长发3",
+     "主体",
+     "右眼上眼睑",
+     "左耳朵1",
+     "眼睛组合"
+    ],
+    "draws": 49,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 84.3,
+    "decodeMs": 3663.9,
+    "auditMs": 140.2
+   }
+  },
+  {
+   "id": "3721991999",
+   "path": "/root/Desktop/DSHarea/allwallpaper/dd/3721991999/scene.pkg",
+   "fileMB": 8.3,
+   "issues": [],
+   "container": {
+    "magic": "PKGV0024",
+    "entries": 55,
+    "sizeMB": 8.3,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 2,
+    "visible": 2,
+    "containers": 0,
+    "image": 1,
+    "video": 0,
+    "particle": 1,
+    "text": 0,
+    "sound": 0,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 0,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 0,
+    "animated": 0
+   },
+   "textures": {
+    "referenced": 2,
+    "pkgHit": 2,
+    "decodeOk": 2,
+    "decodeFail": 0,
+    "bytesMB": 5.5,
+    "formats": {
+     "0": 1,
+     "9": 1
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 1,
+    "maxcount": 128,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "尘埃",
+      "maxcount": 128,
+      "alive": 66
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 1,
+    "skippedLayers": 0,
+    "skippedNames": [],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "meshDrawn": [],
+    "draws": 1,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 14.3,
+    "decodeMs": 9.8,
+    "auditMs": 18.3
+   }
+  },
+  {
+   "id": "3778592720",
+   "path": "/root/Desktop/DSHarea/allwallpaper/dd/3778592720/scene.pkg",
+   "fileMB": 41.3,
+   "issues": [],
+   "container": {
+    "magic": "PKGV0024",
+    "entries": 38,
+    "sizeMB": 41.3,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 5,
+    "visible": 4,
+    "containers": 0,
+    "image": 2,
+    "video": 0,
+    "particle": 2,
+    "text": 0,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 0,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 0,
+    "animated": 0
+   },
+   "textures": {
+    "referenced": 4,
+    "pkgHit": 4,
+    "decodeOk": 3,
+    "decodeFail": 0,
+    "bytesMB": 0.1,
+    "formats": {
+     "0": 3
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 2,
+    "maxcount": 80,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "灰烬大",
+      "maxcount": 40,
+      "alive": 38
+     },
+     {
+      "name": "灰烬大",
+      "maxcount": 40,
+      "alive": 38
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 2,
+    "skippedLayers": 1,
+    "skippedNames": [
+     "obj_wo3DlMOGwrbDjj7DisKw_8747985084_4b5e_77fa_fcfc_2d79b769f05b53407d42e3257e960aae[1].mp3"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "meshDrawn": [],
+    "draws": 2,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 73.5,
+    "decodeMs": 12.9,
+    "auditMs": 46.6
+   }
+  },
+  {
+   "id": "夜莺night——【time_variation_时间变化】alone_孤独の少女【原画：rella]",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/other/夜莺night——【time_variation_时间变化】alone_孤独の少女【原画：rella].mpkg",
+   "fileMB": 49.2,
+   "issues": [
+    {
+     "key": "TRANSPARENT_FALLBACK",
+     "detail": "纯色"
+    }
+   ],
+   "container": {
+    "magic": "PKGM0018",
+    "entries": 132,
+    "sizeMB": 49.2,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 102,
+    "visible": 29,
+    "containers": 1,
+    "image": 37,
+    "video": 0,
+    "particle": 14,
+    "text": 17,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 68,
+    "attachment": 0,
+    "puppet": 1,
+    "alignNonCenter": 1,
+    "animated": 4
+   },
+   "textures": {
+    "referenced": 51,
+    "pkgHit": 51,
+    "decodeOk": 27,
+    "decodeFail": 0,
+    "bytesMB": 136.7,
+    "formats": {
+     "0": 7,
+     "5": 12,
+     "9": 8
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 14,
+    "maxcount": 3453,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "昼夜变化星星1",
+      "maxcount": 500,
+      "alive": null,
+      "hidden": true
+     },
+     {
+      "name": "night2",
+      "maxcount": 500,
+      "alive": null,
+      "hidden": true
+     },
+     {
+      "name": "night3",
+      "maxcount": 100,
+      "alive": null,
+      "hidden": true
+     },
+     {
+      "name": "流星",
+      "maxcount": 100,
+      "alive": null,
+      "hidden": true
+     },
+     {
+      "name": "Stars",
+      "maxcount": 500,
+      "alive": null,
+      "hidden": true
+     },
+     {
+      "name": "昼夜渐变流星1",
+      "maxcount": 100,
+      "alive": null,
+      "hidden": true
+     },
+     {
+      "name": "雨景远景",
+      "maxcount": 512,
+      "alive": 199
+     },
+     {
+      "name": "雪景远景",
+      "maxcount": 360,
+      "alive": 347
+     },
+     {
+      "name": "Fireworks 1",
+      "maxcount": 50,
+      "alive": null,
+      "hidden": true
+     },
+     {
+      "name": "Fireworks 2",
+      "maxcount": 50,
+      "alive": null,
+      "hidden": true
+     },
+     {
+      "name": "Fireworks 3",
+      "maxcount": 50,
+      "alive": null,
+      "hidden": true
+     },
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "alive": 20
+     },
+     {
+      "name": "zzz",
+      "maxcount": 3,
+      "alive": 1
+     },
+     {
+      "name": "rain_drop_screen",
+      "maxcount": 500,
+      "alive": null,
+      "hidden": true
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 18,
+    "skippedLayers": 74,
+    "skippedNames": [
+     "自选时间段背景",
+     "自选时间段背景清晨",
+     "自选时间段背景白天",
+     "自选时间段背景黄昏",
+     "自选时间段背景夜晚",
+     "随时间变化背景",
+     "morning2",
+     "day2",
+     "night5",
+     "昼夜变化背景",
+     "原背景",
+     "昼夜变化星星"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [
+     "纯色"
+    ],
+    "meshDrawn": [
+     "Rella 部件"
+    ],
+    "draws": 28,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 112.3,
+    "decodeMs": 1182.2,
+    "auditMs": 138.6
+   }
+  },
+  {
+   "id": "红鸾樱落",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/other/红鸾樱落.mpkg",
+   "fileMB": 9.4,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0018",
+    "entries": 149,
+    "sizeMB": 9.4,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 65,
+    "visible": 33,
+    "containers": 10,
+    "image": 24,
+    "video": 0,
+    "particle": 9,
+    "text": 17,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 26,
+    "attachment": 0,
+    "puppet": 6,
+    "alignNonCenter": 0,
+    "animated": 7
+   },
+   "textures": {
+    "referenced": 46,
+    "pkgHit": 46,
+    "decodeOk": 36,
+    "decodeFail": 0,
+    "bytesMB": 109.8,
+    "formats": {
+     "0": 1,
+     "5": 24,
+     "8": 4,
+     "9": 7
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 9,
+    "maxcount": 1564,
+    "spriteSheets": 4,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "龙烟",
+      "maxcount": 32,
+      "alive": null,
+      "hidden": true
+     },
+     {
+      "name": "烟......",
+      "maxcount": 32,
+      "alive": 32
+     },
+     {
+      "name": "眼焰",
+      "maxcount": 32,
+      "alive": null,
+      "hidden": true
+     },
+     {
+      "name": "眼焰",
+      "maxcount": 32,
+      "alive": null,
+      "hidden": true
+     },
+     {
+      "name": "樱花 近",
+      "maxcount": 200,
+      "alive": 181
+     },
+     {
+      "name": "樱花 远",
+      "maxcount": 200,
+      "alive": 180
+     },
+     {
+      "name": "鼠标",
+      "maxcount": 1000,
+      "alive": 155
+     },
+     {
+      "name": "底—烟",
+      "maxcount": 20,
+      "alive": 5
+     },
+     {
+      "name": "光",
+      "maxcount": 16,
+      "alive": 5
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 22,
+    "skippedLayers": 36,
+    "skippedNames": [
+     "紫",
+     "蓝",
+     "青",
+     "自定义文字",
+     "下音条02",
+     "下音条01",
+     "中音条0下",
+     "中音条0上",
+     "中y02",
+     "龙烟",
+     "右下方时间",
+     "时间01"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "meshDrawn": [
+     "龙",
+     "头",
+     "挂饰1",
+     "挂饰2",
+     "刀",
+     "朱鹤"
+    ],
+    "draws": 45,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 12,
+    "decodeMs": 857.7,
+    "auditMs": 350.7
+   }
+  },
+  {
+   "id": "伊蕾娜1_8",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/伊蕾娜/伊蕾娜1_8.mpkg",
+   "fileMB": 24.3,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 24.3,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 19.1,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "伊蕾娜_04",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/伊蕾娜/伊蕾娜_04.mpkg",
+   "fileMB": 80.8,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 80.8,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 165.9,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "伊蕾娜_05",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/伊蕾娜/伊蕾娜_05.mpkg",
+   "fileMB": 75,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 75,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 136.3,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "伊蕾娜_08",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/伊蕾娜/伊蕾娜_08.mpkg",
+   "fileMB": 58.6,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 4,
+    "sizeMB": 58.6,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 4,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 69.7,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "夜莺night——【time_variation时间变化】elaina_伊蕾娜：闲憩微息【魔女之旅】day_night",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/伊蕾娜/夜莺night——【time_variation时间变化】elaina_伊蕾娜：闲憩微息【魔女之旅】day_night.mpkg",
+   "fileMB": 315.9,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0018",
+    "entries": 55,
+    "sizeMB": 315.9,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 41,
+    "visible": 15,
+    "containers": 1,
+    "image": 12,
+    "video": 0,
+    "particle": 1,
+    "text": 16,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 31,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 1,
+    "animated": 1
+   },
+   "textures": {
+    "referenced": 9,
+    "pkgHit": 9,
+    "decodeOk": 9,
+    "decodeFail": 0,
+    "bytesMB": 292.8,
+    "formats": {
+     "0": 5,
+     "5": 4
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 1,
+    "maxcount": 128,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "alive": 20
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 7,
+    "skippedLayers": 27,
+    "skippedNames": [
+     "myLayer",
+     "mddn",
+     "morning",
+     "day",
+     "dusk",
+     "night",
+     "可调整组合层",
+     "纯色",
+     "Audio Bars",
+     "Clock",
+     "Date",
+     "Day"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "meshDrawn": [],
+    "draws": 7,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 640.5,
+    "decodeMs": 307.6,
+    "auditMs": 9.6
+   }
+  },
+  {
+   "id": "zmd_08",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/佩丽卡/zmd_08.mpkg",
+   "fileMB": 58.6,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 4,
+    "sizeMB": 58.6,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 23,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 122.2,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "小鸟游星野01_04",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/小鸟游星野/小鸟游星野01_04.mpkg",
+   "fileMB": 125.7,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 125.7,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 305.6,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "小鸟游星野01_11",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/小鸟游星野/小鸟游星野01_11.mpkg",
+   "fileMB": 41.3,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 41.3,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 31.7,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "小鸟游星野04_2",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/小鸟游星野/小鸟游星野04_2.mpkg",
+   "fileMB": 170.8,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 170.8,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 332.8,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "小鸟游星野04_7",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/小鸟游星野/小鸟游星野04_7.mpkg",
+   "fileMB": 47.5,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 47.5,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 98.1,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "小鸟游星野11_01",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/小鸟游星野/小鸟游星野11_01.mpkg",
+   "fileMB": 114.9,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 114.9,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 223.1,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "小鸟游星野11_10",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/小鸟游星野/小鸟游星野11_10.mpkg",
+   "fileMB": 21,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 4,
+    "sizeMB": 21,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 2,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 20.4,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "小鸟游星野_01",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/小鸟游星野/小鸟游星野_01.mpkg",
+   "fileMB": 792,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 792,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 1499.4,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "小鸟游星野_02",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/小鸟游星野/小鸟游星野_02.mpkg",
+   "fileMB": 209.9,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 209.9,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 410,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "小鸟游星野_09",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/小鸟游星野/小鸟游星野_09.mpkg",
+   "fileMB": 54.4,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 54.4,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 69.3,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "小鸟游星野_11",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/小鸟游星野/小鸟游星野_11.mpkg",
+   "fileMB": 36.1,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 36.1,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 56.9,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "小鸟游星野_12",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/小鸟游星野/小鸟游星野_12.mpkg",
+   "fileMB": 29.6,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 29.6,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 26,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "小鸟游星野_13",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/小鸟游星野/小鸟游星野_13.mpkg",
+   "fileMB": 29.3,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 4,
+    "sizeMB": 29.3,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 1,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 61.5,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "庄方宜_19",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/庄方宜/庄方宜_19.mpkg",
+   "fileMB": 56.8,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 4,
+    "sizeMB": 56.8,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 1,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 122.8,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "庄方宜_2",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/庄方宜/庄方宜_2.mpkg",
+   "fileMB": 142,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 142,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 281.4,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "庄方宜_24",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/庄方宜/庄方宜_24.mpkg",
+   "fileMB": 30,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 4,
+    "sizeMB": 30,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 1,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 26.7,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "庄方宜_3",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/庄方宜/庄方宜_3.mpkg",
+   "fileMB": 58.6,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 4,
+    "sizeMB": 58.6,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 2,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 116.6,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "庄方宜_4",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/庄方宜/庄方宜_4.mpkg",
+   "fileMB": 57.8,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 4,
+    "sizeMB": 57.8,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 2,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 70,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "庄方宜_6",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/庄方宜/庄方宜_6.mpkg",
+   "fileMB": 53.7,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 4,
+    "sizeMB": 53.7,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 3,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 112.4,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "庄方宜_7",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/庄方宜/庄方宜_7.mpkg",
+   "fileMB": 19.9,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 4,
+    "sizeMB": 19.9,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 15,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 15.6,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "洁尔佩塔_4",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洁尔佩塔/洁尔佩塔_4.mpkg",
+   "fileMB": 27.6,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 4,
+    "sizeMB": 27.6,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 8,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 21.3,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "洛琪希1_1",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛琪希/洛琪希1_1.mpkg",
+   "fileMB": 445.7,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 445.7,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 827.4,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "洛琪希1_3",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛琪希/洛琪希1_3.mpkg",
+   "fileMB": 58,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 4,
+    "sizeMB": 58,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 3,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 59.3,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "洛琪希_01",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛琪希/洛琪希_01.mpkg",
+   "fileMB": 287.2,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 287.2,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 664.2,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "洛茜_01",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_01.mpkg",
+   "fileMB": 424.5,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 424.5,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 788.6,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "洛茜_02",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_02.mpkg",
+   "fileMB": 249.9,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 249.9,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 492.7,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "洛茜_03",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_03.mpkg",
+   "fileMB": 239.3,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 239.3,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 493.4,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "洛茜_04",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_04.mpkg",
+   "fileMB": 237.9,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 237.9,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 434,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "洛茜_05",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_05.mpkg",
+   "fileMB": 165,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 165,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 304.4,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "洛茜_06",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_06.mpkg",
+   "fileMB": 165,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 165,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 321.1,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "洛茜_07",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_07.mpkg",
+   "fileMB": 59.5,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 4,
+    "sizeMB": 59.5,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 16,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 77.8,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "洛茜_08",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_08.mpkg",
+   "fileMB": 58.3,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 58.3,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 67.3,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "洛茜_09",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_09.mpkg",
+   "fileMB": 58,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 58,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 111.6,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "洛茜_10",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_10.mpkg",
+   "fileMB": 57.7,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 4,
+    "sizeMB": 57.7,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 2,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 72.1,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "洛茜_11",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_11.mpkg",
+   "fileMB": 29.2,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 4,
+    "sizeMB": 29.2,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 24,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 26.4,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "洛茜_12",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_12.mpkg",
+   "fileMB": 16.1,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 16.1,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 13,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "洛茜_13",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/洛茜/洛茜_13.mpkg",
+   "fileMB": 4,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 4,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 11.5,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "夜莺night——【customize自定义】firefly_流萤_星空之誓——夜莺night崩坏星穹铁道",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/流萤/夜莺night——【customize自定义】firefly_流萤_星空之誓——夜莺night崩坏星穹铁道.mpkg",
+   "fileMB": 73.8,
+   "issues": [
+    {
+     "key": "TRANSPARENT_FALLBACK",
+     "detail": "纯色,Media Info (ROUND),Album Cover"
+    }
+   ],
+   "container": {
+    "magic": "PKGM0018",
+    "entries": 127,
+    "sizeMB": 73.8,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 58,
+    "visible": 22,
+    "containers": 0,
+    "image": 22,
+    "video": 0,
+    "particle": 4,
+    "text": 22,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 47,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 2,
+    "animated": 2
+   },
+   "textures": {
+    "referenced": 24,
+    "pkgHit": 24,
+    "decodeOk": 22,
+    "decodeFail": 0,
+    "bytesMB": 113.3,
+    "formats": {
+     "0": 5,
+     "5": 16,
+     "9": 1
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 4,
+    "maxcount": 738,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "Stars",
+      "maxcount": 500,
+      "alive": 236
+     },
+     {
+      "name": "Twinkling shooting star",
+      "maxcount": 100,
+      "alive": 23
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 10,
+      "alive": 10
+     },
+     {
+      "name": "轨迹 1",
+      "maxcount": 128,
+      "alive": 20
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 14,
+    "skippedLayers": 36,
+    "skippedNames": [
+     "流萤正常 蓝幕60帧_batch",
+     "Clock",
+     "Date",
+     "Day",
+     "D a y",
+     "Clock Container",
+     "Text Container",
+     "Background",
+     "Rounded Corners",
+     "Artist Name",
+     "Song Title",
+     "Settings Container"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [
+     "纯色",
+     "Media Info (ROUND)",
+     "Album Cover"
+    ],
+    "meshDrawn": [],
+    "draws": 23,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 146.9,
+    "decodeMs": 775.3,
+    "auditMs": 65.8
+   }
+  },
+  {
+   "id": "流萤01_03",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/流萤/流萤01_03.mpkg",
+   "fileMB": 81.2,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 81.2,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 155.4,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "流萤_06",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/流萤/流萤_06.mpkg",
+   "fileMB": 42,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 42,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 30.3,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "流萤_09",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/流萤/流萤_09.mpkg",
+   "fileMB": 23,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 23,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 23.6,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "砂狼白子02_01",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子02_01.mpkg",
+   "fileMB": 168.5,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 168.5,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 332.8,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "砂狼白子02_02",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子02_02.mpkg",
+   "fileMB": 163.1,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 163.1,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 293.8,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "砂狼白子02_08",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子02_08.mpkg",
+   "fileMB": 58,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 4,
+    "sizeMB": 58,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 9,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 64.3,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "砂狼白子02_10",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子02_10.mpkg",
+   "fileMB": 24.7,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 4,
+    "sizeMB": 24.7,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 3,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 18.9,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "砂狼白子11_01",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子11_01.mpkg",
+   "fileMB": 127.8,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 127.8,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 267.6,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "砂狼白子11_03",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子11_03.mpkg",
+   "fileMB": 61,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 4,
+    "sizeMB": 61,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 69,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 163.9,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "砂狼白子11_05",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子11_05.mpkg",
+   "fileMB": 54.8,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 4,
+    "sizeMB": 54.8,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 6,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 65.6,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "砂狼白子_1",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子_1.mpkg",
+   "fileMB": 27,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 27,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 22.4,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "砂狼白子_2",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子_2.mpkg",
+   "fileMB": 73.2,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 73.2,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 143.5,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "砂狼白子_3",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子_3.mpkg",
+   "fileMB": 99.6,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 99.6,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 193.9,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "砂狼白子_4",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子_4.mpkg",
+   "fileMB": 45.7,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 4,
+    "sizeMB": 45.7,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 4,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 55.1,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "砂狼白子_5",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/砂狼白子/砂狼白子_5.mpkg",
+   "fileMB": 45.7,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 45.7,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 54.1,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "纳西妲_02",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/纳西妲/纳西妲_02.mpkg",
+   "fileMB": 118.6,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 118.6,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 235.9,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "纳西妲_03",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/纳西妲/纳西妲_03.mpkg",
+   "fileMB": 77.3,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 77.3,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 151.2,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "纳西妲_04",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/纳西妲/纳西妲_04.mpkg",
+   "fileMB": 63.6,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 63.6,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 125.7,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "纳西妲_08",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/纳西妲/纳西妲_08.mpkg",
+   "fileMB": 30.4,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 30.4,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 22.6,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "纳西妲_10",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/纳西妲/纳西妲_10.mpkg",
+   "fileMB": 19.2,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 19.2,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 18.5,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "zmd_01",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/终末地/zmd_01.mpkg",
+   "fileMB": 713.2,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 713.2,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 1337.4,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "zmd_12",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/莱万汀/zmd_12.mpkg",
+   "fileMB": 57.8,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 4,
+    "sizeMB": 57.8,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 3,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 67.9,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "夜莺Night——Honkai Star Rail Castorice 遐蝶 冥河永渡 崩坏星穹铁道The Etern",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/遐蝶/夜莺Night——Honkai Star Rail Castorice 遐蝶 冥河永渡 崩坏星穹铁道The Etern.mpkg",
+   "fileMB": 78,
+   "issues": [
+    {
+     "key": "TRANSPARENT_FALLBACK",
+     "detail": "纯色"
+    }
+   ],
+   "container": {
+    "magic": "PKGM0018",
+    "entries": 49,
+    "sizeMB": 78,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 41,
+    "visible": 20,
+    "containers": 0,
+    "image": 5,
+    "video": 0,
+    "particle": 5,
+    "text": 21,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 27,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 0,
+    "animated": 5
+   },
+   "textures": {
+    "referenced": 10,
+    "pkgHit": 10,
+    "decodeOk": 7,
+    "decodeFail": 0,
+    "bytesMB": 60.3,
+    "formats": {
+     "0": 5,
+     "5": 1,
+     "9": 1
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 5,
+    "maxcount": 388,
+    "spriteSheets": 1,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "大型",
+      "maxcount": 40,
+      "alive": 37
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 10,
+      "alive": 10
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 10,
+      "alive": 10
+     },
+     {
+      "name": "樱花",
+      "maxcount": 200,
+      "alive": 174
+     },
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "alive": 20
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 10,
+    "skippedLayers": 21,
+    "skippedNames": [
+     "Clock",
+     "Date",
+     "Day",
+     "D a y",
+     "纯色",
+     "尾澤拓実 - 眠.mp3"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [
+     "纯色"
+    ],
+    "meshDrawn": [],
+    "draws": 14,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 249.9,
+    "decodeMs": 23.4,
+    "auditMs": 98.2
+   }
+  },
+  {
+   "id": "遐蝶_01",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/遐蝶/遐蝶_01.mpkg",
+   "fileMB": 240.9,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 240.9,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 474.6,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "遐蝶_02",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/遐蝶/遐蝶_02.mpkg",
+   "fileMB": 157.2,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 157.2,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 317.9,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "遐蝶_09",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/遐蝶/遐蝶_09.mpkg",
+   "fileMB": 59.1,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 4,
+    "sizeMB": 59.1,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 45,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 67.4,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "遐蝶_15",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpaperE/遐蝶/遐蝶_15.mpkg",
+   "fileMB": 45.5,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 45.5,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 62.3,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "夜莺Night——Honkai Star Rail Castorice 遐蝶 冥河永渡 崩坏星穹铁道The Etern",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpapertest1/夜莺Night——Honkai Star Rail Castorice 遐蝶 冥河永渡 崩坏星穹铁道The Etern.mpkg",
+   "fileMB": 78,
+   "issues": [
+    {
+     "key": "TRANSPARENT_FALLBACK",
+     "detail": "纯色"
+    }
+   ],
+   "container": {
+    "magic": "PKGM0018",
+    "entries": 49,
+    "sizeMB": 78,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 41,
+    "visible": 20,
+    "containers": 0,
+    "image": 5,
+    "video": 0,
+    "particle": 5,
+    "text": 21,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 27,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 0,
+    "animated": 5
+   },
+   "textures": {
+    "referenced": 10,
+    "pkgHit": 10,
+    "decodeOk": 7,
+    "decodeFail": 0,
+    "bytesMB": 60.3,
+    "formats": {
+     "0": 5,
+     "5": 1,
+     "9": 1
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 5,
+    "maxcount": 388,
+    "spriteSheets": 1,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "大型",
+      "maxcount": 40,
+      "alive": 37
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 10,
+      "alive": 10
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 10,
+      "alive": 10
+     },
+     {
+      "name": "樱花",
+      "maxcount": 200,
+      "alive": 174
+     },
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "alive": 20
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 10,
+    "skippedLayers": 21,
+    "skippedNames": [
+     "Clock",
+     "Date",
+     "Day",
+     "D a y",
+     "纯色",
+     "尾澤拓実 - 眠.mp3"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [
+     "纯色"
+    ],
+    "meshDrawn": [],
+    "draws": 14,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 161.8,
+    "decodeMs": 25,
+    "auditMs": 97.7
+   }
+  },
+  {
+   "id": "夜莺night——【customize自定义】firefly_流萤_星空之誓——夜莺night崩坏星穹铁道",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpapertest1/夜莺night——【customize自定义】firefly_流萤_星空之誓——夜莺night崩坏星穹铁道.mpkg",
+   "fileMB": 73.8,
+   "issues": [
+    {
+     "key": "TRANSPARENT_FALLBACK",
+     "detail": "纯色,Media Info (ROUND),Album Cover"
+    }
+   ],
+   "container": {
+    "magic": "PKGM0018",
+    "entries": 127,
+    "sizeMB": 73.8,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 58,
+    "visible": 22,
+    "containers": 0,
+    "image": 22,
+    "video": 0,
+    "particle": 4,
+    "text": 22,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 47,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 2,
+    "animated": 2
+   },
+   "textures": {
+    "referenced": 24,
+    "pkgHit": 24,
+    "decodeOk": 22,
+    "decodeFail": 0,
+    "bytesMB": 113.3,
+    "formats": {
+     "0": 5,
+     "5": 16,
+     "9": 1
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 4,
+    "maxcount": 738,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "Stars",
+      "maxcount": 500,
+      "alive": 236
+     },
+     {
+      "name": "Twinkling shooting star",
+      "maxcount": 100,
+      "alive": 23
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 10,
+      "alive": 10
+     },
+     {
+      "name": "轨迹 1",
+      "maxcount": 128,
+      "alive": 20
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 14,
+    "skippedLayers": 36,
+    "skippedNames": [
+     "流萤正常 蓝幕60帧_batch",
+     "Clock",
+     "Date",
+     "Day",
+     "D a y",
+     "Clock Container",
+     "Text Container",
+     "Background",
+     "Rounded Corners",
+     "Artist Name",
+     "Song Title",
+     "Settings Container"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [
+     "纯色",
+     "Media Info (ROUND)",
+     "Album Cover"
+    ],
+    "meshDrawn": [],
+    "draws": 23,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 162.3,
+    "decodeMs": 813,
+    "auditMs": 69.4
+   }
+  },
+  {
+   "id": "夜莺night——【time_variation_时间变化】alone_孤独の少女【原画：rella]",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpapertest1/夜莺night——【time_variation_时间变化】alone_孤独の少女【原画：rella].mpkg",
+   "fileMB": 49.2,
+   "issues": [
+    {
+     "key": "TRANSPARENT_FALLBACK",
+     "detail": "纯色"
+    }
+   ],
+   "container": {
+    "magic": "PKGM0018",
+    "entries": 132,
+    "sizeMB": 49.2,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 102,
+    "visible": 29,
+    "containers": 1,
+    "image": 37,
+    "video": 0,
+    "particle": 14,
+    "text": 17,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 68,
+    "attachment": 0,
+    "puppet": 1,
+    "alignNonCenter": 1,
+    "animated": 4
+   },
+   "textures": {
+    "referenced": 51,
+    "pkgHit": 51,
+    "decodeOk": 27,
+    "decodeFail": 0,
+    "bytesMB": 136.7,
+    "formats": {
+     "0": 7,
+     "5": 12,
+     "9": 8
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 14,
+    "maxcount": 3453,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "昼夜变化星星1",
+      "maxcount": 500,
+      "alive": null,
+      "hidden": true
+     },
+     {
+      "name": "night2",
+      "maxcount": 500,
+      "alive": null,
+      "hidden": true
+     },
+     {
+      "name": "night3",
+      "maxcount": 100,
+      "alive": null,
+      "hidden": true
+     },
+     {
+      "name": "流星",
+      "maxcount": 100,
+      "alive": null,
+      "hidden": true
+     },
+     {
+      "name": "Stars",
+      "maxcount": 500,
+      "alive": null,
+      "hidden": true
+     },
+     {
+      "name": "昼夜渐变流星1",
+      "maxcount": 100,
+      "alive": null,
+      "hidden": true
+     },
+     {
+      "name": "雨景远景",
+      "maxcount": 512,
+      "alive": 199
+     },
+     {
+      "name": "雪景远景",
+      "maxcount": 360,
+      "alive": 347
+     },
+     {
+      "name": "Fireworks 1",
+      "maxcount": 50,
+      "alive": null,
+      "hidden": true
+     },
+     {
+      "name": "Fireworks 2",
+      "maxcount": 50,
+      "alive": null,
+      "hidden": true
+     },
+     {
+      "name": "Fireworks 3",
+      "maxcount": 50,
+      "alive": null,
+      "hidden": true
+     },
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "alive": 20
+     },
+     {
+      "name": "zzz",
+      "maxcount": 3,
+      "alive": 1
+     },
+     {
+      "name": "rain_drop_screen",
+      "maxcount": 500,
+      "alive": null,
+      "hidden": true
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 18,
+    "skippedLayers": 74,
+    "skippedNames": [
+     "自选时间段背景",
+     "自选时间段背景清晨",
+     "自选时间段背景白天",
+     "自选时间段背景黄昏",
+     "自选时间段背景夜晚",
+     "随时间变化背景",
+     "morning2",
+     "day2",
+     "night5",
+     "昼夜变化背景",
+     "原背景",
+     "昼夜变化星星"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [
+     "纯色"
+    ],
+    "meshDrawn": [
+     "Rella 部件"
+    ],
+    "draws": 28,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 113.3,
+    "decodeMs": 1164,
+    "auditMs": 176.3
+   }
+  },
+  {
+   "id": "夜莺night——【time_variation时间变化】elaina_伊蕾娜：闲憩微息【魔女之旅】day_night",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpapertest1/夜莺night——【time_variation时间变化】elaina_伊蕾娜：闲憩微息【魔女之旅】day_night.mpkg",
+   "fileMB": 315.9,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0018",
+    "entries": 55,
+    "sizeMB": 315.9,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 41,
+    "visible": 15,
+    "containers": 1,
+    "image": 12,
+    "video": 0,
+    "particle": 1,
+    "text": 16,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 31,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 1,
+    "animated": 1
+   },
+   "textures": {
+    "referenced": 9,
+    "pkgHit": 9,
+    "decodeOk": 9,
+    "decodeFail": 0,
+    "bytesMB": 292.8,
+    "formats": {
+     "0": 5,
+     "5": 4
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 1,
+    "maxcount": 128,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "alive": 20
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 7,
+    "skippedLayers": 27,
+    "skippedNames": [
+     "myLayer",
+     "mddn",
+     "morning",
+     "day",
+     "dusk",
+     "night",
+     "可调整组合层",
+     "纯色",
+     "Audio Bars",
+     "Clock",
+     "Date",
+     "Day"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "meshDrawn": [],
+    "draws": 7,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 625.6,
+    "decodeMs": 309.4,
+    "auditMs": 5.9
+   }
+  },
+  {
+   "id": "红鸾樱落",
+   "path": "/root/Desktop/DSHarea/allwallpaper/wallpapertest1/红鸾樱落.mpkg",
+   "fileMB": 9.4,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0018",
+    "entries": 149,
+    "sizeMB": 9.4,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 65,
+    "visible": 33,
+    "containers": 10,
+    "image": 24,
+    "video": 0,
+    "particle": 9,
+    "text": 17,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 26,
+    "attachment": 0,
+    "puppet": 6,
+    "alignNonCenter": 0,
+    "animated": 7
+   },
+   "textures": {
+    "referenced": 46,
+    "pkgHit": 46,
+    "decodeOk": 36,
+    "decodeFail": 0,
+    "bytesMB": 109.8,
+    "formats": {
+     "0": 1,
+     "5": 24,
+     "8": 4,
+     "9": 7
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 9,
+    "maxcount": 1564,
+    "spriteSheets": 4,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "龙烟",
+      "maxcount": 32,
+      "alive": null,
+      "hidden": true
+     },
+     {
+      "name": "烟......",
+      "maxcount": 32,
+      "alive": 32
+     },
+     {
+      "name": "眼焰",
+      "maxcount": 32,
+      "alive": null,
+      "hidden": true
+     },
+     {
+      "name": "眼焰",
+      "maxcount": 32,
+      "alive": null,
+      "hidden": true
+     },
+     {
+      "name": "樱花 近",
+      "maxcount": 200,
+      "alive": 181
+     },
+     {
+      "name": "樱花 远",
+      "maxcount": 200,
+      "alive": 180
+     },
+     {
+      "name": "鼠标",
+      "maxcount": 1000,
+      "alive": 155
+     },
+     {
+      "name": "底—烟",
+      "maxcount": 20,
+      "alive": 5
+     },
+     {
+      "name": "光",
+      "maxcount": 16,
+      "alive": 5
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 22,
+    "skippedLayers": 36,
+    "skippedNames": [
+     "紫",
+     "蓝",
+     "青",
+     "自定义文字",
+     "下音条02",
+     "下音条01",
+     "中音条0下",
+     "中音条0上",
+     "中y02",
+     "龙烟",
+     "右下方时间",
+     "时间01"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "meshDrawn": [
+     "龙",
+     "头",
+     "挂饰1",
+     "挂饰2",
+     "刀",
+     "朱鹤"
+    ],
+    "draws": 45,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 12.4,
+    "decodeMs": 932.7,
+    "auditMs": 401.6
+   }
+  },
+  {
+   "id": "2aeac838640589c66efc315e821c44b6",
+   "path": "/root/.dsh-mpkg-wallpaper/2aeac838640589c66efc315e821c44b6.mpkg",
+   "fileMB": 0,
+   "issues": [
+    {
+     "key": "SCENE",
+     "detail": "no scene.json",
+     "known": {
+      "reason": "v1.0 缩略图壳（唯一入口 wall.png 0KB，/root/.dsh-mpkg-wallpaper 下载残留），不是场景包",
+      "date": "2026-09-12"
+     }
+    }
+   ],
+   "container": {
+    "magic": "v1.0",
+    "entries": 1,
+    "sizeMB": 0,
+    "layoutOk": true
+   },
+   "scene": {
+    "err": "no scene.json"
+   },
+   "timing": {
+    "parseMs": 2.7
+   }
+  },
+  {
+   "id": "5a85a54b12b64bc882d1e7bab0f8e837",
+   "path": "/root/.dsh-mpkg-wallpaper/5a85a54b12b64bc882d1e7bab0f8e837.mpkg",
+   "fileMB": 315.9,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0018",
+    "entries": 55,
+    "sizeMB": 315.9,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 41,
+    "visible": 15,
+    "containers": 1,
+    "image": 12,
+    "video": 0,
+    "particle": 1,
+    "text": 16,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 31,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 1,
+    "animated": 1
+   },
+   "textures": {
+    "referenced": 9,
+    "pkgHit": 9,
+    "decodeOk": 9,
+    "decodeFail": 0,
+    "bytesMB": 292.8,
+    "formats": {
+     "0": 5,
+     "5": 4
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 1,
+    "maxcount": 128,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "alive": 20
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 7,
+    "skippedLayers": 27,
+    "skippedNames": [
+     "myLayer",
+     "mddn",
+     "morning",
+     "day",
+     "dusk",
+     "night",
+     "可调整组合层",
+     "纯色",
+     "Audio Bars",
+     "Clock",
+     "Date",
+     "Day"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "meshDrawn": [],
+    "draws": 7,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 638.4,
+    "decodeMs": 298.6,
+    "auditMs": 5.7
+   }
+  },
+  {
+   "id": "aef86642c01a9db43979dedc142711d2",
+   "path": "/root/.dsh-mpkg-wallpaper/aef86642c01a9db43979dedc142711d2.mpkg",
+   "fileMB": 125.7,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0014",
+    "entries": 3,
+    "sizeMB": 125.7,
+    "layoutOk": true
+   },
+   "type": "video-wallpaper",
+   "scene": {
+    "layers": 0,
+    "visible": 0,
+    "video": true
+   },
+   "textures": {
+    "referenced": 0,
+    "pkgHit": 0,
+    "decodeOk": 0,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {},
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 0,
+    "skippedLayers": 0,
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "draws": 0
+   },
+   "timing": {
+    "parseMs": 221.7,
+    "decodeMs": 0,
+    "auditMs": 0
+   }
+  },
+  {
+   "id": "d5007a52866682e2210d9d855d170c80",
+   "path": "/root/.dsh-mpkg-wallpaper/d5007a52866682e2210d9d855d170c80.mpkg",
+   "fileMB": 73.8,
+   "issues": [
+    {
+     "key": "TRANSPARENT_FALLBACK",
+     "detail": "纯色,Media Info (ROUND),Album Cover"
+    }
+   ],
+   "container": {
+    "magic": "PKGM0018",
+    "entries": 127,
+    "sizeMB": 73.8,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 58,
+    "visible": 22,
+    "containers": 0,
+    "image": 22,
+    "video": 0,
+    "particle": 4,
+    "text": 22,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 47,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 2,
+    "animated": 2
+   },
+   "textures": {
+    "referenced": 24,
+    "pkgHit": 24,
+    "decodeOk": 22,
+    "decodeFail": 0,
+    "bytesMB": 113.3,
+    "formats": {
+     "0": 5,
+     "5": 16,
+     "9": 1
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 4,
+    "maxcount": 738,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "Stars",
+      "maxcount": 500,
+      "alive": 236
+     },
+     {
+      "name": "Twinkling shooting star",
+      "maxcount": 100,
+      "alive": 23
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 10,
+      "alive": 10
+     },
+     {
+      "name": "轨迹 1",
+      "maxcount": 128,
+      "alive": 20
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 14,
+    "skippedLayers": 36,
+    "skippedNames": [
+     "流萤正常 蓝幕60帧_batch",
+     "Clock",
+     "Date",
+     "Day",
+     "D a y",
+     "Clock Container",
+     "Text Container",
+     "Background",
+     "Rounded Corners",
+     "Artist Name",
+     "Song Title",
+     "Settings Container"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [
+     "纯色",
+     "Media Info (ROUND)",
+     "Album Cover"
+    ],
+    "meshDrawn": [],
+    "draws": 23,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 133.5,
+    "decodeMs": 837.5,
+    "auditMs": 51.5
+   }
+  },
+  {
+   "id": "f643f908ae8800b413e9e4d02b9d7858",
+   "path": "/root/.dsh-mpkg-wallpaper/f643f908ae8800b413e9e4d02b9d7858.mpkg",
+   "fileMB": 315.9,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0018",
+    "entries": 55,
+    "sizeMB": 315.9,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 41,
+    "visible": 15,
+    "containers": 1,
+    "image": 12,
+    "video": 0,
+    "particle": 1,
+    "text": 16,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 31,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 1,
+    "animated": 1
+   },
+   "textures": {
+    "referenced": 9,
+    "pkgHit": 9,
+    "decodeOk": 9,
+    "decodeFail": 0,
+    "bytesMB": 292.8,
+    "formats": {
+     "0": 5,
+     "5": 4
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 1,
+    "maxcount": 128,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "alive": 20
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 7,
+    "skippedLayers": 27,
+    "skippedNames": [
+     "myLayer",
+     "mddn",
+     "morning",
+     "day",
+     "dusk",
+     "night",
+     "可调整组合层",
+     "纯色",
+     "Audio Bars",
+     "Clock",
+     "Date",
+     "Day"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "meshDrawn": [],
+    "draws": 7,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 569.1,
+    "decodeMs": 301.6,
+    "auditMs": 4.7
+   }
+  },
+  {
+   "id": "3326873240",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3326873240/scene.pkg",
+   "fileMB": 235.4,
+   "issues": [
+    {
+     "key": "TRANSPARENT_FALLBACK",
+     "detail": "myLayer,193,纯色,组件,1054"
+    }
+   ],
+   "container": {
+    "magic": "PKGV0023",
+    "entries": 104,
+    "sizeMB": 235.4,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 62,
+    "visible": 17,
+    "containers": 0,
+    "image": 31,
+    "video": 0,
+    "particle": 1,
+    "text": 19,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 49,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 4,
+    "animated": 3
+   },
+   "textures": {
+    "referenced": 27,
+    "pkgHit": 27,
+    "decodeOk": 25,
+    "decodeFail": 0,
+    "bytesMB": 240,
+    "formats": {
+     "0": 7,
+     "4": 18
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 1,
+    "maxcount": 128,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "alive": 20
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 16,
+    "skippedLayers": 45,
+    "skippedNames": [
+     "mddn",
+     "dusk",
+     "day",
+     "night",
+     "Media Info (ROUND)",
+     "Holder (hide before publish)",
+     "Clock Container",
+     "Clock",
+     "Text Container",
+     "Background",
+     "Rounded Corners",
+     "Progress Bar"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [
+     "myLayer",
+     193,
+     "纯色",
+     "组件",
+     1054,
+     "帧率位置",
+     893,
+     1297271
+    ],
+    "meshDrawn": [],
+    "draws": 18,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 438.3,
+    "decodeMs": 441.2,
+    "auditMs": 7.5
+   }
+  },
+  {
+   "id": "3327063360",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3327063360/scene.pkg",
+   "fileMB": 59.5,
+   "issues": [
+    {
+     "key": "TRANSPARENT_FALLBACK",
+     "detail": "纯色"
+    }
+   ],
+   "container": {
+    "magic": "PKGV0022",
+    "entries": 124,
+    "sizeMB": 59.5,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 69,
+    "visible": 14,
+    "containers": 1,
+    "image": 36,
+    "video": 0,
+    "particle": 2,
+    "text": 21,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 58,
+    "attachment": 0,
+    "puppet": 1,
+    "alignNonCenter": 4,
+    "animated": 2
+   },
+   "textures": {
+    "referenced": 35,
+    "pkgHit": 35,
+    "decodeOk": 23,
+    "decodeFail": 0,
+    "bytesMB": 54.4,
+    "formats": {
+     "0": 4,
+     "4": 15,
+     "6": 3,
+     "9": 1
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 2,
+    "maxcount": 138,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "alive": null,
+      "hidden": true
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 10,
+      "alive": 10
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 8,
+    "skippedLayers": 55,
+    "skippedNames": [
+     "伊蕾娜",
+     "背景蒙版",
+     "帧率三角阴影",
+     "帧率三角高光",
+     "帧率三角",
+     "日三角阴影",
+     "日三角高光",
+     "三角 倒",
+     "文字三角阴影",
+     "文字三角高光",
+     "文字三角",
+     "主三角阴影"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [
+     "纯色"
+    ],
+    "meshDrawn": [],
+    "draws": 12,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 135.9,
+    "decodeMs": 209,
+    "auditMs": 15.3
+   }
+  },
+  {
+   "id": "3470764447",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3470764447/scene.pkg",
+   "fileMB": 320.6,
+   "issues": [],
+   "container": {
+    "magic": "PKGV0022",
+    "entries": 54,
+    "sizeMB": 320.6,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 41,
+    "visible": 15,
+    "containers": 1,
+    "image": 12,
+    "video": 0,
+    "particle": 1,
+    "text": 16,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 31,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 1,
+    "animated": 1
+   },
+   "textures": {
+    "referenced": 9,
+    "pkgHit": 9,
+    "decodeOk": 9,
+    "decodeFail": 0,
+    "bytesMB": 307.6,
+    "formats": {
+     "0": 6,
+     "4": 3
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 1,
+    "maxcount": 128,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "alive": 20
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 7,
+    "skippedLayers": 27,
+    "skippedNames": [
+     "myLayer",
+     "mddn",
+     "morning",
+     "day",
+     "dusk",
+     "night",
+     "可调整组合层",
+     "纯色",
+     "Audio Bars",
+     "Clock",
+     "Date",
+     "Day"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "meshDrawn": [],
+    "draws": 7,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 635.2,
+    "decodeMs": 468.4,
+    "auditMs": 5.7
+   }
+  },
+  {
+   "id": "3544152633",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3544152633/scene.pkg",
+   "fileMB": 42.4,
+   "issues": [],
+   "container": {
+    "magic": "PKGV0023",
+    "entries": 255,
+    "sizeMB": 42.4,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 70,
+    "visible": 31,
+    "containers": 6,
+    "image": 31,
+    "video": 0,
+    "particle": 16,
+    "text": 16,
+    "sound": 0,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 15,
+    "attachment": 0,
+    "puppet": 1,
+    "alignNonCenter": 4,
+    "animated": 3
+   },
+   "textures": {
+    "referenced": 53,
+    "pkgHit": 53,
+    "decodeOk": 37,
+    "decodeFail": 0,
+    "bytesMB": 81.4,
+    "formats": {
+     "0": 29,
+     "8": 3,
+     "9": 5
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 16,
+    "maxcount": 12387,
+    "spriteSheets": 3,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "Rain perspective",
+      "maxcount": 512,
+      "alive": 199
+     },
+     {
+      "name": "Shooting star-blue-2",
+      "maxcount": 20,
+      "alive": 8
+     },
+     {
+      "name": "rain_on_the_glass2",
+      "maxcount": 150,
+      "alive": 146
+     },
+     {
+      "name": "Fog (calm)",
+      "maxcount": 20,
+      "alive": 6
+     },
+     {
+      "name": "Fireworks 3",
+      "maxcount": 50,
+      "alive": 1
+     },
+     {
+      "name": "Blinking Stars_01",
+      "maxcount": 750,
+      "alive": 240
+     },
+     {
+      "name": "reactive Stars",
+      "maxcount": 500,
+      "alive": 297
+     },
+     {
+      "name": "Shooting_Star_01",
+      "maxcount": 35,
+      "alive": 32
+     },
+     {
+      "name": "Moving Stars_02",
+      "maxcount": 85,
+      "alive": 83
+     },
+     {
+      "name": "Glowing Stars_01",
+      "maxcount": 35,
+      "alive": 34
+     },
+     {
+      "name": "Glowing Stars_02",
+      "maxcount": 8,
+      "alive": 8
+     },
+     {
+      "name": "birds",
+      "maxcount": 30,
+      "alive": 25
+     },
+     {
+      "name": "Star Reactive",
+      "maxcount": 75,
+      "alive": 75
+     },
+     {
+      "name": "Rain_secondary",
+      "maxcount": 10000,
+      "alive": 9941
+     },
+     {
+      "name": "Moving Glowing Stars_01",
+      "maxcount": 85,
+      "alive": 82
+     },
+     {
+      "name": "Vapor (double)",
+      "maxcount": 32,
+      "alive": 26
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 24,
+    "skippedLayers": 40,
+    "skippedNames": [
+     "Audio bar",
+     "Clouds",
+     "Clock",
+     "Date",
+     "DAY DATE TIME (EN)",
+     "DAY DATE TIME (JP)",
+     "---------------------------------------",
+     "----MUSIC PLAYER---- (DO NOT TOUCH ME)",
+     "PLAYER ASSET MOVER. DRAG TO REPOSITION",
+     "playeroutlineanim",
+     "playerthumbnailbackgroundexception",
+     "playerboundsexception"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "meshDrawn": [
+     "girl"
+    ],
+    "draws": 26,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 108.9,
+    "decodeMs": 374.8,
+    "auditMs": 3095.6
+   }
+  },
+  {
+   "id": "3554161528",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3554161528/scene.pkg",
+   "fileMB": 22.5,
+   "issues": [
+    {
+     "key": "TRANSPARENT_FALLBACK",
+     "detail": "纯色"
+    }
+   ],
+   "container": {
+    "magic": "PKGV0022",
+    "entries": 134,
+    "sizeMB": 22.5,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 37,
+    "visible": 32,
+    "containers": 3,
+    "image": 15,
+    "video": 0,
+    "particle": 13,
+    "text": 2,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 19,
+    "attachment": 0,
+    "puppet": 1,
+    "alignNonCenter": 0,
+    "animated": 1
+   },
+   "textures": {
+    "referenced": 26,
+    "pkgHit": 26,
+    "decodeOk": 21,
+    "decodeFail": 0,
+    "bytesMB": 95.4,
+    "formats": {
+     "0": 7,
+     "4": 8,
+     "8": 3,
+     "9": 3
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 13,
+    "maxcount": 1471,
+    "spriteSheets": 5,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "雪景远景",
+      "maxcount": 40,
+      "alive": null,
+      "unverifiable": true
+     },
+     {
+      "name": "落花",
+      "maxcount": 30,
+      "alive": 30
+     },
+     {
+      "name": "notes1_simple",
+      "maxcount": 20,
+      "alive": 7
+     },
+     {
+      "name": "Blinking Stars",
+      "maxcount": 100,
+      "alive": 100
+     },
+     {
+      "name": "Blinking Stars",
+      "maxcount": 150,
+      "alive": 147
+     },
+     {
+      "name": "Blinking Stars",
+      "maxcount": 15,
+      "alive": 15
+     },
+     {
+      "name": "流星",
+      "maxcount": 16,
+      "alive": 1
+     },
+     {
+      "name": "雾 2",
+      "maxcount": 20,
+      "alive": 17
+     },
+     {
+      "name": "落花",
+      "maxcount": 30,
+      "alive": 30
+     },
+     {
+      "name": "雪景远景",
+      "maxcount": 40,
+      "alive": null,
+      "unverifiable": true
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 5,
+      "alive": 5
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 5,
+      "alive": 5
+     },
+     {
+      "name": "cherry blossoms on cursor",
+      "maxcount": 1000,
+      "alive": 163
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 16,
+    "skippedLayers": 8,
+    "skippedNames": [
+     "可调整组合层",
+     "纯色",
+     "Desktop_2025_(mp3cut.net).mp3"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [
+     "纯色"
+    ],
+    "meshDrawn": [
+     "人物"
+    ],
+    "draws": 26,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 24.5,
+    "decodeMs": 972.4,
+    "auditMs": 301.2
+   }
+  },
+  {
+   "id": "3660962877",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3660962877/scene.pkg",
+   "fileMB": 113.6,
+   "issues": [
+    {
+     "key": "TRANSPARENT_FALLBACK",
+     "detail": "纯色,组件,1054,帧率位置,893"
+    }
+   ],
+   "container": {
+    "magic": "PKGV0023",
+    "entries": 68,
+    "sizeMB": 113.6,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 127,
+    "visible": 16,
+    "containers": 0,
+    "image": 34,
+    "video": 0,
+    "particle": 2,
+    "text": 69,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 110,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 27,
+    "animated": 1
+   },
+   "textures": {
+    "referenced": 31,
+    "pkgHit": 31,
+    "decodeOk": 8,
+    "decodeFail": 0,
+    "bytesMB": 102.2,
+    "formats": {
+     "0": 4,
+     "4": 3,
+     "9": 1
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 2,
+    "maxcount": 1128,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "alive": 20
+     },
+     {
+      "name": "cherry blossoms on cursor",
+      "maxcount": 1000,
+      "alive": 163
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 16,
+    "skippedLayers": 111,
+    "skippedNames": [
+     "纯色",
+     "组件镜像",
+     484,
+     "文本1",
+     "文本2",
+     "帧率位置",
+     "帧率显示",
+     491,
+     "早中晚英文",
+     "早中晚",
+     "横Clock",
+     "Clock"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [
+     "纯色",
+     "组件",
+     1054,
+     "帧率位置",
+     893,
+     691
+    ],
+    "meshDrawn": [],
+    "draws": 24,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 222.5,
+    "decodeMs": 294.7,
+    "auditMs": 174.2
+   }
+  },
+  {
+   "id": "3669681034",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3669681034/scene.pkg",
+   "fileMB": 94.2,
+   "issues": [
+    {
+     "key": "TRANSPARENT_FALLBACK",
+     "detail": "松本文紀 - 親愛なるあの日々へ.flac"
+    }
+   ],
+   "container": {
+    "magic": "PKGV0023",
+    "entries": 21,
+    "sizeMB": 94.2,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 2,
+    "visible": 2,
+    "containers": 0,
+    "image": 1,
+    "video": 0,
+    "particle": 0,
+    "text": 0,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 0,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 0,
+    "animated": 0
+   },
+   "textures": {
+    "referenced": 1,
+    "pkgHit": 1,
+    "decodeOk": 1,
+    "decodeFail": 0,
+    "bytesMB": 0,
+    "formats": {
+     "0": 1
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 0,
+    "maxcount": 0,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": []
+   },
+   "audit": {
+    "drawnLayers": 2,
+    "skippedLayers": 0,
+    "skippedNames": [],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [
+     "松本文紀 - 親愛なるあの日々へ.flac"
+    ],
+    "meshDrawn": [],
+    "draws": 2,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 199.9,
+    "decodeMs": 13.1,
+    "auditMs": 3.5
+   }
+  },
+  {
+   "id": "3715743282",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3715743282/scene.pkg",
+   "fileMB": 3.7,
+   "issues": [],
+   "container": {
+    "magic": "PKGV0023",
+    "entries": 26,
+    "sizeMB": 3.7,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 9,
+    "visible": 6,
+    "containers": 0,
+    "image": 2,
+    "video": 0,
+    "particle": 3,
+    "text": 4,
+    "sound": 0,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 0,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 0,
+    "animated": 0
+   },
+   "textures": {
+    "referenced": 5,
+    "pkgHit": 5,
+    "decodeOk": 5,
+    "decodeFail": 0,
+    "bytesMB": 4.7,
+    "formats": {
+     "0": 5
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 3,
+    "maxcount": 208,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "灰烬大",
+      "maxcount": 40,
+      "alive": 39
+     },
+     {
+      "name": "尘埃",
+      "maxcount": 128,
+      "alive": 66
+     },
+     {
+      "name": "Ember",
+      "maxcount": 40,
+      "alive": 39
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 3,
+    "skippedLayers": 3,
+    "skippedNames": [
+     "D a y",
+     "欢迎回家",
+     "时间"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "meshDrawn": [],
+    "draws": 6,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 5.2,
+    "decodeMs": 19.4,
+    "auditMs": 99.3
+   }
+  },
+  {
+   "id": "3719111841",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3719111841/scene.pkg",
+   "fileMB": 69.5,
+   "issues": [],
+   "container": {
+    "magic": "PKGV0024",
+    "entries": 147,
+    "sizeMB": 69.5,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 43,
+    "visible": 31,
+    "containers": 0,
+    "image": 26,
+    "video": 0,
+    "particle": 8,
+    "text": 3,
+    "sound": 4,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 22,
+    "attachment": 19,
+    "puppet": 5,
+    "alignNonCenter": 0,
+    "animated": 0
+   },
+   "textures": {
+    "referenced": 44,
+    "pkgHit": 44,
+    "decodeOk": 43,
+    "decodeFail": 0,
+    "bytesMB": 443.8,
+    "formats": {
+     "0": 5,
+     "4": 24,
+     "8": 2,
+     "9": 12
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 8,
+    "maxcount": 1774,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "Glass Shards",
+      "maxcount": 50,
+      "alive": 45
+     },
+     {
+      "name": "Matrix spawnerREADNAME --> (place top left corner, duplicate once and move second layer  x origin -30)",
+      "maxcount": 500,
+      "alive": 499
+     },
+     {
+      "name": "灰烬大",
+      "maxcount": 40,
+      "alive": 38
+     },
+     {
+      "name": "灰烬光束",
+      "maxcount": 40,
+      "alive": 19
+     },
+     {
+      "name": "Bokeh Hex",
+      "maxcount": 500,
+      "alive": 20
+     },
+     {
+      "name": "Bokeh Cir",
+      "maxcount": 500,
+      "alive": 20
+     },
+     {
+      "name": "尘埃",
+      "maxcount": 128,
+      "alive": 66
+     },
+     {
+      "name": "光束 2 (旧)",
+      "maxcount": 16,
+      "alive": null,
+      "hidden": true
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 25,
+    "skippedLayers": 12,
+    "skippedNames": [
+     "凯尔希_无底",
+     "背景暗色",
+     "音频线Audio Spectrum Visualizer",
+     "Clock",
+     "D a y",
+     "Date",
+     "塞壬唱片-MSR,Robert Wolf - Дом.mp3",
+     "塞壬唱片-MSR,Robert Wolf - 走过漫漫时空.mp3",
+     "塞壬唱片-MSR,松林凜 - Innocence (Instrumental).mp3",
+     "塞壬唱片-MSR,ユリカリパブリック,松林凜 - Innocence.mp3",
+     "光束 2 (旧)",
+     "后处理层"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "meshDrawn": [
+     "长发3",
+     "主体",
+     "右眼上眼睑",
+     "左耳朵1",
+     "眼睛组合"
+    ],
+    "draws": 49,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 132.7,
+    "decodeMs": 4881.3,
+    "auditMs": 128.6
+   }
+  },
+  {
+   "id": "3721991999",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3721991999/scene.pkg",
+   "fileMB": 8.3,
+   "issues": [],
+   "container": {
+    "magic": "PKGV0024",
+    "entries": 55,
+    "sizeMB": 8.3,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 2,
+    "visible": 2,
+    "containers": 0,
+    "image": 1,
+    "video": 0,
+    "particle": 1,
+    "text": 0,
+    "sound": 0,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 0,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 0,
+    "animated": 0
+   },
+   "textures": {
+    "referenced": 2,
+    "pkgHit": 2,
+    "decodeOk": 2,
+    "decodeFail": 0,
+    "bytesMB": 5.5,
+    "formats": {
+     "0": 1,
+     "9": 1
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 1,
+    "maxcount": 128,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "尘埃",
+      "maxcount": 128,
+      "alive": 66
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 1,
+    "skippedLayers": 0,
+    "skippedNames": [],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "meshDrawn": [],
+    "draws": 1,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 12.2,
+    "decodeMs": 6.2,
+    "auditMs": 24.3
+   }
+  },
+  {
+   "id": "3778592720",
+   "path": "/mnt/sdcard/wallpapertest1/dd/3778592720/scene.pkg",
+   "fileMB": 41.3,
+   "issues": [],
+   "container": {
+    "magic": "PKGV0024",
+    "entries": 38,
+    "sizeMB": 41.3,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 5,
+    "visible": 4,
+    "containers": 0,
+    "image": 2,
+    "video": 0,
+    "particle": 2,
+    "text": 0,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 0,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 0,
+    "animated": 0
+   },
+   "textures": {
+    "referenced": 4,
+    "pkgHit": 4,
+    "decodeOk": 3,
+    "decodeFail": 0,
+    "bytesMB": 0.1,
+    "formats": {
+     "0": 3
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 2,
+    "maxcount": 80,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "灰烬大",
+      "maxcount": 40,
+      "alive": 38
+     },
+     {
+      "name": "灰烬大",
+      "maxcount": 40,
+      "alive": 38
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 2,
+    "skippedLayers": 1,
+    "skippedNames": [
+     "obj_wo3DlMOGwrbDjj7DisKw_8747985084_4b5e_77fa_fcfc_2d79b769f05b53407d42e3257e960aae[1].mp3"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "meshDrawn": [],
+    "draws": 2,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 57.7,
+    "decodeMs": 6.5,
+    "auditMs": 44.6
+   }
+  },
+  {
+   "id": "夜莺Night——Honkai Star Rail Castorice 遐蝶 冥河永渡 崩坏星穹铁道The Etern",
+   "path": "/mnt/sdcard/wallpapertest1/夜莺Night——Honkai Star Rail Castorice 遐蝶 冥河永渡 崩坏星穹铁道The Etern.mpkg",
+   "fileMB": 78,
+   "issues": [
+    {
+     "key": "TRANSPARENT_FALLBACK",
+     "detail": "纯色"
+    }
+   ],
+   "container": {
+    "magic": "PKGM0018",
+    "entries": 49,
+    "sizeMB": 78,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 41,
+    "visible": 20,
+    "containers": 0,
+    "image": 5,
+    "video": 0,
+    "particle": 5,
+    "text": 21,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 27,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 0,
+    "animated": 5
+   },
+   "textures": {
+    "referenced": 10,
+    "pkgHit": 10,
+    "decodeOk": 7,
+    "decodeFail": 0,
+    "bytesMB": 60.3,
+    "formats": {
+     "0": 5,
+     "5": 1,
+     "9": 1
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 5,
+    "maxcount": 388,
+    "spriteSheets": 1,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "大型",
+      "maxcount": 40,
+      "alive": 37
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 10,
+      "alive": 10
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 10,
+      "alive": 10
+     },
+     {
+      "name": "樱花",
+      "maxcount": 200,
+      "alive": 174
+     },
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "alive": 20
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 10,
+    "skippedLayers": 21,
+    "skippedNames": [
+     "Clock",
+     "Date",
+     "Day",
+     "D a y",
+     "纯色",
+     "尾澤拓実 - 眠.mp3"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [
+     "纯色"
+    ],
+    "meshDrawn": [],
+    "draws": 14,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 167.1,
+    "decodeMs": 22,
+    "auditMs": 92.6
+   }
+  },
+  {
+   "id": "夜莺night——【customize自定义】firefly_流萤_星空之誓——夜莺night崩坏星穹铁道",
+   "path": "/mnt/sdcard/wallpapertest1/夜莺night——【customize自定义】firefly_流萤_星空之誓——夜莺night崩坏星穹铁道.mpkg",
+   "fileMB": 73.8,
+   "issues": [
+    {
+     "key": "TRANSPARENT_FALLBACK",
+     "detail": "纯色,Media Info (ROUND),Album Cover"
+    }
+   ],
+   "container": {
+    "magic": "PKGM0018",
+    "entries": 127,
+    "sizeMB": 73.8,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 58,
+    "visible": 22,
+    "containers": 0,
+    "image": 22,
+    "video": 0,
+    "particle": 4,
+    "text": 22,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 47,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 2,
+    "animated": 2
+   },
+   "textures": {
+    "referenced": 24,
+    "pkgHit": 24,
+    "decodeOk": 22,
+    "decodeFail": 0,
+    "bytesMB": 113.3,
+    "formats": {
+     "0": 5,
+     "5": 16,
+     "9": 1
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 4,
+    "maxcount": 738,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "Stars",
+      "maxcount": 500,
+      "alive": 236
+     },
+     {
+      "name": "Twinkling shooting star",
+      "maxcount": 100,
+      "alive": 23
+     },
+     {
+      "name": "萤火虫",
+      "maxcount": 10,
+      "alive": 10
+     },
+     {
+      "name": "轨迹 1",
+      "maxcount": 128,
+      "alive": 20
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 14,
+    "skippedLayers": 36,
+    "skippedNames": [
+     "流萤正常 蓝幕60帧_batch",
+     "Clock",
+     "Date",
+     "Day",
+     "D a y",
+     "Clock Container",
+     "Text Container",
+     "Background",
+     "Rounded Corners",
+     "Artist Name",
+     "Song Title",
+     "Settings Container"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [
+     "纯色",
+     "Media Info (ROUND)",
+     "Album Cover"
+    ],
+    "meshDrawn": [],
+    "draws": 23,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 153.9,
+    "decodeMs": 865.9,
+    "auditMs": 52.9
+   }
+  },
+  {
+   "id": "夜莺night——【time_variation时间变化】elaina_伊蕾娜：闲憩微息【魔女之旅】day_night",
+   "path": "/mnt/sdcard/wallpapertest1/夜莺night——【time_variation时间变化】elaina_伊蕾娜：闲憩微息【魔女之旅】day_night.mpkg",
+   "fileMB": 315.9,
+   "issues": [],
+   "container": {
+    "magic": "PKGM0018",
+    "entries": 55,
+    "sizeMB": 315.9,
+    "layoutOk": true
+   },
+   "scene": {
+    "layers": 41,
+    "visible": 15,
+    "containers": 1,
+    "image": 12,
+    "video": 0,
+    "particle": 1,
+    "text": 16,
+    "sound": 1,
+    "light": 0
+   },
+   "transforms": {
+    "parented": 31,
+    "attachment": 0,
+    "puppet": 0,
+    "alignNonCenter": 1,
+    "animated": 1
+   },
+   "textures": {
+    "referenced": 9,
+    "pkgHit": 9,
+    "decodeOk": 9,
+    "decodeFail": 0,
+    "bytesMB": 292.8,
+    "formats": {
+     "0": 5,
+     "5": 4
+    },
+    "failNames": []
+   },
+   "particles": {
+    "layers": 1,
+    "maxcount": 128,
+    "spriteSheets": 0,
+    "multiImage": 0,
+    "aliveRows": [
+     {
+      "name": "Trails 2",
+      "maxcount": 128,
+      "alive": 20
+     }
+    ]
+   },
+   "audit": {
+    "drawnLayers": 7,
+    "skippedLayers": 27,
+    "skippedNames": [
+     "myLayer",
+     "mddn",
+     "morning",
+     "day",
+     "dusk",
+     "night",
+     "可调整组合层",
+     "纯色",
+     "Audio Bars",
+     "Clock",
+     "Date",
+     "Day"
+    ],
+    "layerErrors": [],
+    "whiteFallback": [],
+    "transparentFallback": [],
+    "meshDrawn": [],
+    "draws": 7,
+    "renderErr": null,
+    "logTail": []
+   },
+   "timing": {
+    "parseMs": 627.8,
+    "decodeMs": 301.4,
+    "auditMs": 6.4
+   }
+  }
+ ]
+}
