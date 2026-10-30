@@ -16,6 +16,16 @@
 //   M1 去掉扩展名白名单 ⇒ 夹具上"白名单外扩展名"用例必须红；
 //   M2 去掉 realpath 越界防护 ⇒ "越界 symlink"用例必须红；
 //   期望红集 == 实际红集（逐条）。
+//
+// 演进留痕（任务书 B 2026-10-30：真仓库内嵌布局）：
+//   · B 组"真 renderer 树"的定位改为候选序：`env MPW_RENDERER_DEV` → `../renderer` → `../we-scene-demo`
+//     → `./renderer`（内嵌副本），首个存在的目录胜出。旧代码钉死 `<仓库父目录>/renderer/`（集成交付的
+//     并列目录布局），真仓库/worktree 里该路径不存在 ⇒ B1–B4 红于路径解析而非语义。
+//   · 内嵌副本就是插件 /webloader 实际托管的根（lib/index.js 的 WEBLOADER_ROOT 同款定位：从插件目录
+//     import.meta.url 派生）⇒ 真仓库/worktree 里 B 组打的是"只装插件就能渲染"首帧依赖的**那棵树本身**，
+//     比旧布局（对拍另一棵树）更贴被测对象。
+//   · 四个候选全缺 ⇒ B1–B4 明确 SKIP 并打印原因（不计通过、不静默放行；副本缺失的完整性由
+//     license-boundary 的哨兵判据判红）。
 
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -25,8 +35,18 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PLUGIN = path.resolve(HERE, '..');
-const ROOT = path.resolve(PLUGIN, '..');
-const RENDERER_DEV = path.join(ROOT, 'renderer');
+
+/* ── 真 renderer 树解析（任务书 B 2026-10-30 候选序）：env → ../renderer → ../we-scene-demo → ./renderer（内嵌） ── */
+function resolveRendererTree() {
+  const cands = [];
+  if (process.env.MPW_RENDERER_DEV) cands.push({ label: 'env MPW_RENDERER_DEV=' + process.env.MPW_RENDERER_DEV, p: path.resolve(PLUGIN, process.env.MPW_RENDERER_DEV) });
+  cands.push({ label: '../renderer', p: path.resolve(PLUGIN, '..', 'renderer') });
+  cands.push({ label: '../we-scene-demo', p: path.resolve(PLUGIN, '..', 'we-scene-demo') });
+  cands.push({ label: './renderer（内嵌副本）', p: path.join(PLUGIN, 'renderer') });
+  for (const c of cands) { try { if (fs.statSync(c.p).isDirectory()) return c; } catch { /* 候选不存在 ⇒ 试下一个 */ } }
+  return null;
+}
+const RENDERER_TREE = resolveRendererTree();
 
 let pass = 0, fail = 0; const results = [];
 const check = (id, ok, detail) => { (ok ? pass++ : fail++); results.push({ id, ok, detail }); };
@@ -154,18 +174,26 @@ if (fx) {
   }
 }
 
-/* ── B. 集成读数：真 renderer/ 树 ── */
-try {
-  const serveReal = runFactory(factorySrc, RENDERER_DEV);
-  const a = serveOnce(serveReal, 'GET', '/webloader/');
-  const b = serveOnce(serveReal, 'GET', '/webloader/bundle.js');
-  check('B1 真 renderer 树：/ → demo.html 200', a.res.statusCode === 200 && /we-scene|属性面板|demo/.test(a.res.body().slice(0, 4000)), `code=${a.res.statusCode} len=${a.res.bodyBytes().length}`);
-  check('B2 真 renderer 树：/bundle.js → core/we-scene-bundle.js 200', b.res.statusCode === 200 && b.res.bodyBytes().length > 100000, `code=${b.res.statusCode} len=${b.res.bodyBytes().length}`);
-  const c = serveOnce(serveReal, 'GET', '/webloader/diag-flags.json');
-  check('B3 真 renderer 树：/diag-flags.json → web/ 产物 200', c.res.statusCode === 200 && /"common"/.test(c.res.body()), `code=${c.res.statusCode}`);
-  const d = serveOnce(serveReal, 'GET', '/webloader/elysia/scene-scripts.js');
-  check('B4 真 renderer 树：elysia 模块静态 200', d.res.statusCode === 200, `code=${d.res.statusCode}`);
-} catch (e) { check('B1 真 renderer 树集成断言', false, String(e && e.message)); }
+/* ── B. 集成读数：真 renderer 树（任务书 B 候选序解析；演进留痕见文件头） ── */
+let bSkips = 0;
+if (!RENDERER_TREE) {
+  bSkips = 4;
+  console.log('⏭ SKIP B1–B4 真 renderer 树集成读数 —— 四个候选全缺（env MPW_RENDERER_DEV / ../renderer / ../we-scene-demo / ./renderer 内嵌副本都不存在）；'
+    + '副本缺失的完整性由 license-boundary 判据判红，此处明确跳过、不静默放行');
+} else {
+  console.log('# 真 renderer 树解析：' + RENDERER_TREE.label);
+  try {
+    const serveReal = runFactory(factorySrc, RENDERER_TREE.p);
+    const a = serveOnce(serveReal, 'GET', '/webloader/');
+    const b = serveOnce(serveReal, 'GET', '/webloader/bundle.js');
+    check('B1 真 renderer 树：/ → demo.html 200', a.res.statusCode === 200 && /we-scene|属性面板|demo/.test(a.res.body().slice(0, 4000)), `code=${a.res.statusCode} len=${a.res.bodyBytes().length}`);
+    check('B2 真 renderer 树：/bundle.js → core/we-scene-bundle.js 200', b.res.statusCode === 200 && b.res.bodyBytes().length > 100000, `code=${b.res.statusCode} len=${b.res.bodyBytes().length}`);
+    const c = serveOnce(serveReal, 'GET', '/webloader/diag-flags.json');
+    check('B3 真 renderer 树：/diag-flags.json → web/ 产物 200', c.res.statusCode === 200 && /"common"/.test(c.res.body()), `code=${c.res.statusCode}`);
+    const d = serveOnce(serveReal, 'GET', '/webloader/elysia/scene-scripts.js');
+    check('B4 真 renderer 树：elysia 模块静态 200', d.res.statusCode === 200, `code=${d.res.statusCode}`);
+  } catch (e) { check('B1 真 renderer 树集成断言', false, String(e && e.message)); }
+}
 
 /* ── C. 合同面：client.js 默认地址 + 守卫同源分支 + 身份函数相对 URL ── */
 try {
@@ -209,5 +237,5 @@ try {
 if (fx) { try { fs.rmSync(fx, { recursive: true, force: true }); } catch { /* 清理失败不影响判定 */ } }
 if (outsideDir) { try { fs.rmSync(outsideDir, { recursive: true, force: true }); } catch { /* 同上 */ } }
 for (const r of results) console.log((r.ok ? '✓' : '✗') + ' ' + r.id + (r.detail ? '  —— ' + r.detail : ''));
-console.log(`===== renderer-host: ${pass} 通过 / ${fail} 失败 =====`);
+console.log(`===== renderer-host: ${pass} 通过 / ${fail} 失败${bSkips ? ' / ' + bSkips + ' SKIP（原因见上）' : ''} =====`);
 process.exit(fail ? 1 : 0);

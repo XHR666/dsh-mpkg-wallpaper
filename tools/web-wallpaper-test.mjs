@@ -12,6 +12,17 @@
 //
 // 参考基准（**不读对方仓库/本机副本**，按规格字面量自建，见 docs/COPYING-RULES.md §3.3）：
 //   oneincase/webwallgl，MIT，commit b61e8910ae0a176288aed99ce9a93a13ea07df57（本机研读副本未入库）
+//
+// 演进留痕（任务书 B 2026-10-31，⑦webFrameMode 默认档迁移补完）：
+//   · 分支把网页帧**默认档**从 auto 迁到 compat（lib/client.js ⑦迁移注释：用户设备只有兼容档能播；
+//     迁移覆盖存量档，lib/web-wallpaper.js 的 WEB_FRAME_DEFAULT 是新默认的唯一事实源）。
+//     分支交付时只改了 client 侧、模块与判据停在旧契约 ⇒ B6/B7 组红于"半截契约"而非语义回退。
+//   · 本轮补完：模块默认对齐 compat（lib/web-wallpaper.js）；B7a/B7c/B7d/B7h 的默认档读数随契约演进；
+//     B6 改为**档位可显式注入**（lib/client.js mpwWebSandboxAttr 新增 modeOverride，镜像 shimWanted 模式），
+//     auto 档的旧意图逐字保留（shim 入口 → 不透明源沙箱）。
+//   · 新钉一条安全不变量：`?sandbox=strict`（场景/渲染器帧标记）**不受档位管辖** —— 任何档（含新默认
+//     compat）都返回 strict 集。迁移暴露的真回归：旧实现 compat 档会把场景帧的 strict 吞成兼容集。
+//   · auto 档本身的判定表 / 自动降档纪律（B7b/B7b2/B7f，落点恒 sandbox）**一字未动** —— 安全语义不降。
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -161,9 +172,17 @@ console.log('\n== B. 沙箱 iframe：最小必要集 + 三档（网页 shim / �
   const plugin = loadPlugin({ quiet: true })
   const T = globalThis.__mpwWebTest
   ok(!!T && typeof T.sandboxAttr === 'function', 'B6 客户端测试钩子 __mpwWebTest 已暴露')
-  eq(T.sandboxAttr('/api/mpkg-wallpaper/custom-folder/W/index.html?mpwshim=1&mpwmute=1'), 'allow-scripts', 'B6 shim URL → 不透明源沙箱')
+  /* B6（2026-10-31 ⑦迁移补完）改为档位可显式注入：当前世界档 = 新默认 compat（迁移已写入档）。
+     auto 档的旧意图逐字保留（shim 入口 → 不透明源），新默认档与 strict 前置各有独立断言。 */
+  eq(T.sandboxAttr('/api/mpkg-wallpaper/custom-folder/W/index.html?mpwshim=1&mpwmute=1'), WEB_SANDBOX_COMPAT_ATTR,
+    'B6 新默认 compat 档：shim 标记不改属性（档位优先，兼容集；旧默认时代的 sandbox 读数由下一条 auto 档断言逐字保留）')
+  eq(T.sandboxAttr('/api/mpkg-wallpaper/custom-folder/W/index.html?mpwshim=1&mpwmute=1', 'auto'), 'allow-scripts',
+    'B6 auto 档（显式注入）：shim URL → 不透明源沙箱（旧 B6 意图一字不动）')
   eq(T.sandboxAttr('/api/mpkg-wallpaper/custom-folder/W/index.html'), WEB_SANDBOX_COMPAT_ATTR, 'B6 无标记的普通网页壁纸 URL → 兼容集（旧行为）')
-  eq(T.sandboxAttr('http://127.0.0.1:8899/?pkgurl=x&sandbox=strict'), 'allow-scripts allow-pointer-lock', 'B6 渲染器 strict URL → 场景 strict 集（不受网页通道影响）')
+  eq(T.sandboxAttr('http://127.0.0.1:8899/?pkgurl=x&sandbox=strict'), 'allow-scripts allow-pointer-lock',
+    'B6 渲染器 strict URL → 场景 strict 集（不受档位影响；新默认 compat 下实测曾被吞成兼容集 = 真回归，本轮修复后钉死）')
+  eq(T.sandboxAttr('http://127.0.0.1:8899/?pkgurl=x&sandbox=strict', 'compat'), 'allow-scripts allow-pointer-lock',
+    'B6 strict 前置于档位：显式 compat 档下场景 strict URL 仍是 strict 集（安全不变量）')
   ok(T.isShimUrl('a?mpwshim=1') && !T.isShimUrl('a?mpwshim=0') && !T.isShimUrl('a?xmpwshim=1'), 'B6 shim 标记识别只认 mpwshim=1 且按参数边界')
   // URL 身份 = 壁纸身份，不含策略参数：拨静音/倍速/暂停**不该**重载壁纸（重动画壁纸重载很贵）
   const ua = '/api/mpkg-wallpaper/custom-folder/W/index.html?mpwshim=1&mpwmute=1&mpwspeed=1&mpwpause=0'
@@ -182,10 +201,12 @@ console.log('\n== B. 沙箱 iframe：最小必要集 + 三档（网页 shim / �
    ③ 可查状态：`webFrameStatus()` 形状固定（mode/requested/source/attr/shim/degradable/degraded/why/at）。 */
 console.log('\n== B7. 网页帧模式三档：属性 / shim 标记 / 自动降级（唯一判定表 + 客户端镜像对拍）==')
 {
-  eq(WEB_FRAME_DEFAULT, 'auto', 'B7a 默认档 = auto（= 既有行为，改动前语义不变）')
+  /* ⑦迁移补完（2026-10-31）：默认档 auto → compat（lib/client.js 同名迁移的唯一事实源）。
+     三档本身与 auto 档的判定表/降档纪律（B7b/B7b2）一字未动。 */
+  eq(WEB_FRAME_DEFAULT, 'compat', 'B7a 默认档 = compat（⑦迁移 2026-10-30：用户设备只有兼容档能播；模块是唯一事实源）')
   eq(WEB_FRAME_MODES.join(','), 'auto,sandbox,compat', 'B7a 三档规范顺序 = auto, sandbox, compat')
   eq(WEB_FRAME_QUERY_KEY, 'webframe', 'B7a 回退口键名 = webframe')
-  eq(normalizeWebFrameMode(undefined) + ',' + normalizeWebFrameMode(' SANDBOX ') + ',' + normalizeWebFrameMode('nope') + ',' + normalizeWebFrameMode(null), 'auto,sandbox,auto,auto', 'B7a 归一化：未知/空白/大小写一律回落 auto')
+  eq(normalizeWebFrameMode(undefined) + ',' + normalizeWebFrameMode(' SANDBOX ') + ',' + normalizeWebFrameMode('nope') + ',' + normalizeWebFrameMode(null), 'compat,sandbox,compat,compat', 'B7a 归一化：未知/空白/大小写一律回落默认档（compat）')
   eq(webFrameFromQuery('/a?webframe=compat'), 'compat', 'B7a 从 URL 读 webframe')
   eq(webFrameFromQuery('/a?webframe=bogus') + '|' + webFrameFromQuery('/a'), '|', 'B7a 非法值/缺省 → 空串（= 没指定，不是 auto）')
   const planTable = WEB_FRAME_MODES.map((m) => {
@@ -208,11 +229,15 @@ console.log('\n== B7. 网页帧模式三档：属性 / shim 标记 / 自动降�
     'B7b2 F5：显式档的 fallbackMode 永远是它自己（用户显式选的档不会被自动换）')
   eq(resolveWebFrameMode({ query: 'compat', section: 'sandbox' }).mode, 'compat', 'B7c URL 显式指定 > 设置项')
   eq(resolveWebFrameMode({ query: '', section: 'sandbox' }).source, 'setting', 'B7c 没写 URL 参数时听设置项')
-  eq(resolveWebFrameMode({}).source + '/' + resolveWebFrameMode({}).mode, 'default/auto', 'B7c 都没有 ⇒ 默认档 auto')
+  eq(resolveWebFrameMode({}).source + '/' + resolveWebFrameMode({}).mode, 'default/compat', 'B7c 都没有 ⇒ 默认档 compat（⑦迁移）')
   const st = webFrameStatus({ section: 'sandbox' })
   eq(Object.keys(st).sort().join(','), 'at,attr,autoCompat,degradable,degraded,fallbackMode,mode,queryMode,reason,requested,shim,source,why'.split(',').sort().join(','), 'B7d 状态形状固定（面板/探针/文档共用；①F5 起含 autoCompat/fallbackMode）')
   eq(st.attr, WEB_SANDBOX_ATTR, 'B7d 状态里的 attr 就是 iframe 要写的 sandbox 属性')
-  eq(webFrameStatus({}).autoCompat + '/' + webFrameStatus({}).fallbackMode, 'false/sandbox', 'B7d F5：默认可查状态如实播报"自动降档不会换源"')
+  /* B7d（2026-10-31 ⑦迁移）：无输入基线随新默认演进（compat 档：fallback=自己）；F5 的
+     "自动降档不换源"证据改由显式 auto 档承载（plan 纪律一字未动）。 */
+  eq(webFrameStatus({}).mode + '/' + webFrameStatus({}).fallbackMode, 'compat/compat', 'B7d 无输入基线 = 新默认 compat（显式档 fallback=自己）')
+  eq(webFrameStatus({ section: 'auto' }).fallbackMode + '/' + webFrameStatus({ section: 'auto' }).attr, 'sandbox/' + WEB_SANDBOX_ATTR,
+    'B7d F5：auto 档可查状态如实播报"自动降档落点 = sandbox（不换源）"')
 
   /* 客户端镜像对拍：同一份判定表在 lib/client.js 里必须给出**同一个**答案（否则用户切档不生效） */
   /* 复用 B6 已经装载好的客户端钩子（同一次会话里再 loadPlugin 会因单实例守卫找不到注册）。 */
@@ -247,7 +272,10 @@ console.log('\n== B7. 网页帧模式三档：属性 / shim 标记 / 自动降�
   eq(Tc.frameQueryKey, WEB_FRAME_QUERY_KEY, 'B7g 客户端回退口键名与宿主模块一致')
   const q = Tc.frameQuery()
   eq(q, '', 'B7h 测试环境无 ?webframe= ⇒ 空串（设置项/默认档接管）')
-  eq(Tc.frameResolve().source, 'default', 'B7h 无设置项 ⇒ source=default')
+  /* B7h（2026-10-31 ⑦迁移）：boot 过的世界档里经迁移带着新默认 compat（未打 UserSet 标记）
+     ⇒ 有效档 source=setting、mode=compat。客户端"档里完全没有"的 default 路径由 B7c（模块侧
+     resolveWebFrameMode({})）覆盖 —— 两侧读数不再相同是迁移的预期形状，不是镜像漂移。 */
+  eq(Tc.frameResolve().source + '/' + Tc.frameResolve().mode, 'setting/compat', 'B7h boot 迁移把新默认写进档 ⇒ source=setting + compat（⑦迁移预期形状）')
   /* B7i 风险预检接口（用户第 11 条）：URL 形状 + 标记/状态/文案（纯函数层；路由层见 tools/web-probe-test.mjs） */
   eq(Tc.webProbeUrl({ folder: 'W' }), '/api/mpkg-wallpaper/web-probe?folder=W', 'B7i /web-probe URL 形状：folder=')
   eq(Tc.webProbeUrl({ ltoken: 'abc' }), '/api/mpkg-wallpaper/web-probe?ltoken=abc', 'B7i /web-probe URL 形状：ltoken=')
@@ -1073,8 +1101,15 @@ console.log('\n== F. 洁净度：插件不含任何 GPL 代码/派生物 ==')
   }
   eq(codeHits.length, 0, 'F1 lib/** 代码里无 GPL-2.0-only 项目的派生标识符（注释剥离后 grep）' + (codeHits.length ? ' → ' + codeHits.join(', ') : ''))
   eq(textHits.length, 0, 'F1 lib/** 无 GPL 许可文本/版本标识（含注释）' + (textHits.length ? ' → ' + textHits.join(' | ') : ''))
-  eq((read('LICENSE').split('\n')[0] || '').trim(), 'MIT License', 'F2 插件 LICENSE 首行仍为 MIT')
-  eq(JSON.parse(read('package.json')).license, 'MIT', 'F2 package.json license = MIT')
+  /* F2（任务书 B 2026-10-31 契约演进）：本分支把包改为**双许可**（lib/**=MIT + renderer/**=GPL-3.0-or-later，
+     根 LICENSE 是双许可说明页、package.json license="SEE LICENSE IN LICENSE" —— license-boundary 判据 A1–A5
+     钉的同一套事实）。旧断言（首行 MIT License / license=MIT）是纯 MIT 时代的形态，分支上必然红。
+     演进后的保护意图不变：**插件本体不被 GPL 吞掉** —— LICENSE 必须仍是"MIT + GPL 双许可说明页"
+     （同时点名两部分），package.json 不得标成纯 GPL。 */
+  const rootLicenseHead = read('LICENSE').slice(0, 800)
+  ok(rootLicenseHead.includes('MIT') && rootLicenseHead.includes('GPL-3.0-or-later') && rootLicenseHead.includes('renderer/**'),
+    'F2 插件 LICENSE 仍是"MIT + GPL-3.0-or-later"双许可说明页（点名两目录；不许被 GPL 单边吞掉）')
+  eq(JSON.parse(read('package.json')).license, 'SEE LICENSE IN LICENSE', 'F2 package.json license = SEE LICENSE IN LICENSE（不许标纯 GPL）')
 
   // 不 import/内嵌渲染器：lib/** 不得 import 出包外、代码里不得出现 GPL 侧仓库名
   const crossHits = []

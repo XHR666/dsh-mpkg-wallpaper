@@ -79,13 +79,21 @@ function world(opts = {}) {
 }
 const forgedPolicyError = () => ({ mpw: 'mpw:web', op: 'error', kind: 'SecurityError', message: "Failed to construct 'Worker': Access to the script at 'blob:null/1' is denied by the sandbox" })
 
-/* ══════════════ A. 默认档：伪造错误不降档 + 来源校验 + 记账 ══════════════ */
-console.log('\n== A. 默认档 auto（webFrameAutoCompat 关）：伪造 policy 错误不得升同源 ==')
+/* ══════════════ A. auto 档（显式设定）：伪造错误不降档 + 来源校验 + 记账 ══════════════ */
+console.log('\n== A. auto 档（显式设定，webFrameAutoCompat 关）：伪造 policy 错误不得升同源 ==')
+/* （2026-10-31 任务书 B ⑦迁移补完）本组测 **auto 档**的闸门语义 —— 旧实现靠"默认档=auto"间接进入，
+   分支把默认档迁到 compat 后必须显式设 auto（带 UserSet 标记，不被迁移改写）；
+   新默认档的读数由 A0'（独立世界，放在本组之前 —— 不能混进 A 组：中途再 loadPlugin 会重置
+   同一进程的 diag 收集器，A4 的信标计数会被清零）。 */
 {
-  const { W, T } = world()
+  const { W: W0 } = world()
+  eq(W0.framePlan().mode + '/' + W0.framePlan().fallbackMode, 'compat/compat', "A0' 新默认档读数（无任何设置）= compat（⑦迁移；fallback=显式档自己）")
+}
+{
+  const { W, T } = world({ settings: { webFrameMode: 'auto', webFrameModeUserSet: true } })
   const f = mkFrame(SHIM_URL, SAND_ATTR)
   W.frameStatusSet({})
-  eq(W.framePlan().mode + '/' + W.framePlan().fallbackMode + '/autoCompat=' + W.frameAutoCompat(), 'auto/sandbox/autoCompat=false', 'A0 默认档计划：auto，自动降档落点 = sandbox，回退口关')
+  eq(W.framePlan().mode + '/' + W.framePlan().fallbackMode + '/autoCompat=' + W.frameAutoCompat(), 'auto/sandbox/autoCompat=false', 'A0 auto 档（显式设定）计划：自动降档落点 = sandbox，回退口关')
 
   /* A1 source + origin 都对 ⇒ 走到"策略类错误"分支，但**默认不换源** */
   const r1 = W.frameFallback('script-error', 'SecurityError: sandbox', f)
@@ -123,7 +131,7 @@ console.log('\n== A. 默认档 auto（webFrameAutoCompat 关）：伪造 policy 
 /* A5 2.5s shim 兜底：只去 shim 标记重载，**不换源** */
 console.log('\n== A5. shim 未报到（2.5s）：只去 mpwshim 标记重载，sandbox 属性仍是不透明源 ==')
 {
-  const { W } = world()
+  const { W } = world({ settings: { webFrameMode: 'auto', webFrameModeUserSet: true } })   // ⑦迁移补完：显式 auto（重载走"去标记"路径需要 degradable 的 auto 档）
   const f = mkFrame(SHIM_URL, SAND_ATTR)
   W.frameShimArm(f)
   await sleep(2750)
@@ -167,9 +175,12 @@ console.log('\n== B. 显式档（用户合法路径）：compat 仍生效，sand
 
 /* ══════════════ C. 回退口（风险档）：显式打开后才允许自动降 compat ══════════════ */
 console.log('\n== C. 回退口 webFrameAutoCompat=true：显式打开才允许自动降 compat（有风险） ==')
+/* （2026-10-31 任务书 B ⑦迁移补完）本组测的是 **auto 档**的回退口语义 —— 降级只对 auto 档存在。
+   旧实现靠"默认档=auto"间接进入；分支把默认档迁到 compat 后必须显式设 auto（带 UserSet 标记，
+   不被迁移改写），否则整组读的是 compat 档（degradable=false）、C2/C3 红于夹具而非语义。 */
 const dg = []
 {
-  const { W } = world({ settings: { webFrameAutoCompat: true }, fetch: async () => ({ ok: true, status: 200, json: async () => ({}), text: async () => '', arrayBuffer: async () => new ArrayBuffer(0) }) })
+  const { W } = world({ settings: { webFrameMode: 'auto', webFrameModeUserSet: true, webFrameAutoCompat: true }, fetch: async () => ({ ok: true, status: 200, json: async () => ({}), text: async () => '', arrayBuffer: async () => new ArrayBuffer(0) }) })
   eq(W.frameAutoCompat(), true, 'C1 设置项 webFrameAutoCompat=true 被读到')
   eq(W.framePlan().fallbackMode + '/' + (W.framePlan().fallbackAttr === COMPAT_ATTR ? 'compat-attr' : 'sandbox-attr'), 'compat/compat-attr', 'C1 计划里的自动降档落点变成 compat')
   const f = mkFrame(SHIM_URL, SAND_ATTR)
@@ -182,7 +193,7 @@ const dg = []
   dg.push('risk-flagged')
 }
 {
-  const { W } = world({ settings: { webFrameAutoCompat: true } })
+  const { W } = world({ settings: { webFrameMode: 'auto', webFrameModeUserSet: true, webFrameAutoCompat: true } })
   const f = mkFrame(SHIM_URL, SAND_ATTR)
   W.frameShimArm(f)
   await sleep(2750)

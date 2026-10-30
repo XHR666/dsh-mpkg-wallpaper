@@ -479,7 +479,27 @@ function runSelf(args, env) {
   return { status: r.status, out: (r.stdout || '') + (r.stderr || '') }
 }
 /* 把 lib/index.js 连同它的**相对 import 依赖图**复制进夹具目录（真树只读）。
-   夹具 = 入口的完整依赖闭包，所以变异副本能像真树一样被 import；总量 < 1MB（本仓夹具纪律）。 */
+   夹具 = 入口的完整依赖闭包，所以变异副本能像真树一样被 import；总量 < 1MB（本仓夹具纪律）。
+   ①(任务书 B 2026-10-31) 依赖扫描前先剥**注释**（字符串原样保留 —— import 的模块名就在字符串里）：
+   注释里的 `import './bundle.js'` 之类字样（本分支 lib/index.js 的 webloader 说明注释就有）不是真依赖，
+   照抄旧实现会把不存在的文件当依赖去读 ⇒ ENOENT ⇒ 对照组/变异子跑 exit=-1（全量门禁第 6 步实证）。
+   扫描器按字符状态机走（字符串内不认注释；与 tools/dir-picker-test.mjs 的 stripComments 同思路），
+   不用"先串后注"的正则串行 —— 字符串里的 `//` 会被当注释吃掉后续真实代码。 */
+function stripCommentsKeepStrings(s) {
+  let out = '', i = 0
+  while (i < s.length) {
+    const c = s[i], d = s[i + 1]
+    if (c === '"' || c === "'" || c === '`') {
+      const q = c; out += c; i++
+      while (i < s.length && s[i] !== q) { if (s[i] === '\\') { out += s[i] + (s[i + 1] || ''); i += 2; continue } out += s[i]; i++ }
+      out += q; i++; continue
+    }
+    if (c === '/' && d === '/') { while (i < s.length && s[i] !== '\n') i++; continue }
+    if (c === '/' && d === '*') { i += 2; while (i < s.length && !(s[i] === '*' && s[i + 1] === '/')) i++; i += 2; out += ' '; continue }
+    out += c; i++
+  }
+  return out
+}
 function stagePluginFixture(mutate) {
   const dir = fs.mkdtempSync(path.join(tmpRoot, 'plugin-'))
   const seen = new Set(), texts = new Map()
@@ -490,7 +510,7 @@ function stagePluginFixture(mutate) {
     seen.add(name)
     const raw = fs.readFileSync(abs, 'utf8')
     texts.set(name, name === 'index.js' ? mutate(raw) : raw)
-    for (const m of raw.matchAll(/(?:from|import)\s*\(?\s*['"]\.\/([\w.-]+)['"]/g)) {
+    for (const m of stripCommentsKeepStrings(raw).matchAll(/(?:from|import)\s*\(?\s*['"]\.\/([\w.-]+)['"]/g)) {
       if (!seen.has(m[1])) queue.push([m[1], path.join(path.dirname(abs), m[1])])
     }
   }

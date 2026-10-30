@@ -550,10 +550,13 @@ console.log('\n== G. ② 武装前验活：只有宿主明确回 {ok:false} 才�
              只有用户在设置里显式打开 `webFrameAutoCompat`（风险回退口）才走那条自动降级路。
      所以 H4/H5 拆成两档**都测**：默认档测"不换源 + 有原因"，回退口档把旧 H4/H5 的判据**逐字保留**
      （那条路仍然被测，不是被删掉）。变异 `sandbox-fallback-unconditional` 期望 H 组变红 —— 仍然成立。
+   ⚠(2026-10-31 任务书 B ⑦迁移补完) 本组测的是 **auto 档**的降级纪律 —— 旧实现靠"默认档=auto"间接进入，
+     分支把默认档迁到 compat（lib/client.js ⑦迁移）后必须**显式设 auto**（带 UserSet 标记，不被迁移改写），
+     否则整组读的是 compat 档、判据全红于夹具而非语义。auto 档的断言逐字保留；新默认档的行为在 H13 段补测。
    ══════════════════════════════════════════════════════════════════════════════════ */
 console.log('\n== H. ③ 沙箱档降级（默认不自动升同源 / 回退口才降级） ==')
 {
-  const { L } = boot({})
+  const { L } = boot({ settings: { webFrameMode: 'auto', webFrameModeUserSet: true } })
   ok('H1 SecurityError / Worker 类错误判为"策略挡住"',
     L.webLooksPolicyBlocked({ kind: 'error', message: "SecurityError: Failed to construct 'Worker': The operation is insecure." }) === true
     && L.webLooksPolicyBlocked({ kind: 'rejection', message: 'NotAllowedError: sandbox access denied' }) === true)
@@ -583,8 +586,9 @@ console.log('\n== H. ③ 沙箱档降级（默认不自动升同源 / 回退口�
   }
 }
 {
-  /* 回退口打开：`webFrameAutoCompat: true` ⇒ **旧的 H4/H5 判据逐字保留**（一次性降级到 compat）。 */
-  const { L } = boot({ settings: { webFrameAutoCompat: true } })
+  /* 回退口打开：`webFrameAutoCompat: true` ⇒ **旧的 H4/H5 判据逐字保留**（一次性降级到 compat）。
+     （2026-10-31 ⑦迁移补完：显式设 auto 档 —— 降级只对 auto 档有意义，见 H 组头注释。） */
+  const { L } = boot({ settings: { webFrameMode: 'auto', webFrameModeUserSet: true, webFrameAutoCompat: true } })
   const wrap = L.wrap()
   const frame = L.frame()
   ok('H7 回退口档夹具就位（真 web 帧）', !!frame)
@@ -614,6 +618,34 @@ console.log('\n== H. ③ 沙箱档降级（默认不自动升同源 / 回退口�
     ok('H12 帧内 shim 具备能力自证（caps 上报：worker/storage/offscreen，随 ready/pong 回父页）',
       /function probeCaps\(\)/.test(wwSrc) && /out\.worker = /.test(wwSrc) && (wwSrc.match(/caps: probeCaps\(\)/g) || []).length >= 2,
       'caps 上报点 ' + (wwSrc.match(/caps: probeCaps\(\)/g) || []).length + ' 处')
+  }
+}
+
+{
+  /* H13（2026-10-31 任务书 B ⑦迁移补完）：**新默认 compat 档**的行为钉住 —— boot({}) 不带任何
+     webFrame 设置 ⇒ ⑦迁移把 compat 写进档（无 UserSet 标记）。此档不 degradable ⇒ 策略错误
+     只记账、绝不降级，src/sandbox 一字不改；层上状态要按实际档如实说"兼容档"。 */
+  const { L } = boot({})
+  const wrap = L.wrap()
+  const frame = L.frame()
+  const wfr = (globalThis.__mpwWebTest && globalThis.__mpwWebTest.frameResolve) ? globalThis.__mpwWebTest.frameResolve() : null
+  ok('H13a 新默认档生效：有效档 = compat（迁移写入，source=setting）',
+    !!wfr && wfr.mode === 'compat' && wfr.source === 'setting',
+    JSON.stringify(wfr))
+  if (frame) {
+    const SRC = '/api/mpkg-wallpaper/custom-folder/X/index.html?mpwshim=1'
+    frame.setAttribute('src', SRC)
+    frame.setAttribute('sandbox', 'allow-scripts')
+    const r = L.webSandboxFallback('script-error', 'SecurityError: Worker blocked')
+    ok('H13b 新默认 compat 档不降级（非 degradable ⇒ 返回 false，src/sandbox 一字不改）',
+      r === false && String(frame.getAttribute('src')) === SRC && frame.getAttribute('sandbox') === 'allow-scripts',
+      JSON.stringify({ r, src: frame.getAttribute('src'), sb: frame.getAttribute('sandbox') }))
+    ok('H13c 新默认档的状态按实际档播报"兼容档"（不再误导用户"手动切兼容"）',
+      /兼容档/.test(String(wrap && wrap.getAttribute('data-mpw-webframe-reason') || ''))
+        && String(wrap && wrap.getAttribute('data-mpw-webframe-degraded') || '') === '',
+      JSON.stringify({ reason: wrap && wrap.getAttribute('data-mpw-webframe-reason') }))
+    ok('H13d 新默认档没有降级痕迹（`__mpwSandboxFallback` / `__mpwShimFellBack` 都不许被写上）',
+      !frame.__mpwSandboxFallback && !frame.__mpwShimFellBack)
   }
 }
 

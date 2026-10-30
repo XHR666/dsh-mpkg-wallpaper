@@ -12,6 +12,24 @@
 //      不算模块级引用，因此扫描只认模块加载语法，不认任意字符串。
 //   D. plugin/renderer/ 与开发树 ../renderer/ **逐字节一致**（打包副本不许漂移；渲染器侧改动后必须同步拷贝）。
 //
+// 演进留痕（任务书 B 2026-10-30：真仓库内嵌布局）：
+//   · 旧代码把开发树钉死在 `<仓库父目录>/renderer/`（集成交付的并列目录布局），真仓库里该路径不存在
+//     ⇒ B2/D1 红于**路径解析**而非语义。现改为候选序：`env MPW_RENDERER_DEV` → `../renderer` →
+//     `../we-scene-demo` → `./renderer`（内嵌副本），首个存在的目录胜出。
+//   · B2 的对象改为**随包分发的副本** `renderer/LICENSE`（A4 已钉 pack 含它；此处钉其形态）——
+//     分发出去的是副本，开发树 LICENSE 的形态不随包。旧布局里副本==开发树，语义无损。
+//   · D1/D2（与开发树逐字节对拍）只在解析到**同步源开发树**（env / `../renderer`）时运行：
+//     · 解析到 `../we-scene-demo`（上游项目树）⇒ 对拍无意义：副本 = 上游 + MODIFICATIONS.md 声明的
+//       集成增量 + 打包排除（node_modules/.git/reports 等不随包），**不是逐字节复刻关系**，
+//       对拍是永久假红 ⇒ 明确 SKIP 并打印原因，改跑"嵌入副本自校验"（不许静默通过）。
+//     · 解析到内嵌副本自身（前三候选全缺，真仓库/worktree 的常态）⇒ 对拍是"自己比自己"（空真）
+//       ⇒ 同样 SKIP，改跑"嵌入副本自校验"，语义：
+//         D1' 副本文件集非空 + 哨兵文件在位（LICENSE / PROVENANCE.md / MODIFICATIONS.md /
+//             THIRD-PARTY.md / demo.html / core/we-scene-bundle.js / web/diag-flags.json）；
+//         D2' MODIFICATIONS.md **声明的增量真实在位**（demo.html 五个 mpw-* op + tests/props-compat-test.mjs
+//             + docs/README-DIAGNOSTICS.md 的旗标登记）——"声明了什么"与"副本里有什么"自洽。
+//     · 连内嵌副本都没有 ⇒ D1'/D2' 自然红（副本缺失本就该红），不静默放行。
+//
 // 自证（工程纪律 R1/R2：判据必须能失败，变异必须真的打上去）：
 //   · M1：给扫描器喂一个含 `import … '../renderer/…'` 的临时副本 ⇒ 红集必须**逐条等于**预期（能红且只红该文件）；
 //   · M2：把根 LICENSE 的双许可段落删掉的临时副本 ⇒ LICENSE 断言必须红。
@@ -24,10 +42,22 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));          // plugin/tools
-const PLUGIN = resolve(HERE, '..');                            // plugin/
-const ROOT = resolve(PLUGIN, '..');                            // zcode-renderer-integration/
-const RENDERER_DEV = join(ROOT, 'renderer');                   // 渲染器开发树（本任务单的 renderer/）
-const RENDERER_COPY = join(PLUGIN, 'renderer');                // 打包副本（plugin/renderer/）
+const PLUGIN = resolve(HERE, '..');                            // plugin/（真仓库里 = 仓库根）
+const RENDERER_COPY = join(PLUGIN, 'renderer');                // 打包副本（plugin/renderer/；真仓库里即内嵌 renderer/）
+
+/* ── 开发树解析（任务书 B 2026-10-30 候选序）：env → ../renderer → ../we-scene-demo → ./renderer（内嵌） ──
+   kind：'sync' = 副本的同步源开发树（可逐字节对拍）；'upstream' = 上游项目树（副本含声明增量，不可对拍）；
+   'embedded' = 内嵌副本自身（对拍空真）。找不到任何树 ⇒ null。 */
+function resolveRendererTree() {
+  const cands = [];
+  if (process.env.MPW_RENDERER_DEV) cands.push({ kind: 'sync', label: 'env MPW_RENDERER_DEV=' + process.env.MPW_RENDERER_DEV, p: resolve(PLUGIN, process.env.MPW_RENDERER_DEV) });
+  cands.push({ kind: 'sync', label: '../renderer', p: resolve(PLUGIN, '..', 'renderer') });
+  cands.push({ kind: 'upstream', label: '../we-scene-demo（上游项目树）', p: resolve(PLUGIN, '..', 'we-scene-demo') });
+  cands.push({ kind: 'embedded', label: './renderer（内嵌副本）', p: RENDERER_COPY });
+  for (const c of cands) { try { if (statSync(c.p).isDirectory()) return c; } catch { /* 候选不存在 ⇒ 试下一个 */ } }
+  return null;
+}
+const rendererTree = resolveRendererTree();
 
 let pass = 0, fail = 0; const results = [];
 const check = (id, ok, detail) => { (ok ? pass++ : fail++); results.push({ id, ok, detail }); };
@@ -92,9 +122,10 @@ check('B1 根 LICENSE 含双许可说明（MIT + GPL-3.0-or-later + 两目录）
   && rootLicense.includes('LICENSES/MIT.txt') && rootLicense.includes('LICENSES/GPL-3.0-or-later.txt'),
   '双许可说明页（指向两份全文）');
 const gplFirst = (() => {
-  const t = license(join(RENDERER_DEV, 'LICENSE'));
+  // 任务书 B：对象 = 随包分发的副本 renderer/LICENSE（演进留痕见文件头）
+  const t = license(join(RENDERER_COPY, 'LICENSE'));
   const line = t.split('\n').map((s) => s.trim()).find((s) => s.length > 0) || '';
-  return { line, ok: /GNU GENERAL PUBLIC LICENSE/.test(line) && /Version 3/.test(license(join(RENDERER_DEV, 'LICENSE')).slice(0, 400)) };
+  return { line, ok: /GNU GENERAL PUBLIC LICENSE/.test(line) && /Version 3/.test(t.slice(0, 400)) };
 })();
 check('B2 renderer/LICENSE 首行 GPLv3', gplFirst.ok, '首行=' + JSON.stringify(gplFirst.line));
 const mitTxt = license(join(PLUGIN, 'LICENSES', 'MIT.txt'));
@@ -104,25 +135,58 @@ check('B3 LICENSES/MIT.txt 是 MIT 全文（含 Permission is hereby granted）'
 const libHits = scanLibRendererRefs(join(PLUGIN, 'lib'));
 check('C1 lib/** 无 renderer/ 的 import/require/动态 import 引用', libHits.length === 0, libHits.length ? '命中: ' + libHits.join(', ') : '0 命中');
 
-/* ── D. 打包副本与开发树逐字节一致 ───────────────────────────────── */
-let devFiles = [], copyFiles = [], diffSample = [];
-try { devFiles = walkRel(RENDERER_DEV).sort() } catch (e) { diffSample.push('dev 树读取失败: ' + e.message) }
-try { copyFiles = walkRel(RENDERER_COPY).sort() } catch (e) { diffSample.push('打包副本读取失败: ' + e.message) }
-const onlyDev = devFiles.filter((f) => !copyFiles.includes(f));
-const onlyCopy = copyFiles.filter((f) => !devFiles.includes(f));
-const byteDiff = [];
-for (const f of devFiles) {
-  if (!copyFiles.includes(f)) continue;
-  const a = readFileSync(join(RENDERER_DEV, f));
-  const b = readFileSync(join(RENDERER_COPY, f));
-  if (!a.equals(b)) { byteDiff.push(f); if (byteDiff.length >= 5) break }
+/* ── D. 漂移守卫：同步源开发树在 ⇒ 逐字节对拍；否则 ⇒ 明确 SKIP + 嵌入副本自校验（演进留痕见文件头） ── */
+const isSyncTree = rendererTree && rendererTree.kind === 'sync';
+if (isSyncTree) {
+  const RENDERER_DEV = rendererTree.p;
+  let devFiles = [], copyFiles = [], diffSample = [];
+  try { devFiles = walkRel(RENDERER_DEV).sort() } catch (e) { diffSample.push('dev 树读取失败: ' + e.message) }
+  try { copyFiles = walkRel(RENDERER_COPY).sort() } catch (e) { diffSample.push('打包副本读取失败: ' + e.message) }
+  const onlyDev = devFiles.filter((f) => !copyFiles.includes(f));
+  const onlyCopy = copyFiles.filter((f) => !devFiles.includes(f));
+  const byteDiff = [];
+  for (const f of devFiles) {
+    if (!copyFiles.includes(f)) continue;
+    const a = readFileSync(join(RENDERER_DEV, f));
+    const b = readFileSync(join(RENDERER_COPY, f));
+    if (!a.equals(b)) { byteDiff.push(f); if (byteDiff.length >= 5) break }
+  }
+  check('D1 plugin/renderer 与开发树（' + rendererTree.label + '）文件集合一致',
+    devFiles.length > 0 && onlyDev.length === 0 && onlyCopy.length === 0,
+    'dev=' + devFiles.length + ' copy=' + copyFiles.length
+    + (onlyDev.length ? ' 仅dev: ' + onlyDev.slice(0, 3).join(',') : '')
+    + (onlyCopy.length ? ' 仅副本: ' + onlyCopy.slice(0, 3).join(',') : ''));
+  check('D2 共有文件逐字节一致', byteDiff.length === 0, byteDiff.length ? '差异: ' + byteDiff.join(', ') : '全部一致');
+} else {
+  /* 嵌入副本自校验（替代逐字节对拍；语义写在文件头）：
+     没有同步源开发树可比 ⇒ 副本自身即源头，改钉"完整 + 声明增量真实在位"。 */
+  const reason = !rendererTree
+    ? '四个候选全缺（连内嵌副本都没有）'
+    : rendererTree.kind === 'upstream'
+      ? '解析到上游项目树（' + rendererTree.label + '）：副本=上游+MODIFICATIONS.md 声明增量+打包排除，非逐字节复刻关系，对拍是永久假红 ⇒ SKIP'
+      : '解析到内嵌副本自身（' + rendererTree.label + '）：对拍=自己比自己（空真）⇒ SKIP';
+  const copyFiles = (() => { try { return walkRel(RENDERER_COPY).sort() } catch { return [] } })();
+  const sentinels = ['LICENSE', 'PROVENANCE.md', 'MODIFICATIONS.md', 'THIRD-PARTY.md', 'demo.html', 'core/we-scene-bundle.js', 'web/diag-flags.json'];
+  const missing = sentinels.filter((f) => !copyFiles.includes(f));
+  check("D1' 嵌入副本自校验：文件集非空 + 哨兵文件在位（替代逐字节对拍）",
+    copyFiles.length > 0 && missing.length === 0,
+    'SKIP 原因：' + reason + '。copy=' + copyFiles.length
+    + (missing.length ? ' 缺哨兵: ' + missing.join(',') : ' 哨兵齐'));
+  const declared = (() => {
+    try {
+      const demo = readFileSync(join(RENDERER_COPY, 'demo.html'), 'utf8');
+      const ops = ['mpw-props-describe', 'mpw-props-reset', 'mpw-layers-list', 'mpw-layers-set', 'mpw-ui-set'];
+      const missingOps = ops.filter((op) => !demo.includes(op));
+      const diag = readFileSync(join(RENDERER_COPY, 'docs', 'README-DIAGNOSTICS.md'), 'utf8');
+      const flagsOk = diag.includes('noui') && diag.includes('propscompat');
+      const propsTest = copyFiles.includes('tests/props-compat-test.mjs');
+      return { ok: missingOps.length === 0 && flagsOk && propsTest, detail: missingOps.length ? 'demo.html 缺 op: ' + missingOps.join(',') : (!propsTest ? '缺 tests/props-compat-test.mjs' : (!flagsOk ? 'README-DIAGNOSTICS 未登记 noui/propscompat' : '五个 op + props-compat 判据 + 旗标登记 全在位')) };
+    } catch (e) { return { ok: false, detail: '读取失败: ' + (e && e.message || e) } }
+  })();
+  check("D2' 嵌入副本自校验：MODIFICATIONS.md 声明的增量真实在位（替代逐字节对拍）", declared.ok, declared.detail);
 }
-check('D1 plugin/renderer 与 renderer 文件集合一致',
-  devFiles.length > 0 && onlyDev.length === 0 && onlyCopy.length === 0,
-  'dev=' + devFiles.length + ' copy=' + copyFiles.length
-  + (onlyDev.length ? ' 仅dev: ' + onlyDev.slice(0, 3).join(',') : '')
-  + (onlyCopy.length ? ' 仅副本: ' + onlyCopy.slice(0, 3).join(',') : ''));
-check('D2 共有文件逐字节一致', byteDiff.length === 0, byteDiff.length ? '差异: ' + byteDiff.join(', ') : '全部一致');
+if (rendererTree) console.log('# 开发树解析：' + rendererTree.label + '（kind=' + rendererTree.kind + '）⇒ ' + (isSyncTree ? 'D1/D2 逐字节对拍' : "D1/D2 SKIP，以 D1'/D2' 嵌入副本自校验替代"));
+else console.log('# 开发树解析：无任何候选在位 ⇒ 自校验按红处理（副本缺失不静默放行）');
 
 /* ══ 自证 M1：扫描器喂含真引用的隔离副本 ⇒ 红集逐条等于预期 ══ */
 {

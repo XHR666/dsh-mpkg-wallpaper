@@ -363,13 +363,18 @@ try {
   // ②(2026-10-30 渲染器并入本工作区，路径固化处理) 本目录里渲染器开发树叫 `renderer/`
   //   （原兄弟仓 `we-scene-demo/` 的拷贝），所以查找顺序加 `../renderer/web|根`；
   //   环境变量 MPW_RENDERER_DIR 可显式指定渲染器根；旧兄弟仓名保留为最后回退（原仓检出仍可跑）。
+  // ③(任务书 B 2026-10-30 真仓库内嵌布局) 真仓库/worktree 里渲染器**内嵌**在插件里（`<插件>/renderer/`，
+  //   与 lib/ 同级），旧候选序（`here/../../renderer|we-scene-demo`）全部落空 ⇒ 断言红于路径而非语义。
+  //   本断言的对照对象 = 与面板**同包分发**的渲染器 ⇒ 内嵌副本排第一（env 之后）；兄弟开发树保留为回退。
   const jsonPath = [process.env.MPW_RENDERER_DIR && path.join(process.env.MPW_RENDERER_DIR, 'web', 'diag-flags.json'),
     process.env.MPW_RENDERER_DIR && path.join(process.env.MPW_RENDERER_DIR, 'diag-flags.json'),
+    path.join(here, '..', 'renderer', 'web', 'diag-flags.json'),
+    path.join(here, '..', 'renderer', 'diag-flags.json'),
     path.join(here, '..', '..', 'renderer', 'web', 'diag-flags.json'),
     path.join(here, '..', '..', 'renderer', 'diag-flags.json'),
     path.join(here, '..', '..', 'we-scene-demo', 'web', 'diag-flags.json'),
     path.join(here, '..', '..', 'we-scene-demo', 'diag-flags.json')].find((p) => p && fs.existsSync(p))
-    || path.join(here, '..', '..', 'renderer', 'web', 'diag-flags.json')
+    || path.join(here, '..', 'renderer', 'web', 'diag-flags.json')
   let jsonNames = []
   try {
     const dj = JSON.parse(fs.readFileSync(jsonPath, 'utf8'))
