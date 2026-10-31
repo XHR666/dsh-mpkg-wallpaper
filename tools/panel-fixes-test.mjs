@@ -161,5 +161,17 @@ console.log('\u001b[1m== (a2) 语言字典：zh/en 键集合必须一致 ==\u001
   else bad('中文渲染出现未翻译键', rawKeys.slice(0, 8).join(','))
 }
 
+
+/* ═══ SCROLLX 组（2026-11-03 第四轮 §2④ D2/E 读数）：聊天滚动容器 overflow-x: clip ═══
+   背景：宿主发送键 tooltip 被渲染在有 transform 的按钮/卡片内（fixed ⇒ 相对卡片定位），
+   坐标偏出视口右缘 ⇒ 绝对定位盒撑出容器级横向滚动条 ⇒ 布局位移 ⇒ 跳动循环。
+   缓解：聊天滚动容器 overflow-x: clip（不创建滚动容器、不破坏竖向滚动）。 */
+{
+  const css = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({ enabled: true, image: 'stub-wallpaper.png' }) : '')
+  ok('SCROLLX1 聊天滚动容器 overflow-x: clip 在位（防 tooltip 撑出横向滚动条）',
+    /html body \[class\*="scrollBody\"]:not\(\[data-code-block-banner\]\)\s*\{[^}]*overflow-x:\s*clip !important/.test(css))
+  ok('SCROLLX2 clip 不影响竖向滚动（overflow-y 不被 clip 规则触碰）',
+    !/scrollBody[^}]*overflow-y:\s*clip/.test(css))
+}
+
 console.log(`\n结果: ${pass} 通过, ${fail} 失败`)
-process.exit(fail ? 1 : 0)

@@ -329,8 +329,11 @@ for (const m of MUTANTS) {
   ok('G2 无 sticky + 负 margin-bottom 磨砂组合（防 sticky 路线回归）',
     !/position:\s*sticky[^}]*margin-bottom:\s*calc\(20px\s*-\s*100vh\)/.test(stripped))
   // G3 pane = 滚动容器（overflow-y:auto + max-height 在位）
-  ok('G3 pane = 内层滚动容器（overflow-y:auto + max-height 在位）',
-    /overflow-y:\s*auto !important/.test(stripped) && /max-height:\s*calc\(100vh\s*-\s*60px\)/.test(stripped))
+  // ①(2026-11-03 第四轮 D1 演进留痕) pane max-height 从视口近似(100vh-60px)改为
+  //    面板相对(100%)——面板高度已定 calc(100vh-20px)，百分比最稳（D1 读数定案）
+  ok('G3 pane = 内层滚动容器（overflow-y:auto + max-height:100% 在位）',
+    /overflow-y:\s*auto !important/.test(stripped) && /max-height:\s*100% !important/.test(stripped)
+    && !/max-height:\s*calc\(100vh\s*-\s*60px\)/.test(stripped))
 }
 {
   // G-MUT：把磨砂 backdrop-filter 写到 pane（滚动容器）上 ⇒ G1a 必红
@@ -355,5 +358,45 @@ for (const m of MUTANTS) {
   }
   ok('G-MUT 把磨砂写到 pane（滚动容器）上 ⇒ G1a 必红', paneHasBf)
 }
+
+// ═══ H 组（2026-11-03 第四轮 A/B/D1 读数）：面板填满视高 + pane 高度约束 + flex 链 ═══
+{
+  reset()
+  loadPlugin({ quiet: true })
+  const css = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({ float: true, rightSidebarBlur: true, enabled: true, image: 'stub-wallpaper.png' }) : '')
+  cancelWorldTimers()
+  // H1 面板高度 = calc(100vh-20px)（整列到底，不再 auto）
+  const pushBody = (css.match(/\[data-sidebar-right-panel="push"\]\s*\{([^}]*)\}/) || [])[1] || ''
+  ok('H1 面板高度 = calc(100vh-20px)（填满可用视高，整列到底）',
+    /(?<!max-)height:\s*calc\(100vh\s*-\s*20px\) !important/.test(pushBody)
+    && /max-height:\s*calc\(100vh\s*-\s*20px\) !important/.test(pushBody),
+    'pushBody=' + pushBody.slice(0, 200))
+  // H2 pane max-height: 100%（相对面板，不再视口近似）
+  ok('H2 pane max-height: 100%（相对面板已定高度）',
+    /max-height:\s*100% !important/.test(css) && !/max-height:\s*calc\(100vh\s*-\s*60px\)/.test(css))
+  // H3 flex 链：面板 display:flex + 子代 min-height:0
+  ok('H3a 面板 display:flex + flex-direction:column',
+    /display:\s*flex !important/.test(css) && /flex-direction:\s*column !important/.test(css))
+  ok('H3b 面板子代 min-height:0（flex 收缩允许）',
+    /> \*\s*\{[^}]*min-height:\s*0 !important/.test(css))
+  // H4 面板仍 overflow:hidden（wrapper 不滚动，磨砂 ::before 不参与滚动）
+  ok('H4 面板 overflow:hidden 保留（wrapper 不滚动，磨砂 ::before 不参与滚动）',
+    /\[data-sidebar-right-panel="push"\][^{}]*\{[^}]*overflow: hidden !important/.test(css))
+}
+{
+  // H-MUT：面板 height 改回 auto（回归复刻）⇒ H1 必红
+  reset()
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mpw-panel-h-'))
+  const from = 'height: calc(100vh - 20px) !important;\n\tmax-height: calc(100vh - 20px) !important;'
+  const mut = CLIENT.replace(from, 'height: auto !important;\n\tmax-height: calc(100vh - 20px) !important;')
+  if (mut === CLIENT) throw new Error('H-MUT 锚点缺失')
+  const p2 = path.join(dir, 'client.js'); fs.writeFileSync(p2, mut)
+  loadPlugin({ quiet: true, clientPath: p2, settings: { enabled: true, image: 'stub-wallpaper.png', float: true, rightSidebarBlur: true }, search: '' })
+  const css = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({ float: true, rightSidebarBlur: true, enabled: true, image: 'stub-wallpaper.png' }) : '')
+  cancelWorldTimers()
+  const heightOk = /(?<!max-)height:\s*calc\(100vh\s*-\s*20px\) !important/.test(css)
+  ok('H-MUT 面板高度改回 auto ⇒ H1 必红', !heightOk, 'height still= ' + heightOk)
+}
+
 console.log(`\n===== ${pass} 通过 / ${fail} 失败 =====`)
 process.exit(fail ? 1 : 0)
