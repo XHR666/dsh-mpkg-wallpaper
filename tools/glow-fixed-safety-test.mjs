@@ -354,8 +354,8 @@ console.log('\n== E. 左栏层叠上下文常在（第三轮 §2① v7 读数：
   loadPlugin({ quiet: true, settings: { enabled: true, image: 'data:image/png;base64,AAA', float: true } })
   const css = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({ float: true }) : '')
   cancelWorldTimers()
-  ok('E1 悬浮态产物含左栏稳定层叠上下文规则（z-index: 0 !important）',
-    /html body\[data-mpw-float\] \.pI_x6G_sidebarCol \{[^}]*z-index:\s*0 !important/.test(css))
+  ok('E1 悬浮态产物含左栏稳定层叠上下文规则（z-index 为非 0 正值）',
+    /html body\[data-mpw-float\] \.pI_x6G_sidebarCol \{[^}]*z-index:\s*[1-9]\d*\s*!important/.test(css))
 }
 {
   reset()
@@ -381,7 +381,7 @@ const MUT = [
     verify: (s) => s.indexOf('body[data-mpw-float] .wSkVaW_header {\n\ttransform: translateY(-2px);') >= 0 },
   /* ①(2026-11-03 #Bug2/3/5) 家族变异：把磨砂写回"本体"⇒ C 组必红 */
   { id: 'M4', what: '侧栏磨砂写回 sidebarCol 本体（Bug2/3 回归复刻）⇒ C1 必红', expect: ['C1'],
-    // ①(2026-11-03 第三轮 §2①) 锚点随 z-index:0（稳定层叠上下文）演进更新
+    // ①(2026-11-01 T11) 锚点再演进：稳定层叠上下文的 z 由 0 → 5（0 会被正文按 DOM 顺序盖住）
     patch: (s) => {
       const head = 'body[data-mpw-sblur] .pI_x6G_sidebarCol:not([data-mpw-holds-layer]),\nbody[data-mpw-sblur] [class*="sidebarCol"]:not([data-mpw-holds-layer]) {'
       const i = s.indexOf(head)
@@ -394,15 +394,15 @@ const MUT = [
       const i = s.indexOf('body[data-mpw-sblur] .pI_x6G_sidebarCol:not([data-mpw-holds-layer])::before')
       if (i < 0) return false
       const j = s.lastIndexOf('}', i)
-      return s.slice(0, i).lastIndexOf('backdrop-filter: blur(30px) !important') > s.slice(0, i).lastIndexOf('z-index: 0;') && s.slice(0, i).includes('z-index: 0;')
+      return s.slice(0, i).lastIndexOf('backdrop-filter: blur(30px) !important') > s.slice(0, i).lastIndexOf('z-index: 5;') && s.slice(0, i).includes('z-index: 5;')
     } },
   { id: 'M5', what: '菜单玻璃写回菜单本体（Bug5 回归复刻）⇒ C1 必红', expect: ['C1'],
     patch: (s) => s.replace('[role="menu"], [class*="_menu_"]:not([class*="_pane_"]), [class*="_popover_"], [class*="_floatHeader_"] {\n  -webkit-backdrop-filter: none;\n  backdrop-filter: none;\n  z-index: 900 !important;\n}',
       '[role="menu"], [class*="_menu_"]:not([class*="_pane_"]), [class*="_popover_"], [class*="_floatHeader_"] {\n  -webkit-backdrop-filter: blur(10px) saturate(150%);\n  backdrop-filter: blur(10px) saturate(150%);\n  z-index: 900 !important;\n}'),
     verify: (s) => s.indexOf('-webkit-backdrop-filter: blur(10px) saturate(150%);\n  backdrop-filter: blur(10px) saturate(150%);\n  z-index: 900 !important;') >= 0 },
   { id: 'M7', what: '左栏稳定层叠上下文规则被删（§2① 回归复刻）⇒ E1 必红', expect: ['E1'],
-    patch: (s) => s.replace('html body[data-mpw-float] .pI_x6G_sidebarCol {\n\tposition: relative;\n\tz-index: 0 !important;\n}', ''),
-    verify: (s) => !/html body\[data-mpw-float\] \.pI_x6G_sidebarCol \{[^}]*z-index:\s*0 !important/.test(s) },
+    patch: (s) => s.replace(/html body\[data-mpw-float\] \.pI_x6G_sidebarCol \{[^}]*\}/, ''),
+    verify: (s) => !/html body\[data-mpw-float\] \.pI_x6G_sidebarCol \{[^}]*z-index:\s*[1-9]\d*\s*!important/.test(s) },
   { id: 'M6', what: '手柄补偿被去掉（Bug1 回归复刻）⇒ D1/D2 必红', expect: ['D1', 'D2'],
     patch: (s) => s.replace('else { if (hd.style) { hd.style.transform = "translateX(" + want + "px)"; n++ } }',
       'else { if (hd.style) { n++ } /* 变异：补偿丢失 */ }'),
