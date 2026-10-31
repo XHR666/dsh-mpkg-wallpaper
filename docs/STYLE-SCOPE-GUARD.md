@@ -230,3 +230,4 @@ bash tools/check.sh                           # 门禁第 11 步就是全量模�
 | `third:market-sticky-head` | refine | `[class*="stickyHead"]` / `[class*="searchField"]` | dshmarket「发现」页的搜索+分类吸顶条（sticky z:5，类名 hash 前缀会变 ⇒ 只能用子串）：T17 给它加浮层可读性（底色/玻璃/下边框/阴影），不改 z | 本表 |
 | `host:model-menu-surface` | refine | `[class*="_7KE1Ra_menu"]` | 模型选择弹层外壳（宿主 material 菜单家族）：T14 把底色统一到我们自己的弹层表面 token `--mpw-pop-surface`，消除比其它弹层多一层白的观感 | 本表 |
 | `host:material-layer` | refine | `[class*="_material_"]` | 宿主 material 菜单的内层底色层（α≈0.28 + blur 40px）：T14 只允许在 `[class*="_7KE1Ra_menu"]` 作用域内把它的底色透明化（保留模糊），消除模型弹层"多一层白" | 本表 |
+| `host:copyable-tooltip` | refine | `[class*="_copyable_"]` | 左栏会话 hover 的大预览 tooltip（可悬停/点击复制标题）：T19 把它改成独立 token 的白底+磨砂表面；不动 pointer-events/z/尺寸 | 本表 |

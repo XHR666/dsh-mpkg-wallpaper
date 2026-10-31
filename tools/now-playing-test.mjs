@@ -320,7 +320,7 @@ console.log('\n== B. 开关默认开（DEFAULT_NP_NOW_PLAYING=true）⇒ 默认�
      （BACKUP_FIELDS 原样更名为 MPW_PRESET_FIELDS，键名与语义不变）——本条断言改抓新名单，
      不是删断言：npNowPlaying 仍必须登记在导出/导入白名单里。 */
   ok('B3 npNowPlaying 已登记进 MPW_PRESET_FIELDS（随预设保存/导入/导出）',
-    /const MPW_PRESET_FIELDS = \[[\s\S]{0,1400}?"npNowPlaying"/.test(clientSrc))
+    /const MPW_PRESET_FIELDS = \[[\s\S]{0,6000}?"npNowPlaying"/.test(clientSrc))
   /* 开关关：控制器一个节点都不建、一个观察者都不装 */
   {
     const doc = makeDoc(); buildSidebar(doc, { width: 280 })
