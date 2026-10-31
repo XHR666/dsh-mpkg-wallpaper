@@ -218,3 +218,10 @@ bash tools/check.sh                           # 门禁第 11 步就是全量模�
 | `host:JObwrW-panel` | `[class*="JObwrW_panel"]` | anchor | 宿主"上下文已用"小面板（用户第 3 条⑥）：与其它弹层同一套玻璃（底+模糊+圆角），真机 HTML 由用户提供 |
 | `host:groupTitle` | `[class*="_groupTitle"]`（弹层内） | anchor | 宿主弹层分组标题条（用户第 3 条⑤）：只清宿主白底使其透出容器玻璃，不加自己的底/模糊 |
 | `host:aria-modal` | `[aria-modal="true"]` | anchor | 只有**模态**才禁止玻璃（containing block 风险）；非模态 role=dialog 小面板保留玻璃 |
+
+## 2026-11-01 追加（T05 回收站两态对比）
+
+| id | tier | 选择器 | 说明 | 出处 |
+|---|---|---|---|---|
+| `host:selected-state-attr` | refine | `[data-selected="true"\|"false"]` | 宿主会话/清单行的选中态属性；T05 回收站两态对比只在 `body[data-mpw-aqua]` + `[data-dsh-session-delete]` 双门控下使用（水色覆盖宿主 token 后避免选中/普通行同色） | 本表 |
+| `host:aria-selected-state-attr` | refine | `[aria-selected="true"\|"false"]` | 同上（aria-selected 形态；不同宿主构建二选一） | 本表 |
