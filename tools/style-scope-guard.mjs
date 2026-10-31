@@ -131,6 +131,9 @@ const ALLOWLIST = [
 ]
 
 /* ══════════════════════ 二、永远判红（不允许清单兜底） ══════════════════════ */
+/* ①(2026-11-01 T16 用户批准：仅这两个属性可 !important，且只作用于预览浮层） */
+const RAIL_PREVIEW_GLASS_PROPS = new Set(['backdrop-filter', '-webkit-backdrop-filter'])
+
 const SELECTOR_PROHIBITIONS = [
   {
     id: 'forbid:rail-scope',
@@ -512,7 +515,9 @@ function classifyRule(rule) {
   // rail 门控下的声明策略
   if (policies.includes('rail-ink')) {
     for (const d of decls) {
-      if (d.important) push('RED', 'rail:important', `rail 补偿规则里出现 !important（${d.prop}）——文档要求 rail 补偿不得含 !important`, 'docs/TIMELINE-RAIL-TOKEN.md:187')
+      /* ①(2026-11-01 T16 用户批准的隔离例外：仅轮次预览浮层的 backdrop-filter 放行 !important） */
+      const isPreviewGlass = RAIL_PREVIEW_GLASS_PROPS.has(d.prop) && /eGxaPq_preview|Y0dWHa_preview/.test(rule.selector)
+      if (d.important && !isPreviewGlass) push('RED', 'rail:important', `rail 补偿规则里出现 !important（${d.prop}）——文档要求 rail 补偿不得含 !important（预览浮层 backdrop 例外除外）`, 'docs/TIMELINE-RAIL-TOKEN.md:187')
       if (d.prop.startsWith('--dsw-')) push('RED', 'rail:touch-dsw', `rail 补偿规则里引用/重定义宿主 token（${d.prop}）——文档要求不得引用/重定义任何 --dsw-*`, 'docs/TIMELINE-RAIL-TOKEN.md:187')
     }
   }
