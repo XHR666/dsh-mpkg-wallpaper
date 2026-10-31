@@ -225,3 +225,4 @@ bash tools/check.sh                           # 门禁第 11 步就是全量模�
 |---|---|---|---|---|
 | `host:selected-state-attr` | refine | `[data-selected="true"\|"false"]` | 宿主会话/清单行的选中态属性；T05 回收站两态对比只在 `body[data-mpw-aqua]` + `[data-dsh-session-delete]` 双门控下使用（水色覆盖宿主 token 后避免选中/普通行同色） | 本表 |
 | `host:aria-selected-state-attr` | refine | `[aria-selected="true"\|"false"]` | 同上（aria-selected 形态；不同宿主构建二选一） | 本表 |
+| `host:code-block-banner-flag` | refine | `[data-code-block-banner="true"]` | 宿主代码块标题条（sticky 吸附条）的**值形态**原子：T13 只在该形态上补玻璃层（gated by `body[data-mpw-float][data-mpw-hdr-frost-el]`），避免误伤其它 `[data-code-block-banner]` 用法 | 本表 |
