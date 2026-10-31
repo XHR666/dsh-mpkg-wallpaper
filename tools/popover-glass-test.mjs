@@ -433,5 +433,31 @@ const loadMutant = (from, to) => {
     !/\):not\(\[data-menu-material\]\):not\(\[data-trigger-menu\]\) \{/.test(strip),
     '体规则结尾锚命中=' + /\):not\(\[data-menu-material\]\):not\(\[data-trigger-menu\]\) \{/.test(strip))
 }
+/* ═══ L 组（2026-11-03 第三轮 §2② v5/v9 读数）：header 作用域菜单 z 值下限 ══════════
+   背景：真机读数（MENU_Z）—— 可见三点菜单 computed z=90，命中规则含我们自己的
+   `html body .wSkVaW_header [role="menu"]`（z:90 !important，特异性压过 G 段 900 与
+   3000 提层）⇒ 菜单被内容流 sticky 代码块标题条（_bannerWrap z:6，另一层叠上下文
+   且 DOM 更后）盖住。修复：z90 → 1200（弹层档），且 titleRow 抬升 z1 → 10
+   （titleRow 自带 container-type:inline-size = stacking context，是 header 内菜单的
+   层叠"天花板"——10 > banner 6 菜单才真在上面）。判据：文本级断言 + 变异自证。 */
+{
+  ok('L1 header 作用域菜单规则 z ≥ 1000（不再压回 90 档）',
+    /z-index:\s*1200 !important/.test(CLIENT) && !/z-index:\s*90 !important/.test(CLIENT))
+  ok('L2 titleRow 抬升 ≥ 10（header 内菜单的层叠天花板压过 banner z6）',
+    /:has\(> \.mpw-hdrFrost\) \.wSkVaW_titleRow,[\s\S]{0,600}?z-index:\s*10;/.test(CLIENT))
+}
+{
+  const from = 'html body [class*="wSkVaW_header"] [class*="_dropdown"]:not([class*="Anchor"]):not([class*="anchor"]) {'
+  reset()
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mpw-pop-l-'))
+  // 变异：把 1200 写回 90（回归复刻）⇒ L1 必红
+  const i = CLIENT.indexOf('z-index: 1200 !important;')
+  const mut = CLIENT.slice(0, i) + CLIENT.slice(i).replace('z-index: 1200 !important;', 'z-index: 90 !important;')
+  if (mut === CLIENT) throw new Error('L-MUT 锚点缺失')
+  const p2 = path.join(dir, 'client.js'); fs.writeFileSync(p2, mut)
+  loadPlugin({ quiet: true, clientPath: p2, settings: { enabled: true, image: 'stub-wallpaper.png' }, search: '' })
+  ok('L-MUT 把 1200 写回 90 ⇒ L1 必红',
+    !/z-index:\s*1200 !important/.test(fs.readFileSync(p2, 'utf8')) && /z-index:\s*90 !important/.test(fs.readFileSync(p2, 'utf8')))
+}
 console.log('\n===== popover-glass: ' + pass + ' 通过 / ' + fail + ' 失败 =====')
 process.exit(fail ? 1 : 0)

@@ -345,6 +345,27 @@ function bootHandleEnv(doc, els) {
   cancelWorldTimers()
 }
 
+console.log('\n== E. 左栏层叠上下文常在（第三轮 §2① v7 读数：colZ 必须 ≠ auto）==')
+//   v7 真机读数：colZ=auto ⇒ ::before(z:-1) 逃逸到根负层被壁纸盖掉 = 磨砂消失。
+//   修复 = 悬浮态无条件规则 html body[data-mpw-float] .pI_x6G_sidebarCol { z-index: 0 !important }。
+//   判据：产物文本级（悬浮态产物必须含该规则）+ 变异（删掉 ⇒ 必红）。
+{
+  reset()
+  loadPlugin({ quiet: true, settings: { enabled: true, image: 'data:image/png;base64,AAA', float: true } })
+  const css = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({ float: true }) : '')
+  cancelWorldTimers()
+  ok('E1 悬浮态产物含左栏稳定层叠上下文规则（z-index: 0 !important）',
+    /html body\[data-mpw-float\] \.pI_x6G_sidebarCol \{[^}]*z-index:\s*0 !important/.test(css))
+}
+{
+  reset()
+  loadPlugin({ quiet: true, settings: { enabled: true, image: 'data:image/png;base64,AAA', float: true } })
+  const css = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({ float: true }) : '')
+  cancelWorldTimers()
+  ok('E2 产物不含“把 colZ 写回 auto”的悬浮态规则',
+    !/\.pI_x6G_sidebarCol[^{}]*\{[^}]*z-index:\s*auto !important/.test(css))
+}
+
 console.log('\n== M. 变异自证（隔离副本；期望红集 == 实际红集，逐条相等）==')
 const MUT = [
   { id: 'M1', what: '把 transform 写回面（倾斜回归复刻；⑧改向：写入点在 mpwGlowApply 的面变量之后）⇒ B1 必红', expect: ['B1'],
@@ -379,6 +400,9 @@ const MUT = [
     patch: (s) => s.replace('[role="menu"], [class*="_menu_"]:not([class*="_pane_"]), [class*="_popover_"], [class*="_floatHeader_"] {\n  -webkit-backdrop-filter: none;\n  backdrop-filter: none;\n  z-index: 900 !important;\n}',
       '[role="menu"], [class*="_menu_"]:not([class*="_pane_"]), [class*="_popover_"], [class*="_floatHeader_"] {\n  -webkit-backdrop-filter: blur(10px) saturate(150%);\n  backdrop-filter: blur(10px) saturate(150%);\n  z-index: 900 !important;\n}'),
     verify: (s) => s.indexOf('-webkit-backdrop-filter: blur(10px) saturate(150%);\n  backdrop-filter: blur(10px) saturate(150%);\n  z-index: 900 !important;') >= 0 },
+  { id: 'M7', what: '左栏稳定层叠上下文规则被删（§2① 回归复刻）⇒ E1 必红', expect: ['E1'],
+    patch: (s) => s.replace('html body[data-mpw-float] .pI_x6G_sidebarCol {\n\tposition: relative;\n\tz-index: 0 !important;\n}', ''),
+    verify: (s) => !/html body\[data-mpw-float\] \.pI_x6G_sidebarCol \{[^}]*z-index:\s*0 !important/.test(s) },
   { id: 'M6', what: '手柄补偿被去掉（Bug1 回归复刻）⇒ D1/D2 必红', expect: ['D1', 'D2'],
     patch: (s) => s.replace('else { if (hd.style) { hd.style.transform = "translateX(" + want + "px)"; n++ } }',
       'else { if (hd.style) { n++ } /* 变异：补偿丢失 */ }'),

@@ -15,6 +15,7 @@
 // 用法: node tools/sidebar-collapse-geo-test.mjs
 import fs from 'node:fs'
 import path from 'node:path'
+import os from 'node:os'
 import { fileURLToPath } from 'node:url'
 import { loadPlugin, cancelWorldTimers } from './_stub.mjs'
 
@@ -290,5 +291,36 @@ for (const m of MUTANTS) {
   else { fail++; console.error('  ✗ MUTANT-MISMATCH ' + m.id + '  期望红=' + JSON.stringify(expectRed) + ' 实际红=' + JSON.stringify(red)) }
 }
 
+
+// ═══ F 组（2026-11-03 第三轮 §2③ v8 读数）：右栏磨砂 sticky（钉在滚动口）═══
+{
+  reset()
+  loadPlugin({ quiet: true })
+  const css = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({ float: true, rightSidebarBlur: true, enabled: true, image: 'stub-wallpaper.png' }) : '')
+  cancelWorldTimers()
+  const stickyRule = (css.match(/html body\[data-mpw-rsblur="on"\] \[data-mpw-rs-surface\]::before[^{]*\{([^}]*)\}/) || [])[1] || ''
+  ok('F1 右栏磨砂伪元素 = sticky（钉在滚动口，不随内容滚走）',
+    stickyRule.includes('position: sticky') && stickyRule.includes('top: 0'),
+    stickyRule.trim().slice(0, 110))
+  ok('F2 sticky 磨砂高度 = 面板可视高 + 负 margin 抵消占位（内容位置不变）',
+    stickyRule.includes('height: calc(100vh - 20px)') && stickyRule.includes('margin-bottom: calc(20px - 100vh)'))
+  ok('F3 面板本体保留滚动（overflow-y: auto）+ 圆角裁切（overflow-x: hidden）',
+    /\[data-sidebar-right-panel="push"\][^{}]*\{[^}]*overflow-x: hidden !important[^}]*overflow-y: auto !important/.test(css))
+}
+{
+  // F-MUT：磨砂伪元素退回 absolute（回归复刻）⇒ F1 必红
+  reset()
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mpw-rs-sticky-'))
+  const from = "content: \"\"; position: sticky; top: 0; left: 0; width: 100%; height: calc(100vh - 20px);\n\tmargin-bottom: calc(20px - 100vh);\n\tz-index: -1; pointer-events: none;\n\tborder-radius: inherit;\n\t-webkit-backdrop-filter: ${rsBlurCss} !important;"
+  const mut = CLIENT.replace(from, "content: \"\"; position: absolute; inset: 0; z-index: -1; pointer-events: none;\n\tborder-radius: inherit;\n\t-webkit-backdrop-filter: ${rsBlurCss} !important;")
+  if (mut === CLIENT) throw new Error('F-MUT 锚点缺失')
+  const p2 = path.join(dir, 'client.js'); fs.writeFileSync(p2, mut)
+  loadPlugin({ quiet: true, clientPath: p2, settings: { enabled: true, image: 'stub-wallpaper.png', float: true, rightSidebarBlur: true }, search: '' })
+  const css = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({ float: true, rightSidebarBlur: true, enabled: true, image: 'stub-wallpaper.png' }) : '')
+  cancelWorldTimers()
+  const stickyRule = (css.match(/html body\[data-mpw-rsblur="on"\] \[data-mpw-rs-surface\]::before[^{]*\{([^}]*)\}/) || [])[1] || ''
+  ok('F-MUT 磨砂退回 absolute ⇒ F1 必红',
+    !stickyRule.includes('position: sticky'), stickyRule.trim().slice(0, 80))
+}
 console.log(`\n===== ${pass} 通过 / ${fail} 失败 =====`)
 process.exit(fail ? 1 : 0)

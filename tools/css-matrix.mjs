@@ -109,7 +109,10 @@ function check(label, patch, css) {
       note('[' + label + '] 浮层被改 position（会撑高顶栏）: ' + sel.slice(0, 70) + ' → ' + bodyVal(body, 'position'))
     }
     // 5) 回归：悬浮态右侧导航条不许被改尺寸（曾把 38px 压成 28px）
-    if (/(_tabStrip|dockkit-strip)/.test(sel)) {
+    //    ①(2026-11-03 第三轮 §2③ v8 演进留痕) 放行 ::before/::after 伪元素规则：磨砂层
+    //    （sticky，height=面板可视高）挂在 dockkit-strip 的伪元素上，尺寸的是伪元素自身
+    //    而非导航条本体——本条要守的回归（导航条本体被压扁）只对**元素本体**规则有意义。
+    if (!/::(before|after)/.test(sel) && /(_tabStrip|dockkit-strip)/.test(sel)) {
       for (const p of ['padding', 'padding-left', 'padding-right', 'padding-top', 'padding-bottom', 'box-sizing', 'height', 'max-height', 'min-height']) {
         if (bodyHas(body, p)) note('[' + label + '] 导航条尺寸被改（曾压扁 38→28px）: ' + p + ' @ ' + sel.slice(0, 60))
       }
