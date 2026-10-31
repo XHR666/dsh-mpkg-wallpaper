@@ -222,7 +222,15 @@ const MUTANTS = [
     //   box-shadow（2026-10-30 §1 三面同族），相邻行断言会误报 MUTANT-INERT。
     verify: (s) => s.indexOf('border-radius: 20px;') >= 0 && s.split('border-radius: 20px;').length === 2 },
   { id: 'M5', what: '⑨(§3) 右栏 push 圆角改回 18px 字面量（异于令牌）⇒ A7 必红', expect: ['A7'],
-    patch: (s) => s.replace('border-radius: var(--mpw-side-radius) !important;\n\tborder: 1px solid rgba(148,180,220,0.28) !important;\n\toverflow: hidden !important;\n\tbox-shadow: var(--mpw-float-shadow, 0 6px 24px rgba(0,0,0,0.12));', 'border-radius: 18px !important;\n\tborder: 1px solid rgba(148,180,220,0.28) !important;\n\toverflow: hidden !important;\n\tbox-shadow: var(--mpw-float-shadow, 0 6px 24px rgba(0,0,0,0.12));'),
+    // ①(2026-11-03 第三轮 §2③) 改为按规则定位的变异（规则体内注入了滚动注释，文本锚不稳）
+    patch: (s) => {
+      const head = '[data-sidebar-right-panel="push"] {'
+      const i = s.indexOf(head)
+      if (i < 0) return s
+      const j = s.indexOf('\n}', i)
+      const body = s.slice(i, j).replace('border-radius: var(--mpw-side-radius) !important', 'border-radius: 18px !important')
+      return s.slice(0, i) + body + s.slice(j)
+    },
     verify: (s) => s.indexOf('border-radius: 18px !important;') >= 0 && s.split('border-radius: 18px !important;').length === 2 },
   { id: 'M2', what: '收起态过渡改回 0.18s ease ⇒ A3 必红', expect: ['A3'],
     patch: (s) => s.replace('transition: margin var(--mpw-side-dur) var(--mpw-side-ease), padding var(--mpw-side-dur) var(--mpw-side-ease);\n}', 'transition: margin 0.18s ease, padding 0.18s ease;\n}'),
