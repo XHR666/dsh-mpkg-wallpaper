@@ -227,3 +227,4 @@ bash tools/check.sh                           # 门禁第 11 步就是全量模�
 | `host:aria-selected-state-attr` | refine | `[aria-selected="true"\|"false"]` | 同上（aria-selected 形态；不同宿主构建二选一） | 本表 |
 | `host:code-block-banner-flag` | refine | `[data-code-block-banner="true"]` | 宿主代码块标题条（sticky 吸附条）的**值形态**原子：T13 只在该形态上补玻璃层（gated by `body[data-mpw-float][data-mpw-hdr-frost-el]`），避免误伤其它 `[data-code-block-banner]` 用法 | 本表 |
 | `third:conv-preview` | anchor | `.dsh-conv-preview` | dsh-conversation 插件的大纲条目**预览浮层**（position:fixed z:1100，class 稳定非 hash）：T06 给它补自己的不透明表面+玻璃，避免被我们的水色 token 覆盖成半透明后透出页面文字 | 本表 |
+| `third:market-sticky-head` | refine | `[class*="stickyHead"]` / `[class*="searchField"]` | dshmarket「发现」页的搜索+分类吸顶条（sticky z:5，类名 hash 前缀会变 ⇒ 只能用子串）：T17 给它加浮层可读性（底色/玻璃/下边框/阴影），不改 z | 本表 |
