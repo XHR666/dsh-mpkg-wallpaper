@@ -409,8 +409,8 @@ if (!NO_MUT) {
       /* ①(2026-10-02 表面模型重做) 锚点跟着实现改：顶栏底色不再是写死的中性色字面量，
          而是 `mpwSurfaceColor(基色, 不透明度)`（基色 = 宿主自己的 token）。漂移注入改成
          把那个不透明度减 7 —— 语义与旧注入一致（同一处取值被改动），只是字面量换了。 */
-      mut: (s) => s.replace('tok("--mpw-surface-frost-top", mpwSurfaceColor(surfacePlan.header.base, hdrAlpha / 100));',
-        'tok("--mpw-surface-frost-top", mpwSurfaceColor(surfacePlan.header.base, Math.max(0, hdrAlpha - 7) / 100));'),
+      mut: (s) => s.replace('tok(\"--mpw-surface-frost-top\", mpwSurfaceColor(`var(--dsw-specific-sidebar-fill)`, surfacePlan.left.opacityPct / 100));',
+        'tok(\"--mpw-surface-frost-top\", mpwSurfaceColor(`var(--dsw-specific-sidebar-fill)`, Math.max(0, surfacePlan.left.opacityPct - 7) / 100));'),
       expect: 'A',
     },
     {
@@ -423,8 +423,8 @@ if (!NO_MUT) {
     {
       id: 'surface-value-replaced',
       why: '基础规则不再走共享 token，换成一个不同的字面量 —— 生效值变了，A 组必须变红',
-      mut: (s) => s.replace('.wSkVaW_header:not(:where([data-code-block-banner])) {\n\tbackground-color: var(--mpw-surface-frost-top) !important;',
-        '.wSkVaW_header:not(:where([data-code-block-banner])) {\n\tbackground-color: rgba(9, 9, 9, 0.9) !important;'),
+      mut: (s) => s.replace('.wSkVaW_header:not([data-code-block-banner]):not([data-disclosure-header]) {\n\tbackground-color: var(--mpw-surface-frost-top) !important;',
+        '.wSkVaW_header:not([data-code-block-banner]):not([data-disclosure-header]) {\n\tbackground-color: rgba(9, 9, 9, 0.9) !important;'),
       expect: 'A',
     },
   ]
