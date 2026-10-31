@@ -163,8 +163,12 @@ ok('M6 专用去截断趟：宿主 material 菜单 / 触发候选菜单 / 子代
   && /function mpwPopUntruncExtra[\s\S]{0,4000}?need\.add\(p\)/.test(CLIENT)
   && !/function mpwPopUntruncExtra[\s\S]{0,4000}?glasses\.add/.test(CLIENT)
   && !/function mpwPopUntruncExtra[\s\S]{0,4000}?truncated\.add/.test(CLIENT))
+// ①(2026-11-03 演进留痕) 锚点随两轮演进更新：#Bug5 迁移把模糊规则改写为
+//   "popTipSel + :is(popTreeSel) + :is(popSurfaceSel):not(壳)"；§2② 又给 :is(popSurfaceSel)
+//   加了壳排除。M7 的语义不变（ZKlsPq 进模糊、不进底色），只改锚点形态。
 ok('M7 子智能体会话树只补模糊、不补底（ZKlsPq_menu 进模糊规则，不进底色规则）',
-  /html body :is\(\$\{popTreeSel\}\),\n\$\{popSurfaceSel\} \{/.test(CLIENT)
+  /html body :is\(\$\{popTreeSel\}\)/.test(CLIENT)
+  && /html body :is\(\$\{popSurfaceSel\}\):not\(\[data-menu-material\]\):not\(\[data-trigger-menu\]\) \{/.test(CLIENT)
   && !/popSurfaceCss = \(popAlphaUserSet[\s\S]{0,400}popTreeSel/.test(CLIENT))
 /* ③(2026-10-10 真机层次读数定案) 用户："外面的圆角那圈模糊正常，里面有一个直角的矩形又是白的"。
    读数为证：宿主 material 菜单里 `._7KE1Ra_groups[role="menu"]` 是 **radius 0** 的滚动容器，
@@ -390,6 +394,44 @@ const loadMutant = (from, to) => {
   }
   ok('J-MUT 把损坏形态注回（列表整体接 ::before）⇒ J1 判据必红',
     bad.length > 0, '损坏项=' + bad.slice(0, 2).join(' | '))
+}
+/* ═══ K 组（2026-11-03 第三轮 §2②）：isolation 壳的补模糊不被弹层本体规则压制 ════════
+   背景：宿主给 data-menu-material / data-trigger-menu 壳设 isolation:isolate（= backdrop
+   root），壳**内**伪元素采样不到页面 ⇒ 这两族的磨砂必须留在**壳本体**（2026-10-09 定案 +
+   [data-menu-material] 补模糊规则）。弹层本体 none !important 规则（#Bug5 迁移）特异性
+   极高（POP_NOT 20 个 :not），不排除壳就会把它压掉 ⇒ 三点菜单/加号菜单白底无模糊
+   （真机 §2②"白色模糊"）。判据 = 产物文本级：弹层本体规则必须带这两条 :not；
+   变异 K-MUT 摘掉排除 ⇒ 必红。 */
+{
+  reset()
+  loadPlugin({ quiet: true, settings: { enabled: true, image: 'stub-wallpaper.png', popoverBlur: true }, search: '' })
+  const css = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({ popoverBlur: true }) : '')
+  cancelWorldTimers()
+  const strip = css.replace(/\/\*[\s\S]*?\*\//g, ' ')
+  // 本体 none 规则必须带壳排除（规则选择器超长，用"排除串 + none 声明同现"判定）
+  // 判定：体规则的结尾 = 壳排除 + " {"（伪元素规则的结尾是 ::before，可区分）
+  ok('K1 弹层本体 none 规则排除 material/trigger 壳（壳体补模糊不被压制）',
+    /\):not\(\[data-menu-material\]\):not\(\[data-trigger-menu\]\) \{/.test(strip),
+    '体规则结尾锚命中=' + /\):not\(\[data-menu-material\]\):not\(\[data-trigger-menu\]\) \{/.test(strip))
+  ok('K2 壳体补模糊规则在位（data-menu-material → var(--mpw-pop-blur) !important）',
+    /html body \[data-menu-material\],\s*\n?\s*html body \[data-trigger-menu\]\s*\{[^}]*backdrop-filter:\s*var\(--mpw-pop-blur[^}]*\}\s*\n?/.test(strip.replace(/\n/g, '\n')) ||
+    /\[data-menu-material\][^{}]*\{[^}]*--mpw-pop-blur[^}]*\}/.test(strip))
+}
+{
+  const from = 'html body :is(${popSurfaceSel}):not([data-menu-material]):not([data-trigger-menu]) {'
+  const to = 'html body :is(${popSurfaceSel}) {'
+  reset()
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mpw-pop-k-'))
+  const mut = CLIENT.replace(from, to)
+  if (mut === CLIENT) throw new Error('K-MUT 锚点缺失')
+  const p2 = path.join(dir, 'client.js'); fs.writeFileSync(p2, mut)
+  loadPlugin({ quiet: true, clientPath: p2, settings: { enabled: true, image: 'stub-wallpaper.png', popoverBlur: true }, search: '' })
+  const css = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({ popoverBlur: true }) : '')
+  cancelWorldTimers()
+  const strip = css.replace(/\/\*[\s\S]*?\*\//g, ' ')
+  ok('K-MUT 摘掉体规则壳排除 ⇒ K1 必红',
+    !/\):not\(\[data-menu-material\]\):not\(\[data-trigger-menu\]\) \{/.test(strip),
+    '体规则结尾锚命中=' + /\):not\(\[data-menu-material\]\):not\(\[data-trigger-menu\]\) \{/.test(strip))
 }
 console.log('\n===== popover-glass: ' + pass + ' 通过 / ' + fail + ' 失败 =====')
 process.exit(fail ? 1 : 0)
