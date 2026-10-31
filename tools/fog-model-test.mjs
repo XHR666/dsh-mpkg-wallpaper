@@ -865,8 +865,11 @@ console.log('\n== H 组：无雾层 ⇒ 不给宿主叠 backdrop-filter（+ chro
     !/rgba\(255,\s*255,\s*255,\s*0?\.38\)/.test(css) && !/rgba\(18,\s*22,\s*30,\s*0?\.45\)/.test(css)
     && /background-color:\s*var\(--mpw-hdr-frost-bg,\s*var\(--mpw-surface-frost-top\)\)/.test(css),
     (css.match(/background-color:\s*var\(--mpw-hdr-frost-bg[^;]*/) || [''])[0])
-  ok('H8 三块表面同一套模型：透明度 = 100 - 界面透明度（side=45 ⇒ 55%）在三枚表面 token 里逐字一致',
-    /--mpw-surface-frost-top(-light)?:\s*color-mix\(in srgb, var\(--dsw-alias-bg-base\) 55\.0%, transparent\)/.test(css)
+  /* ①(2026-11-01 III 真机定案·判据演进) 原断言要求顶栏基色 = --dsw-alias-bg-base；真机发现该宿主 token 本身已半透明
+   （#fff 35%）⇒ 再乘 35% 得到 α=0.1225，而侧栏 --dsw-specific-sidebar-fill 不透明 ⇒ α=0.35 ⇒ 观感"标题栏更白"。
+   语义不变（仍要求三枚 token 用同一条透明度 55%、逐字一致），只把顶栏基色改为与侧栏同一宿主 token。 */
+    ok('H8 三块表面同一套模型：透明度 = 100 - 界面透明度（side=45 ⇒ 55%）在三枚表面 token 里逐字一致',
+    /--mpw-surface-frost-top(-light)?:\s*color-mix\(in srgb, var\(--dsw-specific-sidebar-fill\) 55\.0%, transparent\)/.test(css)
     && /--mpw-surface-side-frost:\s*color-mix\(in srgb, var\(--dsw-specific-sidebar-fill\) 55\.0%, transparent\)/.test(css)
     && /--mpw-surface-rs-dock:\s*color-mix\(in srgb, var\(--dsw-specific-sidebar-fill\) 55\.0%, transparent\)/.test(css),
     '')
