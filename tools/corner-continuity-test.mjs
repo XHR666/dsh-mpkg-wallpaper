@@ -153,6 +153,8 @@ console.log('\n== C. 例外登记（值级账本，双向防腐）==')
     '14px': '设置页玻璃容器 + better-sidebar 面板适配（现值保留）',
     '15px': '预设 chip（现值保留）',
     '16px': '大开关轨道胶囊（高 32px，半径=高/2）',
+    /* ①(2026-11-01 T06) 通用浮层/预览表面（.dsh-conv-preview 等）用 10px，与宿主菜单圆角观感一致 */
+    '10px': '通用浮层/预览表面（.dsh-conv-preview 等）：与宿主菜单圆角观感一致',
   }
   const vals = {}
   const re = /border-radius\s*:\s*([^;}{]+)/g
