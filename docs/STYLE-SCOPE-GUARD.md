@@ -233,3 +233,4 @@ bash tools/check.sh                           # 门禁第 11 步就是全量模�
 | `host:copyable-tooltip` | refine | `[class*="_copyable_"]` | 左栏会话 hover 的大预览 tooltip（可悬停/点击复制标题）：T19 把它改成独立 token 的白底+磨砂表面；不动 pointer-events/z/尺寸 | 本表 |
 | `host:scroll-body-atom` | anchor | `[class*="wSkVaW_scrollBody"]` | 宿主主滚动容器：T15 在 Firefox 下补 `scrollbar-color/width`（仅滚动条观感，不动布局） | 本表 |
 | `host:scroll-area-atom` | anchor | `[class*="scrollArea"]` | 宿主通用滚动区（部分 flex 面板）：同上，Firefox 滚动条补偿 | 本表 |
+| `host:tooltip-bubble` | anchor | `[class*="_bubble_"]` | 宿主按钮/元素 tooltip（如左栏「新会话」）：2026-11-01 起统一为弹层表面 token（含 `*` 继承文字色），只改表面不动定位 | 本表 |
