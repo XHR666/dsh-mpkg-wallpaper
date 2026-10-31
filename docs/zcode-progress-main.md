@@ -218,3 +218,63 @@ panel-smoke 5/5 · market-topbar 9/0 · sidebar-frost-team-panel 17/0 · fog-mod
 2. 右栏打开壁纸设置后滚动是否恢复（§2③ 修复）
 3. 三点菜单白雾是否消失（§2② 修复 5b3cd1c）+ 跑任务书 §2② 探针（z=90 定位）
 4. 发送键 tooltip 是否仍视口外（若复现跳动跑 JUMPC_V5 + 补 offsetParent 链读数）
+
+---
+
+# 第三轮续：真机读数 v5–v9 的三组修复（2026-11-03 深夜，69a621c）
+
+## §2① 续（v7）：z0 条件式命中失败 → 无条件规则
+- v7 读数：colZ 仍 auto、无任何 z 规则命中 sidebarCol、::before blur(30px) 在、祖先链无隔离。
+- 源码核对：z0 写在 E 块（要 body[data-mpw-sblur]，用户没设）与 H 块（要 col 不带
+  data-mpw-holds-layer——mpwSyncLayerHosts 因设置弹窗在左栏子树而给 col 打标）两条
+  条件式规则里 ⇒ 停靠+holds-layer 态两条都不命中。
+- 修复：悬浮态**无条件**规则 `html body[data-mpw-float] .pI_x6G_sidebarCol { position:relative; z-index:0 !important }`
+  —— 三种层叠关系全部正确：非停靠 z1（17340，特异性更高）胜出不变 / 停靠 z0 本修复 /
+  rail 收起态 z50（特异性更高）不变。
+- 判据：glow-fixed-safety **E1/E2/M7**（悬浮态产物必须含左栏 z0 规则；删除 ⇒ 必红）。**29/0**
+- 真机自证要求：刷新后跑规则枚举探针 ⇒ colZ 必须为 0（或任何非 auto 值）且能命中我们自己的规则。
+
+## §2② 续（v5/v9）：菜单 computed z=90 的来源与修复
+- v5 读数：可见菜单 z=90，命中我们自己的 `html body .wSkVaW_header [role="menu"] { z-index: 90 !important }`
+  （特异性压过 G 段 900 与 3000 提层）⇒ 菜单被内容流 sticky banner（z6，另一层叠上下文）盖住。
+- 修复双管：① header 作用域菜单规则 z90 → **1200**（弹层档，低于 tooltip 3000 与真模态）；
+  ② titleRow 抬升 z1 → **10**（titleRow 自带 container-type:inline-size = stacking context，
+  是 header 内菜单的层叠天花板；10 > banner z6 菜单才真在上面；低于 rail z12 / 对话框）。
+- 判据：popover-glass **L1/L2/L-MUT**（header 作用域菜单 z ≥ 1000 + titleRow ≥ 10；写回 90 ⇒ 必红）。
+- 真机验证要求（用户要求的实际层叠验证）：打开三点菜单 + 滚到代码块标题条贴住标题栏下方
+  ⇒ `document.elementFromPoint(菜单中心)` 必须返回菜单节点（而非 banner）+ 输出两者 rect。
+
+## §2③ 续（v8）：滚动恢复后磨砂不跟随滚动
+- v8 读数：滚动恢复，但磨砂只盖最初一屏、滚动时模糊停原位、矩形→圆角闪现、滚动条出界。
+- 根因：§2③ 修复后面板本体成了滚动容器（overflow-y:auto）⇒ absolute+inset:0 的磨砂
+  伪元素属于滚动内容，随首屏滚走。
+- 修复：磨砂伪元素 `absolute → sticky`（top:0，height:calc(100vh-20px)，margin-bottom
+  负值抵消占位）——磨砂钉在滚动口顶部：面板底色之上、内容之下，观感不变、滚动时恒覆盖。
+  同族：全屏右栏的磨砂伪元素同款修复（用户规则：修一个扫一类）。
+- 判据：sidebar-collapse-geo **F1/F2/F3/F-MUT**（磨砂 sticky + 负 margin + 面板滚动保留；
+  退回 absolute ⇒ 必红）。**25/0**
+- 已知取舍：height 用 calc(100vh-20px)（= 面板 max-height 档），若宿主面板可视高变化
+  （其它 chrome 占位），磨砂高度会略有偏差——待真机确认；滚动条出界问题待结构读数。
+
+## §2④（v5/v6）：tooltip 视口外 + 跳动未捕获 — 未修（等对齐口径读数）
+- 事实：tooltip fixed z3000 但坐标系统性偏出视口右下（[2140,1440]/[1473,788] vs 视口
+  1496×837/1253×511）；300 帧 rAF 采样跳动未复现（composer/scrollY/vv 恒定）。
+- v6 读数：两次悬停不同按钮测到几乎相同坐标 ⇒ 探针可能匹配到**残留/复用节点**（未过滤
+  可见性/当前 hover 目标）⇒ 需按 v6 建议的对齐口径重测（文本匹配 + opacity + width +
+  innerW/innerH 同会话记录 + offsetParent/最近 transform 祖先）。
+- 候选机制（读数导出）：发送按钮自身 transform 非 none（uV2eYG_primary，宿主样式）⇒
+  若 tooltip 渲染在按钮内部会被 transform 困住（fixed ⇒ 相对按钮定位）⇒ 坐标偏移。
+  htmlComposer=null ⇒ 我们 composer 规则未激活，非本轮回归。
+- 结论：**未改**（等对齐口径读数；若确认是宿主 tooltip-in-transform 结构，属宿主侧
+  问题，我们只在能安全解除困住时才动）。
+
+## 全量门禁（第三轮交付）
+`bash tools/check.sh --full` ⇒ **PASS 12 / FAIL 0**（真跑 12 步，1113.9s，
+峰值 ≈1768 MiB，指纹 3f900015320d，日志 /tmp/round3-final.log）。
+（过程中一次跑被 F7b 挡住——上限 3→4 演进后重跑全绿；演进留痕见 fog-model-test.mjs F7b 注。）
+
+## 真机待验清单（刷新即生效）
+1. §2① 右栏关闭时左栏磨砂恢复 + 跑规则枚举探针确认 colZ ≠ auto
+2. §2② 三点菜单盖住代码块标题条 + elementFromPoint(菜单中心) 返回菜单节点
+3. §2③ 右栏滚动时磨砂整屏贴住、无矩形闪现、滚动条在面板内
+4. §2④ tooltip 视口外（待对齐口径读数后再定修法）

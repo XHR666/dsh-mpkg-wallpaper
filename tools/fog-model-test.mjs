@@ -660,11 +660,16 @@ const F7A_HOLDS = (css) => {
      用户显式特性：悬浮 float 族（`[data-sidebar-collapsed]` 收起让内层 root 透出 +
      `body[data-mpw-float]` 悬浮外壳三面的 corner-shape 连续圆角，见 2026-11-02 演进）与
      主题色（`body[data-mpw-theme]` 的 `--mpw-theme-color` wash）—— 阈值就卡在"≤ 3 条"，
-     且这些必须真的是那些特性的门控选择器（多出第 4 条 = 覆盖规则漏出来了）。 */
+     且这些必须真的是那些特性的门控选择器（多出第 4 条 = 覆盖规则漏出来了）。
+     ①(2026-11-03 第三轮 §2① 演进留痕) 上限 3→4、白名单加入悬浮态层叠上下文规则
+     （`html body[data-mpw-float] .pI_x6G_sidebarCol { position:relative; z-index:0 }`）：
+     它是**层叠/定位规则，不画一个像素**（无背景/无模糊/无滤镜）——真机 v7 读数定案
+     colZ 必须 ≠ auto（否则 ::before(z:-1) 逃逸到根负层被壁纸盖掉 = 磨砂消失）。
+     语义保持：透明度 0 时本模型仍然零注入（无背景/无模糊），第 5 条即红。 */
   const side = SIDE_RULES(boot(INERT_ST))
   const rest = side.map(([sel]) => sel.replace(/\s+/g, ' '))
-  ok('F7b 透明度 0 ⇒ 左栏（pI_x6G_sidebarCol）规则 **≤ 3 条**；剩下的只许是用户显式特性：悬浮 float（[data-sidebar-collapsed] 收起 + [data-mpw-float] 外壳 corner-shape）与主题色（body[data-mpw-theme]），不属于本模型',
-    side.length <= 3 && rest.every((x) => /data-sidebar-collapsed|data-mpw-theme|data-mpw-float/.test(x)),
+  ok('F7b 透明度 0 ⇒ 左栏（pI_x6G_sidebarCol）规则 **≤ 4 条**；剩下的只许是用户显式特性：悬浮 float（[data-sidebar-collapsed] 收起 + [data-mpw-float] 外壳 corner-shape + 层叠上下文 z0）与主题色（body[data-mpw-theme]），不属于本模型',
+    side.length <= 4 && rest.every((x) => /data-sidebar-collapsed|data-mpw-theme|data-mpw-float/.test(x)),
     JSON.stringify({ count: side.length, rest }))
 }
 {
