@@ -322,3 +322,43 @@ np-media 117/0 · theme-assist 61/0 · settings-persist 112/0
 - dockkit-pane 实测 overflowY=visible 与悬浮规则偏差在 P3 读数中已存在、非本轮引入
 - 真机待验：①滚到顶时顶部导航/「收起右侧边栏」完整可见可点 ②滚动时磨砂整屏贴住面板、
   边界不随滚动移动、无矩形闪现 ③滚动条在面板内
+
+---
+
+# 第四轮：右栏填满视高 + flex 链滚动修复 + §2④ 缓解（2026-11-03，91ad8c9）
+
+## A+B（D1 读数 + 截图证据）
+- 面板 height:auto 被内容撑成半截（真机截图 54% 视高）⇒ height: calc(100vh-20px)（整列到底）
+- flex 链 min-height:0：面板 display:flex + flex-direction:column + 子代 min-height:0
+  （D1 读数：_paneBody 长到 1276 > panelBody 817 ⇒ 标准 flexbox 滚动修复）
+- pane max-height 从视口近似(100vh-60px)改为面板相对(100%)——面板高度已定，百分比最稳
+
+## C（D2/E 读数）
+- 发送键 tooltip 被渲染在有 transform 的按钮/卡片内（fixed ⇒ 相对卡片定位），
+  坐标偏出视口右缘撑出容器级横向滚动条 ⇒ 布局位移 ⇒ 跳动循环
+- 缓解：聊天滚动容器 overflow-x: clip（不创建滚动容器、不破坏竖向滚动/sticky），
+  滚动条不再出现、跳动循环断链。判据：panel-fixes SCROLLX1/SCROLLX2
+- 完整修复需宿主侧改动（tooltip 不渲染在有 transform 的祖先内）——我们只做安全缓解
+
+## 判据演进（留痕）
+- sidebar-collapse-geo H 组新增（H1-H4 + H-MUT：面板高度/pane max-height/flex 链/wrapper）
+- sidebar-collapse-geo G3 max-height 从视口近似改 100%（D1 演进）
+- style-scope-guard 新增 host:scroll-body-clip 登记 + 账本行
+
+## 分门禁读数
+sidebar-collapse-geo **33/0**（含 G+H 组）· glow-fixed-safety 29/0 · popover-glass 42/0 ·
+plus-menu-frost 10/0 · float-family-geo 24/24 · panel-fixes +SCROLLX ✓ · css-matrix ✓ ·
+style-scope-guard 0 RED · token-namespace ✓ · panel-smoke 5/5 · np-control 106/0 ·
+np-media 117/0 · theme-assist 61/0 · settings-persist 112/0
+
+## 全量门禁
+`bash tools/check.sh --full` ⇒ **PASS 12 / FAIL 0**（真跑 12 步，1039.7s，
+峰值 ≈2024 MiB，指纹 9b53388140d8，日志 /tmp/round4-full.log）。
+
+## 真机待验清单
+1. 右栏面板**底边贴到窗口底部**（整列到底，不再半截）
+2. 首页 5 个按钮完整可见（不需要滚动也应可见）
+3. 壁纸设置页可上下滚动
+4. §2① 右栏关闭时左栏磨砂恢复
+5. §2② 三点菜单盖住代码块标题条
+6. §2④ 发送/暂停悬停不再跳动（overflow-x:clip 断链）——tooltip 仍可能偏出视口（宿主侧问题）
