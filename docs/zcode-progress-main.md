@@ -362,3 +362,107 @@ np-media 117/0 · theme-assist 61/0 · settings-persist 112/0
 4. §2① 右栏关闭时左栏磨砂恢复
 5. §2② 三点菜单盖住代码块标题条
 6. §2④ 发送/暂停悬停不再跳动（overflow-x:clip 断链）——tooltip 仍可能偏出视口（宿主侧问题）
+
+---
+
+# ★ 第五轮 · 最终总结（按主题归并；本节为台账权威视图，前面各轮为时间线原始记录）
+
+> 分支 `feat/ui-copy-and-family-fixes`，截至 HEAD `eb9ca81`。历史明细（每轮的读数/探针过程）见上方时间线各节，本节按主题归并、一主题一表，供后续会话直接续接。
+
+## 主题 1：三点/加号菜单「白色模糊」+「被代码块标题条压住」（§2②）
+
+| 项 | 内容 |
+|---|---|
+| 根因 | 两个独立缺陷叠加：<br>**A. 白雾**：宿主给 data-menu-material / data-trigger-menu 壳设 `isolation:isolate`（= backdrop root），壳**内**伪元素采样不到页面（2026-10-09 定案同款机制）。上一轮 #Bug5 迁移把弹层本体改写 `none !important`（特异性经 POP_NOT 20 个 :not 堆高）压掉了壳体补模糊规则 ⇒ 菜单只剩半透明白底、无模糊<br>**B. 被压**：我们自己的 header 作用域规则 `html body .wSkVaW_header [role="menu"] { z-index: 90 !important }` 特异性压过 G 段 900 与 3000 提层 ⇒ 菜单 computed z=90；菜单挂在 titleRow 子树内，titleRow 自带 `container-type:inline-size`（= stacking context），其根层档位 z:1 低于内容流 sticky banner（_bannerWrap z:6）⇒ 整个 titleRow 子树（含菜单）被 banner 盖住 |
+| 修复提交 | **`5b3cd1c`**（A：弹层本体/伪元素规则排除 material/trigger 两族壳）+ **`69a621c`**（B：z90 → 1200 弹层档；titleRow 抬升 z1 → 10，10 > banner 6） |
+| 判据 | popover-glass **K1/K2/K-MUT**（体规则结尾必须带壳排除；摘掉 ⇒ 必红）+ **L1/L2/L-MUT**（header 作用域菜单 z ≥ 1000 + titleRow ≥ 10；写回 90 ⇒ 必红）+ M7 锚点随演进更新 |
+| 门禁读数 | popover-glass **42/0** · plus-menu-frost 10/0 · np-media 117/0 · panel-smoke 5/5 · css-matrix ✓ · style-scope-guard 0 RED |
+| 真机验证 | **部分验证**：白雾已消失（用户复测确认"修复了菜单本体模糊"）；层叠半边待复验——打开三点菜单 + 滚到代码块标题条贴住标题栏下方，`document.elementFromPoint(菜单中心)` 应返回菜单节点 |
+
+## 主题 2：左栏磨砂两态消失（§2①）
+
+| 项 | 内容 |
+|---|---|
+| 根因 | `::before` 磨砂（z-index:-1）只有在"父级是层叠上下文"时才被关在栏内。此前 z0 写在两条**条件式**规则里——E 块要 `body[data-mpw-sblur]`（用户没设）、H 块要 col 不带 `data-mpw-holds-layer`（mpwSyncLayerHosts 因设置弹窗在左栏子树而给 col 打标）——停靠+holds-layer 态两条都不命中 ⇒ colZ 回落 auto ⇒ 伪元素逃逸到根层叠上下文负层，被壁纸（同为负 z 且 DOM 更后）盖掉 |
+| 修复提交 | **`9d411e1`**（E/H 块 z0，第一版）+ **`69a621c`**（悬浮态**无条件**规则 `html body[data-mpw-float] .pI_x6G_sidebarCol { position:relative; z-index:0 !important }`——v7 读数证明第一版的条件式形态未命中）。三态层叠关系全部正确：非停靠 z1（17340，特异性更高）胜出不变 / 停靠 z0 本修复 / rail 收起态 z50 特异性更高不变。配套：data-mpw-side-lift 对话框抬升改全态生效 |
+| 判据 | glow-fixed-safety **E1/E2/M7**（悬浮态产物必须含左栏 z0 规则；删除 ⇒ 必红）。**不采用 isolation:isolate**——它会把 col 变成 backdrop root，磨砂采样直接死 |
+| 门禁读数 | glow-fixed-safety **29/0** · float-family-geo 24/24 · sidebar-collapsed-float 9/0 |
+| 真机验证 | **待复验**：v7 读数时 9d411e1 未生效（条件式未命中），69a621c 的无条件规则修好后用户尚未回报。复验：右栏关闭时左栏磨砂恢复 + 规则枚举探针确认 colZ ≠ auto |
+
+## 主题 3：右栏滚动/高度/磨砂（§2③，经三轮迭代）
+
+| 项 | 内容 |
+|---|---|
+| 迭代 1（9d411e1） | 真机读数：面板 scrollHeight 2105 ≫ clientHeight 491、overflowY:hidden ⇒ 悬浮规则的 `overflow:hidden` 杀滚动。修复：overflow 拆分 x:hidden + y:auto。**结果：滚动恢复但磨砂不跟随**（v8） |
+| 迭代 2（68671d2） | 真机 A/B 定案：磨砂伪元素 absolute 属于滚动内容随首屏滚走 ⇒ 改 sticky。**结果：sticky 参与滚动内容布局（垫高/撑 scrollHeight/固定边界）破坏滚动**（用户 A/B 定案：禁用伪元素后滚动恢复） |
+| 迭代 3（91ad8c9，最终形态） | 按用户要求的 wrapper/scroller 分层：<br>**面板 = wrapper**：`overflow:hidden`（不滚动）+ 磨砂 ::before 回退 `absolute; inset:0`（不参与滚动内容布局，恒覆盖可视区）；三条路径（rsblur/unify/fullscreen）同族<br>**pane (dockkit-pane) = 内层滚动容器**：`overflow-x:hidden + overflow-y:auto + max-height:100%`（从与 strip 合写的规则拆出）<br>**面板填满视高**：`height: calc(100vh-20px)`（auto 被内容撑成半截，真机截图 54%）<br>**flex 链 min-height:0**：面板 `display:flex + flex-direction:column + 子代 min-height:0`（D1 读数：_paneBody 长到 1276 > panelBody 817，标准 flexbox 滚动修复）；pane max-height 从视口近似(100vh-60px)改为面板相对(100%) |
+| 修复提交 | **`9d411e1`** → **`68671d2`** → **`91ad8c9`** |
+| 判据 | sidebar-collapse-geo **G 组**（G1a 磨砂不命中 pane 滚动容器本体/伪元素 / G1b wrapper ::before absolute / G1c 面板 overflow:hidden / G2 禁 sticky+负 margin 组合 / G3 pane overflow-y:auto+max-height:100% / **G-MUT** 写磨砂到 pane ⇒ 必红）+ **H 组**（H1 面板高度 / H2 pane max-height:100% / H3a/H3b flex 链 / H4 wrapper / **H-MUT** height 改回 auto ⇒ 必红）+ A7/A7b 锚点随 pane/strip 拆分更新 |
+| 门禁读数 | sidebar-collapse-geo **33/0** · glow-fixed-safety 29/0 · float-family-geo 24/24 · css-matrix ✓（规则 5 放行伪元素，演进留痕） |
+| 真机验证 | **部分验证**：磨砂正常 ✓（用户 A/B）；滚动/高度修复（91ad8c9）后未复验。复验：①面板底边贴窗口底 ②首页 5 按钮完整可见 ③壁纸设置页可上下滚动 ④滚动时磨砂整屏贴住、无矩形闪现 ⑤滚动条在面板内 |
+
+## 主题 4：发送/暂停键悬停跳动（§2④，缓解已落地）
+
+| 项 | 内容 |
+|---|---|
+| 根因（D2/E 读数定案） | 宿主发送键 tooltip 被渲染在**有 transform 的按钮/卡片内**（uV2eYG_primary 自带 translateY(-2px) 按钮动画；uV2eYG_card 是 offsetParent）⇒ fixed 退化为"相对卡片定位" ⇒ tooltip 绝对定位盒偏出视口右缘（x 超 220px）⇒ **撑出聊天滚动容器级横向滚动条** ⇒ 布局位移 ⇒ 鼠标离开热区 ⇒ tooltip 移除 ⇒ 回落 ⇒ 再触发，循环 |
+| 缓解（我们侧） | **`91ad8c9`**：聊天滚动容器 `overflow-x: clip !important`（不创建滚动容器、不破坏竖向滚动/sticky）——横向滚动条不再出现、跳动循环断链 |
+| 判据 | panel-fixes **SCROLLX1/SCROLLX2**（clip 在位；overflow-y 不被触碰） |
+| 门禁读数 | panel-fixes ✓ · np-control 106/0 · np-media 117/0 |
+| 真机验证 | **待复验**：悬停发送/暂停键不再跳动（缓解生效）；tooltip 本身可能仍偏出视口（见下方"未修项"） |
+
+## 主题 5：任务书 A 原始范围（A1–A4，快照 23a5fe 一并交付）
+
+| 项 | 内容 | 状态 |
+|---|---|---|
+| A1 文案与命名 | #9/#10 标题与注册名→「DSH壁纸引擎」、#5 配色组标题「主题与配色」、#8 说明段改写+6 个整体链接（MIT LICENSE/GPL-3.0 LICENSE 各为一个链接）、#6 符号清理+13 键精简 | ✅ 完成（快照内；分门禁 bs-tab 50/0 · preset 57/0） |
+| A2 家族修复 | backdrop-filter 迁伪元素家族（Bug2/3/5 同根因）· Bug4 unclip 降级（默认关+兜底开关+位移回滚）· Bug1 resize 手柄补偿（JS 实时校准）· #11 图标加粗 | ✅ 完成（判据：tip-no-layout-shift 13/0 · glow-fixed-safety D 组） |
+| A3 功能数据 | #4 光晕亮度+颜色（glowBright/glowColor，进预设快照）· #2 better-sidebar 适配退役（整块删除+墓碑判据）· #1 扫描页回填高亮（mpwScanAppliedMatch+K 组）· #7 ?updcheck=fake 模拟路径 | ✅ 完成（判据：panel-glow-face 23/23 · bs-compat-removed 7/0 · bs-scan 42/0 · update-fake 8/0） |
+| A4 #13 左移 | 静态核验在位 + D8e/M8 回归锁（switchTab 零 style 写入） | ✅ 完成（未真机复现，不许盲改） |
+
+## 判据演进留痕汇总（每处：原断言 → 新断言 → 为什么 → 语义保持）
+
+| 位置 | 演进 |
+|---|---|
+| glow-fixed-safety M4 | 锚点从"fixed 文本"改为**按规则定位**（规则体内插入了 z0 注释，文本锚漂移）；语义不变（磨砂写回本体 ⇒ C1 红） |
+| glow-fixed-safety E1/E2/M7 | **新增**：悬浮态产物必须含左栏 z0 无条件规则；删除 ⇒ 必红（§2① v7 教训：写了但没匹配上） |
+| sidebar-collapse-geo G3 | max-height 从 calc(100vh-60px) → **100%**（D1 读数：视口近似在有中间层时不准；面板高度已定，百分比最稳） |
+| sidebar-collapse-geo M5 | 锚点从 fixed 文本改为按规则定位（pane/strip 拆分后文本漂移）；语义不变（右栏圆角改回字面量 ⇒ A7 红） |
+| sidebar-collapse-geo H 组 | **新增**：面板高度/pane max-height:100%/flex 链/wrapper overflow（第四轮 D1 定案四要点） |
+| popover-glass M7 | 锚点从 :is(popTreeSel),popSurfaceSel 形态改为 **:is(popSurfaceSel):not(壳)** 形态（#Bug5 迁移 + §2② 壳排除两轮演进）；语义不变（ZKlsPq 进模糊不进底色） |
+| popover-glass L 组 | **新增**：header 作用域菜单 z ≥ 1000 + titleRow ≥ 10（v5/v9 读数定案） |
+| fog-model F7b | 上限 3→4，白名单加入悬浮态层叠上下文规则（不画一个像素的纯层叠规则——z0 无背景无模糊） |
+| css-matrix 规则 4/5 | 放行 ::before/::after 伪元素规则（守的回归是"本体"被改：浮层本体位置/导航条本体尺寸；伪元素磨砂是家族修复形态） |
+| css-matrix/token-namespace specificity | 伪元素不计类权重（CSS 规范；否则机制迁移被误判为取值漂移/凭空压过本体规则） |
+| theme-assist A3 | 断言随 composer 磨砂形态更新（本体 relative+none、磨砂在 ::before） |
+| sidebar-collapse-geo A1/A7 | 半径口径从"18px 字面量"演进为"跟随宿主 --dsw-radius-panel"（对应 e99fabb/6e5ef63） |
+| style-scope-guard | 删 host:better-sidebar / host:bs-bottom-resize 锚点；新增 host:dsh-popover / host:dsh-surface / host:scroll-body-clip 独立登记 + 账本行 |
+| settings-persist / cross-platform / we-json / transcode-prescale / bundle-equivalence | 随 better-sidebar 适配退役 + numFields 演进同步（判据对象不存在/键退役） |
+
+## 真机验收清单（下一轮开工前逐项确认）
+
+1. **右栏面板底边贴到窗口底部**（不再半截；本轮 91ad8c9）
+2. **首页 5 个按钮完整可见**（不需要滚动也应可见）
+3. **壁纸设置页可上下滚动**、滚动时磨砂整屏贴住、无矩形闪现、滚动条在面板内
+4. **右栏关闭时左栏磨砂恢复**（+ 规则枚举探针确认 colZ ≠ auto）
+5. **三点菜单盖住代码块标题条**（+ elementFromPoint(菜单中心) 返回菜单节点）
+6. **悬停发送/暂停键不再跳动**（overflow-x:clip 断链生效）
+
+## 未修项与归属
+
+| 项 | 归属 | 说明 |
+|---|---|---|
+| §2④ tooltip 坐标偏出视口 | **宿主侧** | tooltip 渲染在有 transform 的祖先内（uV2eYG_primary 自带按钮动画 transform）⇒ fixed 退化为相对定位、坐标偏移。我们已做**断链缓解**（scrollBody overflow-x:clip，跳动循环不再发生），但 tooltip 本身位置偏移需宿主修复（tooltip 不应渲染在带 transform 的祖先内，或应做视口内翻转）。需与宿主侧协商 |
+| §2③ pane max-height calc(100vh-60px) 近似 | 已被 100% 取代 | 无遗留 |
+| 表面质感 A/B/C（历史挂起） | 用户未选 | 挂起 |
+| feat/renderer-embedded 分支红门禁 | 任务书 B | 不在本单范围 |
+
+## 全量门禁最终读数（本分支最后一次真跑）
+
+`bash tools/check.sh --full` ⇒ **PASS 12 / FAIL 0**（真跑 12 步，1039.7s，峰值 ≈2024 MiB，指纹 9b53388140d8，日志 /tmp/round4-full.log）。
+**收尾校验**（台账/UI-TASKS-BACKLOG 文档变更后）：见下方"收尾校验"节读数。
+
+## 收尾校验（第五轮文档整理后）
+
+- `git status --porcelain`：仅 docs 变更（docs/zcode-progress-main.md + 上级工作区 docs/UI-TASKS-BACKLOG.md）✓
+- `bash tools/check.sh --full` ⇒ **PASS 12 / FAIL 0**（真跑 12 步，1006.9s，峰值 ≈2039 MiB，指纹 c6d2fed97716，日志 /tmp/final-gate.log）✓
