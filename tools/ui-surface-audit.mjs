@@ -2,8 +2,10 @@
 // 用法: node tools/ui-surface-audit.mjs <out.json>
 import { chromium } from 'playwright'
 import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 
-const outFile = process.argv[2] || '/tmp/ui-audit.json'
+const outFile = process.argv[2] || path.join(os.tmpdir(), 'ui-audit.json')
 const b = await chromium.connectOverCDP('http://127.0.0.1:9222')
 const ctx = b.contexts()[0]
 const p = ctx.pages().find((x) => x.url().includes('127.0.0.1:3080')) || ctx.pages()[0]
