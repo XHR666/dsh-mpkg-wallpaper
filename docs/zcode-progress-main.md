@@ -278,3 +278,47 @@ panel-smoke 5/5 · market-topbar 9/0 · sidebar-frost-team-panel 17/0 · fog-mod
 2. §2② 三点菜单盖住代码块标题条 + elementFromPoint(菜单中心) 返回菜单节点
 3. §2③ 右栏滚动时磨砂整屏贴住、无矩形闪现、滚动条在面板内
 4. §2④ tooltip 视口外（待对齐口径读数后再定修法）
+
+---
+
+# 第三轮续 2：§2③ wrapper/scroller 分层重做（A/B 二次定案，68671d2）
+
+## 真机 A/B 定案
+sticky 磨砂伪元素（69a621c 版本）参与滚动内容布局（垫高/撑 scrollHeight/固定边界）
+= 右栏滚动破坏的唯一原因。禁走 sticky 路线。
+
+## 修复（按用户要求的 wrapper/scroller 分层）
+- **面板 = wrapper**：回退 `overflow: hidden !important`（不滚动）；磨砂 ::before 回退
+  `absolute; inset: 0`（不参与滚动内容布局，恒覆盖可视区）。三条路径（rsblur / unify /
+  fullscreen）同族回退。
+- **pane (dockkit-pane) = 内层滚动容器**：从与 strip 合写的规则拆出，`overflow-x: hidden
+  !important; overflow-y: auto !important; max-height: calc(100vh - 60px) !important`。
+  顶部导航与「收起右侧边栏」在 pane 内随内容可达；滚动条在 pane 右缘 = 面板可视化区域内。
+- **strip = 裁切**：`overflow: hidden !important` 不变。
+
+## 判据（G 组重写，留痕）
+- G1a：磨砂（backdrop-filter 非 none）不得命中滚动容器 [data-dockkit-pane] 本体/伪元素
+  （抑制 none 规则不计）
+- G1b：rs-surface ::before = absolute inset:0（wrapper 磨砂在位）
+- G1c：面板 overflow:hidden（wrapper 不滚动）
+- G2：无 sticky + 负 margin-bottom 磨砂组合（防 sticky 路线回归）
+- G3：pane overflow-y:auto + max-height:calc(100vh-60px) 在位
+- G-MUT：把磨砂 backdrop-filter 写到 pane（滚动容器）上 ⇒ G1a 必红
+- A7/A7b 锚点随 pane/strip 拆分更新（dockkit-pane 独立读数，语义不变）
+读数：sidebar-collapse-geo **27/0**
+
+## 分门禁读数
+glow-fixed-safety 29/0 · popover-glass 42/0 · plus-menu-frost 10/0 · float-family-geo
+24/24 · css-matrix ✓ · style-scope-guard 0 RED · panel-smoke 5/5 · np-control 106/0 ·
+np-media 117/0 · theme-assist 61/0 · settings-persist 112/0
+
+## 全量门禁
+`bash tools/check.sh --full` ⇒ **PASS 12 / FAIL 0**（真跑 12 步，1077.9s，
+峰值 ≈1803 MiB，指纹 75f00e8bf447，日志 /tmp/r3-final2.log）。
+
+## 已知取舍 / 真机待验
+- pane max-height calc(100vh-60px) 是近似值（面板 max-height − 上下 margin − strip），
+  真机验收后可微调
+- dockkit-pane 实测 overflowY=visible 与悬浮规则偏差在 P3 读数中已存在、非本轮引入
+- 真机待验：①滚到顶时顶部导航/「收起右侧边栏」完整可见可点 ②滚动时磨砂整屏贴住面板、
+  边界不随滚动移动、无矩形闪现 ③滚动条在面板内
