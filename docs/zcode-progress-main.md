@@ -164,3 +164,57 @@ panel-smoke 5/5 · market-topbar 9/0 · sidebar-frost-team-panel 17/0 · fog-mod
    Console 片段，读 sidebarCol 的 computed backdropFilter 与 ::before）
 8. §2.3 打开壁纸设置不再整屏左移
 9. A1 新文案（DSH壁纸引擎/主题与配色/说明段链接）与 #4 光晕亮度颜色两行
+
+---
+
+# 第三轮：真机读数定位的两组修复（2026-11-03 深夜，分支 feat/ui-copy-and-family-fixes）
+
+> 读数来源：`docs/PROBE-READINGS-ROUND3-FINAL.md`（用户真机 Firefox 四轮采样）。
+
+## §2① 左栏磨砂两态消失 — 根因定案（真机两态对比 + 源码核对，高置信）
+- 读数：右栏**展开**时 sidebarCol `z-index:1`（层叠上下文）⇒ ::before(z:-1) 被关在栏内、磨砂可见；
+  右栏**关闭（停靠）**时 z 变 `auto` ⇒ 伪元素逃逸到根层叠上下文负层、被壁纸盖掉 ⇒ 磨砂不可见。
+- 源码核对：`17340` 行 `html body:not([data-mpw-rightbar-parked]) [class*="sidebarCol"]...{ z-index:1 !important }`
+  —— 停靠态退场就是"开关"。
+- 修复：E/H 两条磨砂规则给 sidebarCol **`z-index: 0`**（稳定层叠上下文）。
+  **不采用 isolation:isolate**（用户方案①之一）：它会把 sidebarCol 变成 backdrop root，
+  壳内伪元素的磨砂采样直接死（2026-10-09 同款机制，② 的白雾就是它）。
+- 配套：`data-mpw-side-lift` 对话框抬升从"仅非停靠态"改为**全态生效**（磨砂规则给 sidebarCol
+  常态层叠上下文后，停靠态左栏子树开宿主对话框同样被困；标记由 JS 按结构判定，无被动副作用）。
+- 判据演进：glow-fixed-safety M4 / sidebar-collapse-geo M5 锚点随规则体演进改为按规则定位的
+  变异（语义不变）。读数：glow-fixed-safety **26/0** · sidebar-collapse-geo **21/0** ·
+  sidebar-collapsed-float 9/0 · float-family-geo 24/24。
+
+## §2③ 右栏滚动失效 — 根因定案（读数直接给出，高置信）
+- 读数：面板本体 scrollHeight 2105 ≫ clientHeight 491、overflowY:hidden（滚动条消失）。
+- 源码核对：悬浮规则 `17371` 行对 push 面板设 `overflow: hidden !important`（圆角裁切用），
+  而面板本体是滚动容器 ⇒ 滚动被杀。
+- 修复：拆成 `overflow-x: hidden !important; overflow-y: auto !important`（非 visible 的
+  overflow 仍按 border-radius 裁内容 ⇒ 圆角悬浮观感不变、纵向恢复滚动）。
+- 待下次读数确认：dockkit-pane 实测 overflowY=visible 与悬浮规则（应 hidden）的偏差。
+
+## §2② 三点菜单白雾（本轮早些时候已修，5b3cd1c）
+- 根因：弹层本体 none !important（POP_NOT 巨型特异性）压掉 `[data-menu-material]` 壳体
+  补模糊规则；isolation 壳内伪元素采样不到页面。修复：弹层本体/伪元素规则排除
+  material/trigger 两族壳。判据：popover-glass K1/K2/K-MUT（39/0）。
+- **层叠半边待读数**：真机菜单实测 z=90，而源码/产物里 G 段 z900 !important 与 3000 提层
+  都在 ⇒ 90 与两者都不匹配（可能命中了别的元素/规则）。已备 mini-probe（枚举全部
+  [role=menu] 的 rect/matches/命中规则），下次随读数定位。
+
+## §2④ 发送/暂停键 — 读数已到手，两项事实
+- **跳动 300 帧（JUMPC_V5 rAF）未捕获**：composer/scrollY/docH/visualViewport 全程恒定
+  ⇒ 当前构建下跳动未复现（或仅 hover 进入的 1–2 帧）；若再复现用 mouseenter 版采样。
+- **tooltip 被定位到视口外**（x=2140/y=1440、x=1473/y=788，视口 1496×837/1253×511）：
+  tooltip 由宿主 JS 计算 fixed 坐标；坐标系统性偏出视口右下 ⇒ 宿主测得的锚点几何或
+  offsetParent 链受我们改动影响（候选：composer 卡的 position:relative——仅 composerBlur
+  开时、右栏停靠件的屏外停靠）。**未改**（等补充读数：发送键的 offsetParent 链 +
+  html[data-mpw-composer] 当前值）。
+
+## 全量门禁
+本轮 P1/P3 修复后**尚未跑全量**（按 §0.2，等 ④ 补充读数修完再跑）。
+
+## 真机待验/待读数
+1. 刷新后验证：右栏**关闭**时左栏磨砂是否恢复（本轮 §2① 修复）
+2. 右栏打开壁纸设置后滚动是否恢复（§2③ 修复）
+3. 三点菜单白雾是否消失（§2② 修复 5b3cd1c）+ 跑任务书 §2② 探针（z=90 定位）
+4. 发送键 tooltip 是否仍视口外（若复现跳动跑 JUMPC_V5 + 补 offsetParent 链读数）
