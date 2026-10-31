@@ -234,3 +234,4 @@ bash tools/check.sh                           # 门禁第 11 步就是全量模�
 | `host:scroll-body-atom` | anchor | `[class*="wSkVaW_scrollBody"]` | 宿主主滚动容器：T15 在 Firefox 下补 `scrollbar-color/width`（仅滚动条观感，不动布局） | 本表 |
 | `host:scroll-area-atom` | anchor | `[class*="scrollArea"]` | 宿主通用滚动区（部分 flex 面板）：同上，Firefox 滚动条补偿 | 本表 |
 | `host:tooltip-bubble` | anchor | `[class*="_bubble_"]` | 宿主按钮/元素 tooltip（如左栏「新会话」）：2026-11-01 起统一为弹层表面 token（含 `*` 继承文字色），只改表面不动定位 | 本表 |
+| `host:pop-surface-family` | anchor | `[class*="_surface_ri079_1"]` | 宿主弹层表面家族（菜单/下拉列表共用 `_surface_ri079_1`）：2026-11-01 UI 审计把"内层 material 双层模糊"修复扩到该家族（含 `_list_`），只关内层模糊 | 本表 |

@@ -107,6 +107,7 @@ const ALLOWLIST = [
   { id: 'host:scroll-body-atom', kind: 'attr', tier: 'anchor', match: /^\[class\*="wSkVaW_scrollBody"\]/, reason: '宿主主滚动容器：T15 Firefox 滚动条补偿（scrollbar-color/width）', doc: 'docs/STYLE-SCOPE-GUARD.md:234' },
   { id: 'host:scroll-area-atom', kind: 'attr', tier: 'anchor', match: /^\[class\*="scrollArea"\]/, reason: '宿主通用滚动区：T15 Firefox 滚动条补偿', doc: 'docs/STYLE-SCOPE-GUARD.md:235' },
   { id: 'host:tooltip-bubble', kind: 'attr', tier: 'anchor', match: /^\[class\*="_bubble_"\]/, reason: '宿主 tooltip 家族：统一弹层表面 token（只改表面）', doc: 'docs/STYLE-SCOPE-GUARD.md:236' },
+  { id: 'host:pop-surface-family', kind: 'attr', tier: 'anchor', match: /^\[class\*="_surface_ri079_1"\]/, reason: '宿主弹层表面家族：material 双层模糊修复扩展到全部弹层（含 _list_ 下拉）', doc: 'docs/STYLE-SCOPE-GUARD.md:237' },
   { id: 'host:copyable-tooltip', kind: 'attr', tier: 'refine', match: /^\[class\*="_copyable_"\]/, reason: '左栏会话 hover 大预览 tooltip：T19 用独立 token 改白底+磨砂，不动 pointer-events/z/尺寸', doc: 'docs/STYLE-SCOPE-GUARD.md:233' },
   { id: 'third:session-delete-mark', kind: 'attr', tier: 'refine', match: /^\[data-dsh-session-delete/, reason: 'dsh-session-delete 插件的 DOM 命名空间标记：只在 :not(...) 里把它的**页内普通清单**（回收站列表 role=listbox）从弹层表面/层级规则排除（Issue#5⑥：不排除会反盖住它自己的删除确认弹窗）；绝不主动给它加样式', doc: 'docs/STYLE-SCOPE-GUARD.md:72', docKind: 'ledger' },
   /* ①(2026-10-25 任务 3) dsh-conversation 浮窗层级锚点 */
