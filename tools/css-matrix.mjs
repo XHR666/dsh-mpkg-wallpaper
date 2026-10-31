@@ -127,7 +127,11 @@ function check(label, patch, css) {
   //    语义（源码 headerFrosted = (headerBlur || unifyTint) && headerBg）：
   //      · 「顶栏」开关(headerBg)是标题栏外观的总闸：关掉就完全不接管标题栏；
   //      · 总闸开时，统一虚化(unifyTint)或标题栏磨砂(headerBlur)任一为开 → 必须有磨砂层。
-  const frost = rules(t).some(([sel, body]) => /\.wSkVaW_header(?::not\(:where\(\[data-code-block-banner\]\)\))?::before/.test(sel) && /backdrop-filter/.test(body) && !/backdrop-filter\s*:\s*none/.test(body))
+  //    ①(2026-11-01 演进留痕) 正则从“只认 :not(:where([data-code-block-banner]))”放宽为
+  //    “class 后可跟任意个 :not([...]) 链”：本日给标题栏规则补了 :not([data-disclosure-header])
+  //    （宿主用 wSkVaW_header 类名复用折叠行头，被我们的玻璃/圆角误伤）。判据语义不变：
+  //    仍要求“存在一条 .wSkVaW_header…::before 且带 backdrop-filter 的规则”。
+  const frost = rules(t).some(([sel, body]) => /\.wSkVaW_header(?::not\([^()]*\))*::before/.test(sel) && /backdrop-filter/.test(body) && !/backdrop-filter\s*:\s*none/.test(body))
   if (typeof patch.headerBg === 'boolean' && typeof patch.headerBlur === 'boolean') {
     const wantFrost = (patch.headerBlur || !!patch.unifyTint) && patch.headerBg
     if (wantFrost && !frost) note('[' + label + '] 该有顶栏磨砂但规则缺失（虚化会"没效果"）')
