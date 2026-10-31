@@ -104,12 +104,14 @@ console.log('== A. 统一收起/展开几何（buildCss float:on 真产物）=='
   const rPush = String(decl(rsPush, 'border-radius') || '').replace(/\s*!important$/, '')
   const rDock = String(decl(rsDock, 'border-radius') || '').replace(/\s*!important$/, '')
   // ①(2026-11-03 演进留痕) 同 A1：令牌定义从"18px 字面量"演进为"跟随宿主 --dsw-radius-panel 档"
-  ok('A7 §3 左右栏同源：右栏 push/dockkit 的 border-radius 也是 var(--mpw-side-radius)（令牌跟随宿主 panel 档）',
-    rPush === 'var(--mpw-side-radius)' && rDock === 'var(--mpw-side-radius)' && /--mpw-side-radius:\s*var\(--dsw-radius-panel,\s*26px\);/.test(css),
-    `push=${rPush} dockkit=${rDock}`)
-  ok('A7b §3 对照表：左栏展开/收起/根 3 组 + 右栏 push/dockkit 2 组 = 五处声明逐值同源（同一 var）',
-    [rExp, rCol, rRoot, rPush, rDock].every((v) => v === 'var(--mpw-side-radius)'),
-    `左展开=${rExp} 左收起=${rCol} 左根=${rRoot} 右push=${rPush} 右dock=${rDock}`)
+  // ①(2026-11-03 第三轮 §2③) pane/strip 规则拆分后 dockkit 读数从 rDock 一条变两条
+  const rDockPane = String(decl(ruleBody(css, 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]) [data-dockkit-pane] {'), 'border-radius') || '').replace(/\s*!important$/, '')
+  ok('A7 §3 左右栏同源：右栏 push/dockkit-pane 的 border-radius 也是 var(--mpw-side-radius)（令牌跟随宿主 panel 档）',
+    rPush === 'var(--mpw-side-radius)' && rDockPane === 'var(--mpw-side-radius)' && /--mpw-side-radius:\s*var\(--dsw-radius-panel,\s*26px\);/.test(css),
+    `push=${rPush} pane=${rDockPane}`)
+  ok('A7b §3 对照表：左栏展开/收起/根 3 组 + 右栏 push/dockkit-pane 2 组 = 五处声明逐值同源（同一 var）',
+    [rExp, rCol, rRoot, rPush, rDockPane].every((v) => v === 'var(--mpw-side-radius)'),
+    `左展开=${rExp} 左收起=${rCol} 左根=${rRoot} 右push=${rPush} 右pane=${rDockPane}`)
 }
 
 console.log('\n== B. tooltip 去裁切（行为：真实现 __mpwPopUntruncTest.tipFast/tipSync）==')
@@ -292,35 +294,66 @@ for (const m of MUTANTS) {
 }
 
 
-// ═══ F 组（2026-11-03 第三轮 §2③ v8 读数）：右栏磨砂 sticky（钉在滚动口）═══
+// ═══ G 组（2026-11-03 第三轮 §2③ A/B 二次定案）：wrapper/scroller 分层 ═══
+//   背景：sticky 磨砂伪元素参与滚动内容布局（垫高/撑 scrollHeight）破坏滚动（真机 A/B 定案）。
+//   修复结构：面板 = wrapper（overflow:hidden + 磨砂 ::before absolute inset:0 不滚动）；
+//   pane = 内层滚动容器（overflow-y:auto + max-height）。判据 a/b/c 见下。
 {
   reset()
   loadPlugin({ quiet: true })
   const css = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({ float: true, rightSidebarBlur: true, enabled: true, image: 'stub-wallpaper.png' }) : '')
   cancelWorldTimers()
-  const stickyRule = (css.match(/html body\[data-mpw-rsblur="on"\] \[data-mpw-rs-surface\]::before[^{]*\{([^}]*)\}/) || [])[1] || ''
-  ok('F1 右栏磨砂伪元素 = sticky（钉在滚动口，不随内容滚走）',
-    stickyRule.includes('position: sticky') && stickyRule.includes('top: 0'),
-    stickyRule.trim().slice(0, 110))
-  ok('F2 sticky 磨砂高度 = 面板可视高 + 负 margin 抵消占位（内容位置不变）',
-    stickyRule.includes('height: calc(100vh - 20px)') && stickyRule.includes('margin-bottom: calc(20px - 100vh)'))
-  ok('F3 面板本体保留滚动（overflow-y: auto）+ 圆角裁切（overflow-x: hidden）',
-    /\[data-sidebar-right-panel="push"\][^{}]*\{[^}]*overflow-x: hidden !important[^}]*overflow-y: auto !important/.test(css))
+  const stripped = css.replace(/\/\*[\s\S]*?\*\//g, ' ')
+  // G1a 磨砂不得命中滚动容器 [data-dockkit-pane]（本体或伪元素）
+  let paneBf = []
+  const re1 = /([^{}]{1,500})\{([^{}]*backdrop-filter[^{}]*)\}/g
+  let m1
+  while ((m1 = re1.exec(stripped))) {
+    const sel = m1[1].replace(/\s+/g, ' ').trim()
+    if (/data-dockkit-pane/.test(sel) && !/data-sidebar-right-panel/.test(sel) && !/data-mpw-rs-surface/.test(sel)) {
+      const bf = /backdrop-filter:\s*([^;!]+)/.exec(m1[2])
+      if (bf && bf[1].trim() !== 'none') paneBf.push(sel.slice(0, 80) + ' → ' + bf[1].trim())
+    }
+  }
+  ok('G1a 磨砂（backdrop-filter 非 none）不得命中滚动容器 [data-dockkit-pane] 本体/伪元素（抑制 none 规则不计）',
+    paneBf.length === 0, paneBf.length ? '违规=' + paneBf.slice(0, 2).join(' | ') : '0 违规')
+  // G1b rs-surface ::before 磨砂在位（absolute inset:0，wrapper 磨砂）
+  const rsRule = (css.match(/html body\[data-mpw-rsblur="on"\] \[data-mpw-rs-surface\]::before[^{]*\{([^}]*)\}/) || [])[1] || ''
+  ok('G1b rs-surface ::before = absolute inset:0（wrapper 磨砂在位）',
+    rsRule.includes('position: absolute') && rsRule.includes('inset: 0') && rsRule.includes('backdrop-filter'),
+    rsRule.trim().slice(0, 110))
+  // G1c 面板 = wrapper（overflow:hidden，不滚动）
+  ok('G1c 面板 overflow:hidden（wrapper 不滚动）',
+    /\[data-sidebar-right-panel="push"\][^{}]*\{[^}]*overflow: hidden !important/.test(css))
+  // G2 禁止 sticky + 负 margin-bottom 组合（防回归）
+  ok('G2 无 sticky + 负 margin-bottom 磨砂组合（防 sticky 路线回归）',
+    !/position:\s*sticky[^}]*margin-bottom:\s*calc\(20px\s*-\s*100vh\)/.test(stripped))
+  // G3 pane = 滚动容器（overflow-y:auto + max-height 在位）
+  ok('G3 pane = 内层滚动容器（overflow-y:auto + max-height 在位）',
+    /overflow-y:\s*auto !important/.test(stripped) && /max-height:\s*calc\(100vh\s*-\s*60px\)/.test(stripped))
 }
 {
-  // F-MUT：磨砂伪元素退回 absolute（回归复刻）⇒ F1 必红
+  // G-MUT：把磨砂 backdrop-filter 写到 pane（滚动容器）上 ⇒ G1a 必红
   reset()
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mpw-rs-sticky-'))
-  const from = "content: \"\"; position: sticky; top: 0; left: 0; width: 100%; height: calc(100vh - 20px);\n\tmargin-bottom: calc(20px - 100vh);\n\tz-index: -1; pointer-events: none;\n\tborder-radius: inherit;\n\t-webkit-backdrop-filter: ${rsBlurCss} !important;"
-  const mut = CLIENT.replace(from, "content: \"\"; position: absolute; inset: 0; z-index: -1; pointer-events: none;\n\tborder-radius: inherit;\n\t-webkit-backdrop-filter: ${rsBlurCss} !important;")
-  if (mut === CLIENT) throw new Error('F-MUT 锚点缺失')
-  const p2 = path.join(dir, 'client.js'); fs.writeFileSync(p2, mut)
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mpw-rs-g-'))
+  const anchor = 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]) [data-dockkit-pane] {'
+  const i2 = CLIENT.indexOf(anchor)
+  if (i2 < 0) throw new Error('G-MUT 锚点缺失')
+  const j2 = CLIENT.indexOf('\n}', i2)
+  const mutated = CLIENT.slice(0, i2) + CLIENT.slice(i2, j2).replace('{', '{\n\tbackdrop-filter: blur(30px) !important;') + CLIENT.slice(j2)
+  const p2 = path.join(dir, 'client.js'); fs.writeFileSync(p2, mutated)
   loadPlugin({ quiet: true, clientPath: p2, settings: { enabled: true, image: 'stub-wallpaper.png', float: true, rightSidebarBlur: true }, search: '' })
   const css = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({ float: true, rightSidebarBlur: true, enabled: true, image: 'stub-wallpaper.png' }) : '')
   cancelWorldTimers()
-  const stickyRule = (css.match(/html body\[data-mpw-rsblur="on"\] \[data-mpw-rs-surface\]::before[^{]*\{([^}]*)\}/) || [])[1] || ''
-  ok('F-MUT 磨砂退回 absolute ⇒ F1 必红',
-    !stickyRule.includes('position: sticky'), stickyRule.trim().slice(0, 80))
+  const stripped2 = css.replace(/\/\*[\s\S]*?\*\//g, ' ')
+  let paneHasBf = false
+  const re2 = /([^{}]{1,500})\{([^{}]*backdrop-filter[^{}]*)\}/g
+  let m2
+  while ((m2 = re2.exec(stripped2))) {
+    const sel = m2[1].replace(/\s+/g, ' ').trim()
+    if (/data-dockkit-pane/.test(sel) && !/data-sidebar-right-panel/.test(sel) && !/data-mpw-rs-surface/.test(sel) && sel.includes(':not')) paneHasBf = true
+  }
+  ok('G-MUT 把磨砂写到 pane（滚动容器）上 ⇒ G1a 必红', paneHasBf)
 }
 console.log(`\n===== ${pass} 通过 / ${fail} 失败 =====`)
 process.exit(fail ? 1 : 0)
