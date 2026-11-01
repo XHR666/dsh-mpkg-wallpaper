@@ -559,7 +559,11 @@ console.log('\n== F 组：独立性/归属（跟随开关 + *UserSet 标记）==
     plan.header.base === TOP_BASE && plan.left.base === SIDE_BASE && plan.right.base === SIDE_BASE
     && plan.header.opacityPct === plan.left.opacityPct
     && plan.header.blur === plan.left.blur && plan.left.blur === plan.right.blur
-    && /setProperty\("--mpw-hdr-frost-bg", mpwSurfaceColor\(pl\.header\.base, pl\.header\.opacityPct \/ 100\)\)/.test(SRC),
+    /* 2(2026-11-01) 原断言：setProperty("--mpw-hdr-frost-bg", mpwSurfaceColor(pl.header.base, pl.header.opacityPct/100))
+       ⇒ 新断言：unify 模式下与左栏同源（左栏 base / 左栏不透明度），非 unify 仍用 header 自己那套。
+       为什么：真机"标题栏更白"的代码级根因就是这颗 token 与侧栏双层 color-mix 不同构；语义保持 ——
+       “标题栏半透底 = 宿主底色 × 表面不透明度，且跟随统一模式”，只是 unify 时取左栏那一套（与 CSS tok 层一致）。 */
+    && /setProperty\("--mpw-hdr-frost-bg", mpwSurfaceColor\(\s*un \? pl\.left\.base : pl\.header\.base,\s*\(un \? pl\.left\.opacityPct : pl\.header\.opacityPct\) \/ 100\)\)/.test(SRC),
     JSON.stringify({ header: plan.header, left: plan.left, right: plan.right }))
 }
 {
