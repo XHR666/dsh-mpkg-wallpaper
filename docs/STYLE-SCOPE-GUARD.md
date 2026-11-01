@@ -235,3 +235,4 @@ bash tools/check.sh                           # 门禁第 11 步就是全量模�
 | `host:scroll-area-atom` | anchor | `[class*="scrollArea"]` | 宿主通用滚动区（部分 flex 面板）：同上，Firefox 滚动条补偿 | 本表 |
 | `host:tooltip-bubble` | anchor | `[class*="_bubble_"]` | 宿主按钮/元素 tooltip（如左栏「新会话」）：2026-11-01 起统一为弹层表面 token（含 `*` 继承文字色），只改表面不动定位 | 本表 |
 | `host:pop-surface-family` | anchor | `[class*="_surface_ri079_1"]` | 宿主弹层表面家族（菜单/下拉列表共用 `_surface_ri079_1`）：2026-11-01 UI 审计把"内层 material 双层模糊"修复扩到该家族（含 `_list_`），只关内层模糊 | 本表 |
+| `host:blank-header-zero` | anchor | `html body .wSkVaW_header.wSkVaW_headerBlank` / `.wSkVaW_headerSessionless` | 空标题栏（新会话/加载中）**首帧**兜底：宿主状态类在插件 JS 广播 `body[data-mpw-hdr-blank]` 之前就已存在，需要一条不依赖 JS 门控的归零规则（真机症状：刷新首帧标题栏位置出现约 1 秒的细长条）；只归零空栏，不动有会话标题栏 | 本表 |
