@@ -238,3 +238,4 @@ bash tools/check.sh                           # 门禁第 11 步就是全量模�
 | `host:blank-header-zero` | anchor | `html body .wSkVaW_header.wSkVaW_headerBlank` / `.wSkVaW_headerSessionless` | 空标题栏（新会话/加载中）**首帧**兜底：宿主状态类在插件 JS 广播 `body[data-mpw-hdr-blank]` 之前就已存在，需要一条不依赖 JS 门控的归零规则（真机症状：刷新首帧标题栏位置出现约 1 秒的细长条）；只归零空栏，不动有会话标题栏 | 本表 |
 | `host:task-manager-page` | anchor | `[data-testid="task-manager-page"]` | 宿主机「自动化任务」页容器（data-testid 稳定）：壁纸模式下该页用 bg-base 铺出一整片白色蒙层，改为透明直接透出壁纸；只影响该页面 | 本表 |
 | `host:model-menu-list` | refine | `[class*="_7KE1Ra_groups"]` | 模型/推理等级弹层内的滚动列表容器（也带 role=menu，宿主给它伪元素加了 blur）：只允许关伪元素模糊，避免与外壳 blur 叠加成双层 | 本表 |
+| `host:list-4ub78` | anchor | `[class*="_list_4ub78_7"]` | 宿主下拉列表家族（权限/更多操作/模型列表等共用 `_list_`）：只允许关掉它内层伪元素模糊，避免与外壳 blur 叠成双层 | 本表 |
