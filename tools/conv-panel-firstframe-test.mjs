@@ -138,11 +138,11 @@ let CSS_ON = ''
     'decls=' + decls.length + ' 硬编码残留=' + (raw.match(/background-color:\s*var\(--dsw-static-neutral-bluish/g) || []).length)
   const light = ruleBody(CSS_ON, 'html body [data-mpw-solid-surface="l1"]')
   const dark = ruleBody(CSS_ON, 'html body[data-ds-dark-theme] [data-mpw-solid-surface="l1"]')
-  ok('A2 变量定义在标记规则上且默认=宿主主题原值（稳态观感零变化）',
-    !!light && /--mpw-conv-panel-bg:\s*var\(--dsw-static-neutral-bluish-00\)/.test(light)
-    && !!dark && /--mpw-conv-panel-bg:\s*var\(--dsw-static-neutral-bluish-875\)/.test(dark))
+  ok('A2 变量定义在标记规则上且底色跟随 --dsh-conv-bg-alpha（默认 100%=宿主主题原值）',
+    !!light && /--mpw-conv-panel-bg:\s*color-mix\(in srgb, var\(--dsw-static-neutral-bluish-00\) var\(--dsh-conv-bg-alpha,\s*100%\), transparent\)/.test(light)
+    && !!dark && /--mpw-conv-panel-bg:\s*color-mix\(in srgb, var\(--dsw-static-neutral-bluish-875\) var\(--dsh-conv-bg-alpha,\s*100%\), transparent\)/.test(dark))
   // A3：内存副本替换变量定义 ⇒ 面板底色随变量走（值来源唯一）
-  const swapped = CSS_ON.replace('--mpw-conv-panel-bg: var(--dsw-static-neutral-bluish-00)', '--mpw-conv-panel-bg: rgba(255, 0, 0, 0.5)')
+  const swapped = CSS_ON.replace('--mpw-conv-panel-bg: color-mix(in srgb, var(--dsw-static-neutral-bluish-00) var(--dsh-conv-bg-alpha, 100%), transparent)', '--mpw-conv-panel-bg: rgba(255, 0, 0, 0.5)')
   const swLight = ruleBody(swapped, 'html body [data-mpw-solid-surface="l1"]')
   ok('A3 改这一个变量 ⇒ 面板底色整体跟着变（background-color 只引用变量）',
     !!swLight && /--mpw-conv-panel-bg:\s*rgba\(255, 0, 0, 0\.5\)/.test(swLight)
