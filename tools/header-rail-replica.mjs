@@ -97,7 +97,9 @@ function buildCssFor(variant) {
       // ①(2026-10-30 修复既有红) 280ed55 给这两条规则加了 :not(:where([data-code-block-banner]))
       //   （代码块横幅排除）⇒ before 锚点自那起失配（本步 --full 自 10-27 起未真跑过，本轮暴露）。
       //   锚点更新为当前源码文本（语义不变：before 变体仍 = 删掉整套层叠修复）。
-      ['.wSkVaW_header:not(:where([data-code-block-banner])):has(> .mpw-hdrFrost) > :not(.mpw-hdrFrost) { position: relative; z-index: 1; }\n.mpw-hdrFrost:first-child ~ * { position: relative; z-index: 1; }\n.wSkVaW_header:not(:where([data-code-block-banner])) > .mpw-hdrFrost { z-index: 0 !important; }', ''],
+        //   ①(2026-11-01 T04 演进) 选择器从 :not(:where([data-code-block-banner])) 变为链式
+        //   :not([data-code-block-banner]):not([data-disclosure-header]) ⇒ 锚点再同步一次。
+      ['.wSkVaW_header:not([data-code-block-banner]):not([data-disclosure-header]):has(> .mpw-hdrFrost) > :not(.mpw-hdrFrost) { position: relative; z-index: 1; }\n.mpw-hdrFrost:first-child ~ * { position: relative; z-index: 1; }\n.wSkVaW_header:not([data-code-block-banner]):not([data-disclosure-header]) > .mpw-hdrFrost { z-index: 0 !important; }', ''],
     ]
     for (const [a, b] of reps) { if (!src.includes(a)) throw new Error('before 变体：源码锚点缺失 → ' + a.slice(0, 50)); src = src.replace(a, b) }
     src = src.replace(/\tbox-shadow: 0 0 0 1px var\(--mpw-rail-halo, rgba\(255, 255, 255, 0\.55\)\);\n/g, '')

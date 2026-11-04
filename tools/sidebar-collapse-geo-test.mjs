@@ -15,6 +15,7 @@
 // 用法: node tools/sidebar-collapse-geo-test.mjs
 import fs from 'node:fs'
 import path from 'node:path'
+import os from 'node:os'
 import { fileURLToPath } from 'node:url'
 import { loadPlugin, cancelWorldTimers } from './_stub.mjs'
 
@@ -60,8 +61,11 @@ console.log('== A. 统一收起/展开几何（buildCss float:on 真产物）=='
 {
   const css = cssFloat()
   const tokenDef = ruleBody(css, 'body[data-mpw-float] {\n\t--mpw-side-radius') || ruleBody(css, '--mpw-side-radius:')
-  ok('A1 统一令牌单点定义：--mpw-side-radius（⑨§3 起值为 18px，右栏口径）/ --mpw-side-dur / --mpw-side-ease 都在 float 块',
-    /--mpw-side-radius:\s*18px;/.test(css)
+  // ①(2026-11-03 演进留痕) 半径口径随 2026-11-02 两笔提交演进（18→22→跟随宿主
+  //   --dsw-radius-panel 档/回落 26px，见 lib client.js float 块注释与 commit e99fabb/6e5ef63）；
+  //   本判据从"字面量 18px"改判"令牌单点定义 + 跟随宿主 panel 档"，语义不降（单点 + 同源仍锁死）。
+  ok('A1 统一令牌单点定义：--mpw-side-radius（2026-11-02 起跟随宿主 --dsw-radius-panel）/ --mpw-side-dur / --mpw-side-ease 都在 float 块',
+    /--mpw-side-radius:\s*var\(--dsw-radius-panel,\s*26px\);/.test(css)
     && /--mpw-side-dur:\s*var\(--ds-transition-duration-slow, 0\.3s\)/.test(css)
     && /--mpw-side-ease:\s*var\(--ds-ease-in-out, cubic-bezier\(0\.4, 0, 0\.2, 1\)\)/.test(css))
 
@@ -99,12 +103,15 @@ console.log('== A. 统一收起/展开几何（buildCss float:on 真产物）=='
   const rsDock = ruleBody(css, 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]) [data-dockkit-pane],\nhtml body[data-mpw-float]:not([data-mpw-rightbar-parked]) [data-dockkit-strip] {')
   const rPush = String(decl(rsPush, 'border-radius') || '').replace(/\s*!important$/, '')
   const rDock = String(decl(rsDock, 'border-radius') || '').replace(/\s*!important$/, '')
-  ok('A7 §3 左右栏同源：右栏 push/dockkit 的 border-radius 也是 var(--mpw-side-radius)（令牌值 18px）',
-    rPush === 'var(--mpw-side-radius)' && rDock === 'var(--mpw-side-radius)' && /--mpw-side-radius:\s*18px;/.test(css),
-    `push=${rPush} dockkit=${rDock}`)
-  ok('A7b §3 对照表：左栏展开/收起/根 3 组 + 右栏 push/dockkit 2 组 = 五处声明逐值同源（同一 var）',
-    [rExp, rCol, rRoot, rPush, rDock].every((v) => v === 'var(--mpw-side-radius)'),
-    `左展开=${rExp} 左收起=${rCol} 左根=${rRoot} 右push=${rPush} 右dock=${rDock}`)
+  // ①(2026-11-03 演进留痕) 同 A1：令牌定义从"18px 字面量"演进为"跟随宿主 --dsw-radius-panel 档"
+  // ①(2026-11-03 第三轮 §2③) pane/strip 规则拆分后 dockkit 读数从 rDock 一条变两条
+  const rDockPane = String(decl(ruleBody(css, 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]) [data-dockkit-pane] {'), 'border-radius') || '').replace(/\s*!important$/, '')
+  ok('A7 §3 左右栏同源：右栏 push/dockkit-pane 的 border-radius 也是 var(--mpw-side-radius)（令牌跟随宿主 panel 档）',
+    rPush === 'var(--mpw-side-radius)' && rDockPane === 'var(--mpw-side-radius)' && /--mpw-side-radius:\s*var\(--dsw-radius-panel,\s*26px\);/.test(css),
+    `push=${rPush} pane=${rDockPane}`)
+  ok('A7b §3 对照表：左栏展开/收起/根 3 组 + 右栏 push/dockkit-pane 2 组 = 五处声明逐值同源（同一 var）',
+    [rExp, rCol, rRoot, rPush, rDockPane].every((v) => v === 'var(--mpw-side-radius)'),
+    `左展开=${rExp} 左收起=${rCol} 左根=${rRoot} 右push=${rPush} 右pane=${rDockPane}`)
 }
 
 console.log('\n== B. tooltip 去裁切（行为：真实现 __mpwPopUntruncTest.tipFast/tipSync）==')
@@ -165,6 +172,14 @@ function buildShell({ overflow = 'hidden' } = {}) {
   const T = globalThis.__mpwPopUntruncTest
   ok('B0 判据出口在（tipFast/tipSync/tipClips）', !!T && typeof T.tipFast === 'function' && typeof T.tipSync === 'function' && typeof T.tipClips === 'function')
 
+  /* ①(#Bug4 2026-11-03 演进留痕) unclip 机制默认关闭（悬停发送键页面震荡的根因链；
+     磨砂迁伪元素后 tooltip 不再被裁，历史补丁只剩风险）。B 组打标断言改在**兜底开关打开**
+     的状态下跑（机制本身还在，开关语义由 tip-no-layout-shift-test 的 A/M 组守）。 */
+  const f0 = buildShell({})
+  const n0 = T.tipFast(f0.tip)
+  ok('B0b #Bug4 默认关：未开兜底开关 ⇒ tipFast 不打标（布局零改动）', n0 === 0 && !f0.shell.hasAttribute('data-mpw-tip-unclip'), 'n=' + n0)
+  globalThis.__mpwTipUnclip = true
+
   /* B1：气泡插入帧 ⇒ 裁切祖先同帧打标（= 打标后真实浏览器里该祖先 overflow 变 visible，
      tooltip 的 rect 不再被裁剪 —— 结构前提与 CSS 放开规则成对断言，见 B5） */
   const f1 = buildShell({})
@@ -198,6 +213,7 @@ function buildShell({ overflow = 'hidden' } = {}) {
 
   ok('B5 CSS 放开规则在（!important，与打标成对）：[data-mpw-tip-unclip] ⇒ overflow visible',
     /\[data-mpw-tip-unclip\]\[data-mpw-tip-unclip\] \{[^}]*overflow:\s*visible !important;/.test(CLIENT))
+  globalThis.__mpwTipUnclip = undefined   // 复位兜底开关（不泄漏到后续用例）
   cancelWorldTimers()
 }
 
@@ -209,7 +225,15 @@ const MUTANTS = [
     //   box-shadow（2026-10-30 §1 三面同族），相邻行断言会误报 MUTANT-INERT。
     verify: (s) => s.indexOf('border-radius: 20px;') >= 0 && s.split('border-radius: 20px;').length === 2 },
   { id: 'M5', what: '⑨(§3) 右栏 push 圆角改回 18px 字面量（异于令牌）⇒ A7 必红', expect: ['A7'],
-    patch: (s) => s.replace('border-radius: var(--mpw-side-radius) !important;\n\tborder: 1px solid rgba(148,180,220,0.28) !important;\n\toverflow: hidden !important;\n\tbox-shadow: var(--mpw-float-shadow, 0 6px 24px rgba(0,0,0,0.12));', 'border-radius: 18px !important;\n\tborder: 1px solid rgba(148,180,220,0.28) !important;\n\toverflow: hidden !important;\n\tbox-shadow: var(--mpw-float-shadow, 0 6px 24px rgba(0,0,0,0.12));'),
+    // ①(2026-11-03 第三轮 §2③) 改为按规则定位的变异（规则体内注入了滚动注释，文本锚不稳）
+    patch: (s) => {
+      const head = '[data-sidebar-right-panel="push"] {'
+      const i = s.indexOf(head)
+      if (i < 0) return s
+      const j = s.indexOf('\n}', i)
+      const body = s.slice(i, j).replace('border-radius: var(--mpw-side-radius) !important', 'border-radius: 18px !important')
+      return s.slice(0, i) + body + s.slice(j)
+    },
     verify: (s) => s.indexOf('border-radius: 18px !important;') >= 0 && s.split('border-radius: 18px !important;').length === 2 },
   { id: 'M2', what: '收起态过渡改回 0.18s ease ⇒ A3 必红', expect: ['A3'],
     patch: (s) => s.replace('transition: margin var(--mpw-side-dur) var(--mpw-side-ease), padding var(--mpw-side-dur) var(--mpw-side-ease);\n}', 'transition: margin 0.18s ease, padding 0.18s ease;\n}'),
@@ -267,6 +291,111 @@ for (const m of MUTANTS) {
   const eq = expectRed.length === red.length && expectRed.every((x) => red.indexOf(x) >= 0)
   if (eq) { pass++; console.log('  ✓ MUTANT-RED-OK ' + m.id + ' ' + m.what + '  期望红=' + JSON.stringify(expectRed) + ' 实际红=' + JSON.stringify(red)) }
   else { fail++; console.error('  ✗ MUTANT-MISMATCH ' + m.id + '  期望红=' + JSON.stringify(expectRed) + ' 实际红=' + JSON.stringify(red)) }
+}
+
+
+// ═══ G 组（2026-11-03 第三轮 §2③ A/B 二次定案）：wrapper/scroller 分层 ═══
+//   背景：sticky 磨砂伪元素参与滚动内容布局（垫高/撑 scrollHeight）破坏滚动（真机 A/B 定案）。
+//   修复结构：面板 = wrapper（overflow:hidden + 磨砂 ::before absolute inset:0 不滚动）；
+//   pane = 内层滚动容器（overflow-y:auto + max-height）。判据 a/b/c 见下。
+{
+  reset()
+  loadPlugin({ quiet: true })
+  const css = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({ float: true, rightSidebarBlur: true, enabled: true, image: 'stub-wallpaper.png' }) : '')
+  cancelWorldTimers()
+  const stripped = css.replace(/\/\*[\s\S]*?\*\//g, ' ')
+  // G1a 磨砂不得命中滚动容器 [data-dockkit-pane]（本体或伪元素）
+  let paneBf = []
+  const re1 = /([^{}]{1,500})\{([^{}]*backdrop-filter[^{}]*)\}/g
+  let m1
+  while ((m1 = re1.exec(stripped))) {
+    const sel = m1[1].replace(/\s+/g, ' ').trim()
+    if (/data-dockkit-pane/.test(sel) && !/data-sidebar-right-panel/.test(sel) && !/data-mpw-rs-surface/.test(sel)) {
+      const bf = /backdrop-filter:\s*([^;!]+)/.exec(m1[2])
+      if (bf && bf[1].trim() !== 'none') paneBf.push(sel.slice(0, 80) + ' → ' + bf[1].trim())
+    }
+  }
+  ok('G1a 磨砂（backdrop-filter 非 none）不得命中滚动容器 [data-dockkit-pane] 本体/伪元素（抑制 none 规则不计）',
+    paneBf.length === 0, paneBf.length ? '违规=' + paneBf.slice(0, 2).join(' | ') : '0 违规')
+  // G1b rs-surface ::before 磨砂在位（absolute inset:0，wrapper 磨砂）
+  const rsRule = (css.match(/html body\[data-mpw-rsblur="on"\] \[data-mpw-rs-surface\]::before[^{]*\{([^}]*)\}/) || [])[1] || ''
+  ok('G1b rs-surface ::before = absolute inset:0（wrapper 磨砂在位）',
+    rsRule.includes('position: absolute') && rsRule.includes('inset: 0') && rsRule.includes('backdrop-filter'),
+    rsRule.trim().slice(0, 110))
+  // G1c 面板 = wrapper（overflow:hidden，不滚动）
+  ok('G1c 面板 overflow:hidden（wrapper 不滚动）',
+    /\[data-sidebar-right-panel="push"\][^{}]*\{[^}]*overflow: hidden !important/.test(css))
+  // G2 禁止 sticky + 负 margin-bottom 组合（防回归）
+  ok('G2 无 sticky + 负 margin-bottom 磨砂组合（防 sticky 路线回归）',
+    !/position:\s*sticky[^}]*margin-bottom:\s*calc\(20px\s*-\s*100vh\)/.test(stripped))
+  // G3 pane = 滚动容器（overflow-y:auto + max-height 在位）
+  // ①(2026-11-03 第四轮 D1 演进留痕) pane max-height 从视口近似(100vh-60px)改为
+  //    面板相对(100%)——面板高度已定 calc(100vh-20px)，百分比最稳（D1 读数定案）
+  ok('G3 pane = 内层滚动容器（overflow-y:auto + max-height:100% 在位）',
+    /overflow-y:\s*auto !important/.test(stripped) && /max-height:\s*100% !important/.test(stripped)
+    && !/max-height:\s*calc\(100vh\s*-\s*60px\)/.test(stripped))
+}
+{
+  // G-MUT：把磨砂 backdrop-filter 写到 pane（滚动容器）上 ⇒ G1a 必红
+  reset()
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mpw-rs-g-'))
+  const anchor = 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]) [data-dockkit-pane] {'
+  const i2 = CLIENT.indexOf(anchor)
+  if (i2 < 0) throw new Error('G-MUT 锚点缺失')
+  const j2 = CLIENT.indexOf('\n}', i2)
+  const mutated = CLIENT.slice(0, i2) + CLIENT.slice(i2, j2).replace('{', '{\n\tbackdrop-filter: blur(30px) !important;') + CLIENT.slice(j2)
+  const p2 = path.join(dir, 'client.js'); fs.writeFileSync(p2, mutated)
+  loadPlugin({ quiet: true, clientPath: p2, settings: { enabled: true, image: 'stub-wallpaper.png', float: true, rightSidebarBlur: true }, search: '' })
+  const css = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({ float: true, rightSidebarBlur: true, enabled: true, image: 'stub-wallpaper.png' }) : '')
+  cancelWorldTimers()
+  const stripped2 = css.replace(/\/\*[\s\S]*?\*\//g, ' ')
+  let paneHasBf = false
+  const re2 = /([^{}]{1,500})\{([^{}]*backdrop-filter[^{}]*)\}/g
+  let m2
+  while ((m2 = re2.exec(stripped2))) {
+    const sel = m2[1].replace(/\s+/g, ' ').trim()
+    if (/data-dockkit-pane/.test(sel) && !/data-sidebar-right-panel/.test(sel) && !/data-mpw-rs-surface/.test(sel) && sel.includes(':not')) paneHasBf = true
+  }
+  ok('G-MUT 把磨砂写到 pane（滚动容器）上 ⇒ G1a 必红', paneHasBf)
+}
+
+// ═══ H 组（2026-11-03 第四轮 A/B/D1 读数）：面板填满视高 + pane 高度约束 + flex 链 ═══
+{
+  reset()
+  loadPlugin({ quiet: true })
+  const css = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({ float: true, rightSidebarBlur: true, enabled: true, image: 'stub-wallpaper.png' }) : '')
+  cancelWorldTimers()
+  // H1 面板高度 = calc(100vh-20px)（整列到底，不再 auto）
+  const pushBody = (css.match(/\[data-sidebar-right-panel="push"\]\s*\{([^}]*)\}/) || [])[1] || ''
+  ok('H1 面板高度 = calc(100vh-20px)（填满可用视高，整列到底）',
+    /(?<!max-)height:\s*calc\(100vh\s*-\s*20px\) !important/.test(pushBody)
+    && /max-height:\s*calc\(100vh\s*-\s*20px\) !important/.test(pushBody),
+    'pushBody=' + pushBody.slice(0, 200))
+  // H2 pane max-height: 100%（相对面板，不再视口近似）
+  ok('H2 pane max-height: 100%（相对面板已定高度）',
+    /max-height:\s*100% !important/.test(css) && !/max-height:\s*calc\(100vh\s*-\s*60px\)/.test(css))
+  // H3 flex 链：面板 display:flex + 子代 min-height:0
+  ok('H3a 面板 display:flex + flex-direction:column',
+    /display:\s*flex !important/.test(css) && /flex-direction:\s*column !important/.test(css))
+  ok('H3b 面板子代 min-height:0（flex 收缩允许）',
+    /> \*\s*\{[^}]*min-height:\s*0 !important/.test(css))
+  // H4 面板仍 overflow:hidden（wrapper 不滚动，磨砂 ::before 不参与滚动）
+  ok('H4 面板 overflow:hidden 保留（wrapper 不滚动，磨砂 ::before 不参与滚动）',
+    /\[data-sidebar-right-panel="push"\][^{}]*\{[^}]*overflow: hidden !important/.test(css))
+}
+{
+  // H-MUT：面板 height 改回 auto（回归复刻）⇒ H1 必红
+  reset()
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mpw-panel-h-'))
+  const from = 'height: calc(100vh - 20px) !important;\n\tmax-height: calc(100vh - 20px) !important;'
+  const mut = CLIENT.replace(from, 'height: auto !important;\n\tmax-height: calc(100vh - 20px) !important;')
+  if (mut === CLIENT) throw new Error('H-MUT 锚点缺失')
+  const p2 = path.join(dir, 'client.js'); fs.writeFileSync(p2, mut)
+  loadPlugin({ quiet: true, clientPath: p2, settings: { enabled: true, image: 'stub-wallpaper.png', float: true, rightSidebarBlur: true }, search: '' })
+  const css = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({ float: true, rightSidebarBlur: true, enabled: true, image: 'stub-wallpaper.png' }) : '')
+  cancelWorldTimers()
+  const heightOk = /(?<!max-)height:\s*calc\(100vh\s*-\s*20px\) !important/.test(css)
+  ok('H-MUT 面板高度改回 auto ⇒ H1 必红', !heightOk, 'height still= ' + heightOk)
 }
 
 console.log(`\n===== ${pass} 通过 / ${fail} 失败 =====`)

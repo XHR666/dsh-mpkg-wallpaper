@@ -219,3 +219,12 @@ mark 有布局数、`elementFromPoint` 整条链、祖先链 paint 全量、**�
 > 另外：本轮测量环境里 `.mpw-bgWrap` 一直 computed `display:none`（注入式设置的 host/local
 > 合并时序，属另一条线，见 `docs/WEB-WALLPAPER.md` 的持久化小节），所以像素判据是在**白色底**上取的；
 > 壁纸上（有背景色）的对比度仍需真机看一眼。
+
+## 2026-11-01 追加：轮次预览浮层 backdrop 的**用户批准例外**
+- 背景：轮次导航条的悬停预览（`.eGxaPq_preview` / `.Y0dWHa_preview`）首帧只有 0.63 半透明底、无磨砂；
+  宿主对其 `backdrop-filter` 的规则优先级更高，而本文件要求"rail 补偿不得含 `!important`" ⇒ 压不过。
+- 用户（2026-11-01）明确批准：**仅此一处**允许 `backdrop-filter` 使用 `!important`，且必须**独立成块**、只覆盖 backdrop，
+  不得改背景/边框/尺寸/层级。
+- 实现：`lib/client.js` 的独立规则块（选择器一律带 `body[data-mpw-rail-ink]` 门控）；
+  护栏 `tools/style-scope-guard.mjs` 增加隔离例外 `RAIL_PREVIEW_GLASS_PROPS`（只放行 backdrop-filter/-webkit-backdrop-filter，
+  且选择器必须命中预览浮层）——其它 rail 规则/其它属性依旧判红。

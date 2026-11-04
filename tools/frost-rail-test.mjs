@@ -397,7 +397,10 @@ function checkScenario(sc, r) {
        `color-mix(in srgb, var(--dsw-alias-bg-base) NN%, transparent)`。
        判据同步成"确实写入、且指向宿主 token、且是 color-mix"——比旧式写死 rgba 更强。 */
     t('我们命名空间的半透明底色 --mpw-hdr-frost-bg 已写入（宿主底色 × 不透明度，不再是写死白）',
-      /color-mix\(in srgb,\s*var\(--dsw-alias-bg-base\)\s*[\d.]+%,\s*transparent\)/.test(r.hdrFrostBg))
+      /* 2(2026-11-01) 原断言只认 --dsw-alias-bg-base；新断言同时接受 --dsw-specific-sidebar-fill
+         （unify 模式下标题栏半透底改为与侧栏同源，修“标题栏更白”的 2 倍 tint 根因）。
+         语义保持：值必须仍是「宿主底色 × 不透明度百分比」的 color-mix，不再是写死白。 */
+      /color-mix\(in srgb,\s*var\(--dsw-(?:alias-bg-base|specific-sidebar-fill)\)\s*[\d.]+%,\s*transparent\)/.test(r.hdrFrostBg))
     t('computed 采到 header 底色（诊断用）', typeof r.state.headerBg === 'string' && r.state.headerBg.length > 0)
     // ①(2026-09-16 要求1) "看不见的链路变可见"：用户按诊断/上报时 payload 里必须带磨砂字段
     const d = r.diag || {}

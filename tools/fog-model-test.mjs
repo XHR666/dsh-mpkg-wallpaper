@@ -335,15 +335,9 @@ const RS_SEL = /\[data-sidebar-right-panel\]|\[data-dockkit-(pane|strip|surface|
   ok('B4b 「跟随」⇒ 左侧边栏不再输出自己那条 backdrop-filter（避免双重模糊）',
     !HAS_RULE(css, /body\[data-mpw-sblur\][^,]*\.pI_x6G_sidebarCol/, /backdrop-filter/))
 }
-{
-  const css = boot({ enabled: true, image: true, unifyTint: true, unifyAmount: 30, sidebarAlpha: 40, bsCompat: true, chatFollow: false })
-  ok('B5 better-sidebar 面板/底部工作台：跟雾色与厚度，但**不给** backdrop-filter（防困住内部 fixed 内容）',
-    HAS_RULE(css, /\[data-mpw-unify\] \[data-dsh-better-sidebar\] \[class\*="_bottomPanel"\]/, /background-color:\s*var\(--mpw-unify-surface\)/)
-    && !HAS_RULE(css, /\[data-mpw-unify\] \[data-dsh-better-sidebar\]/, /backdrop-filter/))
-  const cssOff = boot({ enabled: true, image: true, unifyTint: true, unifyAmount: 30, sidebarAlpha: 40, bsCompat: false, chatFollow: false })
-  ok('B5b bsCompat 手动关 ⇒ 产物里 0 条 [data-dsh-better-sidebar] 规则（尊重用户手动关）',
-    !/\[data-dsh-better-sidebar\]/.test(STRIP(cssOff)))
-}
+/* ①(2026-11-03 演进留痕 #2) B5/B5b（better-sidebar 适配块 + bsCompat 门控）随适配整块删除：
+   better-sidebar 第三方插件被 DSH 原生右栏取代，[data-dsh-better-sidebar] 属死代码；
+   "产物 0 条 [data-dsh-better-sidebar] 规则"的守护升级为常驻判据 tools/bs-compat-removed-test.mjs。 */
 {
   const css = boot({ enabled: true, image: false, unifyTint: true, unifyAmount: 30, sidebarAlpha: 40 })
   ok('B6 无壁纸 ⇒ 不产出接管规则（该路径本来就没有玻璃块）',
@@ -516,14 +510,8 @@ console.log('\n== E 组：变异自证 ==')
     TOKEN(cssM, 'mpw-unify-surface') !== '' && TOKEN(cssR, 'mpw-unify-surface') === '',
     JSON.stringify({ mutant: TOKEN(cssM, 'mpw-unify-surface'), real: TOKEN(cssR, 'mpw-unify-surface') }))
 }
-{
-  /* E4 better-sidebar 段不再受 bsCompat 门控 ⇒ B5b 必红 */
-  const m4 = mutant('bs-ungated', 'const bsTakeoverSurface = !unifyTakeover || !bsCompatTakeover ? "" : `', 'const bsTakeoverSurface = !unifyTakeover ? "" : `')
-  const cssM = boot({ enabled: true, image: true, unifyTint: true, unifyAmount: 30, sidebarAlpha: 40, bsCompat: false, chatFollow: false }, m4)
-  const cssR = boot({ enabled: true, image: true, unifyTint: true, unifyAmount: 30, sidebarAlpha: 40, bsCompat: false, chatFollow: false })
-  ok('E4 better-sidebar 段不再受 bsCompat 门控 ⇒ 手动关也照样产出规则（B5b 必红）',
-    /\[data-dsh-better-sidebar\]/.test(STRIP(cssM)) && !/\[data-dsh-better-sidebar\]/.test(STRIP(cssR)))
-}
+/* ①(2026-11-03 演进留痕 #2) E4（bsTakeoverSurface 门控变异）随适配删除：判据对象不存在了。
+   删除断言由 tools/bs-compat-removed-test.mjs 承担（含"写回一条 bs 适配规则 ⇒ 必红"的变异）。 */
 {
   /* E4b 把 shellPct 钉回 100（旧的"不虚化 ⇒ 实心"钳制）⇒ A2f 必红 */
   const m5 = mutant('solid-floor', 'shellPct: Math.max(0, Math.min(100, 100 - sidePct)),', 'shellPct: 100,')
@@ -571,7 +559,11 @@ console.log('\n== F 组：独立性/归属（跟随开关 + *UserSet 标记）==
     plan.header.base === TOP_BASE && plan.left.base === SIDE_BASE && plan.right.base === SIDE_BASE
     && plan.header.opacityPct === plan.left.opacityPct
     && plan.header.blur === plan.left.blur && plan.left.blur === plan.right.blur
-    && /setProperty\("--mpw-hdr-frost-bg", mpwSurfaceColor\(pl\.header\.base, pl\.header\.opacityPct \/ 100\)\)/.test(SRC),
+    /* 2(2026-11-01) 原断言：setProperty("--mpw-hdr-frost-bg", mpwSurfaceColor(pl.header.base, pl.header.opacityPct/100))
+       ⇒ 新断言：unify 模式下与左栏同源（左栏 base / 左栏不透明度），非 unify 仍用 header 自己那套。
+       为什么：真机"标题栏更白"的代码级根因就是这颗 token 与侧栏双层 color-mix 不同构；语义保持 ——
+       “标题栏半透底 = 宿主底色 × 表面不透明度，且跟随统一模式”，只是 unify 时取左栏那一套（与 CSS tok 层一致）。 */
+    && /setProperty\("--mpw-hdr-frost-bg", mpwSurfaceColor\(\s*un \? pl\.left\.base : pl\.header\.base,\s*\(un \? pl\.left\.opacityPct : pl\.header\.opacityPct\) \/ 100\)\)/.test(SRC),
     JSON.stringify({ header: plan.header, left: plan.left, right: plan.right }))
 }
 {
@@ -672,11 +664,16 @@ const F7A_HOLDS = (css) => {
      用户显式特性：悬浮 float 族（`[data-sidebar-collapsed]` 收起让内层 root 透出 +
      `body[data-mpw-float]` 悬浮外壳三面的 corner-shape 连续圆角，见 2026-11-02 演进）与
      主题色（`body[data-mpw-theme]` 的 `--mpw-theme-color` wash）—— 阈值就卡在"≤ 3 条"，
-     且这些必须真的是那些特性的门控选择器（多出第 4 条 = 覆盖规则漏出来了）。 */
+     且这些必须真的是那些特性的门控选择器（多出第 4 条 = 覆盖规则漏出来了）。
+     ①(2026-11-03 第三轮 §2① 演进留痕) 上限 3→4、白名单加入悬浮态层叠上下文规则
+     （`html body[data-mpw-float] .pI_x6G_sidebarCol { position:relative; z-index:0 }`）：
+     它是**层叠/定位规则，不画一个像素**（无背景/无模糊/无滤镜）——真机 v7 读数定案
+     colZ 必须 ≠ auto（否则 ::before(z:-1) 逃逸到根负层被壁纸盖掉 = 磨砂消失）。
+     语义保持：透明度 0 时本模型仍然零注入（无背景/无模糊），第 5 条即红。 */
   const side = SIDE_RULES(boot(INERT_ST))
   const rest = side.map(([sel]) => sel.replace(/\s+/g, ' '))
-  ok('F7b 透明度 0 ⇒ 左栏（pI_x6G_sidebarCol）规则 **≤ 3 条**；剩下的只许是用户显式特性：悬浮 float（[data-sidebar-collapsed] 收起 + [data-mpw-float] 外壳 corner-shape）与主题色（body[data-mpw-theme]），不属于本模型',
-    side.length <= 3 && rest.every((x) => /data-sidebar-collapsed|data-mpw-theme|data-mpw-float/.test(x)),
+  ok('F7b 透明度 0 ⇒ 左栏（pI_x6G_sidebarCol）规则 **≤ 4 条**；剩下的只许是用户显式特性：悬浮 float（[data-sidebar-collapsed] 收起 + [data-mpw-float] 外壳 corner-shape + 层叠上下文 z0）与主题色（body[data-mpw-theme]），不属于本模型',
+    side.length <= 4 && rest.every((x) => /data-sidebar-collapsed|data-mpw-theme|data-mpw-float/.test(x)),
     JSON.stringify({ count: side.length, rest }))
 }
 {
@@ -872,8 +869,11 @@ console.log('\n== H 组：无雾层 ⇒ 不给宿主叠 backdrop-filter（+ chro
     !/rgba\(255,\s*255,\s*255,\s*0?\.38\)/.test(css) && !/rgba\(18,\s*22,\s*30,\s*0?\.45\)/.test(css)
     && /background-color:\s*var\(--mpw-hdr-frost-bg,\s*var\(--mpw-surface-frost-top\)\)/.test(css),
     (css.match(/background-color:\s*var\(--mpw-hdr-frost-bg[^;]*/) || [''])[0])
-  ok('H8 三块表面同一套模型：透明度 = 100 - 界面透明度（side=45 ⇒ 55%）在三枚表面 token 里逐字一致',
-    /--mpw-surface-frost-top(-light)?:\s*color-mix\(in srgb, var\(--dsw-alias-bg-base\) 55\.0%, transparent\)/.test(css)
+  /* ①(2026-11-01 III 真机定案·判据演进) 原断言要求顶栏基色 = --dsw-alias-bg-base；真机发现该宿主 token 本身已半透明
+   （#fff 35%）⇒ 再乘 35% 得到 α=0.1225，而侧栏 --dsw-specific-sidebar-fill 不透明 ⇒ α=0.35 ⇒ 观感"标题栏更白"。
+   语义不变（仍要求三枚 token 用同一条透明度 55%、逐字一致），只把顶栏基色改为与侧栏同一宿主 token。 */
+    ok('H8 三块表面同一套模型：透明度 = 100 - 界面透明度（side=45 ⇒ 55%）在三枚表面 token 里逐字一致',
+    /--mpw-surface-frost-top(-light)?:\s*color-mix\(in srgb, var\(--dsw-specific-sidebar-fill\) 55\.0%, transparent\)/.test(css)
     && /--mpw-surface-side-frost:\s*color-mix\(in srgb, var\(--dsw-specific-sidebar-fill\) 55\.0%, transparent\)/.test(css)
     && /--mpw-surface-rs-dock:\s*color-mix\(in srgb, var\(--dsw-specific-sidebar-fill\) 55\.0%, transparent\)/.test(css),
     '')

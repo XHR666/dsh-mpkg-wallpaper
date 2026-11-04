@@ -74,7 +74,10 @@
 | `host:substr-component` | anchor | `[class*="P3OORG_panel"\|"QsffPG*"\|"composerSeat"\|"composerStack"\|"newSession"\|"thinkBody"]` | 宿主具体组件 hash 子串：只在这些组件内部细化 | 本表 |
 | `host:substr-menu` | anchor | `[class*="_menu*"\|"_dropdown"\|"_popover*"\|"_floatHeader_"\|"_selectMenu"\|"_denseList"\|"_expand"]` | 宿主弹层/菜单/下拉/顶栏展开面板：菜单半透明与"半透明又无模糊"抑制的作用域 | 本表 |
 | `host:substr-refine` | refine | `[class*="card"\|"row"\|"button"\|"fade"\|"primary"\|"message"\|"overlay"\|…]` 等通用子串 | 宿主结构通用类名：**只允许**作为已锚定选择器里的后代细化（裸出现即红） | 本表 |
-| `host:bs-bottom-resize` | anchor | `[class*="bottomResize"]` | better-sidebar 底部面板的宿主 resize strip（8px 拖拽带）：`bsFloat` 的 14px 圆角外壳会把它上沿切掉，故挪进面板内（`top:-4px` → `0`）；只改位置，不动尺寸/交互 | `BETTER-SIDEBAR-COMPAT.md:332`（existing） |
+| `host:dsh-popover` | anchor | `[data-dsh-popover]` | 宿主弹层容器稳定属性（dsh- 前缀 = 宿主命名空间）：浮层提层（z 3000 档）与弹层表面磨砂的作用域。原被 `host:better-sidebar` 顺带匹配，2026-11-03 适配退役后独立登记 | 本表 |
+| `host:dsh-surface` | anchor | `[data-dsh-surface]` | 宿主浮层表面标记（当前构建未见打标 = 惰性备选）。原被 `host:better-sidebar` 顺带匹配，2026-11-03 适配退役后独立登记 | 本表 |
+| `host:scroll-body-clip` | refine | `[class*="scrollBody"]:not([data-code-block-banner])` | 宿主聊天滚动容器：§2④ 缓解——发送键 tooltip 被渲染在有 transform 的按钮/卡片内，坐标偏出视口右缘撑出容器级横向滚动条 ⇒ 跳动循环。overflow-x: clip 仅视觉裁切横向溢出，不创建滚动容器、不破坏竖向滚动 | 本表 |
+| ~~`host:better-sidebar`~~ / ~~`host:bs-bottom-resize`~~ | — | — | **2026-11-03 已移除**：better-sidebar 第三方插件适配整体退役（#2，见 tools/bs-compat-removed-test.mjs）；其稳定属性/resize 锚点不再被任何规则使用 | 本表 |
 | `host:substr-radius-compat` | anchor（整条选择器） | `:where([class*="wrap"], [class*="panel"], [class*="box"], [class*="section"], [class*="container"])` | 第三方插件 UI 圆角兼容（`roundCompat`，默认关）：**故意**匹配任意插件容器子串，但零优先级 `:where` + 只写 `border-radius` ⇒ 不覆盖任何既有样式 | 本表 |
 | `rail:marks` | anchor（**必须带门控**） | `.eGxaPq_*` / `.Y0dWHa_*` / `.qBU-ya*` | 只在 `body[data-mpw-rail-ink]`（对比补偿）/ `data-mpw-traject-clip`（仅几何裁剪）门控下成立 | `TIMELINE-RAIL-TOKEN.md:181`（existing） |
 | `rail:mark-attrs` | anchor（**必须带门控**） | `[class*="qBU-ya"]` / `[class*="_overview"]` | 同上（轨迹总览几何裁剪） | `TIMELINE-RAIL-TOKEN.md:181`（existing） |
@@ -215,3 +218,25 @@ bash tools/check.sh                           # 门禁第 11 步就是全量模�
 | `host:JObwrW-panel` | `[class*="JObwrW_panel"]` | anchor | 宿主"上下文已用"小面板（用户第 3 条⑥）：与其它弹层同一套玻璃（底+模糊+圆角），真机 HTML 由用户提供 |
 | `host:groupTitle` | `[class*="_groupTitle"]`（弹层内） | anchor | 宿主弹层分组标题条（用户第 3 条⑤）：只清宿主白底使其透出容器玻璃，不加自己的底/模糊 |
 | `host:aria-modal` | `[aria-modal="true"]` | anchor | 只有**模态**才禁止玻璃（containing block 风险）；非模态 role=dialog 小面板保留玻璃 |
+
+## 2026-11-01 追加（T05 回收站两态对比）
+
+| id | tier | 选择器 | 说明 | 出处 |
+|---|---|---|---|---|
+| `host:selected-state-attr` | refine | `[data-selected="true"\|"false"]` | 宿主会话/清单行的选中态属性；T05 回收站两态对比只在 `body[data-mpw-aqua]` + `[data-dsh-session-delete]` 双门控下使用（水色覆盖宿主 token 后避免选中/普通行同色） | 本表 |
+| `host:aria-selected-state-attr` | refine | `[aria-selected="true"\|"false"]` | 同上（aria-selected 形态；不同宿主构建二选一） | 本表 |
+| `host:code-block-banner-flag` | refine | `[data-code-block-banner="true"]` | 宿主代码块标题条（sticky 吸附条）的**值形态**原子：T13 只在该形态上补玻璃层（gated by `body[data-mpw-float][data-mpw-hdr-frost-el]`），避免误伤其它 `[data-code-block-banner]` 用法 | 本表 |
+| `third:conv-preview` | anchor | `.dsh-conv-preview` | dsh-conversation 插件的大纲条目**预览浮层**（position:fixed z:1100，class 稳定非 hash）：T06 给它补自己的不透明表面+玻璃，避免被我们的水色 token 覆盖成半透明后透出页面文字 | 本表 |
+| `third:market-sticky-head` | refine | `[class*="stickyHead"]` / `[class*="searchField"]` | dshmarket「发现」页的搜索+分类吸顶条（sticky z:5，类名 hash 前缀会变 ⇒ 只能用子串）：T17 给它加浮层可读性（底色/玻璃/下边框/阴影），不改 z | 本表 |
+| `host:model-menu-surface` | refine | `[class*="_7KE1Ra_menu"]` | 模型选择弹层外壳（宿主 material 菜单家族）：T14 把底色统一到我们自己的弹层表面 token `--mpw-pop-surface`，消除比其它弹层多一层白的观感 | 本表 |
+| `host:material-layer` | refine | `[class*="_material_"]` | 宿主 material 菜单的内层底色层（α≈0.28 + blur 40px）：T14 只允许在 `[class*="_7KE1Ra_menu"]` 作用域内把它的底色透明化（保留模糊），消除模型弹层"多一层白" | 本表 |
+| `host:copyable-tooltip` | refine | `[class*="_copyable_"]` | 左栏会话 hover 的大预览 tooltip（可悬停/点击复制标题）：T19 把它改成独立 token 的白底+磨砂表面；不动 pointer-events/z/尺寸 | 本表 |
+| `host:scroll-body-atom` | anchor | `[class*="wSkVaW_scrollBody"]` | 宿主主滚动容器：T15 在 Firefox 下补 `scrollbar-color/width`（仅滚动条观感，不动布局） | 本表 |
+| `host:scroll-area-atom` | anchor | `[class*="scrollArea"]` | 宿主通用滚动区（部分 flex 面板）：同上，Firefox 滚动条补偿 | 本表 |
+| `host:tooltip-bubble` | anchor | `[class*="_bubble_"]` | 宿主按钮/元素 tooltip（如左栏「新会话」）：2026-11-01 起统一为弹层表面 token（含 `*` 继承文字色），只改表面不动定位 | 本表 |
+| `host:pop-surface-family` | anchor | `[class*="_surface_ri079_1"]` | 宿主弹层表面家族（菜单/下拉列表共用 `_surface_ri079_1`）：2026-11-01 UI 审计把"内层 material 双层模糊"修复扩到该家族（含 `_list_`），只关内层模糊 | 本表 |
+| `host:blank-header-zero` | anchor | `html body .wSkVaW_header.wSkVaW_headerBlank` / `.wSkVaW_headerSessionless` | 空标题栏（新会话/加载中）**首帧**兜底：宿主状态类在插件 JS 广播 `body[data-mpw-hdr-blank]` 之前就已存在，需要一条不依赖 JS 门控的归零规则（真机症状：刷新首帧标题栏位置出现约 1 秒的细长条）；只归零空栏，不动有会话标题栏 | 本表 |
+| `host:task-manager-page` | anchor | `[data-testid="task-manager-page"]` | 宿主机「自动化任务」页容器（data-testid 稳定）：壁纸模式下该页用 bg-base 铺出一整片白色蒙层，改为透明直接透出壁纸；只影响该页面 | 本表 |
+| `host:model-menu-list` | refine | `[class*="_7KE1Ra_groups"]` | 模型/推理等级弹层内的滚动列表容器（也带 role=menu，宿主给它伪元素加了 blur）：只允许关伪元素模糊，避免与外壳 blur 叠加成双层 | 本表 |
+| `host:list-4ub78` | anchor | `[class*="_list_4ub78_7"]` | 宿主下拉列表家族（权限/更多操作/模型列表等共用 `_list_`）：只允许关掉它内层伪元素模糊，避免与外壳 blur 叠成双层 | 本表 |
+| `host:team-inner` | anchor | `[class*="VoX2oq_member"]` / `[class*="VoX2oq_task"]` | 宿主智能体团队面板内部成员/任务卡片（`data-team-panel` 子层）：2026-11-04 层叠审计把它们的第二层 63% 白底透明化，保留边框/阴影，消除团队内"更白"；不改布局/z | 本表 |

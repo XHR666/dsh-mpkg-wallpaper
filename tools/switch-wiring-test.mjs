@@ -42,6 +42,28 @@ const ok = (name, cond, detail) => {
 
 /* ── A. 「不影响 buildCss 产物」白名单：只影响**运行时**的开关（每条必须写清为什么） ── */
 const NON_CSS = {
+  /* ①(2026-11-01 T02 预设补全) 外观/兼容/调试类开关：产物 CSS 不随它们变化（运行时或已退役），
+     但用户要求它们随预设保存/导入 ⇒ 登记为"仅运行时"，接线审计仍然逐条点名。 */
+  fontColorGray: '字体灰化：运行时改文字颜色（JS 写 style/变量），不生成规则',
+  flipX: '画面水平翻转：由 JS/媒体样式作用，不生成规则',
+  flipY: '画面垂直翻转：同上',
+  headerFrostUserSet: '用户是否显式设过顶栏磨砂：纯状态标记（决定是否跟随默认），不生成规则',
+  bsCompat: 'better-sidebar 兼容组（第三方插件适配，已退役）：仅运行时分支，不生成规则',
+  bsFloat: 'better-sidebar 兼容组（已退役）：同上',
+  bsFont: 'better-sidebar 兼容组（已退役）：同上',
+  bsReveal: 'better-sidebar 兼容组（已退役）：同上',
+  bsAqua: 'better-sidebar 兼容组（已退役）：同上',
+  bsCompatUserSet: 'better-sidebar 兼容组的用户显式标记（已退役）：纯状态',
+  bsAlpha: 'better-sidebar 兼容组数值（已退役）：纯状态',
+  bsRevealAlpha: 'better-sidebar 兼容组数值（已退役）：纯状态',
+  powPauseBattery: '省电：电量低暂停，运行时行为',
+  powPauseBlur: '省电：暂停时是否保留虚化，运行时分支',
+  alphaSemantics: '透明度语义版本号：迁移用标记，不生成规则',
+  l: '调试开关（旧）：运行时诊断，不生成规则',
+  lgComposer: '液态玻璃调试子开关：由 JS 注入对应块开关，不进主产物比较',
+  lgSidebar: '液态玻璃调试子开关：同上',
+  lgHeader: '液态玻璃调试子开关：同上',
+  lgCss: '液态玻璃总开关：走独立 lg 块路径（主产物比较上下文已含 lgCss:true 用例）',
   enabled: '总开关：buildCss 只在 `enabled === false` 时把 image 清空，产物差异由"无壁纸"分支承担（换算在调用点 applyFromStorageInner）',
   forceEnabled: '强制启用（运行时优先级开关），不改样式生成',
   mute: '壁纸音频静音：只作用于 video/音量，不生成 CSS',
@@ -212,7 +234,7 @@ function headerSelfFilter(css) {
     })
   }).map(([sel]) => sel)
 }
-const HEADER_PSEUDO_GLASS = (css) => CSS_RULES(css).some(([sel, body]) => /\.wSkVaW_header(?::not\(:where\(\[data-code-block-banner\]\)\))?::before/.test(sel) && /backdrop-filter/.test(body) && !/backdrop-filter\s*:\s*none/.test(body))
+const HEADER_PSEUDO_GLASS = (css) => CSS_RULES(css).some(([sel, body]) => /\.wSkVaW_header(?::not\([^()]*\))*::before/.test(sel) && /backdrop-filter/.test(body) && !/backdrop-filter\s*:\s*none/.test(body))
 
 /* ── 1a0. sessionFollow（新会话按钮跟随面板不透明度）双向判据 ──
  * 来历：设置页有开关 + 文案 + DEFAULT_SESSION_FOLLOW，但**全仓没有任何地方读 section.sessionFollow**

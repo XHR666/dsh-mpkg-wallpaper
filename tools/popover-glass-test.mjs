@@ -24,7 +24,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { loadPlugin } from './_stub.mjs'
+import { loadPlugin, cancelWorldTimers } from './_stub.mjs'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.join(here, '..')
@@ -163,8 +163,12 @@ ok('M6 专用去截断趟：宿主 material 菜单 / 触发候选菜单 / 子代
   && /function mpwPopUntruncExtra[\s\S]{0,4000}?need\.add\(p\)/.test(CLIENT)
   && !/function mpwPopUntruncExtra[\s\S]{0,4000}?glasses\.add/.test(CLIENT)
   && !/function mpwPopUntruncExtra[\s\S]{0,4000}?truncated\.add/.test(CLIENT))
+// ①(2026-11-03 演进留痕) 锚点随两轮演进更新：#Bug5 迁移把模糊规则改写为
+//   "popTipSel + :is(popTreeSel) + :is(popSurfaceSel):not(壳)"；§2② 又给 :is(popSurfaceSel)
+//   加了壳排除。M7 的语义不变（ZKlsPq 进模糊、不进底色），只改锚点形态。
 ok('M7 子智能体会话树只补模糊、不补底（ZKlsPq_menu 进模糊规则，不进底色规则）',
-  /html body :is\(\$\{popTreeSel\}\),\n\$\{popSurfaceSel\} \{/.test(CLIENT)
+  /html body :is\(\$\{popTreeSel\}\)/.test(CLIENT)
+  && /html body :is\(\$\{popSurfaceSel\}\):not\(\[data-menu-material\]\):not\(\[data-trigger-menu\]\) \{/.test(CLIENT)
   && !/popSurfaceCss = \(popAlphaUserSet[\s\S]{0,400}popTreeSel/.test(CLIENT))
 /* ③(2026-10-10 真机层次读数定案) 用户："外面的圆角那圈模糊正常，里面有一个直角的矩形又是白的"。
    读数为证：宿主 material 菜单里 `._7KE1Ra_groups[role="menu"]` 是 **radius 0** 的滚动容器，
@@ -333,6 +337,127 @@ const loadMutant = (from, to) => {
   ok('D2 把"已带标记就放行"改坏 ⇒ 第二轮把 trunc 标记摘掉（B7 必红：真机就是打-撤-打地闪）',
     first && !surface.hasAttribute('data-mpw-pop-trunc'), '首轮=' + first + ' 二轮=' + surface.hasAttribute('data-mpw-pop-trunc'))
   surface.removeAttribute('data-mpw-pop-bg')
+}
+/* ═══ J 组（2026-11-03 #真机回归根因）：伪元素选择器**逐项展开**断言 ═══════════════
+   背景：真机 §2.2/2.4/2.5/2.6/2.7/2.8/2.9 八类回归同根因 —— 模板里给"逗号选择器列表"整体
+   接 ::before，只有最后一项带伪元素，前面所有项变成"本体选择器"却继承伪元素规则体
+   （position:absolute + inset:0 + z-index:-1 落到菜单/tooltip 本体上 ⇒ 弹框巨大化、
+   tooltip 黑竖条、菜单压扁、点击无效）。桩环境的 matches() 判不出这种损坏（选择器照样
+   "匹配"）⇒ 必须在**产物文本**上断言：凡规则体含 content:""（伪元素规则），其每个
+   逗号项都必须以 ::before/::after 结尾。变异 J-MUT 把损坏形态注回 ⇒ 必红。 */
+{
+  reset()
+  loadPlugin({ quiet: true, settings: { enabled: true, image: 'stub-wallpaper.png', popoverBlur: true }, search: '' })
+  const css = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({ popoverBlur: true }) : '')
+  cancelWorldTimers()
+  const strip = css.replace(/\/\*[\s\S]*?\*\//g, ' ')
+  const bad = []
+  const re = /([^{}]{1,30000})\{([^{}]*content:\s*""[^{}]*)\}/g
+  let m
+  while ((m = re.exec(strip))) {
+    const sel = m[1].replace(/\s+/g, ' ').trim()
+    // 跳过 @规则头与明显非选择器片段
+    if (sel.startsWith('@') || sel.startsWith('//')) continue
+    for (const one of sel.split(',')) {
+      const t = one.trim()
+      if (t && !/:{1,2}(before|after)$/.test(t)) bad.push(t.slice(0, 80) + ' ⟵〔' + sel.slice(0, 60) + '…〕')
+    }
+  }
+  ok('J1 伪元素选择器逐项展开（凡 content:\"\" 规则的每个逗号项都以 :before/::after 结尾，单/双冒号均可）',
+    bad.length === 0, bad.length ? '损坏项=' + bad.slice(0, 3).join(' | ') : '0 损坏')
+  ok('J2 弹层伪元素规则在产物里（J1 的对象存在，防空转）',
+    /_menu[^\n]*::before/.test(strip) && /role="tooltip"[^\n]*::before/.test(strip))
+}
+{
+  /* J-MUT：把损坏形态注回（逗号列表整体接 ::before）⇒ J1 必红 */
+  // ①(2026-11-03) 锚点随修复形态更新：把"逐项展开"改回"列表整体接 ::before"（= 损坏原形）
+  const from = '${popTipSel.split(",").map((x) => x.trim() + "::before").join(",\\n")}'
+  const to = '${popTipSel}::before'
+  reset()
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mpw-pop-j-'))
+  const mut = CLIENT.replace(from, to)
+  if (mut === CLIENT) throw new Error('J-MUT 锚点缺失')
+  const p2 = path.join(dir, 'client.js'); fs.writeFileSync(p2, mut)
+  loadPlugin({ quiet: true, clientPath: p2, settings: { enabled: true, image: 'stub-wallpaper.png', popoverBlur: true }, search: '' })
+  const css = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({ popoverBlur: true }) : '')
+  cancelWorldTimers()
+  const strip = css.replace(/\/\*[\s\S]*?\*\//g, ' ')
+  const bad = []
+  const re = /([^{}]{1,30000})\{([^{}]*content:\s*""[^{}]*)\}/g
+  let m
+  while ((m = re.exec(strip))) {
+    const sel = m[1].replace(/\s+/g, ' ').trim()
+    for (const one of sel.split(',')) {
+      const t = one.trim()
+      if (t && !/:{1,2}(before|after)$/.test(t)) bad.push(t.slice(0, 60))
+    }
+  }
+  ok('J-MUT 把损坏形态注回（列表整体接 ::before）⇒ J1 判据必红',
+    bad.length > 0, '损坏项=' + bad.slice(0, 2).join(' | '))
+}
+/* ═══ K 组（2026-11-03 第三轮 §2②）：isolation 壳的补模糊不被弹层本体规则压制 ════════
+   背景：宿主给 data-menu-material / data-trigger-menu 壳设 isolation:isolate（= backdrop
+   root），壳**内**伪元素采样不到页面 ⇒ 这两族的磨砂必须留在**壳本体**（2026-10-09 定案 +
+   [data-menu-material] 补模糊规则）。弹层本体 none !important 规则（#Bug5 迁移）特异性
+   极高（POP_NOT 20 个 :not），不排除壳就会把它压掉 ⇒ 三点菜单/加号菜单白底无模糊
+   （真机 §2②"白色模糊"）。判据 = 产物文本级：弹层本体规则必须带这两条 :not；
+   变异 K-MUT 摘掉排除 ⇒ 必红。 */
+{
+  reset()
+  loadPlugin({ quiet: true, settings: { enabled: true, image: 'stub-wallpaper.png', popoverBlur: true }, search: '' })
+  const css = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({ popoverBlur: true }) : '')
+  cancelWorldTimers()
+  const strip = css.replace(/\/\*[\s\S]*?\*\//g, ' ')
+  // 本体 none 规则必须带壳排除（规则选择器超长，用"排除串 + none 声明同现"判定）
+  // 判定：体规则的结尾 = 壳排除 + " {"（伪元素规则的结尾是 ::before，可区分）
+  ok('K1 弹层本体 none 规则排除 material/trigger 壳（壳体补模糊不被压制）',
+    /\):not\(\[data-menu-material\]\):not\(\[data-trigger-menu\]\) \{/.test(strip),
+    '体规则结尾锚命中=' + /\):not\(\[data-menu-material\]\):not\(\[data-trigger-menu\]\) \{/.test(strip))
+  ok('K2 壳体补模糊规则在位（data-menu-material → var(--mpw-pop-blur) !important）',
+    /html body \[data-menu-material\],\s*\n?\s*html body \[data-trigger-menu\]\s*\{[^}]*backdrop-filter:\s*var\(--mpw-pop-blur[^}]*\}\s*\n?/.test(strip.replace(/\n/g, '\n')) ||
+    /\[data-menu-material\][^{}]*\{[^}]*--mpw-pop-blur[^}]*\}/.test(strip))
+}
+{
+  const from = 'html body :is(${popSurfaceSel}):not([data-menu-material]):not([data-trigger-menu]) {'
+  const to = 'html body :is(${popSurfaceSel}) {'
+  reset()
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mpw-pop-k-'))
+  const mut = CLIENT.replace(from, to)
+  if (mut === CLIENT) throw new Error('K-MUT 锚点缺失')
+  const p2 = path.join(dir, 'client.js'); fs.writeFileSync(p2, mut)
+  loadPlugin({ quiet: true, clientPath: p2, settings: { enabled: true, image: 'stub-wallpaper.png', popoverBlur: true }, search: '' })
+  const css = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({ popoverBlur: true }) : '')
+  cancelWorldTimers()
+  const strip = css.replace(/\/\*[\s\S]*?\*\//g, ' ')
+  ok('K-MUT 摘掉体规则壳排除 ⇒ K1 必红',
+    !/\):not\(\[data-menu-material\]\):not\(\[data-trigger-menu\]\) \{/.test(strip),
+    '体规则结尾锚命中=' + /\):not\(\[data-menu-material\]\):not\(\[data-trigger-menu\]\) \{/.test(strip))
+}
+/* ═══ L 组（2026-11-03 第三轮 §2② v5/v9 读数）：header 作用域菜单 z 值下限 ══════════
+   背景：真机读数（MENU_Z）—— 可见三点菜单 computed z=90，命中规则含我们自己的
+   `html body .wSkVaW_header [role="menu"]`（z:90 !important，特异性压过 G 段 900 与
+   3000 提层）⇒ 菜单被内容流 sticky 代码块标题条（_bannerWrap z:6，另一层叠上下文
+   且 DOM 更后）盖住。修复：z90 → 1200（弹层档），且 titleRow 抬升 z1 → 10
+   （titleRow 自带 container-type:inline-size = stacking context，是 header 内菜单的
+   层叠"天花板"——10 > banner 6 菜单才真在上面）。判据：文本级断言 + 变异自证。 */
+{
+  ok('L1 header 作用域菜单规则 z ≥ 1000（不再压回 90 档）',
+    /z-index:\s*1200 !important/.test(CLIENT) && !/z-index:\s*90 !important/.test(CLIENT))
+  ok('L2 titleRow 抬升 ≥ 10（header 内菜单的层叠天花板压过 banner z6）',
+    /:has\(> \.mpw-hdrFrost\) \.wSkVaW_titleRow,[\s\S]{0,600}?z-index:\s*10;/.test(CLIENT))
+}
+{
+  const from = 'html body [class*="wSkVaW_header"] [class*="_dropdown"]:not([class*="Anchor"]):not([class*="anchor"]) {'
+  reset()
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mpw-pop-l-'))
+  // 变异：把 1200 写回 90（回归复刻）⇒ L1 必红
+  const i = CLIENT.indexOf('z-index: 1200 !important;')
+  const mut = CLIENT.slice(0, i) + CLIENT.slice(i).replace('z-index: 1200 !important;', 'z-index: 90 !important;')
+  if (mut === CLIENT) throw new Error('L-MUT 锚点缺失')
+  const p2 = path.join(dir, 'client.js'); fs.writeFileSync(p2, mut)
+  loadPlugin({ quiet: true, clientPath: p2, settings: { enabled: true, image: 'stub-wallpaper.png' }, search: '' })
+  ok('L-MUT 把 1200 写回 90 ⇒ L1 必红',
+    !/z-index:\s*1200 !important/.test(fs.readFileSync(p2, 'utf8')) && /z-index:\s*90 !important/.test(fs.readFileSync(p2, 'utf8')))
 }
 console.log('\n===== popover-glass: ' + pass + ' 通过 / ' + fail + ' 失败 =====')
 process.exit(fail ? 1 : 0)

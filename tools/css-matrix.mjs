@@ -100,11 +100,19 @@ function check(label, patch, css) {
       if (ovf && /^hidden/.test(ovf)) note('[' + label + '] 顶栏 overflow:hidden → 会裁掉浮层: ' + sel.slice(0, 60))
     }
     // 4) 回归：浮层不许被改 position（会把它拉进普通流 → 顶栏被撑高）
-    if (/(_menu|_popover|_dropdown|role="menu"|QsffPG_menu|_denseList)/.test(sel) && bodyHas(body, 'position')) {
+    //    ①(2026-11-03 演进留痕 #Bug5) 放行 ::before/::after 伪元素规则：弹层磨砂已从"本体
+    //    backdrop-filter"迁到"::before + position:absolute;inset:0"（fixed 后代包含块家族修复，
+    //    见 lib/client.js G 块/弹层表面块注释）。伪元素的定位不改变浮层本体在普通流/顶栏里的
+    //    位置——本条要守的回归（浮层本体被拉进普通流、撑高顶栏）只对**元素本体**规则有意义，
+    //    故仅当选择器不是伪元素时才判。本体规则的判据语义不变。
+    if (!/::(before|after)/.test(sel) && /(_menu|_popover|_dropdown|role="menu"|QsffPG_menu|_denseList)/.test(sel) && bodyHas(body, 'position')) {
       note('[' + label + '] 浮层被改 position（会撑高顶栏）: ' + sel.slice(0, 70) + ' → ' + bodyVal(body, 'position'))
     }
     // 5) 回归：悬浮态右侧导航条不许被改尺寸（曾把 38px 压成 28px）
-    if (/(_tabStrip|dockkit-strip)/.test(sel)) {
+    //    ①(2026-11-03 第三轮 §2③ v8 演进留痕) 放行 ::before/::after 伪元素规则：磨砂层
+    //    （sticky，height=面板可视高）挂在 dockkit-strip 的伪元素上，尺寸的是伪元素自身
+    //    而非导航条本体——本条要守的回归（导航条本体被压扁）只对**元素本体**规则有意义。
+    if (!/::(before|after)/.test(sel) && /(_tabStrip|dockkit-strip)/.test(sel)) {
       for (const p of ['padding', 'padding-left', 'padding-right', 'padding-top', 'padding-bottom', 'box-sizing', 'height', 'max-height', 'min-height']) {
         if (bodyHas(body, p)) note('[' + label + '] 导航条尺寸被改（曾压扁 38→28px）: ' + p + ' @ ' + sel.slice(0, 60))
       }
@@ -119,7 +127,11 @@ function check(label, patch, css) {
   //    语义（源码 headerFrosted = (headerBlur || unifyTint) && headerBg）：
   //      · 「顶栏」开关(headerBg)是标题栏外观的总闸：关掉就完全不接管标题栏；
   //      · 总闸开时，统一虚化(unifyTint)或标题栏磨砂(headerBlur)任一为开 → 必须有磨砂层。
-  const frost = rules(t).some(([sel, body]) => /\.wSkVaW_header(?::not\(:where\(\[data-code-block-banner\]\)\))?::before/.test(sel) && /backdrop-filter/.test(body) && !/backdrop-filter\s*:\s*none/.test(body))
+  //    ①(2026-11-01 演进留痕) 正则从“只认 :not(:where([data-code-block-banner]))”放宽为
+  //    “class 后可跟任意个 :not([...]) 链”：本日给标题栏规则补了 :not([data-disclosure-header])
+  //    （宿主用 wSkVaW_header 类名复用折叠行头，被我们的玻璃/圆角误伤）。判据语义不变：
+  //    仍要求“存在一条 .wSkVaW_header…::before 且带 backdrop-filter 的规则”。
+  const frost = rules(t).some(([sel, body]) => /\.wSkVaW_header(?::not\([^()]*\))*::before/.test(sel) && /backdrop-filter/.test(body) && !/backdrop-filter\s*:\s*none/.test(body))
   if (typeof patch.headerBg === 'boolean' && typeof patch.headerBlur === 'boolean') {
     const wantFrost = (patch.headerBlur || !!patch.unifyTint) && patch.headerBg
     if (wantFrost && !frost) note('[' + label + '] 该有顶栏磨砂但规则缺失（虚化会"没效果"）')

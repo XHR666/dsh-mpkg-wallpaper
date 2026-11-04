@@ -163,7 +163,11 @@ console.log('\n== C3. 空栏兜底（⑪翻转：空栏全量归零 + 非空栏�
   ok('C3b 空栏兜底（header 本体）含 5 条外壳归零（margin/padding/border-width/border-radius/box-shadow，!important）',
     missing.length === 0, missing.length ? '缺=' + missing.join(' , ') : '5 条齐')
   // ::before/::after/磨砂子层组的压制原样保留（10-09 细磨砂条根因不回潮）
-  const blankPseudo = ruleBody(CSS_ON, 'html body[data-mpw-hdr-blank][data-mpw-hdr-blank] .wSkVaW_header::before, html body[data-mpw-hdr-blank][data-mpw-hdr-blank] .wSkVaW_header::after, html body[data-mpw-hdr-blank][data-mpw-hdr-blank] .wSkVaW_header:not(:where([data-code-block-banner])) > .mpw-hdrFrost')
+  let blankPseudo = ruleBody(CSS_ON, 'html body[data-mpw-hdr-blank][data-mpw-hdr-blank] .wSkVaW_header::before, html body[data-mpw-hdr-blank][data-mpw-hdr-blank] .wSkVaW_header::after, html body[data-mpw-hdr-blank][data-mpw-hdr-blank] .wSkVaW_header:not(:where([data-code-block-banner])) > .mpw-hdrFrost')
+    if (!blankPseudo) { // ①(2026-11-01 判据演进：T04 给第三个逗号项加了 :not([data-disclosure-header])) 允许前缀匹配
+      const mm = /html body\[data-mpw-hdr-blank\]\[data-mpw-hdr-blank\] \.wSkVaW_header::before[^{]*\{([\s\S]*?)\}/.exec(CSS_ON)
+      blankPseudo = mm ? mm[1] : null
+    }
   ok('C3c 空栏兜底（伪元素/磨砂子层）原样保留（含 margin:0 !important 与 background-image:none）',
     !!blankPseudo && /margin:\s*0 !important/.test(blankPseudo) && /background-image:\s*none !important/.test(blankPseudo),
     blankPseudo ? blankPseudo.slice(0, 90) : '规则缺失')

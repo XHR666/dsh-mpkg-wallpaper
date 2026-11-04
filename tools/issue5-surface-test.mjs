@@ -123,8 +123,8 @@ console.log('\n== A. 实底保住标记（§2.1 stickyHead / §2.2 dsh-conv-pane
   /* ①(2026-10-31 任务 §3.2 改向) l1 实底值收敛到单变量 --mpw-conv-panel-bg（默认=宿主原值，
      供将来「透明度可调」覆盖）⇒ 本断言从"直连 00/875"演进为"消费变量 + 变量定义默认仍是
      00/875"——语义不变（稳态观感零变化），判据演进留痕（详见 tools/conv-panel-firstframe-test.mjs A 组）。 */
-  ok('A3 有壁纸：l1 实底规则在（消费 --mpw-conv-panel-bg，默认仍 00/875）+ l2 玻璃规则在（specific-menu + menu-backdrop-filter）',
-    /\[data-mpw-solid-surface="l1"\]\s*{[^}]*--mpw-conv-panel-bg:\s*var\(--dsw-static-neutral-bluish-00\)/.test(cssOn)
+  ok('A3 有壁纸：l1 实底规则在（消费 --mpw-conv-panel-bg，底色跟随 --dsh-conv-bg-alpha）+ l2 玻璃规则在（specific-menu + menu-backdrop-filter）',
+    /\[data-mpw-solid-surface="l1"\]\s*{[^}]*--mpw-conv-panel-bg:\s*color-mix\(in srgb, var\(--dsw-static-neutral-bluish-00\) var\(--dsh-conv-bg-alpha,\s*100%\), transparent\)/.test(cssOn)
       && /background-color:\s*var\(--mpw-conv-panel-bg,\s*var\(--dsw-static-neutral-bluish-00\)\)\s*!important/.test(cssOn)
       && cssOn.indexOf('--dsw-static-neutral-bluish-875') >= 0
       && cssOn.indexOf('[data-mpw-solid-surface="l2"]') >= 0

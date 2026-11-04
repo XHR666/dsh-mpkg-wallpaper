@@ -21,7 +21,7 @@
 //
 // 获取"真实产物"：**不重写 buildCss**。用 tools/_stub.mjs 把 lib/client.js 在 Node 里跑起来，
 // 调用插件自己暴露的 `globalThis.__mpwBuildCss(patch)`（lib/client.js:5359），遍历组合
-// （默认段 / 每个布尔开关单独开 / 核心 9 开关全组合 / bsCompat 家族 / 数值极值 / 无壁纸 / lgTest），
+// （默认段 / 每个布尔开关单独开 / 核心 9 开关全组合 / 数值极值 / 无壁纸 / lgTest），
 // 对**生成出来的 CSS 文本**做选择器解析（含 @media / @supports 嵌套）。加载口径与 tools/css-matrix.mjs 相同。
 //
 // 用法:
@@ -77,7 +77,9 @@ const ALLOWLIST = [
 
   /* ── 宿主：稳定属性锚点 ── */
   { id: 'host:dark-theme', kind: 'attr', tier: 'anchor', match: /^\[data-ds-dark-theme/, reason: '宿主暗色主题标记：暗色档的底色/文字补偿必须由此门控（亮暗两套值）', doc: 'docs/STYLE-SCOPE-GUARD.md:58', docKind: 'ledger' },
-  { id: 'host:better-sidebar', kind: 'attr', tier: 'anchor', match: /^\[data-dsh-(better-sidebar|panel|bottom-panel|pane|float-window|popover|surface|sidebar-dragging)/, reason: 'dsh-better-sidebar 的稳定属性锚点：0.16→0.19 类名前缀换过一次，属性锚点是"下次换名不失效"的保险', doc: 'docs/BETTER-SIDEBAR-COMPAT.md:204', docKind: 'existing' },
+  /* ①(2026-11-03 #2) host:better-sidebar 锚点随适配退役移除（[data-dsh-better-sidebar] 规则已全部删除）。 */
+  { id: 'host:dsh-popover', kind: 'attr', tier: 'anchor', match: /^\[data-dsh-popover/, reason: '宿主弹层容器的稳定属性（data-dsh-popover，dsh- 前缀 = 宿主自己的命名空间，非 better-sidebar 插件）：浮层提层（z-index 3000 档）与弹层表面磨砂的作用域锚点。原被 host:better-sidebar 锚点顺带匹配，2026-11-03 适配退役后独立登记', doc: 'docs/STYLE-SCOPE-GUARD.md:77', docKind: 'ledger' },
+  { id: 'host:dsh-surface', kind: 'attr', tier: 'anchor', match: /^\[data-dsh-surface/, reason: '宿主浮层表面标记（data-dsh-surface，dsh- 前缀 = 宿主命名空间）：弹层表面磨砂/底色兜底选择器的一员（当前宿主构建未见打此标记 = 惰性备选，保留以防旧构建回退）。原被 host:better-sidebar 锚点顺带匹配，2026-11-03 适配退役后独立登记', doc: 'docs/STYLE-SCOPE-GUARD.md:78', docKind: 'ledger' },
   { id: 'host:bs-panel-host', kind: 'attr', tier: 'anchor', match: /^\[data-dsh-panel-host/, reason: '登记仅为让违规信息指得到文档；真实判定走 PROHIBITIONS（[data-dsh-panel-host] 禁止加背景/模糊）', doc: 'docs/BETTER-SIDEBAR-COMPAT.md:196', docKind: 'existing' },
   { id: 'host:dockkit', kind: 'attr', tier: 'anchor', match: /^\[data-(dockkit|sidebar-right-panel|sidebar-right-float-host|rightbar-fullscreen|menu-material|trigger-menu|team-panel|session-stats)/, reason: '宿主右栏/dockkit 浮层（0.19 原生右栏 + 浮窗）：透出/磨砂/悬浮只打这些容器', doc: 'docs/BETTER-SIDEBAR-DOM-CONTRACT-0.19.1.md:37', docKind: 'existing' },
   { id: 'host:slot', kind: 'attr', tier: 'anchor', match: /^\[data-slot(\*?=)/, reason: '宿主 slot 标记（sidebar/workspaces/composer）：sidebar-fill 白名单与"隐藏列表 fade"白名单都用它', doc: 'docs/TIMELINE-RAIL-TOKEN.md:63', docKind: 'existing' },
@@ -88,38 +90,59 @@ const ALLOWLIST = [
   { id: 'host:radix-popper', kind: 'attr', tier: 'anchor', match: /^\[data-radix-popper-content-wrapper/, reason: '宿主浮层定位壳（radix popper）：宿主所有下拉/菜单都挂在它下面，是弹层半透明的稳定锚点', doc: 'docs/STYLE-SCOPE-GUARD.md:67', docKind: 'ledger' },
   { id: 'host:state-attrs', kind: 'attr', tier: 'refine', match: /^\[data-(dragging|sidebar-collapsed|phase=|dsh-sidebar)/, reason: '宿主瞬时状态标记（拖拽/折叠/激活阶段）：只用于**抑制我们自己的规则**（"拖拽时别磨砂"），不单独改宿主样式', doc: 'docs/STYLE-SCOPE-GUARD.md:68', docKind: 'ledger' },
   /* ①(2026-10-02 用户第 3 条第⑤⑥项 · 真机 HTML 由用户给出) */
-  { id: 'host:aria-modal', kind: 'attr', tier: 'refine', match: /^\[aria-modal="true"\]/, reason: '真正的模态对话框标记：只有模态才禁止玻璃（避免 backdrop-filter 成为下拉的 containing block）；非模态的 role=dialog 小面板（如上下文已用）保留玻璃效果', doc: 'docs/STYLE-SCOPE-GUARD.md:217', docKind: 'ledger' },
-  { id: 'host:JObwrW-panel', kind: 'attr', tier: 'anchor', match: /^\[class\*="JObwrW_panel"/, reason: '宿主"上下文已用"小面板（div.JObwrW_panel[role=dialog][aria-label=上下文已用]，内含 JObwrW_track/fill 圆环）：用户要求它与其他弹层同一套玻璃效果（探针实测 bg 纯白、bf=none）', doc: 'docs/STYLE-SCOPE-GUARD.md:215', docKind: 'ledger' },
-  { id: 'host:groupTitle', kind: 'attr', tier: 'anchor', match: /^\[class\*="(_?groupTitle|GroupTitle)"/, reason: '宿主弹层里的分组标题条（模型选择的提供商名，div._7KE1Ra_groupTitle）：只清它的宿主白底、让它透出容器玻璃；不单独给它加底/模糊（用户第 3 条⑤）', doc: 'docs/STYLE-SCOPE-GUARD.md:216', docKind: 'ledger' },
+  { id: 'host:aria-modal', kind: 'attr', tier: 'refine', match: /^\[aria-modal="true"\]/, reason: '真正的模态对话框标记：只有模态才禁止玻璃（避免 backdrop-filter 成为下拉的 containing block）；非模态的 role=dialog 小面板（如上下文已用）保留玻璃效果', doc: 'docs/STYLE-SCOPE-GUARD.md:220', docKind: 'ledger' },
+  { id: 'host:JObwrW-panel', kind: 'attr', tier: 'anchor', match: /^\[class\*="JObwrW_panel"/, reason: '宿主"上下文已用"小面板（div.JObwrW_panel[role=dialog][aria-label=上下文已用]，内含 JObwrW_track/fill 圆环）：用户要求它与其他弹层同一套玻璃效果（探针实测 bg 纯白、bf=none）', doc: 'docs/STYLE-SCOPE-GUARD.md:218', docKind: 'ledger' },
+  { id: 'host:groupTitle', kind: 'attr', tier: 'anchor', match: /^\[class\*="(_?groupTitle|GroupTitle)"/, reason: '宿主弹层里的分组标题条（模型选择的提供商名，div._7KE1Ra_groupTitle）：只清它的宿主白底、让它透出容器玻璃；不单独给它加底/模糊（用户第 3 条⑤）', doc: 'docs/STYLE-SCOPE-GUARD.md:219', docKind: 'ledger' },
   { id: 'host:aria-roles', kind: 'attr', tier: 'anchor', match: /^\[role="(dialog|alertdialog|menu|listbox|combobox|tooltip|alert|status)"/, reason: '宿主弹层/菜单/提示的 ARIA 语义角色：弹窗虚化/菜单半透明的唯一稳定锚点（只改背景与模糊，不改布局）', doc: 'docs/STYLE-SCOPE-GUARD.md:69', docKind: 'ledger' },
   { id: 'host:aria-refine', kind: 'attr', tier: 'refine', match: /^\[role="(menuitem|option)"/, reason: '只在 :not(...) 里排除"菜单项/选项"，避免给交互项误加背景', doc: 'docs/STYLE-SCOPE-GUARD.md:70', docKind: 'ledger' },
   /* ①(2026-10-25 Issue#5④⑥) 右栏 guide 条目锚点 + 第三方插件自管标记 */
   { id: 'host:sidebar-right-guide', kind: 'attr', tier: 'anchor', match: /^\[data-sidebar-right-guide-entry/, reason: '宿主右栏 guide 列表条目（dsh-client-ui-sidebar-right 为每个注册的侧栏 tab 渲染的原生 button，带稳定属性 data-sidebar-right-guide-entry=<tabId>）：Issue#5④ 修复只在 :hover 态把底色恢复为与静默底同族的白（静默态一个像素不碰）', doc: 'docs/STYLE-SCOPE-GUARD.md:71', docKind: 'ledger' },
+  { id: 'host:selected-state-attr', kind: 'attr', tier: 'refine', match: /^\[data-selected=/, reason: '宿主会话/清单行的选中态属性（data-selected）：T05 回收站两态对比只在 body[data-mpw-aqua] + [data-dsh-session-delete] 双门控下使用，避免水色覆盖宿主 token 后选中/普通行同色', doc: 'docs/STYLE-SCOPE-GUARD.md:226' },
+  { id: 'host:aria-selected-state-attr', kind: 'attr', tier: 'refine', match: /^\[aria-selected=/, reason: '同上（aria-selected 形态；不同宿主构建二选一）', doc: 'docs/STYLE-SCOPE-GUARD.md:227' },
+  { id: 'host:code-block-banner-flag', kind: 'attr', tier: 'refine', match: /^\[data-code-block-banner=/, reason: '宿主代码块标题条（sticky 吸附条）的值形态原子：T13 只在该形态上补玻璃层（gated by body[data-mpw-float][data-mpw-hdr-frost-el]），避免误伤其它 [data-code-block-banner] 用法', doc: 'docs/STYLE-SCOPE-GUARD.md:228' },
+  { id: 'third:conv-preview', kind: 'class', tier: 'anchor', match: /^\.dsh-conv-preview$/, reason: 'dsh-conversation 大纲条目预览浮层（fixed z:1100，类名稳定）：T06 给它补不透明表面+玻璃，避免水色 token 覆盖后透出页面文字', doc: 'docs/STYLE-SCOPE-GUARD.md:229' },
+  { id: 'third:market-sticky-head', kind: 'attr', tier: 'refine', match: /^\[class\*="(stickyHead|searchField)"\]/, reason: 'dshmarket 发现页搜索+分类吸顶条（hash 前缀会变，只能子串）：T17 加浮层可读性（底/玻璃/下边框/阴影），不改 z', doc: 'docs/STYLE-SCOPE-GUARD.md:230' },
+  { id: 'host:team-inner', kind: 'attr', tier: 'anchor', match: /^\[class\*="VoX2oq_(member|task)"/, reason: '宿主智能体团队面板内部成员/任务卡片（data-team-panel 子层）：2026-11-04 层叠审计只允许把第二层 63% 白底透明化，保留宿主边框/阴影，不改布局/z', doc: 'docs/STYLE-SCOPE-GUARD.md:242', docKind: 'ledger' },
+  { id: 'host:task-manager-page', kind: 'attr', tier: 'anchor', match: /^\[data-testid="task-manager-page"\]$/, reason: '宿主机自动化任务页容器（data-testid 稳定）：壁纸模式下把宿主 bg-base 白底改透明，透出壁纸', doc: 'docs/STYLE-SCOPE-GUARD.md:239' },
+  { id: 'host:blank-header-zero', kind: 'selector', tier: 'anchor', match: /^html body \.wSkVaW_header\.wSkVaW_header(?:Blank|Sessionless)$/, reason: '空标题栏首帧兜底（headerBlank/headerSessionless 在插件 JS 广播 data-mpw-hdr-blank 之前就存在，需不依赖 JS 门控；只归零空栏）', doc: 'docs/STYLE-SCOPE-GUARD.md:238' },
+  { id: 'host:list-4ub78', kind: 'attr', tier: 'anchor', match: /^\[class\*="_list_4ub78_7"\]$/, reason: '宿主下拉列表（权限/更多操作等共用 _list_ 家族）：只允许关掉它内层伪元素模糊，避免与外壳 blur 叠成双层', doc: 'docs/STYLE-SCOPE-GUARD.md:241' },
+  { id: 'host:model-menu-list', kind: 'attr', tier: 'refine', match: /^\[class\*="_7KE1Ra_groups"\]$/, reason: '模型/推理等级弹层内的滚动列表容器（role=menu，宿主给伪元素也加了 blur）：只允许关掉它的伪元素模糊，避免双层模糊', doc: 'docs/STYLE-SCOPE-GUARD.md:240' },
+  { id: 'host:model-menu-surface', kind: 'attr', tier: 'refine', match: /^\[class\*="_7KE1Ra_menu"\]/, reason: '模型选择弹层外壳：T14 统一到我们自己的弹层表面 token --mpw-pop-surface，消除比其它弹层多一层白', doc: 'docs/STYLE-SCOPE-GUARD.md:231' },
+  { id: 'host:material-layer', kind: 'attr', tier: 'refine', match: /^\[class\*="_material_"\]/, reason: '宿主 material 内层底色：T14 仅允许在 _7KE1Ra_menu 作用域内透明化底色（保留模糊）', doc: 'docs/STYLE-SCOPE-GUARD.md:232' },
+  { id: 'host:scroll-body-atom', kind: 'attr', tier: 'anchor', match: /^\[class\*="wSkVaW_scrollBody"\]/, reason: '宿主主滚动容器：T15 Firefox 滚动条补偿（scrollbar-color/width）', doc: 'docs/STYLE-SCOPE-GUARD.md:234' },
+  { id: 'host:scroll-area-atom', kind: 'attr', tier: 'anchor', match: /^\[class\*="scrollArea"\]/, reason: '宿主通用滚动区：T15 Firefox 滚动条补偿', doc: 'docs/STYLE-SCOPE-GUARD.md:235' },
+  { id: 'host:tooltip-bubble', kind: 'attr', tier: 'anchor', match: /^\[class\*="_bubble_"\]/, reason: '宿主 tooltip 家族：统一弹层表面 token（只改表面）', doc: 'docs/STYLE-SCOPE-GUARD.md:236' },
+  { id: 'host:pop-surface-family', kind: 'attr', tier: 'anchor', match: /^\[class\*="_surface_ri079_1"\]/, reason: '宿主弹层表面家族：material 双层模糊修复扩展到全部弹层（含 _list_ 下拉）', doc: 'docs/STYLE-SCOPE-GUARD.md:237' },
+  { id: 'host:copyable-tooltip', kind: 'attr', tier: 'refine', match: /^\[class\*="_copyable_"\]/, reason: '左栏会话 hover 大预览 tooltip：T19 用独立 token 改白底+磨砂，不动 pointer-events/z/尺寸', doc: 'docs/STYLE-SCOPE-GUARD.md:233' },
   { id: 'third:session-delete-mark', kind: 'attr', tier: 'refine', match: /^\[data-dsh-session-delete/, reason: 'dsh-session-delete 插件的 DOM 命名空间标记：只在 :not(...) 里把它的**页内普通清单**（回收站列表 role=listbox）从弹层表面/层级规则排除（Issue#5⑥：不排除会反盖住它自己的删除确认弹窗）；绝不主动给它加样式', doc: 'docs/STYLE-SCOPE-GUARD.md:72', docKind: 'ledger' },
   /* ①(2026-10-25 任务 3) dsh-conversation 浮窗层级锚点 */
-  { id: 'third:conv-panel', kind: 'class', tier: 'anchor', match: /^\.dsh-conv-panel/, reason: 'dsh-conversation 插件的历史大纲浮窗（.dsh-conv-panel，position:fixed 自带 z-index:1000）：任务 3 只设定它的层值（60，档位家族见 lib 注释）+ 把它在标题栏内的祖先盒从磨砂子节点 z=1 的层叠上下文里解出来；设置/弹层在场时全部让位（z:auto）。不改该插件 DOM/代码', doc: 'docs/STYLE-SCOPE-GUARD.md:81', docKind: 'ledger' },
-  { id: 'third:conv-panel-sub', kind: 'attr', tier: 'anchor', match: /^\[class\*="dsh-conv-panel"\]/, reason: '同上（浮窗类名的子串形态，:has(…) 解困/让位选择器里用；浮窗是 fixed 定位面板，类名不含空格组合，子串匹配无误伤面）', doc: 'docs/STYLE-SCOPE-GUARD.md:81', docKind: 'ledger' },
+  { id: 'third:conv-panel', kind: 'class', tier: 'anchor', match: /^\.dsh-conv-panel/, reason: 'dsh-conversation 插件的历史大纲浮窗（.dsh-conv-panel，position:fixed 自带 z-index:1000）：任务 3 只设定它的层值（60，档位家族见 lib 注释）+ 把它在标题栏内的祖先盒从磨砂子节点 z=1 的层叠上下文里解出来；设置/弹层在场时全部让位（z:auto）。不改该插件 DOM/代码', doc: 'docs/STYLE-SCOPE-GUARD.md:84', docKind: 'ledger' },
+  { id: 'third:conv-panel-sub', kind: 'attr', tier: 'anchor', match: /^\[class\*="dsh-conv-panel"\]/, reason: '同上（浮窗类名的子串形态，:has(…) 解困/让位选择器里用；浮窗是 fixed 定位面板，类名不含空格组合，子串匹配无误伤面）', doc: 'docs/STYLE-SCOPE-GUARD.md:84', docKind: 'ledger' },
 
   /* ── 宿主/第三方：类名子串（hash 会变，只能子串匹配 —— 既有文档明确说这是当前唯一可行解） ── */
   { id: 'host:substr-anchor', kind: 'attr', tier: 'anchor', match: /^\[class[*$^]?="(sidebarCol|wSkVaW_header|_header_|_overlay|_overlayLayer|_modal|_portal|_mask|_panel|_bottomPanel|_pane|_tabBar|_tabStrip|_editorHeader|_browserBar|_terminal|_terminalWrap|_xterm|_addBar|_addButton|settingsArea)/, reason: '宿主/better-sidebar 的类名子串锚点（面板、pane、tab 栏、编辑头、浏览器栏、终端壳、遮罩、设置区）：0.16→0.19 换过前缀，子串匹配是当前唯一可行解', doc: 'docs/BETTER-SIDEBAR-COMPAT.md:207', docKind: 'existing' },
   { id: 'host:substr-component', kind: 'attr', tier: 'anchor', match: /^\[class[*$^]?="(P3OORG_panel|QsffPG|composerSeat|composerStack|newSession|thinkBody)/, reason: '宿主具体组件的 hash 子串（右栏 panel / 顶栏按钮组 / 输入区 seat·stack / 新建会话 / Deep-diving 正文）：只在这些组件内部细化', doc: 'docs/STYLE-SCOPE-GUARD.md:74', docKind: 'ledger' },
   { id: 'host:substr-menu', kind: 'attr', tier: 'anchor', match: /^\[class[*$^]?="(_menu|_menu_|_dropdown|_popover|_popover_|_floatHeader_|_selectMenu|_denseList|_expand)/, reason: '宿主弹层/菜单/下拉/顶栏展开面板的类名子串：菜单半透明、"半透明又无模糊"抑制、展开面板避让的作用域', doc: 'docs/STYLE-SCOPE-GUARD.md:75', docKind: 'ledger' },
+  { id: 'host:scroll-body-clip', kind: 'attr', tier: 'refine', match: /^\[class\*="scrollBody"\]/, reason: '宿主聊天滚动容器（wSkVaW_scrollBody，dsh- 前缀 = 宿主命名空间）：§2④ 缓解——发送键 tooltip 被渲染在有 transform 的按钮/卡片内，坐标偏出视口右缘撑出容器级横向滚动条 ⇒ 跳动循环。overflow-x: clip 仅视觉裁切横向溢出，不创建滚动容器、不破坏竖向滚动', doc: 'docs/STYLE-SCOPE-GUARD.md:79', docKind: 'ledger' },
   { id: 'host:substr-refine', kind: 'attr', tier: 'refine', match: /^\[class[*$^]?="(wrap|panel|box|section|container|card|_card|row|_row|button|badge|logo|logoRow|mode|segmented|fade|footArea|footerActions|root|icon|Icon|anchor|Anchor|item|Item|trigger|Trigger|groupTitle|status|Status|open|Open|Seat|Stack|seat|stack|overlay|primary|message|_scrollBody|_divider|_resizeHandle|_resizer|_expand|_tab|_emptyTabHost|bRhRbq_panel|ZKlsPq_menu|_material_ri079|_hint|_label|_meta|_title|_pane_)/, reason: '宿主结构的通用类名子串：只允许作为**已锚定**选择器里的后代细化（裸出现 = 无锚点 ⇒ 判红）', doc: 'docs/STYLE-SCOPE-GUARD.md:76', docKind: 'ledger' },
-  { id: 'host:bs-bottom-resize', kind: 'attr', tier: 'anchor', match: /^\[class[*$^]?="bottomResize/, reason: 'better-sidebar 底部面板的宿主 resize strip（8px 拖拽带）：bsFloat 圆角外壳 overflow:hidden 会把 strip 上沿切掉，故把它挪进面板内（top:-4px → 0）；只改位置不改宿主尺寸/交互', doc: 'docs/BETTER-SIDEBAR-COMPAT.md:332', docKind: 'existing' },
-  { id: 'host:substr-radius-compat', kind: 'selector', tier: 'anchor', match: /^:where\(\[class\*="wrap"\], \[class\*="panel"\], \[class\*="box"\], \[class\*="section"\], \[class\*="container"\]\)$/, reason: '第三方插件 UI 圆角兼容（roundCompat 开关，默认关）：**故意**匹配任意插件的容器类名子串，但零优先级 :where + 只写 border-radius ⇒ 不覆盖任何既有样式', doc: 'docs/STYLE-SCOPE-GUARD.md:78', docKind: 'ledger' },
+  /* ①(2026-11-03 #2) host:bs-bottom-resize 锚点随 bsFloat 适配退役移除。 */
+  { id: 'host:substr-radius-compat', kind: 'selector', tier: 'anchor', match: /^:where\(\[class\*="wrap"\], \[class\*="panel"\], \[class\*="box"\], \[class\*="section"\], \[class\*="container"\]\)$/, reason: '第三方插件 UI 圆角兼容（roundCompat 开关，默认关）：**故意**匹配任意插件的容器类名子串，但零优先级 :where + 只写 border-radius ⇒ 不覆盖任何既有样式', doc: 'docs/STYLE-SCOPE-GUARD.md:81', docKind: 'ledger' },
 
   /* ── 门控限定锚点：选择器里同时带 [data-mpw*] 门控时才成立（未门控时 PROHIBITIONS 先判红） ── */
   { id: 'rail:marks', kind: 'class', tier: 'anchor', requiresGate: true, match: /^\.(eGxaPq_|Y0dWHa_)|^\.qBU-ya/, reason: '宿主右侧轮次导航条/轨迹总览的类名：**只允许**出现在 body[data-mpw-rail-ink]（对比补偿）或 data-mpw-traject-clip（仅几何裁剪）门控下', doc: 'docs/TIMELINE-RAIL-TOKEN.md:181', docKind: 'existing' },
   { id: 'rail:mark-attrs', kind: 'attr', tier: 'anchor', requiresGate: true, match: /^\[class[*$^]?="(qBU-ya|_overview)/, reason: '宿主轨迹总览的类名子串（qBU-ya / _overview）：同上，只允许在 data-mpw-traject-clip 门控下做几何裁剪', doc: 'docs/TIMELINE-RAIL-TOKEN.md:181', docKind: 'existing' },
-  { id: 'host:todo-card', kind: 'attr', tier: 'anchor', requiresGate: true, match: /^\[class[*$^]?="lXshSW_root|^\[data-tool="todo_write"\]/, reason: '宿主任务列表（todo 卡片）容器与工具标记：todoBlur 只打它（宿主类名 hash 会变，故同时留 [data-tool="todo_write"] 兼容），门控在 body[data-mpw-todo-blur]', doc: 'docs/STYLE-SCOPE-GUARD.md:82', docKind: 'ledger' },
-  { id: 'host:substr-root-refine', kind: 'attr', tier: 'refine', match: /^\[class\$="_root"/, reason: '宿主通用 root 后缀（如 [class$="_root"][class*="qBU-ya"] 的复合写法）：只作为已锚定选择器里的复合细化', doc: 'docs/STYLE-SCOPE-GUARD.md:83', docKind: 'ledger' },
+  { id: 'host:todo-card', kind: 'attr', tier: 'anchor', requiresGate: true, match: /^\[class[*$^]?="lXshSW_root|^\[data-tool="todo_write"\]/, reason: '宿主任务列表（todo 卡片）容器与工具标记：todoBlur 只打它（宿主类名 hash 会变，故同时留 [data-tool="todo_write"] 兼容），门控在 body[data-mpw-todo-blur]', doc: 'docs/STYLE-SCOPE-GUARD.md:85', docKind: 'ledger' },
+  { id: 'host:substr-root-refine', kind: 'attr', tier: 'refine', match: /^\[class\$="_root"/, reason: '宿主通用 root 后缀（如 [class$="_root"][class*="qBU-ya"] 的复合写法）：只作为已锚定选择器里的复合细化', doc: 'docs/STYLE-SCOPE-GUARD.md:86', docKind: 'ledger' },
 
   /* ── 元素/通配：只允许作为已锚定选择器的细化 ── */
-  { id: 'type:any', kind: 'type', tier: 'refine', match: /^[a-zA-Z][a-zA-Z0-9-]*$/, reason: '元素选择器（button/header/svg/img/video/iframe/canvas/b/input…）：只允许作为**已锚定**选择器里的元素细化，裸元素选择器判红', doc: 'docs/STYLE-SCOPE-GUARD.md:84', docKind: 'ledger' },
-  { id: 'universal:any', kind: 'universal', tier: 'refine', match: /^\*$/, reason: '通配 *：只允许作为已锚定宿主作用域下的后代细化（如 [class*="sidebarCol"] *），裸 * 判红', doc: 'docs/STYLE-SCOPE-GUARD.md:85', docKind: 'ledger' },
+  { id: 'type:any', kind: 'type', tier: 'refine', match: /^[a-zA-Z][a-zA-Z0-9-]*$/, reason: '元素选择器（button/header/svg/img/video/iframe/canvas/b/input…）：只允许作为**已锚定**选择器里的元素细化，裸元素选择器判红', doc: 'docs/STYLE-SCOPE-GUARD.md:87', docKind: 'ledger' },
+  { id: 'universal:any', kind: 'universal', tier: 'refine', match: /^\*$/, reason: '通配 *：只允许作为已锚定宿主作用域下的后代细化（如 [class*="sidebarCol"] *），裸 * 判红', doc: 'docs/STYLE-SCOPE-GUARD.md:88', docKind: 'ledger' },
 ]
 
 /* ══════════════════════ 二、永远判红（不允许清单兜底） ══════════════════════ */
+/* ①(2026-11-01 T16 用户批准：仅这两个属性可 !important，且只作用于预览浮层） */
+const RAIL_PREVIEW_GLASS_PROPS = new Set(['backdrop-filter', '-webkit-backdrop-filter'])
+
 const SELECTOR_PROHIBITIONS = [
   {
     id: 'forbid:rail-scope',
@@ -163,7 +186,7 @@ const TOKEN_POLICY = {
     '--dsw-alias-label-error', '--dsw-alias-line-secondary', '--dsw-alias-separator-primary',
     '--dsw-alias-border-secondary', '--dsw-alias-border-l2', '--dsw-alias-border-l3', '--dsw-alias-state-warn-label',
   ],
-  registeredGlobalDoc: 'docs/STYLE-SCOPE-GUARD.md:92',
+  registeredGlobalDoc: 'docs/STYLE-SCOPE-GUARD.md:95',
 }
 
 const ROOT_POLICY = {
@@ -501,7 +524,9 @@ function classifyRule(rule) {
   // rail 门控下的声明策略
   if (policies.includes('rail-ink')) {
     for (const d of decls) {
-      if (d.important) push('RED', 'rail:important', `rail 补偿规则里出现 !important（${d.prop}）——文档要求 rail 补偿不得含 !important`, 'docs/TIMELINE-RAIL-TOKEN.md:187')
+      /* ①(2026-11-01 T16 用户批准的隔离例外：仅轮次预览浮层的 backdrop-filter 放行 !important） */
+      const isPreviewGlass = RAIL_PREVIEW_GLASS_PROPS.has(d.prop) && /eGxaPq_preview|Y0dWHa_preview/.test(rule.selector)
+      if (d.important && !isPreviewGlass) push('RED', 'rail:important', `rail 补偿规则里出现 !important（${d.prop}）——文档要求 rail 补偿不得含 !important（预览浮层 backdrop 例外除外）`, 'docs/TIMELINE-RAIL-TOKEN.md:187')
       if (d.prop.startsWith('--dsw-')) push('RED', 'rail:touch-dsw', `rail 补偿规则里引用/重定义宿主 token（${d.prop}）——文档要求不得引用/重定义任何 --dsw-*`, 'docs/TIMELINE-RAIL-TOKEN.md:187')
     }
   }
@@ -742,7 +767,7 @@ function fieldsFromSource(src) {
 }
 const FALLBACK_BOOLS = ['sidebar', 'sharp', 'headerBlur', 'headerBg', 'rightSidebarBlur', 'dialogBlur', 'popoverBlur', 'maskBlur',
   'unifyTint', 'chatFollow', 'sessionFollow', 'aquaMask', 'aquaTint', 'aquaInk', 'todoBlur', 'float', 'newStyle', 'thinkBg', 'clock',
-  'bsCompat', 'bsFloat', 'bsFont', 'bsReveal', 'bsAlpha', 'bsAqua', 'lgCss', 'headerFrostOwn', 'sidebarBlur']
+  'lgCss', 'headerFrostOwn', 'sidebarBlur']
 const CORE = ['sidebar', 'unifyTint', 'headerBg', 'headerBlur', 'float', 'lgCss', 'aquaMask', 'aquaTint', 'rightSidebarBlur'] // 与 css-matrix 同口径
 
 function buildCases(src) {
@@ -761,10 +786,8 @@ function buildCases(src) {
   cases.push({ name: '单开:aquaTextEnhance', patch: P({ aquaTextEnhance: true }) })
   cases.push({ name: 'accent+文字增强', patch: P({ accent: '#ff0000', aquaTextEnhance: true }) })
   for (const b of bools) cases.push({ name: '单开:' + b, patch: P({ [b]: true }) })
-  const BS = ['bsFloat', 'bsReveal', 'bsAlpha', 'bsAqua', 'bsFont', 'bsBottomAvoid']
-  for (const b of BS) cases.push({ name: 'bsCompat+' + b, patch: P({ bsCompat: true, [b]: true }) })
-  cases.push({ name: 'bsCompat 全子开关', patch: P(Object.fromEntries(['bsCompat', ...BS].map((b) => [b, true]))) })
-  for (const n of (nums.length ? nums : ['opacity', 'blur', 'sidebarAlpha', 'bsRevealAlpha'])) {
+  /* ①(2026-11-03 #2) bsCompat 家族组合随适配退役移除（枚举从源码 boolFields 派生，自动少 7 键）。 */
+  for (const n of (nums.length ? nums : ['opacity', 'blur', 'sidebarAlpha'])) {
     cases.push({ name: `数值:${n}=0`, patch: P({ [n]: 0 }) })
     cases.push({ name: `数值:${n}=100`, patch: P({ [n]: 100 }) })
   }
@@ -992,7 +1015,7 @@ const MUTATIONS = [
   { id: 'bs-panel-host', payload: '[data-dsh-panel-host]{backdrop-filter:blur(4px)}', expect: 'RED', why: '文档点名"不要碰"的宿主层' },
   { id: 'unregistered-token', payload: 'body{--dsw-alias-bg-base:#fff !important}', expect: 'RED', why: '未登记宿主 token + !important' },
   { id: 'bare-unknown-scope', payload: '.someOtherPlugin_root{opacity:.5}', expect: 'RED', why: '裸的、未登记的第三方作用域（连锚点都没有）' },
-  { id: 'unknown-atom-gated', payload: '[data-dsh-better-sidebar] .someOtherPlugin_root{opacity:.5}', expect: 'REVIEW', why: '有锚点但含未登记原子 ⇒ 必须先登记（reason + docs 指针）' },
+  { id: 'unknown-atom-gated', payload: '[class*="_panel"] .someOtherPlugin_root{opacity:.5}', expect: 'REVIEW', why: '有锚点但含未登记原子 ⇒ 必须先登记（reason + docs 指针）' },
   { id: 'control-ours', payload: '.mpw-guardProbe{color:red}', expect: 'PASS', why: '阴性对照：我们自己的标记必须仍然放行（防"假红"）' },
   // ①(2026-09-18 §5 第1项) token 命名空间的两条新判据也要有分辨力
   { id: 'host-override-unregistered', payload: '.mpw-guardProbeHost{--dsw-alias-bg-base:#fff !important}', expect: 'RED', why: '★未登记的宿主 token 覆盖（§5 第1项："永不覆盖宿主 token"；确实需要必须登记）' },

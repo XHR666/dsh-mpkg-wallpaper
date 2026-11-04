@@ -10,7 +10,8 @@
 //      遍历 615 组设置（按源码 boolFields/numFields 自动枚举，实跑打印条数；开关增减时数字随之变化）；
 //   ③ 对每条规则解析选择器与声明，挑出"打在四个表面上的 底色/磨砂/模糊"声明，
 //      用产物里自己的 token 定义（SSOT 的 body 块等）**递归代换 var()** ⇒ 得到"符号化取值"；
-//   ④ 按 (设置组合, 表面, 亮/暗档, 属性) 收集**取值集合**，before 与 after 必须**完全一致**
+//   ④ 按 (设置组合, 表面, 亮/暗档, 属性) 收集**取值集合**：顶栏/侧栏 before 与 after 必须一致；
+//      面板/rail 表面 2026-11-03 起是有意改为统一可调 token（见 (d)）。
 //      ⇒ 结构变了、取值没变（重构而非重设计）。宿主自定义 token 保持符号名，两侧同样处理。
 //
 // 另外三条结构断言（brief 的 (a)(b)）：
@@ -18,6 +19,8 @@
 //       定义在 body，写在 :root 会 guaranteed-invalid 并继承下去 —— 见 lib/client.js emitSurfaceTokens 注释）
 //   (b) 四个表面必须各自引用到共享 --mpw-* 名（清单写在本文件 SURFACES）
 //   (c) 分辨力：把"表面改回直接读宿主 token"与"共享 token 挪到 :root"两种回退做成变异，必须变红
+//   (d) 2026-11-03 起「面板/rail」表面有意改为统一可调 token（白底/模糊滑条），因此 A 组
+//       只对顶栏/侧栏做逐键等价；面板由 panel-surface-token-test、rail 由 popover-glass-test 另行校验。
 //
 // 用法:
 //   node tools/token-namespace-test.mjs                 # 全量（含变异自证）
@@ -179,7 +182,12 @@ function buildCases(src) {
 function specificity(part) {
   // ①(2026-10-27) :where(...) 对特异性贡献为零（CSS 规范）——先剥掉再计数，
   //   否则 ":not(:where([attr]))" 这类**零特异性排除**会被多算（banner 收窄引入的误报）。
-  const stripped = String(part).replace(/:not\(:where\([^()]*\)\)/g, '').replace(/:where\([^()]*\)/g, '')
+  // ①(2026-11-03 演进留痕 #Bug2/3/5) 伪元素 ::before/::after 不计入类权重（CSS 规范：
+  //   伪元素不计入 class/伪类档）。原实现里 ":before" 被伪类正则从第二个冒号起匹配成
+  //   ":before" 多算 +100 —— 磨砂从"表面本体"迁到"::before"（fixed 后代包含块家族修复）
+  //   后，同一位置的同族规则会因此凭空压过本体规则，把"机制搬迁"误判成"生效值漂移"。
+  //   修正确保 before↔after 的层叠模型仍然自洽（变异自证不变，M 组照旧能打红）。
+  const stripped = String(part).replace(/:not\(:where\([^()]*\)\)/g, '').replace(/:where\([^()]*\)/g, '').replace(/::(before|after)\b/g, '')
   const ids = (stripped.match(/#[A-Za-z0-9_-]+/g) || []).length
   const cls = (stripped.match(/\.[A-Za-z0-9_\\-]+|\[[^\]]*\]|:(?!:)[a-z-]+(?:\([^)]*\))?/g) || []).length
   const el = (stripped.match(/(^|[\s>+~])[a-zA-Z][a-zA-Z0-9-]*/g) || []).length
@@ -314,7 +322,7 @@ if (dumpKey) {
 
 /* ── 断言 1：默认档 + 全组合的"取值指纹"逐键相等（重构而非重设计） ── */
 console.log('== A. 表面取值等价（before ↔ after，符号化代换后逐键比对）==')
-let diffKeys = 0, diffCases = 0, keysChecked = 0
+let diffKeys = 0, diffCases = 0, keysChecked = 0, panelSkipped = 0
 const samples = []
 for (let i = 0; i < cases.length; i++) {
   const fb = new Map([...fingerprint(before[i].css, 'default'), ...fingerprint(before[i].css, 'gated')])
@@ -322,6 +330,8 @@ for (let i = 0; i < cases.length; i++) {
   const keys = new Set([...fb.keys(), ...fa.keys()])
   let caseBad = false
   for (const k of keys) {
+    /* 面板/rail 表面 2026-11-03 起有意改为统一可调 token（rail preview 也统一 blur）：只保留顶栏/侧栏重构不变判据。 */
+    if (/\|(panel|rail)\|/.test(k)) { panelSkipped++; continue }
     keysChecked++
     const vb = fb.get(k)
     const va = fa.get(k)
@@ -332,8 +342,8 @@ for (let i = 0; i < cases.length; i++) {
   }
   if (caseBad) diffCases++
 }
-ok(`★ 四表面底色/磨砂**生效值**在 ${cases.length} 组设置 × 亮/暗 × 默认/门控态下逐键相等`,
-  diffKeys === 0, diffKeys ? `${diffKeys} 个键不一致（${diffCases} 组设置）\n      ` + samples.join('\n      ') : `比对 ${keysChecked} 个 (状态, 亮/暗, 表面, 属性) 键`)
+ok(`★ 顶栏/侧栏底色/磨砂生效值在 ${cases.length} 组设置 × 亮/暗 × 默认/门控态下逐键相等（面板/rail 表面有意改为统一可调 token，另由 panel-surface-token-test / popover-glass-test 校验）`,
+  diffKeys === 0, diffKeys ? `${diffKeys} 个键不一致（${diffCases} 组设置）\n      ` + samples.join('\n      ') : `比对 ${keysChecked} 个键；跳过面板/rail 表面键 ${panelSkipped} 个`)
 
 // 表面规则里不得再出现共享 token 的**定义**（值必须只在 SSOT 一处给）
 let surfaceDefs = []
@@ -404,8 +414,8 @@ if (!NO_MUT) {
       /* ①(2026-10-02 表面模型重做) 锚点跟着实现改：顶栏底色不再是写死的中性色字面量，
          而是 `mpwSurfaceColor(基色, 不透明度)`（基色 = 宿主自己的 token）。漂移注入改成
          把那个不透明度减 7 —— 语义与旧注入一致（同一处取值被改动），只是字面量换了。 */
-      mut: (s) => s.replace('tok("--mpw-surface-frost-top", mpwSurfaceColor(surfacePlan.header.base, hdrAlpha / 100));',
-        'tok("--mpw-surface-frost-top", mpwSurfaceColor(surfacePlan.header.base, Math.max(0, hdrAlpha - 7) / 100));'),
+      mut: (s) => s.replace('tok(\"--mpw-surface-frost-top\", mpwSurfaceColor(`var(--dsw-specific-sidebar-fill)`, surfacePlan.left.opacityPct / 100));',
+        'tok(\"--mpw-surface-frost-top\", mpwSurfaceColor(`var(--dsw-specific-sidebar-fill)`, Math.max(0, surfacePlan.left.opacityPct - 7) / 100));'),
       expect: 'A',
     },
     {
@@ -418,8 +428,8 @@ if (!NO_MUT) {
     {
       id: 'surface-value-replaced',
       why: '基础规则不再走共享 token，换成一个不同的字面量 —— 生效值变了，A 组必须变红',
-      mut: (s) => s.replace('.wSkVaW_header:not(:where([data-code-block-banner])) {\n\tbackground-color: var(--mpw-surface-frost-top) !important;',
-        '.wSkVaW_header:not(:where([data-code-block-banner])) {\n\tbackground-color: rgba(9, 9, 9, 0.9) !important;'),
+      mut: (s) => s.replace('.wSkVaW_header:not([data-code-block-banner]):not([data-disclosure-header]) {\n\tbackground-color: var(--mpw-surface-frost-top) !important;',
+        '.wSkVaW_header:not([data-code-block-banner]):not([data-disclosure-header]) {\n\tbackground-color: rgba(9, 9, 9, 0.9) !important;'),
       expect: 'A',
     },
   ]
@@ -433,7 +443,7 @@ if (!NO_MUT) {
         })
     const out = (r.stdout || '') + (r.stderr || '')
     // 断言名会改，这里按"哪一组断言变红"匹配（A 组 = 取值等价；B 组 = SSOT 定义点）
-    const failedA = /✗ ★ (四表面底色|表面规则里不再定义)/.test(out)
+    const failedA = /✗ ★ (四表面底色|顶栏\/侧栏底色|表面规则里不再定义)/.test(out)
     const failedB = /✗ ★ (每枚共享|共享 token 的定义点是 body|没有任何)/.test(out)
     const got = failedA ? 'A' : (failedB ? 'B' : (r.status === 0 ? 'PASS' : 'FAIL(其它)'))
     ok(`变异 ${m.id}：期望 ${m.expect} 变红，实际 ${got}`, got === m.expect, `${m.why}  [exit=${r.status}]`)
