@@ -1613,12 +1613,7 @@ async function mpwAcquireWebGL2(cvEl, attrs) {
   rec.reason = (!p.webgl2 && !p.webgl1) ? 'no-webgl2' : (p.webgl2 ? 'canvas-context-failed' : 'no-webgl2-but-webgl1')
   return null
 }
-if (MODE === 'elysia') {
-  const _id = new URL(location.href).searchParams.get('id') || '3719111841';
-  import('./elysia/demo-elysia.js')
-    .then((m) => m.bootElysia({ id: _id, canvas: cv, log: logf, fpsEl }))
-    .catch((e) => { logf('❌ elysia 启动失败: ' + ((e && e.message) || e)); try { window.__mpwCapErr && window.__mpwCapErr('elysia-boot') } catch (e2) {} });
-} else {
+{
 // ①(P-77) 多实例时**不在 #sc 上取上下文**（每个格子自建自己的 canvas+context，上限 = maxinst）；
 //   单实例路径（无 ?ids=）这一行逐字不变。
 /* ①(第 24 条 2026-09-23) 上下文属性走**唯一来源** `lib.glCanvasAttrs()`：
