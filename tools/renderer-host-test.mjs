@@ -207,6 +207,10 @@ try {
     check('C5 场景 pkgurl 走宿主 HOST_BASE（不是根 /raw）',
       /mpwHostAbsUrl\(HOST_BASE \+ "\/raw\?"/.test(clientSrc) && !/mpwHostAbsUrl\("\/raw\?"/.test(clientSrc), 'pkgurl 路径');
     check('C6 场景 thumbpost 走宿主 HOST_BASE（不是根 /custom-scene-thumb）',
+    try {
+      const demo = fs.readFileSync(path.join(PLUGIN, 'renderer', 'demo.html'), 'utf8');
+      check('C7 壁纸 noui 模式隐藏调试 chrome', /html\.mpw-noui #bar/.test(demo) && /html\.mpw-noui #__mpwLnTag/.test(demo) && /classList\.add\('mpw-noui'\)/.test(demo), 'bar/fps/lnTag/noui class');
+    } catch (e2) { check('C7 renderer/demo.html 读取', false, String(e2 && e2.message)); }
       /mpwHostAbsUrl\(HOST_BASE \+ "\/custom-scene-thumb"\)/.test(clientSrc) && !/mpwHostAbsUrl\("\/custom-scene-thumb"\)/.test(clientSrc), 'thumbpost 路径');
 } catch (e) { check('C1 client.js 合同断言', false, String(e && e.message)); }
 

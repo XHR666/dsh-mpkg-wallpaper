@@ -22,6 +22,15 @@ html.mpw-no-wallpaper canvas,html.mpw-no-wallpaper #bar,html.mpw-no-wallpaper #l
 #logbar.collapsed{left:auto;right:8px;bottom:0;border:1px solid #2a4;border-bottom:0;border-radius:6px 6px 0 0}
 #logbar:focus{outline:1px solid #48a}
 #fps{position:fixed;top:44px;right:8px;z-index:10;background:rgba(0,0,0,.6);padding:2px 6px;border-radius:4px;font:14px monospace}
+/* ①(P6 2026-11-04) 壁纸模式（noui=1）：渲染器只是宿主背景层，调试 chrome 一律不可见。
+   直接打开渲染器页/测试台（不带 noui）不受影响。 */
+html.mpw-noui #bar,
+html.mpw-noui #fps,
+html.mpw-noui #log,
+html.mpw-noui #logbar,
+html.mpw-noui #__mpwLnTag,
+html.mpw-noui #mpw-audio-panel,
+html.mpw-noui #mpw-audio-btn { display: none !important; }
 /* ①(N6 2026-09-14 用户决策 C) 顶栏 🔊 音频面板：现场解析当前包内音轨，逐条播放/下载；状态记 localStorage */
 #mpw-audio-panel{position:fixed;top:38px;right:8px;z-index:12;width:340px;max-height:60vh;overflow:auto;background:rgba(0,0,0,.85);border:1px solid #468;border-radius:8px;padding:6px 8px;font:12px monospace;display:none}
 #mpw-audio-panel.open{display:block}
@@ -1890,6 +1899,7 @@ const MPW_PROP_PUSH_RAW = (() => { try { return new URLSearchParams(location.sea
 const MPW_NOUI_RAW = (() => { try { return new URLSearchParams(location.search).get('noui') } catch (e) { return null } })()
 const MPW_NOUI = String(MPW_NOUI_RAW || '') === '1'
 try { window.__mpwNoUi = MPW_NOUI } catch (e) { /* 无 window */ }
+try { if (MPW_NOUI) document.documentElement.classList.add('mpw-noui') } catch (e) { /* 无 document */ }
 /** `?proppush=legacy`（`off`/`0`/`false` 同义）= 回到改动前（P-203 之前没有这条通道）。 */
 function mpwPropPushLegacyOf(raw) {
   const v = String(raw == null ? '' : raw).trim().toLowerCase()
