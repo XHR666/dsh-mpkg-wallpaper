@@ -13,10 +13,10 @@
 //
 // 本文件断言（每条都能被"改回旧取值/删结构"变红，见文末 M1–M3）：
 //   P1 SSOT：两个新 token 恰好定义一次，值 = 统一表面 token（符号级；2026-11-03 起可调）
-//   P2 产物规则：[data-team-panel] 底消费 --mpw-surface-panel-menu，不再消费旧霜化档
-//   P3 产物规则：磨砂消费 --mpw-panel-menu-blur（标准 + webkit 前缀）
+//   P2 产物规则：[data-team-panel]::before 底消费 --mpw-surface-panel-menu，不再消费旧霜化档
+//   P3 产物规则：[data-team-panel]::before 磨砂消费 --mpw-panel-menu-blur（标准 + webkit 前缀）
 //   P4 逐 token 相等（代换到统一表面 token）+ 暗色档消费 pop-surface-dark
-//   P5 结构：[data-team-panel]::before/::after 透明化规则仍在（单层磨砂）
+//   P5 结构：[data-team-panel] 元素透明 + ::before 单层底/模糊（避免 fixed tooltip 包含块）
 //   P6 层叠：通用 [role="dialog"] 兜底与 team 规则并存（特异性 (0,1,2) > (0,1,0)，team 胜）
 // 复现: node tools/panel-surface-token-test.mjs
 import fs from 'node:fs';
@@ -68,7 +68,7 @@ const DETAIL_NAMES = {
   P4a: '底消费 --mpw-surface-panel-menu（= 统一 --mpw-pop-surface）',
   P4b: '磨砂消费 --mpw-panel-menu-blur（= 统一 --mpw-pop-blur）',
   P4c: '暗色档消费 --mpw-pop-surface-dark（统一亮/暗两态）',
-  P5: '::before/::after 透明化规则仍在（单层磨砂结构）',
+  P5: '元素透明 + ::before 单层表面/模糊（fixed tooltip 不建包含块）',
   P6: '通用 [role="dialog"] 兜底并存（team 规则特异性 (0,1,2) > (0,1,0) 胜出）',
 };
 
@@ -82,23 +82,27 @@ function judge(clientPath) {
   const bg = bgRuleOf(rs);
   const menuVal = menuValOf(rs), blurVal = blurValOf(rs);
   g('P2a', team.length >= 1, JSON.stringify(team.map((r) => r.sel)));
-  g('P2b', !!bg && bg.body.includes('var(--mpw-surface-panel-menu)') && !bg.body.includes('--mpw-surface-panel-frost'),
-    bg ? bg.body.slice(0, 120) : '无规则');
-  g('P3', !!bg && /-webkit-backdrop-filter\s*:\s*var\(--mpw-panel-menu-blur\)/.test(bg.body)
-    && /(?:^|;)\s*backdrop-filter\s*:\s*var\(--mpw-panel-menu-blur\)/.test(bg.body),
-    bg ? (bg.body.match(/backdrop-filter[^;]*/g) || []).join(' | ') : '无规则');
-  const before = rs.filter((r) => r.sel.includes('[data-team-panel]::'));
-  g('P5', before.length >= 1 && before.every((r) => /background\s*:\s*transparent/.test(r.body) && /backdrop-filter\s*:\s*none/.test(r.body)),
-    before.map((r) => r.sel + '{' + r.body.slice(0, 50) + '}').join(' | '));
+  const teamPseudoSurface = rs.filter((r) => r.sel.includes('[data-team-panel]::before')
+    && r.body.includes('var(--mpw-surface-panel-menu)'));
+  const sf = teamPseudoSurface[0];
+  g('P2b', !!sf && sf.body.includes('var(--mpw-surface-panel-menu)') && !sf.body.includes('--mpw-surface-panel-frost'),
+    sf ? sf.body.slice(0, 120) : '无规则');
+  g('P3', !!sf && /-webkit-backdrop-filter\s*:\s*var\(--mpw-panel-menu-blur\)/.test(sf.body)
+    && /(?:^|;)\s*backdrop-filter\s*:\s*var\(--mpw-panel-menu-blur\)/.test(sf.body),
+    sf ? (sf.body.match(/backdrop-filter[^;]*/g) || []).join(' | ') : '无规则');
+  const teamElementTransparent = team.every((r) => /background-color\s*:\s*transparent/.test(r.body)
+    && !/backdrop-filter\s*:\s*var\(/.test(r.body));
+  g('P5', teamElementTransparent && teamPseudoSurface.length === 1,
+    'elementTransparent=' + teamElementTransparent + ' pseudoSurface=' + teamPseudoSurface.length);
   g('P1a', menuVal === 'var(--mpw-pop-surface)', String(menuVal));
   g('P1b', blurVal === 'var(--mpw-pop-blur)', String(blurVal));
   const cnt = (tok) => (strip(rs.length ? rs.map((r) => r.body).join(';') : '').match(new RegExp(tok.replace(/-/g, '\\-') + '\\s*:', 'g')) || []).length;
   g('P1c', cnt('--mpw-surface-panel-menu') === 1 && cnt('--mpw-panel-menu-blur') === 1,
     'menu=' + cnt('--mpw-surface-panel-menu') + ' blur=' + cnt('--mpw-panel-menu-blur'));
   // P4 逐 token 相等：消费点 → SSOT → 宿主常量，两层代换后与主界面基准符号级相等
-  g('P4a', !!bg && menuVal === 'var(--mpw-pop-surface)' && bg.body.includes('var(--mpw-surface-panel-menu)'),
-    bg ? 'bg ✓=' + !!/var\(--mpw-surface-panel-menu\)/.test(bg.body) + ' menuVal=' + menuVal : '无规则');
-  g('P4b', !!bg && blurVal === 'var(--mpw-pop-blur)' && bg.body.includes('var(--mpw-panel-menu-blur)'),
+  g('P4a', !!sf && menuVal === 'var(--mpw-pop-surface)' && sf.body.includes('var(--mpw-surface-panel-menu)'),
+    sf ? 'surface ✓=' + !!/var\(--mpw-surface-panel-menu\)/.test(sf.body) + ' menuVal=' + menuVal : '无规则');
+  g('P4b', !!sf && blurVal === 'var(--mpw-pop-blur)' && sf.body.includes('var(--mpw-panel-menu-blur)'),
     'blurVal=' + blurVal);
   const darkTeam = rs.filter((r) => /data-ds-dark-theme\] \[data-team-panel\]/.test(r.sel) && /background/.test(r.body));
   g('P4c', darkTeam.length === 1 && darkTeam[0].body.includes('var(--mpw-pop-surface-dark)'), JSON.stringify(darkTeam.map((r) => r.sel + ':' + r.body.slice(0, 80))));
@@ -146,13 +150,13 @@ await withMutant('M1', 'SSOT 值改回旧霜化档', [
 ], ['P1a', 'P4a']);
 
 await withMutant('M2', '磨砂改回 blur(11px) 常量', [
-  ['-webkit-backdrop-filter: var(--mpw-panel-menu-blur) !important;\n\tbackdrop-filter: var(--mpw-panel-menu-blur) !important;\n}',
-   '-webkit-backdrop-filter: blur(11px) !important;\n\tbackdrop-filter: blur(11px) !important;\n} /* M2 */'],
+  ['html body [data-team-panel]::before {\n\tcontent: "" !important;\n\tposition: absolute !important;\n\tinset: 0 !important;\n\tz-index: -1 !important;\n\tpointer-events: none !important;\n\tborder-radius: inherit !important;\n\tbackground-color: var(--mpw-surface-panel-menu) !important;\n\t-webkit-backdrop-filter: var(--mpw-panel-menu-blur) !important;\n\tbackdrop-filter: var(--mpw-panel-menu-blur) !important;\n}',
+   'html body [data-team-panel]::before {\n\tcontent: "" !important;\n\tposition: absolute !important;\n\tinset: 0 !important;\n\tz-index: -1 !important;\n\tpointer-events: none !important;\n\tborder-radius: inherit !important;\n\tbackground-color: var(--mpw-surface-panel-menu) !important;\n\t-webkit-backdrop-filter: blur(11px) !important;\n\tbackdrop-filter: blur(11px) !important;\n} /* M2 */'],
 ], ['P3', 'P4b']);
 
-await withMutant('M3', '删掉 ::before/::after 透明化（结构回退）', [
-  ['html body [data-team-panel]::before,\nhtml body [data-team-panel]::after,\nhtml body [class*="JObwrW_panel"]::before,\nhtml body [class*="JObwrW_panel"]::after {\n\tbackground: transparent !important;\n\t-webkit-backdrop-filter: none !important;\n\tbackdrop-filter: none !important;\n}',
-   '/* M3 removed */'],
+await withMutant('M3', '元素重新画底（破坏单层结构）', [
+  ['html body [data-team-panel] {\n\tbackground-color: transparent !important;',
+   'html body [data-team-panel] {\n\tbackground-color: var(--mpw-surface-panel-menu) !important;'],
 ], ['P5']);
 
 console.log('\n===== ' + pass + ' 通过 / ' + fail + ' 失败 =====');
