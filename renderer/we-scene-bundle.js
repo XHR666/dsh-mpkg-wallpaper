@@ -1,1 +1,0 @@
-core/we-scene-bundle.js

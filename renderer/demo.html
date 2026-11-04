@@ -1611,7 +1611,7 @@ import { resolveWebFrameMode, webFrameSandboxAttr, webEntryPlan, webShimDowngrad
 import { injectWebShim } from './we-web-shim.mjs';   // ①(第 ⑥ 条) 两者按仓库约定**三处登记**（8899 路由 / Pages 映射 / sw 预缓存）
 // ①(用户第 6 项 2026-09-19) 自绘下拉（共享模块，测试台与渲染器页同一个实现）：
 //   模块住在 `demo/`（测试台天然托管），8899 这边由服务器补了一条**限定这两个文件**的只读路由。
-import { enhanceSelect } from './demo/mpw-select.js';
+import { enhanceSelect } from './mpw-select.js';
 // ═══ MPW-SELECT-WIRING-BEGIN ①(用户第 6 项 2026-09-19) ═══
 // 属性面板的控件是在**经典脚本**（`MPW-PROPS-PANEL` 块）里造的 ⇒ 那里拿不到 ESM 导入。
 // 这里用"面板进 DOM 就增强"的方式接上：只订阅 `document.body` 的 **childList**（不订阅整棵子树 ——
