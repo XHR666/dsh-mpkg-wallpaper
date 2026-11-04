@@ -218,6 +218,7 @@ try {
       check('C10 已删除右下角「交互」按钮创建', !/const ixBtn = document\.createElement/.test(clientSrc) && !/appendChild\(ixBtn\)/.test(clientSrc), 'ixBtn removed');
     check('C11 壁纸模式不初始化 props/fx/逐层调试/音频面板', /!\(typeof MPW_NOUI !== 'undefined' && MPW_NOUI\)/.test(demo) && /const audioPanelEarly = \(\(typeof PAGE === 'undefined' \|\| PAGE\) && !\(typeof MPW_NOUI/.test(demo), 'noui init guards');
     check('C12 根层自定义场景身份（custom||file）', /custom === "1"/.test(clientSrc) && /custom === '1'/.test(fs.readFileSync(path.join(PLUGIN, 'lib', 'index.js'), 'utf8')), 'root identity');
+    check('C14 静态调试 UI 已从 demo 删除', !/<div id=bar>/.test(demo) && !/<script id="mpw-(log|props|fx)-panel">/.test(demo), 'bar/log/props/fx DOM gone');
     check('C13 缩略图只在首帧上报一次', /if \(__first\) postThumb\('first'\)/.test(demo), 'thumb first guard');
     } catch (e2) { check('C8-C10 renderer/demo.html 读取', false, String(e2 && e2.message)); }
     } catch (e2) { check('C7 renderer/demo.html 读取', false, String(e2 && e2.message)); }
