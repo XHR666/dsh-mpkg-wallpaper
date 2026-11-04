@@ -1,0 +1,15 @@
+{
+  "name": "WEwebLoader Bench",
+  "short_name": "WEwebLoader",
+  "description": "Wallpaper Engine scene wallpaper renderer for the browser — user guide & preview bench",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0d111a",
+  "theme_color": "#0d111a",
+  "icons": [
+    { "src": "assets/brand/brand-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/brand/brand-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "assets/brand/favicon-64.png", "sizes": "64x64", "type": "image/png" }
+  ]
+}

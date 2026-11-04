@@ -1,0 +1,23 @@
+{
+  "//": "TS 只当**类型检查器**（`--noEmit`），不参与构建、不产生任何运行期产物：",
+  "//2": "插件半边必须单文件下发、渲染器半边必须直出源码（多处门禁按源码行做守卫）⇒ 都不能引入构建步骤。",
+  "//3": "范围起步只覆盖**纯逻辑小模块**（无 DOM、无 GL、可 Node 侧直测）；逐步扩大，每加一个文件必须零错误。",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM"],
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "strict": false,
+    "noImplicitAny": false,
+    "skipLibCheck": true,
+    "types": ["node"]
+  },
+  "include": [
+    "core/web-frame-host.mjs",
+    "core/web-frame-geometry.mjs",
+    "server/web-store.mjs"
+  ]
+}

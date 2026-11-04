@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NowPlaying（Bencho 移植 · P-138）</title>
+<!-- ①(P-138 2026-09-19) 独立演示页：只引本目录的两个文件（样式表 + 打包产物），
+     不联网、不引 CDN、不需要 node_modules —— 页面直接看得到东西。
+     挂载点：/WEwebLoader/now-playing/index.html 与 /demo/now-playing/index.html
+     （8902 的 /demo/** 与 /WEwebLoader/** 都指向仓库的 demo/）。
+     本页**不动** demo/index.html（测试台外壳），这一批只做「独立页 + 组件」。 -->
+<link rel="stylesheet" href="./now-playing.css" />
+<style>
+  /* ── 页面自己的中性底色与调试 UI ────────────────────────────────
+     这些**不属于组件**，所以不写进 now-playing.css（那份文件有"每条选择器
+     都必须在 .snd 子树内"的机器判据）。
+
+     下面的 :root 是本项目暗色主题的一个**子集**，逐值与
+     demo/assets/bench-HtRiuWm6.css 的 `:root` 相同 —— 故意这么做：
+     组件里的 14 个 Bencho token 映射的就是这些名字（--fg / --panel /
+     --sidebar / --input / --border / --ui-font / --mono / --editor …），
+     页面把真名给出来，映射那条路才会被真的走到（否则落到兜底值上，
+     等于没验证映射）。 */
+  :root {
+    color-scheme: dark;
+    --fg: #cccccc;
+    --fg-dim: #9d9d9d;
+    --fg-mute: #6e6e6e;
+    --editor: #1f1f1f;
+    --panel: #181818;
+    --sidebar: #181818;
+    --input: #313131;
+    --border: #2b2b2b;
+    --widget-border: #3c3c3c;
+    --hover: #2a2a2a;
+    --accent: #0078d4;
+    --list-active-fg: #ffffff;
+    --ui-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Noto Sans SC", sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 28px 20px 48px;
+    min-height: 100vh;
+    background: var(--editor);
+    color: var(--fg);
+    font: 13px/1.5 var(--ui-font);
+  }
+  main { max-width: 720px; margin: 0 auto; }
+  h1 { margin: 0 0 4px; font-size: 19px; font-weight: 600; letter-spacing: -0.01em; }
+  .sub { margin: 0 0 22px; color: var(--fg-mute); font-size: 12px; }
+  .sub a { color: var(--accent); }
+  /* 舞台：一块**中性**的底，组件就放在中间 —— 它自己的 .snd 是
+     display:grid + place-items:center，所以这里给个高度就够。 */
+  .stage {
+    display: grid;
+    place-items: center;
+    min-height: 300px;
+    padding: 34px 18px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background:
+      radial-gradient(120% 90% at 50% 0%, #23262c 0%, var(--editor) 62%);
+  }
+  .panel {
+    margin-top: 18px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--panel);
+  }
+  .row { display: flex; align-items: center; gap: 12px; margin: 10px 0; }
+  .row > label { flex: none; width: 92px; color: var(--fg-dim); }
+  .row input[type="range"] { flex: 1; min-width: 120px; accent-color: var(--accent); }
+  .row output, .num { flex: none; min-width: 46px; text-align: right; font-family: var(--mono);
+    font-variant-numeric: tabular-nums; color: var(--fg); }
+  .row .hint { flex: none; color: var(--fg-mute); font-size: 11.5px; }
+  .facts { margin: 12px 0 0; padding-top: 10px; border-top: 1px solid var(--border);
+    color: var(--fg-mute); font-size: 12px; font-family: var(--mono); }
+  .facts b { color: var(--fg); font-weight: 500; }
+  .note { margin-top: 18px; color: var(--fg-mute); font-size: 12px; }
+  .note code { font-family: var(--mono); color: var(--fg-dim); }
+  #fallback { display: none; margin-top: 14px; padding: 10px 12px; border: 1px solid var(--border);
+    border-left: 3px solid #d7ba7d; border-radius: 6px; color: var(--fg-dim); font-size: 12px; }
+  #fallback.on { display: block; }
+</style>
+</head>
+<body>
+<main>
+  <h1>NowPlaying</h1>
+  <p class="sub">
+    Bencho「Now playing」的移植件（<code>①(P-138)</code>）—— 组件本体照抄、注释逐字保留；
+    这里只是它的独立演示页。源码与说明见 <code>demo/now-playing/README.md</code>。
+  </p>
+
+  <div class="stage">
+    <!-- 组件挂在这里；mount.tsx 的 mountNowPlaying() 建 React 根 -->
+    <div id="np-root"></div>
+  </div>
+
+  <div class="panel">
+    <div class="row">
+      <label for="morph">morph</label>
+      <input id="morph" type="range" min="0" max="100" step="1" value="50" />
+      <output id="morph-v" for="morph">50</output>
+      <span class="hint">形状变化多快（50 = 原件调好的 460ms）</span>
+    </div>
+    <div class="row">
+      <label for="corner">corner</label>
+      <input id="corner" type="range" min="0" max="32" step="1" value="16" />
+      <output id="corner-v" for="corner">16</output>
+      <span class="hint">封面圆角；盒子的角 = 封面 + offset（同心）</span>
+    </div>
+    <div class="row">
+      <label for="stroke">hairline</label>
+      <input id="stroke" type="checkbox" />
+      <span class="hint">盒子的发丝线 = 组件自己的 <code>stroke</code> 属性（取代 Bencho 的全局
+        <code>[data-stroke="on"]</code>）</span>
+    </div>
+    <p class="facts" id="facts"></p>
+  </div>
+
+  <p class="note">
+    看什么：点一下胶囊（或封面）→ 盒子从 <b>260×78</b> 长到 <b>260×189</b>，封面从 40px 走到 64px、
+    圆角两端同心；播放键是**画出来**的（暂停 ⇄ 播放是同一对四边形在变形），心跳只在"点亮"那一次。
+    本机无 GPU（软件渲染、约 1fps）⇒ 动效必须人眼看，见 README 的「需要人眼/真机」一节。
+  </p>
+
+  <div id="fallback">
+    打包产物 <code>./dist/now-playing.js</code> 没加载起来 —— 先在
+    <code>demo/now-playing/</code> 里跑一次 <code>node build.mjs</code>（产物是提交进仓库的，
+    正常情况下不用重跑）。
+  </div>
+</main>
+
+<script type="module">
+  // ①(P-138) 只做接线：读三个旋钮 → 交给 mountNowPlaying().update()。
+  // 纯函数模块也直接引一下，好让页面上的数字与组件里的算式是**同一份**
+  // （W/SHUT/OPEN/TOTAL 全从 now-playing-math.mjs 来）。
+  const boot = async () => {
+    try {
+      const [{ mountNowPlaying }, math] = await Promise.all([
+        import("./dist/now-playing.js"),
+        import("./now-playing-math.mjs"),
+      ]);
+      const app = mountNowPlaying(document.getElementById("np-root"), {
+        morph: 50,
+        corner: 16,
+        stroke: false,
+      });
+
+      const el = (id) => document.getElementById(id);
+      const morph = el("morph"), corner = el("corner"), stroke = el("stroke");
+      const sync = () => {
+        const m = Number(morph.value), c = Number(corner.value);
+        el("morph-v").textContent = String(m);
+        el("corner-v").textContent = String(c);
+        app.update({ morph: m, corner: c, stroke: stroke.checked });
+        const dur = Math.round(math.BASE * math.rate(m));
+        const art = math.artRadius(c), box = math.boxRadius(c);
+        el("facts").innerHTML =
+          `W <b>${math.W}</b> · SHUT <b>${math.SHUT}</b> · OPEN <b>${math.OPEN}</b>` +
+          ` · 时长 <b>${dur}ms</b> · 封面角 <b>${art[0].toFixed(1)}/${art[1].toFixed(1)}</b>` +
+          ` · 盒子角 <b>${box[0].toFixed(1)}/${box[1].toFixed(1)}</b>` +
+          ` · offset <b>${math.cornerOffset(c).toFixed(1)}</b>（同心：盒子 − 封面 = offset）` +
+          ` · 轨道 <b>${math.TOTAL}s</b>`;
+      };
+      for (const n of [morph, corner, stroke]) n.addEventListener("input", sync);
+      sync();
+    } catch (err) {
+      console.error("[now-playing demo]", err);
+      document.getElementById("fallback").classList.add("on");
+    }
+  };
+  boot();
+</script>
+</body>
+</html>

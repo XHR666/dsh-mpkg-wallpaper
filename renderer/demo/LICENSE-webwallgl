@@ -1,0 +1,65 @@
+UPSTREAM LICENCE — WebWallGL (MIT © 2026 oneincase)
+===================================================
+
+这个文件与同目录的 `LICENSE-webwallgl-MIT.txt` **是同一条许可的两种写法**，内容等价、
+互相印证；两份都随测试台一起分发，**不要删掉任一份**：
+  * `LICENSE-webwallgl-MIT.txt` 由建仓线撰写，说明"哪些文件是上游构建产物、哪些是我们的补丁"；
+  * 本文件（`LICENSE-webwallgl`）是同一事实的简短登记，文件名沿用本仓库既有的
+    `<LICENSE>-<上游名>` 命名习惯，方便下游按文件名就能找到上游许可。
+
+上游 / Upstream
+---------------
+  Project:    WebWallGL — 浏览器端 Wallpaper Engine 渲染核心 + 测试台
+  Repository: https://github.com/oneincase/webwallgl
+  Licence:    MIT
+  Copyright:  Copyright (c) 2026 oneincase <462534624@qq.com>
+  取用版本:    fdfc578a577d0e680a9cfe2cf2e3e825d3cd2372（version 1.3.23, 2026-09-15）
+
+本目录里哪些是上游、哪些是我们的
+--------------------------------
+* **上游产物（原样再分发，MIT 覆盖）**：
+  `assets/bench-*.js`、`assets/bench-*.css`、`assets/renderer-*.js`、
+  `assets/modulepreload-polyfill-*.js`、`index.html`、`renderer/index.html`、
+  `default-wallpaper/index.html`、`icons/*.png`、`manifest.webmanifest`、`sw.js`。
+  （minified 产物里的 banner/品牌字符串仍是上游的 "WebWallGL"；我们没有重建它们 ——
+   本机离线装不上依赖，见 `../PATCH-NOTES.md` §0。）
+* **我们的补丁（GPL-3.0-or-later，本仓库自有代码）**：`bench-patch.js` —— 被 `index.html`
+  以 `type="module"` 引入的**运行期**补丁。它不改 minified 产物，只读写 DOM 并复用
+  产物既有的代码路径；行为与动机见 `../PATCHES.md` P-93 与 `../docs/ONLINE-DEMO.md`。
+
+许可流动（单向）
+----------------
+MIT → GPL-3.0-or-later 是**被允许的单向流动**（工作区 `docs/COPYING-RULES.md` §2.1）。
+上游 MIT 声明对**本目录内再分发的上游材料**继续有效，必须随之一起分发。
+反向不成立：本项目的 GPL 代码**绝不能**回流入 `oneincase/webwallgl`。
+
+不含任何壁纸内容
+----------------
+本目录不含任何壁纸包、预览图、音视频或 Steam 创意工坊内容。测试台默认载入的
+`../samples/sample-synthetic/scene.pkg` 是本仓库用算术生成的合成样例（33 299 B，
+由 `../make-sample.mjs` 生成，无第三方内容）。壁纸必须由用户自己提供合法副本。
+
+第三方许可登记：`../THIRD-PARTY.md`。
+
+------------------------------------------------------------------------------
+MIT License（上游 `LICENSE` 逐字全文）
+
+Copyright (c) 2026 oneincase <462534624@qq.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

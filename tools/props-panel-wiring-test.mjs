@@ -31,9 +31,14 @@ function check(name, ok, detail) {
   else { fail++; fails.push(name); console.log('  ✗ ' + name + (detail ? '  [' + detail + ']' : '')) }
 }
 
-/* ── 真实语料：有 group + condition 的真包（缺语料则整段 SKIP，门禁不红） ── */
-const REAL = path.join(WS, 'allwallpaper', '0917', '3509243656', 'project.json')
-const REAL_B = path.join(WS, 'allwallpaper', '0917', '3195212886', 'project.json')
+/* ── 真实语料：有 group + condition 的真包（缺语料则整段 SKIP，门禁不红） ──
+   ①(2026-10-30 路径固化) 原来只认 `<工作区>/allwallpaper`（插件仓的上一级）。渲染器并入本工作区后
+   （zcode-renderer-integration/），插件的上一级是集成目录 ⇒ 语料在其再上一级（真实工作区根）。
+   解析顺序：env MPW_WS → 集成布局（WS/../allwallpaper）→ 旧布局（WS/allwallpaper）。 */
+const WS_CANDIDATES = [process.env.MPW_WS, path.join(WS, '..'), WS].filter(Boolean)
+const WS_REAL = WS_CANDIDATES.find((w) => fs.existsSync(path.join(w, 'allwallpaper', '0917', '3509243656', 'project.json'))) || WS
+const REAL = path.join(WS_REAL, 'allwallpaper', '0917', '3509243656', 'project.json')
+const REAL_B = path.join(WS_REAL, 'allwallpaper', '0917', '3195212886', 'project.json')
 const hasCorpus = fs.existsSync(REAL)
 
 /* ══════════ 源码切片：纯函数（模型/解析）——与 lib 同源，改哪断言哪 ══════════ */

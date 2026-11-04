@@ -1,0 +1,61 @@
+# .gitignore.public —— 公开渲染器仓库的忽略清单 —— **它是发布闸门的唯一口径来源** ✓
+#   ⚠ **不要删除本文件** ✗：`tests/publish-check.mjs` 里 `IGNORE_FILE = .gitignore.public` ✓，
+#   删掉会让发布闸门失去忽略清单（`.gitignore` 是它的**超集**，但**不是**脚本读取的那个 ✓）。
+#   （旧抬头写作"草稿；发布时改名为 .gitignore" ✗ —— 已被 2026-10-12 的文档修订更正 ✓，
+#    以免读者误以为它是可删的草稿 ✓。真要改名 ⇒ 必须同步改 `publish-check.mjs` ✗。）
+#
+# 设计原则：**仓库只带"能跑起来的渲染器 + 自带样例 + 文档 + 测试"**，
+# 本机数据（上报、私有库清单、基线、实验残留）一律不进仓库。与 `publish-check.mjs` 配套使用。
+
+# ── 本机运行数据 ──
+# build-pages.mjs 的产物（Pages 构建输出，由 CI 重建；注释必须独占一行，
+# 否则 publish-check 会把整行当成 glob，规则静默失效——本行曾犯错一次）
+_site/
+reports/
+*.log
+/tmp-*
+
+# ── 私有库清单 / 基线（内嵌本机壁纸与工坊路径，**绝不能发布**）──
+library-manifest.json
+package-matrix.json
+package-baseline.json
+perf-matrix.json
+perf-baseline.json
+
+# ── 实验/调试残留（2026-09-16 目录整理：根目录里的这类本机文件已归入 `archive/local/`；
+#    下面这些形状规则**不锚定根**，所以归档后依旧被忽略、不入库）──
+*.bak
+*.bak-*
+*-probe.mjs
+hina-probe.mjs
+refrender-*.json
+ref-render-*.json
+ref-*.json
+*AUDIT-preview-before.png
+*AUDIT-preview-after.png
+
+# ── 依赖与缓存 ──
+node_modules/
+__pycache__/
+*.pyc
+.DS_Store
+
+# ── 本机 WE 安装（只读引用，绝不入库）──
+wallpaper_engine/
+
+# ── 说明 ──
+# 1) 测试壁纸（allwallpaper/**）留在**仓库外**，是否入库由用户决定（F5/F6）；若只发子集，在此追加排除规则。
+# 1b) ①(P-87 2026-09-15 版权) `samples/wallpapers/`（4 个真实 Steam 工坊壁纸，198MB）**已整体删除**：
+#     本仓库**不分发任何真实壁纸**，自带样例只有程序化生成的 `samples/sample-synthetic*`。
+#     这里**故意不写忽略规则** —— 让误加回来的大包继续被 `publish-check.mjs` 的体积闸门（>100MB 阻塞）
+#     当场拦下，而不是被静默忽略掉。
+# 2) `shaders/common*.h`（2026-09-16 目录整理：仓库根 → shaders/）不是忽略项而是**已替换项**——
+#    它们是**本仓库自研**的 API 兼容实现（见 README §7.7 / THIRD-PARTY.md）；忽略掉会让渲染器编译失败，
+#    所以这里**故意不忽略**。（`common_vertex.h` 仍是**故意不发布**，见下面最后一条。）
+# ── WE 官方资产（**运行时**从用户自己的 WE 安装读取，我们不分发）──
+# 用户口径（2026-09-14）："未解包、直接存在于 Steam/WE 目录下的原资产可以考虑不重写" ——
+# 因为仓库里根本不含它们，渲染器/校验器运行时从 `MPW_WE_ASSETS` 解析即可。
+# 本项目内部 shader 只有 6 个头被实际引用（common.h / common_blending / common_blur /
+# common_composite / common_fragment / common_perspective），这 6 个已换成自研实现；
+# `common_vertex.h` **零引用** → 直接不随仓库分发（用户 WE 目录里有真品）。
+common_vertex.h

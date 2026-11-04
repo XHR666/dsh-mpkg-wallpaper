@@ -723,3 +723,20 @@ dsh-mpkg-wallpaper/
   表面 token 命名空间 `docs/TOKEN-NAMESPACE.md`、标题栏磨砂 `docs/HEADER-FROST.md`、右侧时间线条 `docs/TIMELINE-RAIL-TOKEN.md`、
   转码资源与生命周期 `docs/TRANSCODE-RESOURCE.md` / `docs/TRANSCODE-LIFECYCLE.md`、选择器行为契约 `docs/DIR-PICKER-SCROLL.md`、
   发布记录 `docs/RELEASE.md`。
+
+---
+
+## 15. 许可证（双许可）
+
+本包包含**两个独立许可**的部分：
+
+| 部分 | 许可 | 全文 |
+|---|---|---|
+| 插件本体 `lib/**`（以及图标、README、THIRD-PARTY.md 等） | **MIT** | [`LICENSES/MIT.txt`](LICENSES/MIT.txt) |
+| 内置渲染器组件 `renderer/**`（Wallpaper Engine 浏览器渲染器，随包分发、在沙箱 iframe 内运行） | **GPL-3.0-or-later** | [`renderer/LICENSE`](renderer/LICENSE) |
+
+- 渲染器的第三方组件台账见 [`renderer/THIRD-PARTY.md`](renderer/THIRD-PARTY.md)；
+- 渲染器与插件的集成边界（**只有 iframe + postMessage 通信，无代码互相复制**）见 [`renderer/PROVENANCE.md`](renderer/PROVENANCE.md)；
+- 根 [`LICENSE`](LICENSE) 是上述双许可的说明页；`package.json` 的 `license` 字段为 `SEE LICENSE IN LICENSE`。
+
+再分发提示：`lib/**` 部分按 MIT 履行义务；`renderer/**` 部分按 GPL-3.0-or-later 履行义务（本包已随附其完整源码、许可全文与第三方声明）。

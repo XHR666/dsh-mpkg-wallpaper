@@ -94,6 +94,25 @@ const WHITELIST = [
     match: WL('const key = ', '', "'dsh.mpkg-wallpaper.v2'"),
     why: 'localStorage **键名**（探针预置插件设置用的存储键，与 lib/client.js 的 STORE_KEY 同名同值）：值是点分命名的键字符串，不含凭据；①(2026-10-25) 既有红顺手清账（a6a7dce 引入探针时漏登记）',
   },
+  // ①(任务书 B 2026-10-31) 渲染器随包后新增的三条（upstream 文件，逐条清账）：
+  {
+    file: 'renderer/demo/bench-patch.js',
+    pattern: 'assigned-credential-ext',
+    match: WL("howKey: 'backend", ".demoNoBackend'", ''),
+    why: '前端**文案 i18n 键名**（howKey=说明文案的字典键，值 backend.demoNoBackend 是键标识符），不是凭据',
+  },
+  {
+    file: 'renderer/demo/bench-patch.js',
+    pattern: 'assigned-credential-ext',
+    match: WL('const PROPS_COLLAPSED_', "KEY = 'bench", "-props-collapsed'"),
+    why: 'localStorage **键名**（demo 面板折叠状态的持久化键，值 bench-props-collapsed 是 kebab-case 键标识符），不是凭据',
+  },
+  {
+    file: 'renderer/tests/demo-check.mjs',
+    pattern: 'assigned-credential-ext',
+    match: WL("/PROPS_COLLAPSED_KEY = 'bench", "-props-collapsed'/", ''),
+    why: '同上字面量的**判据侧**：demo-check 用同一字符串断言 bench-patch 里该键存在（锁两侧一致），不是凭据',
+  },
 ]
 
 // ── B 段：本机绝对路径门禁 ──

@@ -1,0 +1,10 @@
+{
+  "updated": "2026-09-12",
+  "note": "package-matrix.mjs 门禁白名单：key = <包id>|<门禁键>。豁免必须带 reason + date；清理时按 date 复核。",
+  "entries": {
+    "2aeac838640589c66efc315e821c44b6|SCENE": {
+      "reason": "v1.0 缩略图壳（唯一入口 wall.png 0KB，插件下载缓存 $MPW_PLUGIN_CACHE 残留），不是场景包",
+      "date": "2026-09-12"
+    }
+  }
+}

@@ -25,6 +25,13 @@
 #     --full ⇒ 一律真跑；缓存自己坏了（读不出/算不出/写不进）⇒ 当没缓存真跑，并在汇总里显式记账（绝不静默）。
 #   · 缓存与锁只落 os.tmpdir()（可用 MPW_GATE_CACHE / MPW_GATE_LOCK 覆盖）；仓库里不写本机绝对路径。
 #
+# 2026-10-31 门禁计数修复（任务书 B 全量跑出的实证缺陷；本文件与 main 完全一致 ⇒ 缺陷是 main 既有的）：
+#   · 原实现每步用 `node … || fail=1`，而 fail 是跨步持久的全局 + gate_end 以 `fail == GATE_FAIL_BEFORE`
+#     判绿 ⇒ `fail=1` 幂等：**第一个红步之后所有步的新失败都记成绿**（实证：第 2 步红后，第 5 步
+#     web-wallpaper 457/7、第 6 步 cross-platform 对照组 ENOENT 全被记绿，两轮全量汇总都停在 FAIL 1）。
+#   · 修法：`|| fail=1` → `|| fail=$((fail + 1))`（91 处），判定语义不变（有新增失败 ⇒ 本步红），
+#     只是计数能区分"新失败"与"继承失败" ⇒ 每步红绿如实、汇总真实。
+#
 set -uo pipefail
 SELF="$0"
 case "$SELF" in /*) ;; *) SELF="$PWD/$SELF" ;; esac          # --list 要读自己的 step 标签 ⇒ $0 必须在 cd 之前抓下来
@@ -284,8 +291,8 @@ if [ "$GATE_RUN" = 1 ]; then           # ← 缓存命中时整块跳过（SKIP-
 #   紧挨着还有一条旧档位签名的「检测到有壁纸源但媒体未挂上 → 补一次: …3582362359…」。
 #   修法：六个定时器标识符作为**参数**注入插件源码 ⇒ 每世界一张表，换代即取消上一世界的未触发定时器
 #   （用例自己的 sleep 走全局 setTimeout，不受影响）。这条判据钉住"隔离在位 + 关掉必红（定点 L1/L2/L3）"。
-node tools/world-isolation-test.mjs || fail=1
-node tools/panel-smoke.mjs || fail=1
+node tools/world-isolation-test.mjs || fail=$((fail + 1))
+node tools/panel-smoke.mjs || fail=$((fail + 1))
 node tools/regress-20261026-test.mjs
 # ①(2026-09-24 用户 bug「壁纸配置里 WE 自带的选项只显示一项、展不开」) 官方 user properties
 #   面板回归（离线；真包语料 3509243656：233 条 / 21 组 / condition 与非空/空串都覆盖）：
@@ -295,12 +302,12 @@ node tools/regress-20261026-test.mjs
 #   propEdits**（`setProp` 原来是 0 处调用的死代码）+ 5 条变异必红（M1 改回默认折叠 / M2 改回
 #   只读文本行 / M3 丢掉 group·condition / M4 setProp 空实现 / M5 分组头退化成普通行）。
 #   基线 18 通过 / 0 失败；变异 M1..M5 全红（读数打印在测试末尾）。
-node tools/props-panel-wiring-test.mjs || fail=1
+node tools/props-panel-wiring-test.mjs || fail=$((fail + 1))
 # ①(P-203 2026-09-25) 场景帧属性下发通道：`setProp` / 场景帧 `onload`（新文档强制重发）与同 URL 重入 /
 #   恢复默认三处接线 + 跨源 op `mpw-user-props` 的载荷形状 + 幂等（同帧同值不重发）+ 回执驱动的退避重试
 #   （有上限、不留常驻定时器）+ `proppush=legacy` 回退口 + 帧不在/空表如实记账；真源码切片离线驱动，
 #   8 组变异各自必红。判据见 docs/WE-USER-PROPS.md §4.2（基线 73 通过 / 0 失败）。
-node tools/scene-props-push-test.mjs || fail=1
+node tools/scene-props-push-test.mjs || fail=$((fail + 1))
 # ①(2026-09-21 真机第12/13条) 预览框：**媒体不裁切 + 与占位不并排 + 同框可见 ≤ 1**。
 #   真机现场：暂停键左边的预览图被切掉一块、右边约 1/4 是白块写着 `mp4`（换目录后同形，白块不走）。
 #   根因：`.mpw_wallThumb` 是 flex 行，`<img>/<video>`（width:100% + object-fit:cover）与类型占位
@@ -319,14 +326,14 @@ node tools/scene-props-push-test.mjs || fail=1
 #   URL（留白由模糊铺满层兜底 ⇒ 不裁切也没有"左右各 1/5 白块"）。
 #   C 组单一落点判据（占位显隐只有 mpwThumbSync 里的 3 处写入；事件入口只许"收起"）+ 旧实现对照。
 #   39 通过 / 0 失败。真机读数与两条真机探针见 docs/RELEASE.md。
-node tools/thumb-chain-test.mjs || fail=1
+node tools/thumb-chain-test.mjs || fail=$((fail + 1))
 # ①(2026-10-12 用户第 ① 条「画面左右各被切掉一部分」的**插件侧**同族缺陷) 场景**静态合成**的适配档：
 #   旧行为恒 `cover`（`scale = Math.max(vw/W, vh/H)`）⇒ 16:9 素材铺进非 16:9 的框会裁长边两端
 #   （真机截图 3392×2400 = 1.41333 ⇒ 左右各 10.31%，见 ../docs/reports/CROP-TEXT-POSITION-DIAGNOSIS.md §11/§12）。
 #   本档钉：缺省 `contain`（整幅可见、四边裁切 0.00%）+ 显式 `cover` 反向读数（左右各 10.25%）+
 #   `?scenefit=cover` 与设置 `sceneFit:"cover"` 两个回退口 + 算式唯一（旧裸 cover 必须已移除）+
 #   源级变异自证（缺省改回 cover ⇒ 必红，期望红集==实际红集）；9 断言；~0.2s；无浏览器/无语料。
-node tools/scene-fit-contain-test.mjs || fail=1
+node tools/scene-fit-contain-test.mjs || fail=$((fail + 1))
 # ①(2026-09-23 用户第 4 项「支持导入 pkg 单文件和 mpkg 文件」) 导入链回归 —— 依据核验报告
 #   `../docs/PKG-IMPORT-VERIFICATION-20260923.md`（12 条缺口 G1~G12）。原状（本机可复现）：
 #   单文件 `.pkg`（真机 magic `PKGV0022`）**没有任何入口**（accept 不含 .pkg、嗅探只认 PKGM
@@ -348,13 +355,13 @@ node tools/scene-fit-contain-test.mjs || fail=1
 #     D 用户原话硬语义：预检只吃条目表（**不依赖 preview / project.json**——上游 oneincase
 #       的包这两者一般是缺失的）；
 #     E 变异自证 6 组（accept / 嗅探 / preview 路由 / 失败清理 / 回收 / reason 两处各自承重）。
-node tools/pkg-import-test.mjs || fail=1
+node tools/pkg-import-test.mjs || fail=$((fail + 1))
 # ①(P-309 2026-10-11 资源审计 #4 剩余半) 上传副本**内容哈希去重**：`/upload` 边收边算 sha256（流式）⇒
 #   `hash → token` 命中且旧副本仍在 ⇒ 复用旧 token/路径、丢弃本次落盘（清掉磁盘双份 + files 双条目）；
 #   命中刷新 lastUsed；回收时同步清索引；**任何失败都回退随机 token**（去重不破坏导入）。
 #   回退位 `MPW_UPLOAD_DEDUP=0`（环境变量 ⇒ 不进 URL 开关表）。判据：A 去重语义五条 + B 回退档 + 变异自证
 #   （撤掉"命中即复用" ⇒ 期望红集 == 实际红集 == ["A2","A3","A4","A4b"]）。详见 docs/RESOURCE-AUDIT-20260923.md。
-node tools/upload-dedup-test.mjs || fail=1
+node tools/upload-dedup-test.mjs || fail=$((fail + 1))
 # ①(2026-09-27 类型判定轮) 同一路线的**类型判定**判据（`/custom-dir` 目录级判定）：用户点名
 #   「包含 mp4 的 scene 壁纸的 MPKG 形式会不会被只识别成 MP4、丢掉 scene 效果」。
 #   实测错判（真机可复现）：`signals.scene` 第三顺位是**任意 `.pkg/.mpkg`** ⇒ "是容器就是场景"；
@@ -366,11 +373,11 @@ node tools/upload-dedup-test.mjs || fail=1
 #   判据 48 条（合成判定表 + 7 个真包实测 + 客户端档位/分流顺序 + 回退口 + 3 组变异必红）：
 #   `node tools/type-detect-test.mjs`（离线、不读大视频、语料缺失自动 SKIP）；判定表与实测对照
 #   见 `docs/TYPE-DETECT.md`。回退口：`typedetect=legacy`（请求体）/`DSH_WE_TYPEDETECT=legacy`（env）。
-node tools/type-detect-test.mjs || fail=1
+node tools/type-detect-test.mjs || fail=$((fail + 1))
 # 真机探针的**纯判据**（--selftest）常驻在这里：探针本身不进门禁（要用户 :3080 在跑），
 # 但"探针的判据还有没有分辨力"是秒级的 —— 不常驻的话探针会悄悄退化成恒绿。
-node tools/scan-switch-live-probe.mjs --selftest || fail=1
-node tools/np-axis-live-probe.mjs --selftest || fail=1
+node tools/scan-switch-live-probe.mjs --selftest || fail=$((fail + 1))
+node tools/np-axis-live-probe.mjs --selftest || fail=$((fail + 1))
 # ①(2026-09-21 用户第 11 条) 网页壁纸风险预检（重动画 / 需外网）**单查接口**：
 #   来历：预检本来只藏在两次目录扫描的返回值里（形状各不相同、导入前没法单查）⇒ 测试台要显示
 #   两个标记只能自己再解析一遍目录。现在判定只有一处实现（模块级 probeWebWallpaper），
@@ -379,7 +386,7 @@ node tools/np-axis-live-probe.mjs --selftest || fail=1
 #   htmlFile,scannedBytes,reasons,limits}）/ 正负例（骨骼动画 + 外链 vs 干净目录 vs 只引回环）/
 #   参数闸门（400/403/404）/ 扫描条目与单查结论逐项一致 / 递归只有一份定义（源码级）。
 #   形状契约：docs/WEB-WALLPAPER.md §3.4。26 通过 / 0 失败。
-node tools/web-probe-test.mjs || fail=1
+node tools/web-probe-test.mjs || fail=$((fail + 1))
 # ①(2026-09-22 漏音：总线级静音) `audio-bus-test`：内核 `lib/audio-bus.js` 的**离线**判据 37 条 ——
 #   直连 `ctx.destination` 必须被改接到每 ctx 懒建的 masterGain（挂 `AudioNode.prototype`，不是 AudioContext.prototype）、
 #   master 自己那一下走原始 connect（无递归）、`connect` 返回值按真 API 语义返回**调用方传进来的 dest**、
@@ -388,39 +395,39 @@ node tools/web-probe-test.mjs || fail=1
 #   静音期 `play()` 压制且返回**已 resolve** 的 Promise、`start(when)` 迟到分 burst/jitter 且**只记录不阻止**、
 #   `new Audio()`/Shadow DOM/`speechSynthesis`/WebRTC track/跨域"不可控清单"归因、档位 `off|report|redirect|1|all` 与跨 realm 幂等。
 #   ~0.1s，无浏览器无网络。真机那半由 `tools/audio-bus-live-probe.mjs` 负责（**待接线后启用**）。
-node tools/audio-bus-test.mjs || fail=1
+node tools/audio-bus-test.mjs || fail=$((fail + 1))
 # ①(2026-09-22 接线) `audio-bus-wiring-test`：`lib/client.js` 里的 MPW-AUDIO-BUS 内联块是**生成产物**
 #   （client.js 是单文件产物，页面没有模块图 ⇒ 只能内联，与 now-playing 同款）。判据：块必须**逐字**包含
 #   `lib/audio-bus.js` 的当前源码（改源不重跑生成器 ⇒ 红）、顶层真的调用了安装入口且幂等、模式纯函数口径
 #   （顶层缺省 `redirect` 只归因 / 帧内缺省 `1` 真压 / 显式档照办 / 帧内不接受 `redirect`）、静音跟随设置
 #   `mute` 同步（800ms 轮询 + 走模块 API）、三条分辨力自证。20 断言，~0.1s，无浏览器。
-node tools/audio-bus-wiring-test.mjs || fail=1
+node tools/audio-bus-wiring-test.mjs || fail=$((fail + 1))
 # ①(P-225 2026-09-30 用户实测"幽灵声音") 探针侧静音纪律：tools/*.mjs 里每个 `firefox.launch`/
 #   `chromium.launch` 调用点都必须带 `_audio-mute.mjs` 的三件套（volume_scale=0 + 禁自动播放 +
 #   音频通道默认静音）——无头 Firefox(Nightly) 加载测试台/插件面时自动播放会真的建出 PulseAudio 流。
 #   静态扫（纯 Node ~0.1s）+ 三件套逐键钉值 + 反例自证（改坏必红）+ MPW_PROBE_AUDIO 逃生门。
-node tools/audio-mute-discipline-test.mjs || fail=1
+node tools/audio-mute-discipline-test.mjs || fail=$((fail + 1))
 #  ①(2026-10-01) 半透明主题适配（应用外框 / 输入框磨砂 / ≥4K 提示）——issue #4 的 (A)(B)(C) 收口判据（纯 Node 桩 DOM，23 断言 + 5 组变异自证）
-node tools/theme-assist-test.mjs || fail=1
+node tools/theme-assist-test.mjs || fail=$((fail + 1))
 #  ①(2026-10-02 桌面端兼容) 宿主基址兜底（file:// 档 → dsh.internal）/ ffprobe 跨平台探测链 / 只读排查通道（22 断言含 7 组变异）
-node tools/desktop-compat-test.mjs || fail=1
+node tools/desktop-compat-test.mjs || fail=$((fail + 1))
 #  ①(2026-10-02 表面模型重做) mpwSurfacePlan 唯一源：透明度 0=不透明/100=全透明（与模糊解耦）、
 #  基色=宿主自己的表面色、四表面同色同透同半径、**透明度 0 ⇒ 完全不覆盖宿主**（含聊天区顶栏
 #  不注入磨砂层）、单独动过即独立（*UserSet）+「恢复跟随」（74 断言含 7 组变异自证，纯 Node 桩 DOM）
-node tools/fog-model-test.mjs || fail=1
+node tools/fog-model-test.mjs || fail=$((fail + 1))
 # ①(P1B 2026-10-03) 左栏收起动画卡顿：全文档扫描类重活的共享闸门（mpwHeavyGate，动画在跑
 #   ⇒ 跳过 + 400ms 补跑；sblur/popTag/hdrBlur 三工人接线）+ ?mpwperf=off 测量对照档。
 #   判据 16 条：闸门行为（拦下/零布局/补跑/账目）+ 接线静态断言 + 变异自证。
 #   读数与机制：docs/ANIMATION-PERF.md（P1A 探针 tools/sidebar-anim-probe.mjs）
-node tools/anim-guard-test.mjs || fail=1
+node tools/anim-guard-test.mjs || fail=$((fail + 1))
 # ①(第13条 用户点名"长期没修好"的 bug) 选择文件夹/选择文件的选择器：
 #   滚动位置（重渲染/容器被重建后不跳顶）、不抢焦点、键盘导航、500 项大目录、滚轮不串联宿主。
 #   A 组源码级（**同一套断言对 `git show HEAD:lib/client.js` 必须变红** ⇒ 证明用例有分辨力）
 #   B 组假 DOM + 迷你 React（切 lib/client.js 的 MPW-DIRPICK 块，跑生产实现）
 #   规格/根因/行为契约：docs/DIR-PICKER-SCROLL.md
-node tools/dir-picker-test.mjs || fail=1
+node tools/dir-picker-test.mjs || fail=$((fail + 1))
 # P-66（2026-09-15）：①渲染错误边界（catch 里引用 try 块内 const h → 真因被吞）②zh/en 字典键对齐
-node tools/panel-fixes-test.mjs || fail=1
+node tools/panel-fixes-test.mjs || fail=$((fail + 1))
 # ①(NP-1 2026-09-19 用户第 1 条「now playing 挂载到 dsh 设置上面 有一个开关启用是否挂载
 #   左边栏收起就隐藏」) Now playing：
 #   · 形态：源 lib/now-playing.js + lib/now-playing-math.js **逐字节内联**进 lib/client.js 的生成区
@@ -440,21 +447,21 @@ node tools/panel-fixes-test.mjs || fail=1
 #   生成区漂移门禁有**两条独立实现**，都常驻在这一步里：下面这条是生成器自己复算整块生成区并核对；
 #   紧跟的那份是从产物里把两份源的正文抠出来逐字节比（A2/A3/A4/A5）。两条都要 ——
 #   前者防"生成器与产物不一致"，后者防"产物里的正文被人手改过"。
-node tools/build-now-playing.mjs --check || fail=1
-node tools/now-playing-test.mjs || fail=1
+node tools/build-now-playing.mjs --check || fail=$((fail + 1))
+node tools/now-playing-test.mjs || fail=$((fail + 1))
 # ①(NP-3 2026-09-19) Now playing 的**声音接线**（数据源判定 / 音轨清单路由 / 播放落点 / 静音落点 /
 #   让位）：数据源只认"当前真的在放"的那个媒体（页面里那个隐藏空壳 #mpw-bgVideo 不算）；
 #   清单作用域认 mpkgKey="custom|<folder>"（自定义目录的 web 壁纸没有 folderName —— 旧写法拼成
 #   library 路由 ⇒ 404 ⇒ 目录里的音频永远接不上）；上一首/下一首按清单顺序（不是"回到开头"）；
 #   静音写设置**并且**落到 video/audio/帧内元素；宿主同一位置已有别的插件的元素 ⇒ 不挂/撤下且不重建
 #   （data-mpw-np-yield）。12 组变异自证各自必红。设计与根因：docs/NOW-PLAYING-DSH.md §7.7
-node tools/np-media-test.mjs || fail=1
+node tools/np-media-test.mjs || fail=$((fail + 1))
 # ①(NP-4 2026-09-19 真机修复) Now playing 的**控制面**（电平 / 起播顺序 / 拖动 seek / ② 联动开关 /
 #   ④ 清单可播性 / ⑤ 借宽放大 / ⑥ 对外的接口面）：真机六条各自"修前读数 → 修后读数"的可复现判据。
 #   为什么单开一条：这六件事里五件是"**同一个动作落到谁身上**"（静音 vs 音量、起播用了哪个 muted、
 #   拖动影响壁纸还是只影响声音、清单能不能真取到字节、借宽借谁的像素）—— 界面看着对是判不出来的，
 #   必须对着真实元素 / 真实 URL / 真实矩形断言。11 组变异各自必红。根因/读数：docs/NOW-PLAYING-DSH.md §7.8
-node tools/np-control-test.mjs || fail=1
+node tools/np-control-test.mjs || fail=$((fail + 1))
 # ②①③④⑤⑥(2026-09-20 真机修复轮) 壁纸**生命周期**门禁：换档成套重写（残留 webUrl 不许抢先武装）/
 #   挂载裁决 / URL 形状跟着条目来源（custom|library|container 三类唯一形状）/"当前壁纸"预览候选链
 #   （web 档不再空白）/ 弹层容器不得被我们打成侧栏（设置面板被压缩进左栏那条，真机读数 800→254px）/
@@ -463,7 +470,7 @@ node tools/np-control-test.mjs || fail=1
 #   切页静音（powPauseHidden 新默认 + 迁移）/ 交互音与角色语音不进播放器清单（纯分类器 + 依据）/
 #   联动开关关闭的语义（关＝不碰壁纸、开＝按卡片状态对齐）。13 组变异各自必红。
 #   真机读数与同类审计：docs/WALLPAPER-LIFECYCLE.md
-node tools/wallpaper-lifecycle-test.mjs || fail=1
+node tools/wallpaper-lifecycle-test.mjs || fail=$((fail + 1))
 # ①(2026-09-18) 「开关必须真的接线」审计（功能静默无效这一类的通用判据）：
 #   来历是真事故：「配色」(accent) 与「深底文字可读增强」(aquaTextEnhance) 两段 CSS 被一起
 #   包在 `if (aquaOn(section))` 里 ⇒ 只开这两个开关时规则根本不生成（开关能点、没效果、不报错）。
@@ -472,7 +479,7 @@ node tools/wallpaper-lifecycle-test.mjs || fail=1
 #   （修好则必须从表里删，双向断言防"遮羞布"—— 2026-09-19 该表**已清空**：lgCss/sessionFollow 已修好，
 #   glassWindow 按用户"不留看得见却点不动的死文案"政策**退役删除**，转由 A0 段看住
 #   "源码 0 悬空引用 + 两套字典 0 孤儿文案"，并配常驻变异 `retired-glasswindow-copy-restored`）。
-node tools/switch-wiring-test.mjs || fail=1
+node tools/switch-wiring-test.mjs || fail=$((fail + 1))
 # ①(2026-09-23 静默失败审计，../docs/SILENT-FAILURE-AUDIT-20260923.md §A-1/§A-2/§A-10 + 资源审计 §2.1 #2)
 #   上面那条管"开关有没有接线"，这一条管**同一类事故的另一半：失败有没有留下痕迹**。四条修的都是
 #   "把失败当成正常值"，各自的既有门禁只覆盖主路径，没有一处钉住"失败要报/要计数/要拒绝写回"：
@@ -491,28 +498,28 @@ node tools/switch-wiring-test.mjs || fail=1
 #   ⑤ 结构性护栏：np 播放器 blob 兜底 URL 的每一处清 src 都必须伴随 `npBlobUrlSet("")`
 #      （资源审计 #2：修前该 URL 从不 revoke，自动连播每曲钉一支 ≤32MiB 的 Blob 到页面卸载）。
 #   判据：34 通过 / 0 失败，纯自造桩环境（无浏览器/网络/ffmpeg/语料，约 8s）+ **7 组变异各自必红**。
-node tools/silent-failure-guards-test.mjs || fail=1
-node tools/we-json-tolerance-test.mjs || fail=1
+node tools/silent-failure-guards-test.mjs || fail=$((fail + 1))
+node tools/we-json-tolerance-test.mjs || fail=$((fail + 1))
 # ①(2026-09-18 §5 第3项)「诊断自证闭环」：payload 补齐关键子系统（磨砂/侧栏/时间线是否被影响、
 #   壁纸类型与路径、shim 是否注入、视频解码、表面 token、场景健康），**每个字段带来源（provenance）**，
 #   读不到 ⇒ 字段仍在 + value:null + degraded.reason（部分子来源缺 ⇒ degraded.partial）——绝不静默省略；
 #   一键发送 POST /diag 拿宿主落点，宿主不可用 ⇒ 下载 JSON（离线可用）；
 #   客户端单份字节上限 + 宿主 diag 目录"数量 + 合计字节"双上限、最旧先删（都直接调真实现断言）。
 #   字段表/怎么发/落在哪/上限：docs/DIAGNOSTICS.md
-node tools/diag-subsystem-test.mjs || fail=1
+node tools/diag-subsystem-test.mjs || fail=$((fail + 1))
 # ①(2026-09-20 同类缺陷一并修) 宿主两个 POST 接收端的**超限语义**（真 HTTP + 变异自证）：
 #   超限 ⇒ **413 + JSON 说明**（旧实现 `req.destroy()` ⇒ 客户端只看到 ECONNRESET）、超限**不落盘**、
 #   跨源（`Origin: null`）也带 CORS 头能读到原因；判据有没有分辨力由"改回 req.destroy() 必红"自证。
-node tools/host-body-limit-test.mjs || fail=1
+node tools/host-body-limit-test.mjs || fail=$((fail + 1))
 # ①(MEDIA-1 接线 2026-09-20) 系统媒体会话**接线**：宿主三路由（21 键透传 / op 白名单 / 封面只服务当前快照的
 #   玩家）+ 客户端补充路径（同步 npResolveMedia 不动 / 自适应轮询 2s↔30s / available:false 不接管 /
 #   封面走代理 / 传输改道带能力位）+ 本机诚实降级（无会话总线 ⇒ available:false + reason）。
-node tools/media-session-wiring-test.mjs || fail=1
+node tools/media-session-wiring-test.mjs || fail=$((fail + 1))
 # ⓪(2026-09-16 两个真机 bug 的回归门禁)：
 #   bug① 右侧「轮次导航条」(.eGxaPq_*/--dsw-alias-border-l4) 不被我们的样式/token 覆盖弄透明；
 #   bug② 标题栏磨砂注入链（假 DOM：注入 + 内联样式 + 半透明底 + 宿主标记 + 诊断 reason + 回退开关）。
 #   详见 docs/HEADER-FROST.md、docs/TIMELINE-RAIL-TOKEN.md
-node tools/frost-rail-test.mjs || fail=1
+node tools/frost-rail-test.mjs || fail=$((fail + 1))
 # ⓪(2026-10-11 P-307 用户 bug「展开智能体团队 ⇒ 左侧边栏模糊消失」)：
 #   `setupSblurObserver()` 的 `check()` 第一支原来**全文档**找"近全屏 fixed 弹层"；智能体团队面板是
 #   DSH `createPortal(…, document.body)` 的 `.VoX2oq_panel`（role=dialog / fixed / 最高 680px）⇒ 与侧栏
@@ -520,16 +527,16 @@ node tools/frost-rail-test.mjs || fail=1
 #   侧栏磨砂摘掉；收起即恢复（与用户描述逐字吻合）。修法：第一支限定为"真的是 sidebarCol 后代"
 #   （第二支本来就这样）+ 回退位 `?sblurscope=legacy`。判据三段（A 切片纯逻辑 / B 桩上真 check() 的
 #   属性落点 / C CSS 面）+ 变异自证（撤掉修法 ⇒ 期望红集恰为 ['A1']）。详见 docs/HEADER-FROST.md §8。
-node tools/sidebar-frost-team-panel-test.mjs || fail=1
+node tools/sidebar-frost-team-panel-test.mjs || fail=$((fail + 1))
 # ①(2026-09-17 壁纸层可见性轮) `.mpw-bgWrap`：有壁纸源时**不得** display:none（且两种 none 正常语义
 #   ——"无源" vs "面板不透明度 100" ——必须可判别）；有源时 `img.src` 必须留下（旧写法 showImageEl 里
 #   无条件清 src ⇒ "图层在但没有画面"，真机表现为刷新后图片/GIF 壁纸不显示）；`?bgwrapfix=legacy` 回退开关接线。
 #   判据/证据/复测方法：docs/BGWRAP-VISIBILITY.md；真机测量器 tools/bgwrap-display-probe.mjs。
-node tools/bgwrap-visible-test.mjs || fail=1
+node tools/bgwrap-visible-test.mjs || fail=$((fail + 1))
 #  ①(2026-09-25 P-184 同类普查) 慢判（12s"有 src 但一直没有画面 ⇒ 强制重挂一次"）判的必须是**真的画出来了**：
 #   section 档原判据 `canvas.width>0` 会退化成"元素存在"（draw() 一开始就按视口设宽高，图层 URL 全 404 时也成立）
 #   ⇒ 自愈永不触发、永久空白且无告警。判据/读数/改前改后矩阵：tools/bgpaint-heal-test.mjs。
-node tools/bgpaint-heal-test.mjs || fail=1
+node tools/bgpaint-heal-test.mjs || fail=$((fail + 1))
 # ①(2026-09-17 独立成线) 壁纸**刷新不丢**（持久化）：壁纸 dataURL 常内联在 STORE_KEY 的整串 JSON 里，
 #   而 localStorage 单值硬顶 256KB（超限**拒写**）、宿主 /settings 又明确跳过 image ⇒ 落在
 #   (256KB, 2MB] 的壁纸（本机语料实测 **34/34 全部命中**，量法见 tools/persist-size-scan.mjs）
@@ -537,7 +544,7 @@ node tools/bgpaint-heal-test.mjs || fail=1
 #   "重载"（同一份 localStorage+IDB 再跑一次 apply）后恢复 / IDB 不可用时留痕+告警（不静默）/
 #   小图原路径不变 / `?mpwpersist=legacy` 与"删掉读侧 dataURL 分支"的变异必须变红。
 #   判据与阈值表：docs/PERSISTENCE.md。
-node tools/persist-test.mjs || fail=1
+node tools/persist-test.mjs || fail=$((fail + 1))
 # ①(2026-09-19 设置持久化轮 · 真机"壁纸选择字段会丢")：真机两处存储都成了**半残档**
 #   （`mpkgKey:"custom|3582362359"` 还在、`image`/`webUrl` 都没）⇒ buildCss 的 hasImage=false
 #   ⇒ `.mpw-bgWrap{display:none}` ⇒ **用户的壁纸不显示**（tools/settings-persist-live-probe.mjs 实测）。
@@ -548,8 +555,8 @@ node tools/persist-test.mjs || fail=1
 #     · 用户主动"清空壁纸"**仍然**能被清空（自愈不是"删不掉"）。
 #   宿主侧同一条契约（PUT 合并不替换）另有源码守卫 + 行为断言；6 组变异各自必红。
 #   根因链/修法/判据/诚实清单：docs/SETTINGS-PERSIST.md
-node tools/settings-persist-test.mjs || fail=1
-node tools/blob-media-retry-test.mjs || fail=1
+node tools/settings-persist-test.mjs || fail=$((fail + 1))
+node tools/blob-media-retry-test.mjs || fail=$((fail + 1))
 # H(2026-09-25 真机"后台挂载期起播") 隐藏闸门：Android 把后台标签冻结→丢弃→**在后台重新加载**时，
 #   页面在 `document.hidden === true` 下走了一遍完整挂载；而 C 那轮的闸门只挂在"上一轮省电跑过"
 #   （`powPaused`）与三条补起播入口上，**14 处 play() 一处都没查 document.hidden** ⇒ 后台重载那条路
@@ -562,7 +569,7 @@ node tools/blob-media-retry-test.mjs || fail=1
 #     flock /tmp/.mpw-firefox.lock -c 'node tools/hidden-gate-browser-probe.mjs'
 #   它用真 Firefox + 真 `<video>` + 真 `visibilitychange` 事件证明同一件事（17 通过 / 0 失败），
 #   且不导航到任何在跑的服务（页面由 page.route 本地 fulfil，fetch 被换成桩）。
-node tools/hidden-gate-test.mjs || fail=1
+node tools/hidden-gate-test.mjs || fail=$((fail + 1))
 
 fi                                     # ← 第 2 步结束
 gate_end 2
@@ -570,7 +577,7 @@ if [ "$MODE_QUICK" = 0 ]; then
   step "3/12 CSS 组合矩阵（512 全组合 + 600 随机 + 边界；8 类历史回归断言）"
   gate_begin 3
   if [ "$GATE_RUN" = 1 ]; then           # ← 缓存命中时整块跳过（SKIP-CACHED）
-  node tools/css-matrix.mjs || fail=1
+  node tools/css-matrix.mjs || fail=$((fail + 1))
   fi                                     # ← 第 3 步结束
   gate_end 3
 else
@@ -580,7 +587,7 @@ fi
 step "4/12 场景看门狗/调试参数回归（批次15：B1/B3/B5 + 作用域修复 P0）"
 gate_begin 4
 if [ "$GATE_RUN" = 1 ]; then           # ← 缓存命中时整块跳过（SKIP-CACHED）
-node tools/scene-watchdog-test.mjs || fail=1
+node tools/scene-watchdog-test.mjs || fail=$((fail + 1))
 
 # 批次18 / B6：渲染器沙箱（去 allow-same-origin）+ 场景级短期 token
 # 契约 we-scene-demo/RENDERER-SANDBOX-CONTRACT.md；两侧各自回归，宿主侧只走拒绝路径（不落盘）。
@@ -591,9 +598,9 @@ gate_end 4
 step "5/12 B6 沙箱与场景 token + 网页壁纸 shim 沙箱（客户端模式/回退 + 宿主签发与 Origin:null 闸门）+ P-204/P-205 安全闸门（路由来源 F1–F4 / 网页帧同源逃逸 F5 / 可控上游+st 下发 F6）"
 gate_begin 5
 if [ "$GATE_RUN" = 1 ]; then           # ← 缓存命中时整块跳过（SKIP-CACHED）
-node tools/scene-sandbox-test.mjs || fail=1
-node tools/host-sandbox-token-test.mjs || fail=1
-node tools/web-wallpaper-test.mjs || fail=1
+node tools/scene-sandbox-test.mjs || fail=$((fail + 1))
+node tools/host-sandbox-token-test.mjs || fail=$((fail + 1))
+node tools/web-wallpaper-test.mjs || fail=$((fail + 1))
 # ①(2026-09-28 B1 迟到翻盘修复) **切到 scene 后 1 秒内切走 ⇒ 约 8s 后档位/画面/两处存储被改回旧 scene**
 #   （压测报告 docs/reverse/STRESS-RAPID-SWITCH-20260925.md §S2/S4/S5，真机已复现）。
 #   根因：`mpwSandboxArmStrictWatch` 的 8s 一次性定时器**换档不取消** + `mpwSandboxFail`/`mpwSandboxMaybeUpgrade`
@@ -602,14 +609,14 @@ node tools/web-wallpaper-test.mjs || fail=1
 #   判据：G1 挂载即武装 → G2 切走后取消 + 把（未取消时就会到点的）真回调推到点 ⇒ 档位保持最后一次选择
 #   （内存 + localStorage 两处）→ G3 切回同一 scene 合法重挂照旧 → G4 token 迟到的同族路径 →
 #   G5 6 组变异各自必红。74 通过 / 0 失败，~1s。规格/回退口/未验证边界见 docs/SCENE-STALE-COMMIT.md
-node tools/stale-scene-commit-test.mjs || fail=1
+node tools/stale-scene-commit-test.mjs || fail=$((fail + 1))
 # ⓪①(2026-09-27 P-204 安全审计 F1–F4) 宿主路由的**来源闸门**（三处 ACAO 回显白名单化 / 非 GET 的
 #   Sec-Fetch-Site+Origin 闸门 / customDir 敏感目录黑名单 / `/raw` 扩展名白名单 / 令牌按真身份签发）。
 #   判据：A 段把审计报告 §4.1 那条**已复现的攻击链**自动化（修后 403、无 ACAO；回退档
 #   `MPW_CSRF=0`+`MPW_CORS_LEGACY=1`+`MPW_CUSTOM_DIR_ALLOW_ANY=1` 下同一发请求 200 + ACAO 回显 +
 #   密文读回 = 旧行为逐条重现），B 段纯函数矩阵，C 段 4 组变异必红。45 通过 / 0 失败，~1s。
 #   规格/回退口/未验证边界：docs/SECURITY-ROUTES.md
-node tools/sec-route-guard-test.mjs || fail=1
+node tools/sec-route-guard-test.mjs || fail=$((fail + 1))
 # ①(2026-09-28 P-205 安全审计 F5) 网页壁纸**同源逃逸**（审计时因 lib/client.js 被并行线占用留到本轮）：
 #   改前两条自动降档路径（`webShimArm` 的 2.5s 兜底 / `mpwWebSandboxFallback` 的"策略类错误"兜底）把帧的
 #   sandbox 属性写成 allow-scripts+allow-same-origin ⇒ 作者页 `parent.postMessage` 一条含
@@ -621,7 +628,7 @@ node tools/sec-route-guard-test.mjs || fail=1
 #   C 回退口打开才降 compat 且台账标 risk=same-origin；D 3 组变异必红（去 origin 校验/去 source 校验/
 #   强制自动进 compat）。45 通过 / 0 失败，~9s。
 #   规格/回退口/未验证边界：docs/SECURITY-ROUTES.md 的 F5 一节
-node tools/web-frame-origin-guard-test.mjs || fail=1
+node tools/web-frame-origin-guard-test.mjs || fail=$((fail + 1))
 # ①(2026-09-28 P-205 安全审计 F6) **可控上游 + `st` 下发**（同一轮）：
 #   改前 `sceneRendererUrl`/`sceneExtUrl` 读到什么就拼进渲染器 iframe（`?extbase=`），宿主签发的场景
 #   token `st` 也随 `pkgurl` 一路下发 ⇒ 设置被改到攻击者源就等于把令牌送出去。修法：设置里的外链只认
@@ -632,11 +639,11 @@ node tools/web-frame-origin-guard-test.mjs || fail=1
 #   C 白名单放行档 ⇒ 带 st（回退口）；D 同主机字面 IP 放行、域名不算（DNS 重绑定）；E 非 http(s) 拒绝；
 #   F 纯函数矩阵；G 4 组变异必红（去目标闸门/去目标+st 双闸门 ⇒ 令牌真外发/白名单任意放行/同主机恒真）。
 #   41 通过 / 0 失败，~4s。规格/回退口/未验证边界：docs/SECURITY-ROUTES.md 的 F6 一节
-node tools/scene-url-token-guard-test.mjs || fail=1
+node tools/scene-url-token-guard-test.mjs || fail=$((fail + 1))
 # ①(2026-09-16 第 11 条) 网页壁纸**交互注入**：坐标换算 / 事件整形（button:-1 哨兵、click 边缘合成）/
 #   注入开关状态机（60s idle + 180s maxAge + Esc/失焦/卸载都能关）/ 沙箱边界（交互不放宽 sandbox、
 #   不读帧内 DOM）/ 舞台契约（默认不挡宿主）/ 与 client.js 内嵌段逐字段对拍。见 docs/WEB-WALLPAPER.md §11
-node tools/web-interaction-test.mjs || fail=1
+node tools/web-interaction-test.mjs || fail=$((fail + 1))
 # ⓪(2026-09-17 用户第 1 条) 视频壁纸**转码资源占用 / 误判转码**回归：
 #   可播性闸门（可直读就不起 ffmpeg）/ 缓存复用（键不含时间戳）/ 并发上限 1 /
 #   产物数量+字节双上限与最旧先删 / 启动清理 / 取消即 kill 且不重试 / 内存准入 /
@@ -648,28 +655,28 @@ node tools/web-interaction-test.mjs || fail=1
 #   F2 8bit 非 4:2:0 也降 yuv420p（否则转出浏览器同样放不出的 4:2:2/4:4:4 并被当有效缓存）、
 #   F6 h264+opus 判据看容器（MKV/WebM 放行、MP4 拦下）、VP9/AV1 高位深 profile 判"吃不下"。
 #   详见 docs/TRANSCODE-RESOURCE.md
-node tools/transcode-limit-test.mjs || fail=1
+node tools/transcode-limit-test.mjs || fail=$((fail + 1))
 # ①(2026-10-03 审计 F5 收口) 自带下载**成对装 ffprobe**（同源 ffmpeg-static ffprobe-* 资产；
 #   sha256 钉值/魔数/长度校验，失败不落盘不覆盖、不影响 ffmpeg 本体）+ ffprobe 缺席机器的
 #   **次选探测**（ffmpeg -i 的 stderr 解析，probeSource 台账字段）。判据 20 条：
 #   桩下载端点断言落盘/拒绝/零请求早退 + 真 mp4 双路 verdict 一致 + 变异自证。
 #   详见 docs/TRANSCODE-RESOURCE.md §ffprobe
-node tools/ffprobe-provision-test.mjs || fail=1
+node tools/ffprobe-provision-test.mjs || fail=$((fail + 1))
 # ①(2026-10-04) 「只剩 image token、身份/类型全空」那条半残档（真机：刷新偶尔壁纸加载不出来 ⇒
 #   类型变 image、名字/图标空、预览破图；重新在目录里点一次「使用」又好了）。判据 9 条：
 #   该形状必须判成半残档（旧判据要求有 mpkgKey/source 线索 ⇒ 漏判）+ 从 token 反推身份 key
 #   （mpkg 名 / ltoken / folder 三种形状）+ 不许误伤完整档与空档 + 自愈链真的用这个 key 尝试过。
-node tools/source-heal-token-test.mjs || fail=1
+node tools/source-heal-token-test.mjs || fail=$((fail + 1))
 # ①(P3 修复 2026-10-03) 弹层玻璃 backdrop root 被截断（读数 docs/POPOVER-BLUR.md）：
 #   mpwPopUntruncSync 给第一个带 blur 的截断祖先打 data-mpw-pop-untrunc + 静态 !important 规则，
 #   弹层关即撤（宿主逐字还原）；判据 11 条：打标/幂等/还原/硬前提/健康弹层/多层只标第一个/变异自证
-node tools/popover-glass-test.mjs || fail=1
+node tools/popover-glass-test.mjs || fail=$((fail + 1))
 # ①(2026-10-24 加号菜单磨砂首帧) 加号菜单就地渲染在 [data-composer-card] 子树里，对话框虚化给
 #   卡片加的 blur 成为菜单磨砂的 backdrop root ⇒ 去截断补跑前整段无磨砂（重活节流+动画闸门最坏
 #   ~600ms；先开权限面板再点加号时被关闭动画拉得更长）。修复 = 观察器同步快路里对菜单壳做定点
 #   去截断（mpwPopUntruncFast，微任务、渲染前生效）。判据：接线/同步打标/观察器批次/两个反向/
 #   标记保全 + 变异自证（M1 摘接线 ⇒ T2 红；M2 判据恒假 ⇒ T1/T2 红；期望红集 == 实际红集）。
-node tools/plus-menu-frost-test.mjs || fail=1
+node tools/plus-menu-frost-test.mjs || fail=$((fail + 1))
 # ①(2026-09-23 用户第 1 项 B) 视频「按屏幕物理尺寸预缩（ffmpeg lanczos）」档 —— **默认关**：
 #   依据 ../docs/USER-ITEMS-20260921.md 第 19 条实测（`3588989102` 2558×1438@60）：非全屏尺寸上
 #   「一次直降」的**闪烁**是「逐级减半」的 1.6~2.7×，代价是细节低 1.4~1.9× ⇒ 取舍，默认不翻。
@@ -685,7 +692,7 @@ node tools/plus-menu-frost-test.mjs || fail=1
 #     C 客户端：默认关 / 物理宽纯函数（×dpr、夹 [640,3840]）/ 目标宽（关⇒0）/ 四处接线 / 文案 / 登记；
 #     D 变异自证 6 组（vf 去 flags / 键去 `|s:` / 白名单照单全收 / 默认档翻成开 / URL 不传 scale / 闸门拆掉）。
 #   档位登记：docs/TRANSCODE-RESOURCE.md §3 一行（档名/默认关/依据）+ 代码内 /probe limits.scaleFlags。
-node tools/transcode-prescale-test.mjs || fail=1
+node tools/transcode-prescale-test.mjs || fail=$((fail + 1))
 # ①(2026-09-28 用户第 2 项「切档 → 立刻切回 ⇒ 壁纸加载不出来，过一会儿又好了」) **切档竞态回归**：
 #   根因两层：①验活请求（`Range: bytes=0-0`）与 `<video>` 播放请求命中**同一份** in-flight 转码
 #   ⇒ 播放请求一断开（用户切档）就 kill 共享 ffmpeg，验活反而收 502 {ok:false} ⇒ 客户端把"被取消"
@@ -695,7 +702,7 @@ node tools/transcode-prescale-test.mjs || fail=1
 #         B 宿主真路由端到端（桩 ffmpeg）：切档断开只 kill 本任务、验活拿 202 不起 ffmpeg、
 #           半成品不进缓存、台账 phase=cancelled+代际可读、归属（A 断开不误杀 B）、原文件字节一致；
 #         C 变异 7 组各自必红（去代际/否定 TTL 回 20s/去产物魔数/去引用计数/拆验活角色/取消写成 error/关档判成转码）。
-node tools/prescale-switch-race-test.mjs || fail=1
+node tools/prescale-switch-race-test.mjs || fail=$((fail + 1))
 # ①(2026-09-28 用户第 2 项「感觉壁纸过曝了 / 可能还在跑 FFMpeg 转译后的状态」) **色彩/位深保真回归**：
 #   读数（真 ffmpeg + 合成源，量程归一）：8bit tv/bt709 源标签逐字保留、YAVG Δ=-0.05/255；
 #   全范围 pc 源产物仍 pc、Δ=+0.21/255 ⇒ **"过曝"在 8bit 源上复现不出来**（结论写进 docs）；
@@ -703,7 +710,7 @@ node tools/prescale-switch-race-test.mjs || fail=1
 #   现按 `transcodeColorPlan` 显式降 8bit + 声明 bt709/tv 并记台账；8bit 源**一个参数都不加**
 #   （既有产物继续命中、与改动前逐字节相同）。回退口 `DSH_WE_TRANSCODE_COLOR=legacy|force8`。
 #   判据 24 条（含 4 组变异必红）；本机无 ffmpeg 时相关段**显式 SKIP 并计数**，不冒充通过。
-node tools/transcode-color-fidelity-test.mjs || fail=1
+node tools/transcode-color-fidelity-test.mjs || fail=$((fail + 1))
 
 # ①(第16项) 发布前完整性自检：必需文件/package.json 字段/files 白名单/个人路径/凭据形态/图标/门禁脚本在位
 fi                                     # ← 第 5 步结束
@@ -711,78 +718,78 @@ gate_end 5
 step "6/12 发布完整性自检（第16项：文件齐全、元数据、白名单、无个人路径与凭据）"
 gate_begin 6
 if [ "$GATE_RUN" = 1 ]; then           # ← 缓存命中时整块跳过（SKIP-CACHED）
-node tools/integrity-check.mjs || fail=1
+node tools/integrity-check.mjs || fail=$((fail + 1))
 # ①(2026-09-19 敏感信息加固) 密钥/本机绝对路径**常驻扫描**（tracked 全量；秒级，无网络/无浏览器）：
 #   与上面一条**故意并列**而不是并进去，因为覆盖面不同 —— integrity-check ④⑤ 只扫**发布面**（lib/**），
 #   而密钥与本机路径最容易从 docs/tools/CI 配置漏出去（那些目录不进 npm 包、却进公开仓库）。
 #   判据/白名单/退出码见 tools/secret-scan-test.mjs 文件头（白名单逐条写理由，且断言"每条都仍然命中"，
 #   防止白名单腐烂成遮羞布）。**不新增步骤**：integrity-check ⑨b 断言 "N/M" 编号自洽，加一步要全表改分母。
-node tools/secret-scan-test.mjs || fail=1
+node tools/secret-scan-test.mjs || fail=$((fail + 1))
 # ①(2026-09-21 跨平台轮) 跨平台**静态**门禁（秒级 / 无浏览器 / 无网络）：上面 12 步几乎全是"在 Linux
 #   本机跑一遍看行为"，**没有一条**钉住"平台分支真的齐全、不许写成 Linux 独占"—— WSL 只写死 /mnt/c 就是
 #   这类漏网（Steam 装在 D:/E:/… 的 WSL 用户永远扫不到，而本机跑什么都绿）。判据：steamProbeDirs() 纯函数
 #   契约（WSL 盘符枚举可在**非 WSL 机器**上断言 + 三平台各自成根 + 与改前候选逐字节等价）+ tracked 静态卫生
 #   （写死的临时目录/宿主绝对路径台账、shell 可移植、文件名、BOM/CRLF）+ 每类合成反例自证 + 两条"改回去必红"变异。
 #   实测：63 通过 / 0 失败（tracked 127 文件；账本 25 条全部反查命中）。不新增步骤编号（integrity-check ⑨b 断言编号自洽）。
-node tools/cross-platform-test.mjs || fail=1
+node tools/cross-platform-test.mjs || fail=$((fail + 1))
 # ①(2026-10-25 任务 1.2) 扫描页缩略图 OOM 防护调度器判据（纯 Node 桩元素直驱生产函数）：
 #   并发上限/离屏释放/超时推进/LRU 双上限/重试一次/自动降档/非受管不变/scan 装配 8 组契约
 #   + 5 条变异自证（期望红集 == 实际红集）。约 4s。
-node tools/thumb-sched-test.mjs || fail=1
+node tools/thumb-sched-test.mjs || fail=$((fail + 1))
 # ①(2026-10-25 任务 2) 预设配置区块判据（纯 Node 桩渲染直驱生产组件）：
 #   初始化/持久化/位置两入口/切换确认与快照还原/导入安全（恶意样例逐条）/删除/导出/i18n 8 组
 #   + 5 条变异自证（期望红集 == 实际红集）。约 12s（含两轮 3.5s 落盘闸门等待）。
-node tools/preset-test.mjs || fail=1
+node tools/preset-test.mjs || fail=$((fail + 1))
 # ①(2026-10-25 任务 3) dsh-conversation 浮窗层级判据（纯 Node：__mpwBuildCss 产物解析）：
 #   面板层值 60 / 标题栏内祖先盒解困 / 设置·弹层在场让位 + 三组数值比较（输入框/模态/弹层）
 #   + 3 条变异自证（期望红集 == 实际红集）。约 2s。
-node tools/conv-panel-layer-test.mjs || fail=1
+node tools/conv-panel-layer-test.mjs || fail=$((fail + 1))
 # ①(2026-10-31 任务 §3) 大纲面板首帧实底 + 底色单变量判据（纯 Node：真 fastPath 直驱 + 产物解析）：
 #   插入帧/显形帧 t=0 属性即已打（观察器微任务 = 渲染前；a6a7dce 同型快路）/
 #   t=16/50/100/200ms 采样无闪烁 / 稳态幂等 / 非面板不误标 /
 #   background-color 全产物恰 2 处且唯一值来源 = var(--mpw-conv-panel-bg, …)（⑬单变量收敛）/
 #   变量定义默认 = 宿主主题原值（稳态零外观变化）/ 改一个变量即整体改底色
 #   + 2 条变异自证（期望红集 == 实际红集）。约 3s。
-node tools/conv-panel-firstframe-test.mjs || fail=1
+node tools/conv-panel-firstframe-test.mjs || fail=$((fail + 1))
 # ①(2026-10-25 任务 4) 插件市场顶栏半透明磨砂判据（纯 Node：__mpwBuildCss 两态产物解析）：
 #   底色回退 alpha 区间（非纯白/非全透）/ 模糊非 none / 两态同规则 / l1 门控语义不变
 #   + 3 条变异自证（期望红集 == 实际红集）。约 2s。
-node tools/market-topbar-glass-test.mjs || fail=1
+node tools/market-topbar-glass-test.mjs || fail=$((fail + 1))
 # ①(2026-10-28 任务 §1) 左栏收起态三问题判据（纯 Node：__mpwBuildCss 产物解析 + 桩行为）：
 #   两态圆角逐键相等（统一 --mpw-side-radius 令牌）/ 两态 transition 逐字一致（与宿主 grid
 #   过渡同参数）/ 拖拽与 reduced-motion 让位 / tooltip 去裁切（打标/摘标/滚动容器反向）
 #   + 4 条变异自证（期望红集 == 实际红集）。约 6s。
-node tools/sidebar-collapse-geo-test.mjs || fail=1
+node tools/sidebar-collapse-geo-test.mjs || fail=$((fail + 1))
 # ①(2026-11-02 任务①) 侧栏收起态悬浮回归判据（纯 Node：__mpwBuildCss 产物解析）：
 #   收起态悬浮三件套在位（margin/令牌圆角/阴影，无 !important 清零）/ 展开态零变化 /
 #   c1a55a6 的"has([data-sidebar-collapsed]) + sidebarCol 整类清零"回归模式不得复活 /
 #   外壳规则必须带 body[data-mpw-float] 专属门控 + 2 条变异自证（期望红集 == 实际红集）。
-node tools/sidebar-collapsed-float-test.mjs || fail=1
+node tools/sidebar-collapsed-float-test.mjs || fail=$((fail + 1))
 # ①(2026-10-30 任务书 §1) 标题栏悬浮恢复 + 悬浮三面同族判据（纯 Node：产物 CSS 解析）：
 #   注释配平 + 顶层规则前导合法（55da7a8 注释截断 ⇒ 标题栏规则被浏览器整条丢弃的
 #   事故族，text 级断言探不到）/ 三面规则存活 / 圆角·阴影同令牌单源 / float-off 让位
 #   + 3 条变异自证（期望红集 == 实际红集）。约 5s。
-node tools/float-family-geo-test.mjs || fail=1
+node tools/float-family-geo-test.mjs || fail=$((fail + 1))
 # ①(2026-10-28 任务 §2) 标题栏磨砂首帧判据（纯 Node：真 syncHeaderFrost + 真观察器回调）：
 #   同步快路接线 / 零 containing-block / 切会话换 header 后 t=0 与 t=16/50/100/200ms 采样
 #   全稳 / 关档·空栏反向 / 幂等 + 3 条变异自证（期望红集 == 实际红集）。约 3s。
-node tools/hdr-frost-first-frame-test.mjs || fail=1
+node tools/hdr-frost-first-frame-test.mjs || fail=$((fail + 1))
 # ①(2026-10-29 任务书) 光晕 + 「fixed 后代安全」防线判据（纯 Node：真光晕模块直驱 + 产物解析）：
 #   倾斜本体零残留（2026-10-28 §3 的 3D 倾斜因 transform 困 fixed 后代已移除）/
 #   float 三处悬浮规则在且零 transform / 四类面 + fixed 后代祖先链零 transform·filter·perspective /
 #   光晕层形态与显隐 / reduced-motion + 3 条变异自证（期望红集 == 实际红集）。约 4s。
 #   （取代 2026-10-28 的 tilt-glow-test：倾斜断言随功能删除，光晕断言演进保留，改向见测试文件头。）
-node tools/glow-fixed-safety-test.mjs || fail=1
+node tools/glow-fixed-safety-test.mjs || fail=$((fail + 1))
 # ①(2026-10-30 任务书 §2) 面板内光晕判据（纯 Node：真光晕模块直驱 + 产物解析）：
 #   四面（标题栏/左栏/右栏/输入框卡片）--mpw-glow-x/y 随指针更新 / 面规则在场（radial-gradient
 #   叠在面背景上，峰值 alpha 0.12）/ 可见性（alpha=1 写在面上，旧 body 层零残留）/
 #   红线（面与 fixed 后代祖先链零 transform·filter·perspective·contain）/
 #   开关与 float 同闸 / reduced-motion / 淡出 + 3 条变异自证（期望红集 == 实际红集）。约 5s。
-node tools/panel-glow-face-test.mjs || fail=1
+node tools/panel-glow-face-test.mjs || fail=$((fail + 1))
 # ①(2026-10-02 门禁提速轮) 门禁自身的判据：输入键的分辨力（lib/**、tools/**、package.json 改一个字节必变）、
 #   绿缓存跳过 / 红缓存不跳过 / --full 必真跑、--list 12 步、并发第二个实例快速失败且无残留锁。
 #   纯 Node + os.tmpdir() 夹具 + 4 次"只抢锁/只列表"的轻量调用（约 4s，不跑任何门禁步骤）。
-node tools/gate-cache-test.mjs || fail=1
+node tools/gate-cache-test.mjs || fail=$((fail + 1))
 
 # ①(2026-09-15 用户第 1 条反馈「扫描音频的速度能否快些」)
 #   惰性音频索引（只读目录表 + 仅候选条目 16 字节头，带 mtime+size 缓存）+
@@ -797,8 +804,8 @@ gate_end 6
 step "7/12 音频扫描提速（惰性索引 + Range/探测路由；真包与规格参考实现逐项一致）"
 gate_begin 7
 if [ "$GATE_RUN" = 1 ]; then           # ← 缓存命中时整块跳过（SKIP-CACHED）
-node tools/audio-scan-test.mjs || fail=1
-node tools/scene-audio-route-test.mjs || fail=1
+node tools/audio-scan-test.mjs || fail=$((fail + 1))
+node tools/scene-audio-route-test.mjs || fail=$((fail + 1))
 
 # ①(2026-09-15 用户第 1 条反馈 ⑥c) ensureSceneVideo 改「索引先行」：只读目录表 + 仅候选条目前缀，
 #   不再整包 readFileSync、也不再把每个 .tex 的 mipmap 全解压（它在"应用壁纸"关键路径上）。
@@ -810,7 +817,7 @@ gate_end 7
 step "8/12 scene 视频索引（应用壁纸关键路径；旧实现逐项一致 + 缓存 + 缓存文件同名同内容）"
 gate_begin 8
 if [ "$GATE_RUN" = 1 ]; then           # ← 缓存命中时整块跳过（SKIP-CACHED）
-node tools/scene-video-test.mjs || fail=1
+node tools/scene-video-test.mjs || fail=$((fail + 1))
 # ①(2026-09-23 资源审计 #1，docs/RESOURCE-AUDIT-20260923.md §2.1) 上一条用的是"真机语料"
 #   （本机 ../allwallpaper/dd 2.3GB，B/C 段会整包读）—— 本机可用内存只有 ~4GB，常驻门禁不能只靠它。
 #   于是**同一个 step** 下再挂一条纯自造夹具的测试（夹具合计 3.71MiB、峰值堆 <64MB、
@@ -823,7 +830,7 @@ node tools/scene-video-test.mjs || fail=1
 #   单条超上限不入缓存但仍完整返回 / 整条读**之前**腾位置（preReadEvictions）/ TTL 过期与"命中刷新"/
 #   `lib/index.js` 换 scene 目录时真的调了清理 —— 并配**四个变异体各自必红**（去掉字节闸门 /
 #   去掉读前腾位置 / 去掉 TTL sweep / 删掉 index.js 的清理调用）。40 通过 / 0 失败。
-node tools/scene-video-cache-test.mjs || fail=1
+node tools/scene-video-cache-test.mjs || fail=$((fail + 1))
 # ①(2026-10-04) **「只判不取」的 scene 视频 verdict**（对照上游同族 issue #136 的修法；对比报告
 #   ../docs/reverse/ELYSIA-COMPARE-ABSORB-20261004.md）。动机：`ensureSceneVideo` 是"判定 + 提取"
 #   一体的，而客户端卡片/清单阶段只问 `{has}`（lib/client.js 的 sceneVideoCheckUrl 只读 d.has）——
@@ -833,7 +840,7 @@ node tools/scene-video-cache-test.mjs || fail=1
 #   会把 LZ4 链条目当 raw 用；语料 0 命中，但这是构造性缺陷）；③ 接线/结构棘轮（路由先试 verdict、
 #   条目读取必须走 decodeStoredEntry）。含 1 个变异体（去掉压缩判定 ⇒ D3 必红）+ 可选语料段
 #   （verdict 与全量扫描判定一致、读量结构性上界）。15 通过 / 0 失败 / 无浏览器/无网络。
-node tools/scene-video-verdict-test.mjs || fail=1
+node tools/scene-video-verdict-test.mjs || fail=$((fail + 1))
 # ①(2026-09-23 静默失败审计 #3，../docs/SILENT-FAILURE-AUDIT-20260923.md §A-3 表 #3/#4) 上面两条门禁测的是
 #   "探测得对 / 缓存得对"，这一条测"探测或落盘**失败时不许说谎**"：`ensureSceneVideo` 改前把三种状态
 #   压成一个 `null` —— ② 两级探测都抛也写 `{hash:null}` 负缓存（/custom-scene-video-check 永久回
@@ -843,7 +850,7 @@ node tools/scene-video-verdict-test.mjs || fail=1
 #   落盘产物确实不存在 / D 回归（正常可写 ⇒ 200 has:true + 文件真的在 + 字节一致）+ "目录不在"仍是
 #   200 has:false 与 404 —— 并配**两个变异体各自必红**（删探测失败的抛错 ⇒ B 红；删落盘失败的抛错
 #   ⇒ C 红）。纯自造夹具（<8KiB、无浏览器/网络/ffmpeg、不读语料），实测 20 通过 / 0 失败、512ms。
-node tools/scene-video-probe-fail-test.mjs || fail=1
+node tools/scene-video-probe-fail-test.mjs || fail=$((fail + 1))
 
 # ①(2026-09-16 第三个视觉 bug 定案轮) 「顶栏磨砂 / 顶栏描边 / 时间线条」的**真机复刻 A/B**：
 #   宿主 CSS（真产物）+ 我们的 buildCss 产物 + 无头 Firefox 取 computed 值。
@@ -857,7 +864,7 @@ gate_end 8
 step "9/12 真机复刻 A/B（磨砂层叠 / 描边恢复 / rail 反色晕；before↔after 双向断言）"
 gate_begin 9
 if [ "$GATE_RUN" = 1 ]; then           # ← 缓存命中时整块跳过（SKIP-CACHED）
-node tools/header-rail-replica.mjs --both || fail=1
+node tools/header-rail-replica.mjs --both || fail=$((fail + 1))
 
 # ①(2026-09-17 第 1 项「壁纸插件对 better-sidebar 的适配」) 两段链路都曾**静默失效**：
 #   ① host /ping 的 betterSidebarVersion 恒 null（局部变量遮蔽同名函数，见 lib/index.js:70 注释）；
@@ -872,12 +879,12 @@ gate_end 9
 step "10/12 better-sidebar 适配（/ping 版本链路 + 页面加载期版本门控 + 锚点金丝雀）"
 gate_begin 10
 if [ "$GATE_RUN" = 1 ]; then           # ← 缓存命中时整块跳过（SKIP-CACHED）
-node tools/better-sidebar-compat-test.mjs || fail=1
+node tools/better-sidebar-compat-test.mjs || fail=$((fail + 1))
 # ①(2026-09-18 用户裁定) bsCompat 总开关**默认改为开**（底部面板悬浮适配已真机定案，默认关 = 没人看得见），
 #   并且**只迁移"从没显式设过"的存量用户**、用户手动关过的绝不覆盖（写入口打 bsCompatUserSet 标记；
 #   迁移不打标记）。判据双向：默认档生效 / 显式关过不生效且迁移不发生 / 迁移后手动关持久生效（含"重启"重放）；
 #   变异自证：删掉"用户设过就不迁移"、把默认值改回 false、写入口不打标记 ⇒ 三组各自变红。
-node tools/bs-compat-default-test.mjs || fail=1
+node tools/bs-compat-default-test.mjs || fail=$((fail + 1))
 
 # ①(2026-10-24 侧边栏 tab) 向 dsh-better-sidebar 注册「壁纸」页签（可选依赖）的四段链路判据：
 #   注册恰好一次/字段/id 唯一（A）· ctx.effect 生命周期：卸载→重 apply 不撞 already registered（A6）·
@@ -886,7 +893,7 @@ node tools/bs-compat-default-test.mjs || fail=1
 #   两入口配置读写等价（E，①(2026-10-25) 跳转壳已按任务纠正删除）。变异自证 M1 去掉 optional 守卫 /
 #   M2 去掉 ctx.effect 包裹 / M3 id 撞内置 / M4 设置页变空壳 / M5 不传 scanTab —— 期望红集 == 实际红集逐条相等
 #   （tools/bs-tab-test.mjs 文件头有链路与依据索引）。
-node tools/bs-tab-test.mjs || fail=1
+node tools/bs-tab-test.mjs || fail=$((fail + 1))
 
 # ①(2026-10-25 任务纠正) 「壁纸」页签内部「扫描壁纸」面板的链路判据（独立页签已删）：
 #   内部 tab 顺序（侧栏版 scan 第一/设置页 7 项）/ 扫描目标优先级（自定义目录已选 ⇒ 只扫它，
@@ -894,18 +901,18 @@ node tools/bs-tab-test.mjs || fail=1
 #   无「继续展开」按钮、滚到底 = 全部结果可达 / 空态与错误态 / 网页壁纸先确认再落盘 /
 #   zh/en 键集逐键相等。变异自证 M-order / M-priority / M-empty / M-lazy / M-scroll / M-apply ——
 #   期望红集 == 实际红集逐条相等（tools/bs-scan-test.mjs 文件头有链路与依据索引）。
-node tools/bs-scan-test.mjs || fail=1
+node tools/bs-scan-test.mjs || fail=$((fail + 1))
 
 # ①(2026-10-24 任务三) 弹层表面规则不得命中「inline 触发器包装」（侧栏终端"选择 Shell"按钮
 #   背景不一致的修复）：标记判据（打/撤/回归面）/ buildCss 产物排除 / 独立求值器复核选择器语义。
 #   变异自证 M7 删排除 / M8 断标记 —— 期望红集 == 实际红集逐条相等（文件头有证据链 file:line）。
-node tools/pop-ctl-guard-test.mjs || fail=1
+node tools/pop-ctl-guard-test.mjs || fail=$((fail + 1))
 
 # ①(2026-10-25 Issue#5) 透明度误伤修复面的判据：实底保住标记（插件市场 stickyHead / dsh-conv
 #   浮窗，两态对照）/ 右栏 guide 条目 hover 保底（变量两态）/ session-delete 回收站清单排除
 #   （CSS 三规则 + JS 标记父链跳过）/ applyTokenOverrides 根因两态留证。
 #   变异自证 M-solid / M-hover / M-listbox / M-skip —— 期望红集 == 实际红集逐条相等。
-node tools/issue5-surface-test.mjs || fail=1
+node tools/issue5-surface-test.mjs || fail=$((fail + 1))
 
 
 # ①(2026-09-17 单文件 bundle 轮 / MASTER-TODO §5 第 6 项)「npm + 单文件 bundle 两种装载」的机器门禁：
@@ -925,7 +932,7 @@ gate_end 10
 step "11/12 单文件 bundle 等价性（构建可复现 + 源码↔bundle 路由逐字段对拍 + 装载布局 + 变异对照）"
 gate_begin 11
 if [ "$GATE_RUN" = 1 ]; then           # ← 缓存命中时整块跳过（SKIP-CACHED）
-node tools/bundle-equivalence-test.mjs || fail=1
+node tools/bundle-equivalence-test.mjs || fail=$((fail + 1))
 
 # ⓪(2026-09-17 MASTER-TODO §5 第 2 项「样式作用域护栏（自动的）」) 两次真实事故（右侧轮次导航条被弄透明、
 #   顶栏下描边被抹掉）都不是"某一行写错"，而是**选择器作用域没人管**。本步把这件事变成会变红的判据：
@@ -950,15 +957,15 @@ gate_end 11
 step "12/12 样式作用域护栏（真实产物 615 组设置全枚举；裸元素/裸 */:root 覆盖/宿主 token/禁止锚点判红）+ 表面 token 命名空间（宿主覆盖登记表 + 四表面共享 --mpw-* + 取值等价）"
 gate_begin 12
 if [ "$GATE_RUN" = 1 ]; then           # ← 缓存命中时整块跳过（SKIP-CACHED）
-node tools/style-scope-guard.mjs || fail=1
-node tools/token-namespace-test.mjs || fail=1
+node tools/style-scope-guard.mjs || fail=$((fail + 1))
+node tools/token-namespace-test.mjs || fail=$((fail + 1))
 
 # ①(2026-11-02 任务②③) 连续圆角 + 内外同心判据（纯 Node：__mpwBuildCss 两态产物解析 + 源码级）：
 #   半径族 token（--mpw-r-lg/md/sm）单点定义 / corner-shape 全部包在 @supports 内 /
 #   token 化选择器逐值等于旧字面量 / 内外同心契约（容器 --mpw-r-outer/--mpw-gap + 内层
 #   max(0px, calc(outer-gap))，padding 同读 gap，硬编码内半径即红）/ 字面量圆角值例外登记
 #   双向防腐 / 产物零 clip-path·mask（回退层不做，红线）+ 4 条变异自证（期望红集 == 实际红集）。
-node tools/corner-continuity-test.mjs || fail=1
+node tools/corner-continuity-test.mjs || fail=$((fail + 1))
 
 # ①(2026-10-24 视图一致性轮) 「标题栏浮层面板」（智能体团队 [data-team-panel] /
 #   Token 用量 [class*=bRhRbq_panel]）表面与主界面菜单面板族统一的机器判据：
@@ -966,7 +973,7 @@ node tools/corner-continuity-test.mjs || fail=1
 #   宿主常量（--dsw-specific-menu / --dsw-menu-backdrop-filter）+ 产物规则消费点 + 暗色不单列 +
 #   ::before/::after 透明化结构仍在。变异自证：SSOT 值改回旧霜化档 / 磨砂改回 blur(11px) /
 #   删伪元素透明化 ⇒ 期望红集 == 实际红集逐条相等。
-node tools/panel-surface-token-test.mjs || fail=1
+node tools/panel-surface-token-test.mjs || fail=$((fail + 1))
 
 fi                                     # ← 第 12 步结束
 gate_end 12

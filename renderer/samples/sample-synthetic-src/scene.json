@@ -1,0 +1,190 @@
+{
+  "camera": null,
+  "general": {
+    "ambientcolor": "0.20000 0.20000 0.25000",
+    "bloom": false,
+    "clearcolor": "0.02000 0.03000 0.07000",
+    "clearenabled": true,
+    "farz": 10000,
+    "fov": 50,
+    "hdr": false,
+    "nearz": 0.01,
+    "orthogonalprojection": {
+      "height": 1080,
+      "width": 1920
+    },
+    "zoom": 1
+  },
+  "objects": [
+    {
+      "id": 1,
+      "name": "background",
+      "image": "models/background.json",
+      "origin": "960.00000 540.00000 0.00000",
+      "size": "1920.00000 1080.00000",
+      "scale": "1.00000 1.00000 1.00000",
+      "angles": "0.00000 0.00000 0.00000",
+      "alpha": 1,
+      "visible": true
+    },
+    {
+      "id": 2,
+      "name": "motion",
+      "image": "models/util/composelayer.json",
+      "origin": "0.00000 0.00000 0.00000",
+      "scale": "1.00000 1.00000 1.00000",
+      "visible": true
+    },
+    {
+      "id": 3,
+      "name": "accent",
+      "image": "models/util/solidlayer.json",
+      "solid": true,
+      "color": {
+        "user": "accentColor",
+        "value": "0.12000 0.62000 0.86000"
+      },
+      "origin": {
+        "value": "960.00000 300.00000 0.00000",
+        "animation": {
+          "options": {
+            "fps": 30,
+            "length": 150,
+            "mode": "loop"
+          },
+          "c1": [
+            {
+              "frame": 0,
+              "value": 780
+            },
+            {
+              "frame": 75,
+              "value": 300
+            },
+            {
+              "frame": 150,
+              "value": 780
+            }
+          ]
+        }
+      },
+      "size": "1920.00000 10.00000",
+      "scale": "1.00000 1.00000 1.00000",
+      "alpha": 0.28,
+      "visible": true
+    },
+    {
+      "id": 4,
+      "name": "orb",
+      "parent": 2,
+      "image": "models/orb.json",
+      "origin": {
+        "value": "560.00000 440.00000 0.00000",
+        "animation": {
+          "options": {
+            "fps": 30,
+            "length": 120,
+            "mode": "loop"
+          },
+          "c0": [
+            {
+              "frame": 0,
+              "value": 560
+            },
+            {
+              "frame": 60,
+              "value": 1360
+            },
+            {
+              "frame": 120,
+              "value": 560
+            }
+          ]
+        }
+      },
+      "size": "280.00000 280.00000",
+      "scale": {
+        "value": "1.00000 1.00000 1.00000",
+        "animation": {
+          "options": {
+            "fps": 30,
+            "length": 120,
+            "mode": "loop"
+          },
+          "c0": [
+            {
+              "frame": 0,
+              "value": 1
+            },
+            {
+              "frame": 30,
+              "value": 1.14
+            },
+            {
+              "frame": 60,
+              "value": 1
+            },
+            {
+              "frame": 90,
+              "value": 1.14
+            },
+            {
+              "frame": 120,
+              "value": 1
+            }
+          ],
+          "c1": [
+            {
+              "frame": 0,
+              "value": 1
+            },
+            {
+              "frame": 30,
+              "value": 1.14
+            },
+            {
+              "frame": 60,
+              "value": 1
+            },
+            {
+              "frame": 90,
+              "value": 1.14
+            },
+            {
+              "frame": 120,
+              "value": 1
+            }
+          ]
+        }
+      },
+      "angles": "0.00000 0.00000 0.00000",
+      "alpha": 1,
+      "visible": true
+    },
+    {
+      "id": 5,
+      "name": "label",
+      "text": {
+        "user": "labelText",
+        "value": "SYNTHETIC SAMPLE"
+      },
+      "font": "",
+      "pointsize": {
+        "user": "labelSize",
+        "value": 44
+      },
+      "color": "0.78000 0.90000 1.00000",
+      "origin": "960.00000 130.00000 0.00000",
+      "size": "760.00000 84.00000",
+      "scale": "1.00000 1.00000 1.00000",
+      "horizontalalign": "center",
+      "verticalalign": "center",
+      "alpha": 0.92,
+      "visible": {
+        "user": "labelVisible",
+        "value": true
+      }
+    }
+  ],
+  "version": 1
+}

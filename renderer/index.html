@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>wallpaper-engine-web-loader — 浏览器端 WE 场景渲染器 · 在线 demo</title>
+    <meta name="description" content="WEwebLoader（浏览器端 Wallpaper Engine 壁纸渲染器）在线 demo：不装 WE、不装 Windows 依赖，一个静态服务器 + WebGL2 就能实时渲染 scene.pkg。本项目不分发任何真实壁纸。" />
+    <meta name="theme-color" content="#0f1116" />
+    <!-- ①(2026-09-23 第二轮品牌清理 · 用户③) 落地页原先**一条图标声明都没有** ⇒ 浏览器标签页只能去要
+         `/favicon.ico`（Pages 上原本 404）。这三行指向仓库所有者的品牌图：站点根副本在 `web/icons/brand-*`，
+         构建（build-pages.mjs）把它拷成产物里的 `./icons/brand-*`，另有一条 `favicon.ico` 映射兜住默认路径。 -->
+    <link rel="icon" type="image/png" sizes="32x32" href="./icons/brand-32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="./icons/brand-192.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="./icons/brand-192.png" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0f1116; --card: #171a21; --card-hi: #1e222b; --fg: #e6e8ee; --dim: #a5abb8; --mute: #7d8492;
+        --line: #272b35; --accent: #58a6ff; --accent-hi: #79b8ff; --warn: #e3b341; --danger: #ff7b72;
+        --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+        --ui: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; padding: 0 20px 56px;
+        background: radial-gradient(1200px 600px at 50% -10%, #1b2030 0%, var(--bg) 60%) no-repeat, var(--bg);
+        color: var(--fg); font-family: var(--ui); line-height: 1.75; font-size: 15px;
+      }
+      .wrap { max-width: 880px; margin: 0 auto; }
+      header { padding: 56px 0 8px; }
+      h1 { font-size: 30px; line-height: 1.35; margin: 0 0 10px; letter-spacing: .2px; }
+      h1 small { display: block; font-size: 14px; font-weight: 400; color: var(--mute); margin-top: 8px; letter-spacing: 0; }
+      .lede { font-size: 16.5px; color: var(--dim); margin: 0 0 26px; }
+      .lede strong { color: var(--fg); }
+      .cards { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); margin: 26px 0 34px; }
+      a.card {
+        display: block; padding: 18px 20px; border: 1px solid var(--line); border-radius: 12px;
+        background: var(--card); text-decoration: none; color: inherit; transition: .16s border-color, .16s transform, .16s background;
+      }
+      a.card:hover { border-color: var(--accent); background: var(--card-hi); transform: translateY(-2px); }
+      .card .k { font-size: 12px; color: var(--mute); text-transform: uppercase; letter-spacing: .12em; }
+      .card .t { font-size: 17.5px; font-weight: 600; margin: 6px 0 6px; color: var(--accent-hi); }
+      .card .d { font-size: 13.5px; color: var(--dim); }
+      .card .u { font-family: var(--mono); font-size: 12px; color: var(--mute); margin-top: 10px; }
+      section { margin: 34px 0; }
+      h2 { font-size: 19px; margin: 0 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+      h3 { font-size: 15.5px; margin: 22px 0 8px; color: var(--dim); }
+      .disclaimer { background: var(--card); border: 1px solid var(--line); border-left: 3px solid var(--warn); border-radius: 10px; padding: 16px 20px; }
+      .disclaimer p { margin: 0 0 12px; font-size: 13.8px; color: var(--dim); }
+      .disclaimer p:last-child { margin-bottom: 0; }
+      .disclaimer strong { color: var(--fg); }
+      .disclaimer[lang="en"] { border-left-color: var(--accent); }
+      ul { padding-left: 22px; color: var(--dim); font-size: 14px; }
+      li { margin: 5px 0; }
+      code { font-family: var(--mono); font-size: 12.5px; background: #10131a; border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; }
+      a { color: var(--accent); }
+      .note { font-size: 13px; color: var(--mute); }
+      table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+      th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+      th { color: var(--mute); font-weight: 500; }
+      footer { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 13px; color: var(--mute); }
+      footer a { color: var(--dim); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>
+          WEwebLoader
+          <small>WEwebLoader · npm/仓库名 wallpaper-engine-web-loader · 浏览器端 Wallpaper Engine 壁纸渲染器（GPL-3.0-or-later）</small>
+        </h1>
+        <p class="lede">
+          不装 Wallpaper Engine、不装 Windows 依赖：<strong>一个静态服务器 + WebGL2</strong> 就能在浏览器里实时渲染
+          <code>scene.pkg</code> / <code>.mpkg</code> 场景壁纸，带离线 PWA、逐层调试与对账门禁。
+          <strong>本仓库不分发任何真实壁纸</strong> —— 页面里默认载入的是我们自己用算术生成的那张合成样例。
+        </p>
+
+        <div class="cards">
+          <a class="card" href="./demo/">
+            <div class="k">Entry 1 · 测试台</div>
+            <div class="t">在线测试台（打过补丁的 WebWallGL 产物）</div>
+            <div class="d">逐层调试、属性面板、指针注入、鼠标尾迹、分辨率/DPR/FPS、导出诊断日志。默认载入合成样例，打开就有画面。</div>
+            <div class="u">/demo/</div>
+          </a>
+          <a class="card" href="./demo.html">
+            <div class="k">Entry 2 · 渲染器</div>
+            <div class="t">渲染器 demo（本仓库自己的渲染器）</div>
+            <div class="d">逐层开关、相机/投影/滤镜/质量档位热更、诊断面板。没有本机 Node 后端时用 <code>?pkgurl=</code> 或内置合成样例。</div>
+            <div class="u">/demo.html</div>
+          </a>
+          <a class="card" href="./samples/README.md">
+            <div class="k">Entry 3 · 样例</div>
+            <div class="t">合成样例说明</div>
+            <div class="d">33 299 B 的 <code>scene.pkg</code>：来源、字节数、SHA-256、包含哪 5 个对象、怎么重新生成、三条加载路径。</div>
+            <div class="u">/samples/README.md</div>
+          </a>
+        </div>
+      </header>
+
+      <section id="disclaimer">
+        <h2>免责声明 / Disclaimer</h2>
+
+        <div class="disclaimer" lang="zh-CN">
+          <p><strong>免责声明</strong> 本项目与 Wallpaper Engine 官方<strong>无任何关联</strong>，不包含 Wallpaper Engine 本体、Steam 创意工坊内容或任何受版权保护的壁纸资源。本项目<strong>不分发</strong>任何壁纸包（scene 场景包、视频壁纸、网页壁纸）、预览图、音视频或美术素材；仓库内随附的字体仅为各自许可允许再分发的开源字体，逐条见 THIRD-PARTY。用户需自行提供<strong>合法获得</strong>的壁纸，并自行承担因读取、转换或播放相关内容而产生的合规责任。"Wallpaper Engine" 及其相关名称与标识为其各自权利人的商标，本项目仅出于说明兼容性之目的进行指称。本项目渲染器以 GPL-3.0-or-later 发布、插件以 MIT 发布；第三方组件与参考资料（<strong>仅行为对照、未复制代码</strong>）的许可与归属见 THIRD-PARTY.md 与 docs/COPYING-RULES.md。</p>
+        </div>
+
+        <div class="disclaimer" lang="en">
+          <p><strong>Disclaimer</strong> This project is <strong>not affiliated with Wallpaper Engine</strong> in any way. It does not include the Wallpaper Engine application, any Steam Workshop content, or any copyrighted wallpaper assets. It <strong>does not redistribute</strong> wallpaper packages (scene, video, or web), preview images, audio/video, or artwork; the fonts bundled in this repository are only those open-licensed fonts whose licences permit redistribution (see THIRD-PARTY). <strong>Users must supply their own lawfully obtained wallpapers</strong> and are solely responsible for compliance when reading, converting, or playing such content. "Wallpaper Engine" and related names and marks belong to their respective owners and are referenced here only to describe compatibility. The renderer is released under GPL-3.0-or-later and the plugin under MIT; see THIRD-PARTY.md and docs/COPYING-RULES.md for third-party components and reference material (used for <strong>behavioural comparison only — no code was copied</strong>).</p>
+        </div>
+      </section>
+
+      <section id="online">
+        <h2>在线版有什么 / 没有什么</h2>
+        <p class="note">
+          线上是<strong>纯静态托管（GitHub Pages）</strong>：没有服务端、没有本机 Node 后端。
+          测试台会自己探测到这一点并<strong>优雅降级</strong>（不假装能用），不是"坏了"。
+        </p>
+        <table>
+          <thead><tr><th>能力</th><th>在线</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>渲染 scene 场景包</td><td>✅</td><td>WebGL2 全在浏览器里跑；默认载入合成样例</td></tr>
+            <tr><td>逐层调试 / 属性面板 / 滤镜 / 分辨率 / DPR / FPS</td><td>✅</td><td>纯前端</td></tr>
+            <tr><td>「选择文件夹」扫描本地壁纸</td><td>✅</td><td>纯前端读取，文件不离开浏览器</td></tr>
+            <tr><td>壁纸库列表 / 属性保存 / 删除 / 打开所在文件夹</td><td>❌</td><td>需要本机 Node 后端（<code>/api/*</code>），线上 404 ⇒ 控件置灰并写明原因</td></tr>
+            <tr><td>渲染器诊断流 <code>/diag</code></td><td>❌</td><td>同上；诊断区置灰并给出原因</td></tr>
+            <tr><td>真实壁纸包 / 预览图 / 音视频</td><td>❌ <strong>故意没有</strong></td><td>本仓库不分发任何真实壁纸，线上也不会出现</td></tr>
+          </tbody>
+        </table>
+        <p class="note">
+          完整的测试台（壁纸库、属性保存、诊断流）需要在源码目录跑本机 Node host：
+          <code>bash start-demo.sh</code> / <code>pnpm dev</code>。见仓库 <a href="./README.md">README</a> 与
+          <a href="./docs/ONLINE-DEMO.md">docs/ONLINE-DEMO.md</a>。
+        </p>
+      </section>
+
+      <section id="license">
+        <h2>许可与致谢</h2>
+        <ul>
+          <li>本仓库渲染器：<strong>GPL-3.0-or-later</strong> —— 全文见 <a href="./LICENSE">LICENSE</a>。</li>
+          <li>第三方组件与参考资料（含逐条许可全文、<strong>仅行为对照、未复制代码</strong>的登记）：<a href="./THIRD-PARTY.md">THIRD-PARTY.md</a>。</li>
+          <li>复制/借鉴规则与单向流动台账：<a href="./docs/COPYING-RULES.md">docs/COPYING-RULES.md</a>。</li>
+          <li><strong>命名说明（2026-09-19）</strong>：本产品现名 <strong>WEwebLoader</strong>（npm 包名与仓库名仍是 <code>wallpaper-engine-web-loader</code>）；上游项目名仍是 <strong>WebWallGL</strong>（<code>oneincase/webwallgl</code>，MIT），归属与许可不因此改变。</li>
+          <li>
+            在线测试台是 <strong>WebWallGL</strong> 静态构建产物的补丁版再分发，上游
+            <a href="https://github.com/oneincase/webwallgl" target="_blank" rel="noopener noreferrer">oneincase/webwallgl</a>
+            （<strong>MIT © 2026 oneincase</strong>）；上游许可全文随测试台一起分发：
+            <a href="./demo/LICENSE-webwallgl-MIT.txt">demo/LICENSE-webwallgl-MIT.txt</a>
+            与 <a href="./demo/LICENSE-webwallgl">demo/LICENSE-webwallgl</a>（同一许可的两份等价登记，两份都在）。
+          </li>
+          <li>合成样例由本仓库的 <a href="./tools/make-sample.mjs">tools/make-sample.mjs</a> 生成，<strong>无第三方内容、无需署名</strong>。</li>
+          <li>使用说明与自证：<a href="./README.md">README.md</a> · <a href="./docs/TESTING.md">docs/TESTING.md</a> · <a href="./docs/SELFCHECK.md">docs/SELFCHECK.md</a>。</li>
+        </ul>
+      </section>
+
+      <footer>
+        <p>
+          <a href="./demo/">在线测试台</a> ·
+          <a href="./demo.html">渲染器 demo</a> ·
+          <a href="./samples/README.md">合成样例说明</a> ·
+          <a href="./docs/ONLINE-DEMO.md">发布形态文档</a> ·
+          <a href="https://github.com/XHR666/wallpaper-engine-web-loader" target="_blank" rel="noopener noreferrer">GitHub 仓库</a>
+        </p>
+        <p>
+          上游渲染核心归属：
+          <a href="https://github.com/oneincase/webwallgl" target="_blank" rel="noopener noreferrer">WebWallGL · oneincase（MIT 许可）</a>
+          —— 赞赏二维码已移除，本项目不接受也不展示任何收款方式。
+        </p>
+        <p class="note">
+          本页是纯静态页面：无 Cookie、无统计脚本、无第三方 CDN、无网络请求（浏览器只会去取你自己点的那些文件）。
+        </p>
+      </footer>
+    </div>
+  </body>
+</html>

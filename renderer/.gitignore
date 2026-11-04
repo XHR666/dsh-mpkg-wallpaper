@@ -1,0 +1,92 @@
+# .gitignore —— 本仓库（we-scene-demo = WE-Scene 浏览器端渲染器）的忽略清单
+#
+# ⚠ 口径来源：本文件是 `.gitignore.public` 的**超集**。
+#   `.gitignore.public` 仍然在位，因为 `publish-check.mjs` 把它当作**唯一的忽略清单**读取
+#   （脚本里 `IGNORE_FILE = .gitignore.public`）——改它等于改发布闸门的行为，故保持原样不动。
+#   **两份文件必须同步**：`.gitignore.public` 是"发布面"的规范来源（发布闸门认它），
+#   本文件在它之上补 git 侧的额外排除（历史备份、归档、临时产物、编辑器垃圾）。
+#
+# 设计原则（与 `.gitignore.public` 一致）：**仓库只带"能跑起来的渲染器 + 自带样例 + 文档 + 测试"**，
+# 本机数据（上报、私有库清单、基线、实验残留、真实壁纸语料）一律不进仓库。
+
+# ── 本机运行数据 ──
+reports/
+*.log
+/tmp-*
+tmp/
+*.tmp
+
+# ── 私有库清单 / 基线（内嵌本机壁纸与工坊路径，**绝不能发布**）──
+library-manifest.json
+package-matrix.json
+package-baseline.json
+perf-matrix.json
+perf-baseline.json
+
+# ── 实验/调试残留 ──
+*.bak
+*.bak-*
+*.bak*
+*-probe.mjs
+hina-probe.mjs
+refrender-*.json
+ref-render-*.json
+ref-*.json
+*AUDIT-preview-before.png
+*AUDIT-preview-after.png
+*.orig
+*.rej
+
+# ── 归档目录：`archive/` 是历史脚本与旧许可备份，**不属于发布面** ──
+# （`publish-check.mjs` 的 SKIP_DIRS 也已跳过它，两边口径一致）
+archive/
+
+# ── 依赖与缓存 ──
+node_modules/
+__pycache__/
+*.pyc
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# ── 本机 WE 安装（只读引用，绝不入库）──
+wallpaper_engine/
+
+# ── 说明（沿用 `.gitignore.public` 的口径，勿删）──
+# 1) 测试壁纸（allwallpaper/**）留在**仓库外**；本仓库**不分发任何真实壁纸**。
+#    这里**故意不写忽略规则** —— 让误加回来的大包继续被 `publish-check.mjs` 的体积闸门
+#    （单文件 >100MB 阻塞）当场拦下，而不是被静默忽略掉。
+# 2) `common*.h` 不是忽略项而是**待替换项**：忽略掉它们会让渲染器编译失败，故**故意不忽略**。
+# 3) `vendor-ref/**`（webwallgl 等**仓库外**研读副本）位于工作区根，不在本目录内，无需规则；
+#    其内容一律不入库（`publish-check.mjs` 也确认 "未 vendored"）。
+# ── WE 官方资产（**运行时**从用户自己的 WE 安装读取，我们不分发）──
+# 本项目内部 shader 只有 6 个头被实际引用（common.h / common_blending / common_blur /
+# common_composite / common_fragment / common_perspective），这 6 个已换成自研实现；
+# `common_vertex.h` **零引用** → 直接不随仓库分发（用户 WE 目录里有真品）。
+common_vertex.h
+
+# ── GitHub Pages 构建产物（build-pages.mjs 的输出，绝不入库）──
+_site/
+
+# ── 参考资料隔离区（2026-09-17 目录归一；**双保险规则**）──
+# 事实：第三方参考副本唯一内容落点 = 工作区根的 `references/**`（`../references/` 相对本仓库），
+# 取证归档 = `../Delete/**`（如 `Delete/we-official-shaders/`）。**两者都在本仓库之外**，
+# 所以严格说这里不需要规则 —— 但**万一有人把副本拷进本仓库**（打包/复制粘贴/子模块化），
+# 下面这几条 git 侧立即忽略，`tests/reference-isolation-check.mjs` 断言 ①②③ 另有独立拦截。
+references/
+Delete/
+# 旧路径名（归一前的六个根目录名）。工作区根的同名条目现在只是**符号链接**（零内容重定向）；
+# 若它们以**真实目录**形态出现在仓库内 = 内容回流，必须拦下。
+wer-ref/
+we-layerd-ref/
+lwe-ref/
+dsbw-ref/
+vendor-ref/
+reference/
+
+# 探针的**落盘读数**（`tests/mpkg-sweep-*.json` 等）含本机绝对路径，属本机证据、不进仓库：
+# 报告与结论写在 docs/（VIDEOBASE-20260924.md、MPKG-SWEEP 系列），读数用对应探针可随时复算。
+tests/mpkg-sweep-*.json
+tests/mpkg-videobase-*.json
+tests/mpkg-solidlayer-fallback.json

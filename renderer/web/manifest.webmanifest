@@ -1,0 +1,17 @@
+{
+  "name": "WEwebLoader",
+  "short_name": "WEwebLoader",
+  "description": "浏览器端 Wallpaper Engine 场景渲染器：不装 WE、不装 Windows 依赖，WebGL2 实时渲染 scene.pkg 场景壁纸（离线可渲染自带合成样例）。",
+  "lang": "zh-CN",
+  "start_url": "/?id=sample-synthetic",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b0e14",
+  "theme_color": "#0b0e14",
+  "icons": [
+    { "src": "/icons/brand-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/brand-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/brand-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

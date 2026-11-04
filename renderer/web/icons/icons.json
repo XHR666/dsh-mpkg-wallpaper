@@ -1,0 +1,24 @@
+{
+ "generator": "node tools/make-icons.mjs（确定性；勿手改 PNG）",
+ "note": "程序化生成，无第三方素材；sha256 用于门禁核对",
+ "icons": [
+  {
+   "file": "icon-192.png",
+   "ok": true,
+   "sha256": "6adc1651229e89229e73a875787e242bc7a2b27fe5d3ebefbd0842d703568f3e",
+   "bytes": 5891
+  },
+  {
+   "file": "icon-512.png",
+   "ok": true,
+   "sha256": "8c7b44838819403a2ea6f4dcf99a769954535debb15ab5304a0c2fe43d7a98e0",
+   "bytes": 20798
+  },
+  {
+   "file": "icon-512-maskable.png",
+   "ok": true,
+   "sha256": "e754bfdc9aed897643d82f743393bbbd20325271992a0ab214c4afb1b0ee640b",
+   "bytes": 20520
+  }
+ ]
+}

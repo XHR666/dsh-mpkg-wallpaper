@@ -1,0 +1,393 @@
+/* ①(P-138 2026-09-19 移植) now-playing.css —— Bencho「Now playing」（.snd）的样式。
+   照抄的部分：.snd / .snd-box / .snd-art / .snd-say / .snd-title / .snd-by /
+   .snd-bar / .snd-rail / .snd-run / .snd-clock / .snd-ops / .snd-op /
+   .snd-like / .snd-tap / @keyframes snd-beat / 两条 prefers-reduced-motion。
+   删掉的部分（都属于 Bencho 的其它块，抄进来会打到本项目的别的 UI）：
+     · 音效板 "sound board" 一段：它的 .snd 框（display:flex/column/gap/width:460px）
+       与 .snd-wake / .snd-grid / .snd-key / .snd-key[data-pitched] / .snd-num / .snd-name；
+     · 音效墙页面一段：注释块 + .sfx-wall；
+     · `[data-stroke="on"] .snd-box` 依赖 Bencho 的全局属性 ⇒ 改写成组件自己的
+       `.snd[data-stroke="on"] .snd-box`（由 <NowPlaying stroke /> 写在这个根上）。
+   逐条理由与 token 映射表见 demo/now-playing/README.md。
+
+   作用域纪律（有机器判据，tests/now-playing-test.mjs）：本文件**每一条**选择器
+   都以 .snd 开头或落在 .snd 子树内 —— 没有裸标签、没有 body、没有 :root、没有 *，
+   也没有一个"新的全局 token"：下面 14 条自定义属性只定义在 .snd 自己身上。 */
+
+@media (prefers-reduced-motion: reduce) {
+  .snd-op, .snd-art, .snd-like { transition-duration: 1ms; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .snd-like[data-on] .lucide { animation: none; }
+}
+
+/* ══ Sound ══════════════════════════════════════════════════
+   A now-playing bar that opens into a player.
+
+   There is almost nothing here, and that is deliberate: every
+   position, size and radius in this component is written by
+   the spring in Sound.tsx and arrives as an inline style. A
+   transition on any of these rules would be a SECOND opinion
+   about where a thing is, fighting the first one every frame.
+
+   What is left is the material — the surfaces, the type and
+   the two hover states — which never animates with the shape
+   and so has nothing to fight. */
+
+.snd {
+  /* ── ①(P-138) Bencho 的 14 个自定义属性在这里落地 ────────────────
+     原件读它们却从不定义它们（它们是 Bencho 的设计 token）。本项目
+     不新增全局变量 ⇒ 全部只定义在组件自己的根上，不外泄；每条都映
+     射到本项目**已有的** token，括号里是独立演示页没接项目样式表时
+     的兜底值（与 demo/assets/bench-*.css 的暗色主题同值）。-rgb 结
+     尾的给三个裸数字，因为下面的 CSS 用它们拼 rgba()。
+     映射表在 README 与 tests/now-playing-test.mjs 的 TOKEN_MAP 里各一份。 */
+  --card: var(--editor, #1f1f1f);                    /* 页/画布底：聚焦环画在控件外圈时要拿它当"周围的地" */
+  --font-num: var(--mono, ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace);
+  --font-ui: var(--ui-font, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Noto Sans SC", sans-serif);
+  --ink: var(--fg, #cccccc);
+  --ink-3: var(--fg-dim, #9d9d9d);                   /* .snd-op 的静止图标色 */
+  --ink-4: var(--fg-mute, #6e6e6e);                  /* .snd-by / .snd-clock 那一档 */
+  --ink-rgb: 204, 204, 204;                          /* = --fg:#cccccc 的三个裸数字；本项目没有 -rgb token，改 --fg 要同步改这里 */
+  --on-ink: var(--list-active-fg, #ffffff);          /* 实心墨色按钮上的字/图标色 */
+  --on-slab: var(--fg, #cccccc);
+  --pane: color-mix(in srgb, var(--panel, #181818) 86%, transparent);   /* 与 demo/index.html 的 color-mix(…86%…) 同口径 */
+  --pane-edge: var(--border, #2b2b2b);
+  --slab: var(--input, #313131);
+  --surface-2: var(--sidebar, #181818);              /* 封面兜底渐变的下位面 */
+  --surface-3: var(--input, #313131);                /* 封面兜底渐变的上位面 */
+  position: relative;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-ui);}
+
+/* The object. It is the only thing on the card, so it is the
+   quietest surface that still reads as one: the pane the rest
+   of the bench uses, and a hairline. */
+.snd-box {
+  position: relative;
+  background: var(--pane);
+  -webkit-backdrop-filter: blur(2px) saturate(150%);
+  backdrop-filter: blur(2px) saturate(150%);
+  overflow: hidden;}
+
+/* NO BORDER of its own. The hairline is the Stroke control's
+   to give, the way it is for every other block — a spread
+   shadow rather than a border, because the box has
+   `overflow: hidden` and a border would be one more thing the
+   morph has to carry through every frame. See the Stroke
+   section above. */
+/* ①(P-138 移植) 原件这里是 `[data-stroke="on"] .snd-box` —— 那个全局属性是
+   Bencho 测试台的，本项目没有 ⇒ 换成组件自己的可选属性（<NowPlaying stroke />
+   时写在 .snd 上）。语义没变：发丝线仍然只由"描边"这个开关给，盒子自己不常驻
+   边框 —— 上面 "NO BORDER of its own" 的理由（overflow:hidden + 每帧都要带着
+   一条边框走）因此继续成立。 */
+.snd[data-stroke="on"] .snd-box { box-shadow: 0 0 0 1px var(--pane-edge); }
+
+/* ── the cover ──────────────────────────────────────────────
+   A real sleeve, inlined by scripts/cover.sh. It was drawn in
+   CSS first, on the reasoning that the morph is about the
+   SQUARE rather than about what is printed on it — which is
+   true of the animation and not true of the component: a
+   player with a grey gradient where the artwork goes is a
+   wireframe of a player.
+
+   `cover`, not `contain`: the square is the fixed thing here
+   and the picture is cropped to it, so the sleeve is never
+   letterboxed at either end of the morph.
+
+   The gradient stays underneath as the ground. It is what
+   shows for the frame before a 464px image has decoded, and
+   it is what the shape is if the file is ever missing. */
+/* ①(P-138 移植) 上面那句 "inlined by scripts/cover.sh" 是**原件**的做法（Bencho 把
+   封面内联进单文件产物）。本仓库没有那套管线 ⇒ 封面是组件里 `COVER` 给出的
+   **相对页面的链接图**（demo/assets/brand/brand-512.png；P-164 前是 demo/icons/pwa-512.png）。
+   下面这条渐变与 `background-size:
+   cover` 的口径不变，而"图片解码前那一帧看到的是渐变"这句因此更成立。 */
+.snd-art {
+  position: absolute;
+  background-color: var(--surface-2);
+  background-image:
+    linear-gradient(148deg, var(--surface-3), var(--surface-2));
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;}
+
+/* ── the words ──────────────────────────────────────────────
+   One block that travels from beside the cover to under it.
+   Both lines are in it, so the pair moves as a unit and the
+   artist never arrives before the title. */
+/* ── the words ──────────────────────────────────────────────
+   Centred by the BOX, not by a number. It used to be placed
+   by its top edge against a hard-coded guess at how tall two
+   lines of type are — which was right until the type sizes
+   changed, and then the words sat 1.8px above the middle of
+   the sleeve at one end of the morph and somewhere else at
+   the other.
+
+   Now it is given the sleeve's own height and told to centre
+   inside it, so the two are level at every size the morph
+   passes through and nothing has to be kept in step by hand.
+   Two magic numbers gone with it. */
+.snd-say {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  pointer-events: none;}
+
+.snd-title {
+  color: var(--ink);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;}
+
+.snd-by {
+  color: var(--ink-4);
+  line-height: 1.25;
+  white-space: nowrap;}
+
+/* ── the track ──────────────────────────────────────────────
+   A rail and a run, and the times at either end under it.
+   Nothing here is interactive: this component is about the
+   shape changing, and a scrubber you can drag is a different
+   component that happens to live in the same box. */
+.snd-bar {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;}
+
+.snd-rail {
+  display: block;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(var(--ink-rgb), 0.12);
+  overflow: hidden;}
+
+.snd-run {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--ink);}
+
+.snd-clock {
+  display: flex;
+  justify-content: space-between;
+  /* ── the interface face, with tabular figures ─────────────
+     It was the mono stack, for the reason clocks usually are:
+     a proportional 1 is narrower than a 0, so a counter set in
+     one shifts on its own every second — which on a track
+     that reads 0:57 → 0:58 → 0:59 is a number that fidgets
+     while you watch it.
+
+     `tabular-nums` is the same guarantee without the second
+     typeface. It asks the UI font for its fixed-width figures,
+     which it has, so the digits stop moving and the component
+     stops carrying a face nothing else here uses. */
+  font-family: var(--font-ui);
+  font-variant-numeric: tabular-nums;
+  font-size: 10.5px;
+  /* 1, so the row is the height of the digits and not of the
+     font's own leading — nineteen pixels for a ten pixel
+     number is eight of empty space the layout above has to
+     find room for */
+  line-height: 1;
+  letter-spacing: 0.04em;
+  color: var(--ink-4);}
+
+/* ── ③(2026-09-25 issue0924a2 用户第 3 条) the volume track ────
+   「把音量的按钮集成到 NP 的卡片里面」：一条音量轨落在**时钟行**的中间
+   （左时刻 / 音量 / 百分数 / 右剩余），与 DSH 插件 `dsh-mpkg-wallpaper/lib/now-playing.js`
+   的 `.mpw_np_vol` 同一个位置；传输行里另有第四键（音量/静音，`data-mpw-np-mute`）。
+   两样都只在**受控档 + 卡片展开**（`late > 0`）时渲染 ⇒ 收起成胶囊时这里一条规则都不生效。
+
+   ⚠选择器写法：**只用既有类名 + 属性选择器**，不新增 `.snd-*` 类 ——
+   组件有一条"CSS 里的 .snd* 类名与渲染出来的 DOM 一一对应"的判据，而它拿的是
+   **装饰档**的 SSR 产物（音量行在那边根本不存在）⇒ 新类名会被算成孤儿规则。
+   `data-mpw-np-*` 也是这个组件受控面的既有词汇（scrub / link / noseek 都是这么标的）。
+
+   为什么用**原生** `input[type=range]`（DSH 插件是自绘的）：本组件"位置全由补间内联写"
+   的纪律针对的是**形状**（sleeve/box/rail/transport 那几个每帧都在动的东西）；音量轨是卡片
+   展开后才出现的静态控件，用原生控件换来键盘/无障碍/拖动手感，而它的尺寸与材料**只有这里一份**。 */
+.snd-clock input[type="range"][data-mpw-np-vol-range] {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+  height: 12px;
+  margin: 0 6px;
+  padding: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  cursor: pointer;
+  /*  #np-mount > *{pointer-events:none} 是测试台预览那条纪律；音量轨要能拖 ⇒ 自己打开。 */
+  pointer-events: auto;}
+
+.snd-clock input[type="range"][data-mpw-np-vol-range]:disabled { cursor: default; opacity: 0.4; }
+
+/* the rail（未走过）与 the run（已走过）：与 .snd-rail/.snd-run 同一套颜色口径 */
+.snd-clock input[type="range"][data-mpw-np-vol-range]::-webkit-slider-runnable-track {
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(var(--ink-rgb), 0.16);}
+.snd-clock input[type="range"][data-mpw-np-vol-range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 7px; height: 7px;
+  margin-top: -2.5px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ink);}
+.snd-clock input[type="range"][data-mpw-np-vol-range]::-moz-range-track {
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(var(--ink-rgb), 0.16);}
+.snd-clock input[type="range"][data-mpw-np-vol-range]::-moz-range-progress {
+  height: 2px;
+  border-radius: 999px;
+  background: var(--ink);}
+.snd-clock input[type="range"][data-mpw-np-vol-range]::-moz-range-thumb {
+  width: 7px; height: 7px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ink);}
+.snd-clock input[type="range"][data-mpw-np-vol-range]:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--pane-edge);}
+
+.snd-clock [data-mpw-np-volnum] {
+  flex: none;
+  padding-right: 6px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-4);}
+
+/* ── the transport ──────────────────────────────────────────
+   Placed by its CENTRE — the row's own width changes between
+   the two states, so an edge would move even when the middle
+   of it did not. */
+.snd-ops {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  translate: -50% -50%;}
+
+.snd-op {
+  flex: none;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  overflow: hidden;
+  transition: color 160ms ease, background 160ms ease, scale 130ms cubic-bezier(0.3, 0.9, 0.4, 1);}
+
+.snd-op:hover { color: var(--ink); background: rgba(var(--ink-rgb), 0.07); }
+
+/* ── the press ──────────────────────────────────────────────
+   It yields before it acts. A control that only changes state
+   reads as having been triggered; one that gives under the
+   finger first reads as having been pushed, and the whole
+   difference is about 40ms and four per cent.
+
+   `scale` as its own property, not inside a transform: the
+   row is placed with `translate` and the play button's size
+   is written by the tween, so anything sharing the transform
+   shorthand here would be overwritten every frame. */
+.snd-op:active { scale: 0.9; }
+
+/* the one you press most, and the only one that is filled */
+.snd-op[data-lead] {
+  background: var(--ink);
+  color: var(--on-ink);}
+
+.snd-op[data-lead]:hover { background: var(--ink); opacity: 0.88; }
+
+.snd-op:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--card), 0 0 0 4px rgba(var(--ink-rgb), 0.35);}
+
+/* ── the heart ──────────────────────────────────────────────
+   Built off .snd-op rather than sharing it: it is the same
+   size and the same give, but it is not in the transport row
+   and it is the only control here that stays on after you let
+   go — so it needs a state the row has no use for.
+
+   Ink when it is on, not red. A heart is already the shape
+   that carries the meaning, so the colour has only one job
+   left — to say FILLED — and the loudest ink on the block is
+   what does that without introducing a hue nothing else here
+   uses. It also puts the heart at the same weight as the play
+   button, which is the other solid mark on the card, so the
+   two read as the same kind of thing rather than as a control
+   and a warning. */
+.snd-like {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: color 160ms ease, background 160ms ease,
+    scale 130ms cubic-bezier(0.3, 0.9, 0.4, 1);}
+
+.snd-like:hover { color: var(--ink); background: rgba(var(--ink-rgb), 0.07); }
+
+.snd-like:active { scale: 0.9; }
+
+.snd-like[data-on] { color: var(--ink); }
+
+.snd-like[data-on]:hover { color: var(--ink); background: rgba(var(--ink-rgb), 0.07); }
+
+/* ── the beat ───────────────────────────────────────────────
+   On the way ON only, which is why it is keyed to the state
+   and not to the press: unliking something does not deserve a
+   flourish, and one that plays both ways reads as a button
+   animating rather than as a thing being liked.
+
+   Overshoot is the whole effect — 1.34 and back, on a curve
+   that passes its target — so it lands as a pulse rather than
+   as a grow. */
+.snd-like[data-on] .lucide {
+  animation: snd-beat 340ms cubic-bezier(0.3, 1.4, 0.5, 1);}
+
+.snd-like:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--card), 0 0 0 4px rgba(var(--ink-rgb), 0.35);}
+
+/* the hit area, and nothing else — see the note in Sound.tsx */
+.snd-tap {
+  position: absolute;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;}
+
+/* the cover gives too — it is the thing you press to change
+   the shape, so it should answer the same way the transport
+   does. Scoped to the ART, not to this: the hit area is
+   invisible and scaling nothing looks like nothing. */
+.snd-box:has(.snd-tap:active) .snd-art { scale: 0.96; }
+
+.snd-art { transition: scale 130ms cubic-bezier(0.3, 0.9, 0.4, 1); }
+
+.snd-tap:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--card), 0 0 0 4px rgba(var(--ink-rgb), 0.35);}
+
+@keyframes snd-beat {
+  0% { scale: 1; }
+  38% { scale: 1.34; }
+  100% { scale: 1; }}

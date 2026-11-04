@@ -1,0 +1,1481 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- P-93（在线 demo）：资源引用一律改成**相对本页**。
+         原因：同一份 HTML 既要在本机 :8901（P-127 起挂 /WEwebLoader/，软链到本目录；旧名
+         /wallpaper-engine-webgl/ 的软链与 Pages 上的重定向页都还在）、又要在 GitHub Pages
+         （挂 /demo/ 与 /WEwebLoader/）下工作 —— 绝对路径只在其中一种布局下成立。
+         相对路径两边都对，且 <base href="./"> 让 favicon/manifest/图标继续按本目录解析。
+         产物 assets 内部写死的绝对路径由 bench-patch.js 在运行期改写（见该文件 P-93 段）。 -->
+    <base href="./" />
+    <!-- ①(修正 2026-09-18 真机：安卓浏览器专属 bug 的真因) 本页原来**没有 viewport meta**：
+         手机浏览器因此用 980px 的"布局视口"排版再整体缩放/平移 ⇒ 桌面看着正常、手机上"放大/内容缩到角落"，
+         而且 `@media (max-width:860px)` 这类窄屏规则在手机上**永远不匹配**（实测 clientWidth=980、matchMedia=false）。
+         与渲染器页 demo.html 保持一致。 -->
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>wallpaper-engine-webgl</title>
+    <meta name="theme-color" content="#0d111a" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <!-- ①(P-164) 页面图标换成**仓库所有者提供的**品牌图（`demo/assets/brand/**`，随仓分发；
+         来源与可用性由仓库所有者负责，见提交信息与 docs/PATCHES.md P-164；**不当作上游第三方素材登记**）。
+         32/64 给标签页，192 给 apple-touch，512 给清单图标。 -->
+    <link rel="icon" type="image/png" sizes="32x32" href="./assets/brand/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="./assets/brand/favicon-64.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="./assets/brand/brand-192.png" />
+    <link rel="apple-touch-icon" href="./assets/brand/brand-192.png" />
+    <script type="module" crossorigin src="./assets/bench-DSKWIqmS.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
+    <link rel="stylesheet" crossorigin href="./assets/bench-HtRiuWm6.css">
+    <!-- ⑭(P-142 2026-09-19 用户第 2 项) 声音控件 = P-138 交付的 NowPlaying（`demo/now-playing/dist/now-playing.js`
+         是自足 ESM，React 已内联）。样式必须**跟在组件旁边**：它不在产物里（build.mjs 只出 JS），
+         独立演示页也是这么引的。这份 CSS 的每条选择器都以 `.snd` 开头 / 落在 `.snd` 子树内、
+         14 个 Bencho token 只定义在 `.snd` 自己身上（`tests/now-playing-test.mjs` 第 ③/④ 组逐条断言）
+         ⇒ 引到本页**不会**碰到测试台自己的 UI，也不新增全局变量。 -->
+    <link rel="stylesheet" href="./now-playing/now-playing.css" />
+    <!-- ⚠ ①(2026-09-18)**站点外壳的首屏布局 CSS 必须静态存在**，不能靠补丁运行期注入：
+         真机现象"刷新时先一帧全屏放大、随后控制台缩到左上角"就是"产物样式先生效、我们的样式后注入"之间的窗口。
+         下面这份是按 html.bench-shell 作用域静态声明（内容与 demo/bench-patch.js 的 SITE_LAYOUT_CSS 逐条等价，
+         由 tests/demo-check.mjs 的 D8 断言防止漂移）。`?shell=off` 时 head 里那段脚本不加类 ⇒ 整块 CSS 不生效（旧行为）。 -->
+    <style id="bench-shell-static">
+html.bench-shell body{display:flex!important;flex-direction:column;grid-template-rows:none!important}
+html.bench-shell #site-header{flex:none;height:44px;display:flex;align-items:center;gap:14px;padding:0 12px;background:var(--titlebar);border-bottom:1px solid var(--border);position:relative;z-index:30}
+html.bench-shell #site-brand{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px;color:var(--fg);white-space:nowrap}
+html.bench-shell .brand-dot{width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,var(--accent,#0078d4),#7dd3fc)}
+html.bench-shell #app-version{font-size:11px;color:var(--fg-mute);font-weight:400}
+html.bench-shell #site-tabs{position:relative;display:flex;align-items:stretch;height:100%}
+html.bench-shell .site-tab{appearance:none;border:0;background:transparent;color:var(--fg-dim);font:inherit;font-size:13px;padding:0 14px;cursor:pointer;border-bottom:2px solid transparent}
+html.bench-shell .site-tab:hover{color:var(--fg)}
+html.bench-shell .site-tab.active{color:var(--fg);border-bottom-color:transparent}
+html.bench-shell #site-tab-ink{position:absolute;bottom:0;left:0;height:2px;width:0;background:var(--accent,#0078d4);transition:none;pointer-events:none}
+html.bench-shell #site-actions{margin-left:auto;display:flex;align-items:center;gap:8px;position:relative}
+html.bench-shell #settings-btn{appearance:none;font:inherit;font-size:12.5px;color:var(--fg);background:transparent;border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer}
+html.bench-shell #settings-btn:hover, html.bench-shell #settings-btn[aria-expanded="true"]{background:var(--accent,#0078d4);border-color:var(--accent,#0078d4);color:#fff}
+html.bench-shell #site-actions .theme-btn{width:30px;height:26px;border:0;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;place-items:center;padding:0;line-height:1;box-sizing:border-box}
+html.bench-shell #theme-toggle .ic{display:block;flex:none}
+/* ⑥(2026-09-20 用户第 6 条「暗色模式小月亮图标不居中」)：几何居中的三件事必须同时成立 ——
+   ① 按钮 `border:0`：产物 `.act` 带 `border-left:2px solid transparent`，`*{box-sizing:border-box}`
+      下它会从 30px 里吃掉 2px ⇒ 内容盒左移、图标中心比按钮中心右偏 1px（实测就是这个）；
+   ② 容器 flex/grid 居中（`align-items/justify-content/place-items`）；
+   ③ 图标自己 `display:block;line-height:1`（内联 svg 走基线对齐会带上 line-box 的降部留白）。
+   门禁 `bench-ui-headless` G 组用 `getBoundingClientRect` 判两主题下中心偏差 ≤1px。 */
+html.bench-shell #theme-toggle svg.ic{display:block;line-height:1;margin:0;vertical-align:middle}
+html.bench-shell .theme-seg{display:inline-flex;align-items:center;border:1px solid var(--border);border-radius:6px;overflow:hidden}
+html.bench-shell .theme-opt{appearance:none;font:inherit;font-size:12px;color:var(--fg-dim);background:transparent;border:0;padding:3px 9px;cursor:pointer}
+html.bench-shell .theme-opt + .theme-opt{border-left:1px solid var(--border)}
+html.bench-shell .theme-opt:hover{color:var(--fg)}
+html.bench-shell .theme-opt[aria-pressed="true"]{background:var(--accent,#0078d4);color:#fff}
+html.bench-shell #settings-pop{position:absolute;right:0;top:calc(100% + 6px);width:330px;background:var(--panel);border:1px solid var(--border);border-radius:8px;box-shadow:0 14px 40px rgba(0,0,0,.38);padding:10px 12px;z-index:40;display:flex;flex-direction:column;gap:8px;font-size:12.5px}
+/* ⑫b(2026-09-19 用户要求) 捕手必须**低于** #site-header：header 是 `position:relative;z-index:30` 的
+   层叠上下文，弹层自己在里面 z-index:40 —— 但整个上下文在根级只有 30。捕手原来是 35（根级），
+   ⇒ 它盖在**整个 header 之上**（弹层也不例外）：点「语言」命中的是捕手 ⇒ pointerdown 直接关弹层，
+   语言永远切不了。改成 29（根级：高于内容层 #pages-track 的 auto、低于 header 的 30）⇒
+   弹层收得到点击，点页面其它地方仍然是"先命中捕手 ⇒ 关"。 */
+html.bench-shell #settings-catcher{position:fixed;inset:0;z-index:29;background:transparent}
+html.bench-shell #settings-pop[hidden]{display:none!important}
+html.bench-shell .pop-row, html.bench-shell .lang-box{display:flex;align-items:center;gap:8px}
+html.bench-shell .pop-k{color:var(--fg-mute);min-width:44px}
+html.bench-shell .pop-val{color:var(--fg)}
+html.bench-shell .pop-note{margin:2px 0 0;color:var(--fg-mute);font-size:11.5px;line-height:1.6}
+html.bench-shell .pop-credit{margin-top:2px;padding-top:8px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--fg-mute)}
+html.bench-shell .pop-credit a{color:var(--link,var(--accent,#58a6ff));pointer-events:auto;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+html.bench-shell #pages-track{flex:1 1 auto;width:auto;display:flex;flex-direction:column;min-height:0;min-width:0;overflow:hidden;contain:paint;transform:none!important;transition:none!important}
+html.bench-shell .page{flex:1 1 auto;width:100%;min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+html.bench-shell #page-docs, html.bench-shell #page-wpset{overflow-y:auto;background:var(--editor)}
+html.bench-shell #workbench{flex:1;grid-template-columns:var(--mpw-lib-w,300px) auto minmax(0,1fr)!important;min-height:0;overflow:hidden}
+html.bench-shell #activitybar{display:none!important}
+html.bench-shell #sidebar{grid-column:1;width:auto!important;max-width:none!important;min-width:0!important;resize:none!important}
+html.bench-shell #props{grid-column:2;width:var(--mpw-props-w,320px);min-width:0;border-left:1px solid var(--border);border-right:1px solid var(--border)}
+html.bench-shell #props[hidden]{display:flex!important}
+/* ⑫a(2026-09-19 用户要求)「壁纸配置」要能收起。上面那条 `[hidden]{display:flex!important}`（为 docs 视图
+   上的锁）+ `paintPropsEmpty()` 见到 hidden 就摘掉 ⇒ 产物 `#props-close.onclick = ue(!1)` 点了没效果。
+   收起状态改用**我们自己的类**：规则排在 `#props[hidden]` 之后、与它**同特异度**（1 个 id + 2 个 class
+   + 1 个元素）⇒ 源序后者胜；`!important` 同时压掉产物 CSS 里的 `[hidden]{display:none!important}`。 */
+html.bench-shell #props.bench-props-collapsed{display:none!important}
+html.bench-shell .props-empty{padding:14px 12px;color:var(--fg-mute);font-size:12.5px;line-height:1.75}
+html.bench-shell .props-empty strong{display:block;color:var(--fg-dim);margin-bottom:4px}
+/* ── ①(2026-09-19 测试台外壳一批 UI bug) 顶部工具条"太长把后面的选项顶掉"的真因与修法 ────────────
+   `#main` 是产物自己的 `display:grid`（单列、且那条列是 `auto`）：列宽由**内容 max-content** 决定 ⇒
+   `#editor-tabs` 里 11 个切换 tab 把它撑到 2279px（视口 1360、`#main` 真实宽 740）⇒ 工具条那一行整条
+   溢出到视口外，`#main{overflow:hidden}` 把右边 12 个控件连同"输出"栏右侧的清空/复制一起裁掉
+   （实测：1360×900 下 17 个控件只有 3 个在视口内，两个按钮的 rect 右缘 2891 > 1360）。
+   修法：把内层那条列**钉成 `minmax(0,1fr)`**（`!important` 压过产物的 `auto`）⇒ 列宽 = `#main` 的真实宽度，
+   工具条自己的 `flex-wrap:wrap`（产物本来就有）这才有可能换行；再补 `max-width:100%` / 横向不滚，
+   配合下面的 `max-height:30vh + overflow-y:auto`，**窄屏也一定可达**（换行优先、超高才纵向滚动）。
+   为什么选"换行"而不是折叠进"更多"菜单或横向滚动：①产物那 17 个控件全是原生 label/select/button，
+   换行零结构改动、键盘 Tab 顺序天然正确；②"更多"菜单要把控件搬进浮层，控件 id 与产物绑定会断；
+   ③横向滚动在触控笔电上会把"看不到"变成"要横划才找到"，而用户的诉求正是"完整可达"。 */
+html.bench-shell #toolbar{max-height:30vh;overflow-y:auto;flex-wrap:wrap;max-width:100%;overflow-x:hidden}
+/* ①(P-228e 2026-10-04，2026-10-04 二改：从"网格格子"改回**紧凑流式**——网格把每个控件撑成
+   260px 的格子，短按钮也占满一格 ⇒ 大片留白 + 行数变多（工具条反而更高）。
+   现在：flex 换行 + **控件按内容宽**、标签不固定占位；状态行独占整行且**行高固定**（超长省略）
+   ⇒ 既紧凑整齐，也不会因为状态文案变长而顶高工具条/挪动预览区。 */
+html.bench-shell #toolbar{display:flex;flex-direction:column;align-items:stretch;gap:4px 0;max-height:none;overflow:visible;width:100%}
+/* ⑩(P-228f 2026-10-05) **四行**：行容器显式（`.tb-row`），每行自己 flex 换行 ⇒ 行内容与窗口宽度无关。 */
+html.bench-shell #toolbar .tb-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;min-width:0}
+html.bench-shell #toolbar .tb-row > label{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;min-width:0}
+html.bench-shell #toolbar .tb-row > label > span:first-child{flex:0 0 auto;white-space:nowrap}
+html.bench-shell #toolbar .tb-row select,html.bench-shell #toolbar .tb-row input[type="search"]{width:auto;min-width:6.6em;max-width:13em}
+html.bench-shell #toolbar .tb-row > button,html.bench-shell #toolbar .tb-row > .mpw-select{flex:0 0 auto;width:auto;padding-left:8px;padding-right:8px}
+/* ①(P-228e 四改 2026-10-04) 复选框命中区统一：`.check` 原来跟着上面那条一起吃 `padding-left:8px`，
+   而 label 的 padding 也算可点区 ⇒ 看上去"框的左边还多出一截能点到"，并且各行的观感不一致。
+   这里把左内边距清零、间距交给 input 自己的 margin ⇒ **可点区 = 框 + 文字**，四行完全一致。 */
+html.bench-shell #toolbar .tb-row > .check{flex:0 0 auto;width:auto;padding-left:0;padding-right:8px}
+html.bench-shell #toolbar .tb-row > .check > input[type="checkbox"]{margin:0 6px 0 0}
+html.bench-shell #bar-row{flex:0 0 auto;display:flex;align-items:center;gap:8px;height:1.6em;min-width:0}
+html.bench-shell #bar-row button{flex:0 0 auto}
+/* ⑧(P-228f) 状态片：诊断区（输出面板页签行尾）里的紧凑读数 —— 单行、可省略、悬停看全文。 */
+html.bench-shell .bench-status-chip{flex:0 1 auto;min-width:0;max-width:22em;display:inline-block;height:1.6em;line-height:1.6em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--fg-dim);font-size:12px;padding:0 6px;border:1px solid var(--bench-input-border,#3c3c3c);border-radius:6px;cursor:help}
+/* 收起态：只收第 1~3 行（参数）；第 4 行的动作按钮与新档位保持可用。 */
+html.bench-shell #toolbar.bar-off .tb-row:not(#tb-row4){display:none}
+/* ⑩(2026-09-21 台账 §5.3) 「音条源」状态行：诚实原因可能是一整句（"该壁纸没有音源或已静音 ——
+   可切「麦克风」或「模拟」看形态"），所以让它**换行**（`flex-wrap` 优先）而不是 `nowrap` +
+   `text-overflow:ellipsis` —— 截断会把"可切麦克风/模拟"这条出路吃掉。*/
+html.bench-shell #status-bandfeed{flex:0 1 auto;min-width:0;max-width:100%;color:var(--fg-dim);font-size:12px;line-height:1.35;overflow-wrap:anywhere}
+/* ⑪(2026-09-21) 「渲染器来源」状态行：与上面那条同口径（一整句、可换行、不截断）——
+   它写的是"跑的是哪条路径 + 画布/DPR 真读数 + 哪些能力明确降级"，截断会把降级名单吃掉。*/
+html.bench-shell #status-renderer-src{flex:0 1 auto;min-width:0;max-width:100%;color:var(--fg-dim);font-size:12px;line-height:1.35;overflow-wrap:anywhere}
+/* ⑬(2026-09-19 用户要求) 下拉浮层浮在页面上层：`position:fixed` 让它脱离 `#toolbar` / `#main` /
+   `#props-body` 的 overflow 裁剪（这些祖先都没有 transform/contain ⇒ 不是固定定位的包含块），
+   坐标由 `dropdownLayerPlan()` 在展开时写内联 left/top/min-width/max-height。
+   `min-width:0` 必需：产物那条 `min-width:100%` 在 fixed 下会对齐**视口宽**。 */
+html.bench-shell .bench-rd-list{position:fixed;z-index:70;top:auto;left:auto;min-width:0;max-height:min(280px,42vh);overflow-y:auto}
+/* 这条与 #toolbar 的 `minmax(0,1fr)` 是同一处修复的两半：列钉死 ⇒ 工具条换行而不是把整行顶出视口。 */
+html.bench-shell #main{grid-column:3;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:auto minmax(140px,1fr) 6px minmax(60px,var(--mpw-logs-h,220px))!important}
+html.bench-shell #main.logs-collapsed{grid-template-rows:auto minmax(0,1fr) 6px 34px!important}
+/* ⑥(用户要求)"输出 / 渲染器诊断"这一行行尾**常驻**清空 + 复制：产物那条
+   `#main.logs-collapsed #clear-logs{display:none}` 会在收起态把"清空"藏掉 ⇒ 这里按同一特异度
+   （1 id + 1 class + 1 元素 = 产物那条）+ `!important` 压回来。两个态都在，不再"只有收起才冒出复制输出"。 */
+html.bench-shell #main.logs-collapsed #clear-logs{display:inline-flex!important}
+html.bench-shell #editor-chrome{grid-row:1}
+html.bench-shell #workspace{grid-row:2}
+html.bench-shell #main > #logs-splitter{grid-row:3;cursor:row-resize;background:var(--border);opacity:.55}
+html.bench-shell #logs-splitter:hover, html.bench-shell #logs-splitter.dragging{background:var(--accent,#0078d4);opacity:1}
+html.bench-shell #main > #logs{grid-row:4}
+html.bench-shell #wp-switch{display:flex;align-items:stretch;background:var(--sidebar);border-bottom:1px solid var(--border)}
+html.bench-shell #editor-tabs{flex:1;min-width:0;overflow-x:auto;overflow-y:hidden;height:32px;border-bottom:0;scrollbar-width:thin}
+html.bench-shell #editor-tabs .tab{height:32px;font-size:12.5px}
+html.bench-shell .wp-tab{max-width:200px;display:flex;align-items:center;gap:6px;padding:0 10px;font:inherit;font-size:12.5px;color:var(--fg-dim);background:transparent;border:0;border-right:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+html.bench-shell .wp-tab:hover{background:var(--hover,rgba(255,255,255,.07));color:var(--fg)}
+html.bench-shell .wp-tab.active{background:var(--editor);color:var(--fg);box-shadow:inset 0 -2px 0 var(--accent,#0078d4)}
+html.bench-shell .wp-tab.wp-cur{opacity:.45}
+html.bench-shell #wp-add{flex:none;width:34px;border:0;border-left:1px solid var(--border);background:transparent;color:var(--fg-dim);font-size:16px;line-height:1;cursor:pointer}
+html.bench-shell #wp-add:hover{background:var(--accent,#0078d4);color:#fff}
+html.bench-shell #toggle-logs{gap:4px;width:auto!important;padding:0 6px!important}
+html.bench-shell #logs.bench-logs-collapsed-tag #toggle-logs::after{content:attr(data-tag);font-size:11px;color:var(--fg-dim)}
+html.bench-shell .stage-tools button{color:var(--fg)!important;background:color-mix(in srgb,var(--panel) 86%,transparent);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer}
+html.bench-shell .stage-tools button:hover{background:var(--accent,#0078d4)!important;border-color:var(--accent,#0078d4);color:#fff!important}
+html.bench-shell .doc-wrap{max-width:1020px;margin:0 auto;padding:22px 28px 64px;font-size:13.5px;line-height:1.75;color:var(--fg)}
+html.bench-shell .doc-wrap h1{font-size:20px;margin:6px 0 10px}
+html.bench-shell .doc-wrap h2{font-size:14.5px;margin:22px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+html.bench-shell .doc-lede{color:var(--fg-dim);font-size:13px}
+html.bench-shell .doc-wrap table{width:100%;border-collapse:collapse;font-size:12.5px;margin:8px 0 4px}
+html.bench-shell .doc-wrap th, html.bench-shell .doc-wrap td{text-align:left;vertical-align:top;padding:6px 9px;border-bottom:1px solid var(--border)}
+html.bench-shell .doc-wrap th{color:var(--fg-mute);font-weight:500}
+html.bench-shell .doc-wrap code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;background:color-mix(in srgb,var(--fg) 10%,transparent);border-radius:4px;padding:1px 5px}
+html.bench-shell .doc-wrap pre{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px 12px;overflow:auto}
+html.bench-shell .doc-wrap pre code{background:none;padding:0}
+html.bench-shell .doc-wrap ul, html.bench-shell .doc-wrap ol{padding-left:22px}
+html.bench-shell .doc-note{color:var(--fg-mute);font-size:12.5px}
+html.bench-shell .tag{display:inline-block;font-size:11px;padding:1px 6px;border-radius:999px;border:1px solid var(--border);white-space:nowrap}
+html.bench-shell .tag-ok{color:#3fb950;border-color:rgba(63,185,80,.45);background:rgba(63,185,80,.12)}
+html.bench-shell .tag-todo{color:#d29922;border-color:rgba(210,153,34,.45);background:rgba(210,153,34,.12)}
+html.bench-shell .tag-we{color:var(--fg-dim)}
+html.bench-shell #docs-view{display:none!important}
+html.bench-shell #sidebar[hidden]{display:flex!important}
+html.bench-shell #logs[hidden]{display:flex!important}
+html.bench-shell #editor-chrome[hidden]{display:block!important}
+html.bench-shell #stage-slot[hidden]{display:flex!important}
+html[lang="en"] .lang-zh{display:none}
+html[lang]:not([lang="en"]) .lang-en{display:none}
+@media (prefers-reduced-motion: reduce){html.bench-shell #pages-track,#site-tab-ink{transition:none!important}}
+    
+/* ── ⑦(2026-09-20 用户第 7 条)：滚动条一处定义、两处引用 ──────────────────────────────────
+   用户原话口径：「白色/浅色、细（6–8px）、上下圆角」。**定义只有一处**：下面四个自定义属性
+   （`--bench-sb-*`，随主题切换）；**引用两处**：资源管理器列表（`#list` 等）与输出区（`#logbody`
+   /`#diag-body`/`#debug-body`）共用同一条选择器清单 —— 改样式只改这一处，不会再出现
+   "列表细了、输出区还又黑又粗"。WebKit/Blink 走 `::-webkit-scrollbar` 系列（轨道透明、
+   滑块半透明、`border-radius:999px` 上下圆角、无箭头按钮）；Firefox 走标准
+   `scrollbar-width:thin; scrollbar-color:<滑块> <轨道>`。 */
+html.bench-shell{--bench-sb-size:8px;--bench-sb-thumb:rgba(255,255,255,.5);--bench-sb-thumb-hover:rgba(255,255,255,.72);--bench-sb-track:transparent}
+html.bench-shell[data-theme="light"]{--bench-sb-thumb:rgba(0,0,0,.28);--bench-sb-thumb-hover:rgba(0,0,0,.42)}
+/* ②(P-166 第 23 条) 输出区行首永远可见（与补丁 SITE_LAYOUT_CSS 逐条同文，D8 守）：长行折行、不横滚。 */
+html.bench-shell #logbody{white-space:pre-wrap;overflow-wrap:anywhere}
+html.bench-shell #logbody{color:var(--fg)}
+html.bench-shell #list, html.bench-shell .bench-dirbox-list, html.bench-shell #logbody, html.bench-shell #diag-body, html.bench-shell .dbg-log{scrollbar-width:thin;scrollbar-color:var(--bench-sb-thumb) var(--bench-sb-track)}
+html.bench-shell #list::-webkit-scrollbar, html.bench-shell .bench-dirbox-list::-webkit-scrollbar, html.bench-shell #logbody::-webkit-scrollbar, html.bench-shell #diag-body::-webkit-scrollbar, html.bench-shell .dbg-log::-webkit-scrollbar{width:var(--bench-sb-size);height:var(--bench-sb-size)}
+html.bench-shell #list::-webkit-scrollbar-track, html.bench-shell .bench-dirbox-list::-webkit-scrollbar-track, html.bench-shell #logbody::-webkit-scrollbar-track, html.bench-shell #diag-body::-webkit-scrollbar-track, html.bench-shell .dbg-log::-webkit-scrollbar-track{background:var(--bench-sb-track)}
+html.bench-shell #list::-webkit-scrollbar-thumb, html.bench-shell .bench-dirbox-list::-webkit-scrollbar-thumb, html.bench-shell #logbody::-webkit-scrollbar-thumb, html.bench-shell #diag-body::-webkit-scrollbar-thumb, html.bench-shell .dbg-log::-webkit-scrollbar-thumb{background:var(--bench-sb-thumb);border-radius:999px}
+html.bench-shell #list::-webkit-scrollbar-thumb:hover, html.bench-shell .bench-dirbox-list::-webkit-scrollbar-thumb:hover, html.bench-shell #logbody::-webkit-scrollbar-thumb:hover, html.bench-shell #diag-body::-webkit-scrollbar-thumb:hover, html.bench-shell .dbg-log::-webkit-scrollbar-thumb:hover{background:var(--bench-sb-thumb-hover)}
+html.bench-shell #list::-webkit-scrollbar-button, html.bench-shell .bench-dirbox-list::-webkit-scrollbar-button, html.bench-shell #logbody::-webkit-scrollbar-button, html.bench-shell #diag-body::-webkit-scrollbar-button, html.bench-shell .dbg-log::-webkit-scrollbar-button{display:none;width:0;height:0}
+html.bench-shell #list::-webkit-scrollbar-corner, html.bench-shell .bench-dirbox-list::-webkit-scrollbar-corner, html.bench-shell #logbody::-webkit-scrollbar-corner, html.bench-shell #diag-body::-webkit-scrollbar-corner, html.bench-shell .dbg-log::-webkit-scrollbar-corner{background:transparent}
+/* ── ⑨(2026-09-20 用户第 10 条)：输入框聚焦不再是浏览器默认的黄色框 ──────────────────────────
+   平时灰边、聚焦黑边（暗色模式聚焦白边）；`outline:none` + `border-color` 切换，两个颜色统一到
+   一处变量（`--bench-input-border` / `--bench-input-focus`）。范围限定在文本类输入（勾选/单选/
+   滑条/取色器没有"聚焦边框"这个语义）。
+   ⚠ 必须 `!important`：产物自己有 `#filter:focus,#props-filter:focus,#toolbar select:focus{border-color:var(--focus)}`
+   —— 那条**带 id**，而"任意多个 class/属性选择器"都压不过一个 id（特异性 a>b>c）⇒ 不加就永远轮不到
+   我们的变量色（实测聚焦色仍是产物的 `--focus` #0078d4）。 */
+html.bench-shell{--bench-input-border:#ccc;--bench-input-focus:#111}
+html.bench-shell[data-theme="dark"]{--bench-input-border:#3c3c3c;--bench-input-focus:#fff}
+html.bench-shell input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]), html.bench-shell textarea{border:1px solid var(--bench-input-border)!important}
+html.bench-shell input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):focus, html.bench-shell textarea:focus{outline:none;border-color:var(--bench-input-focus)!important}
+/* 本轮（用户第 14/18/23/25/26/27/28/30/34 条）：资源管理器行布局 + 属性面板富文本/报错 + 外链确认弹层 */
+html.bench-shell #list .meta{min-width:0}
+html.bench-shell #list .sub .bench-row-id{display:block;max-width:100%;font-family:var(--mono);font-size:10.5px;color:var(--fg-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.bench-shell #list li.active .sub .bench-row-id{color:#b4d0e8}
+html.bench-shell #list .sub .bench-row-kind{display:block;overflow:hidden;text-overflow:ellipsis}
+html.bench-shell .bench-prop-note{padding:2px 0 0;color:var(--fg-mute);font-size:11px;line-height:1.5}
+html.bench-shell .bench-prop-imgwrap{display:block;margin:4px 0}
+html.bench-shell .bench-prop-img{display:block;max-width:100%;height:auto;border-radius:2px}
+html.bench-shell .bench-prop-link{color:var(--link);text-decoration:underline;cursor:pointer}
+html.bench-shell .bench-num-err{margin-top:4px;color:var(--danger);font-size:11px;line-height:1.5}
+html.bench-shell .bench-props-hidden-note{font-size:11px;line-height:1.6}
+html.bench-shell .bench-ext{position:fixed;inset:0;z-index:1200;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5)}
+html.bench-shell .bench-ext-box{width:min(520px,92vw);padding:16px 18px;border:1px solid var(--widget-border);border-radius:8px;background:var(--panel);color:var(--fg);box-shadow:var(--shadow)}
+html.bench-shell .bench-ext-title{font-size:14px;font-weight:600;margin-bottom:6px}
+html.bench-shell .bench-ext-host{font-size:13px;color:var(--fg);word-break:break-all}
+html.bench-shell .bench-ext-url{display:block;margin:6px 0;padding:6px 8px;border:1px solid var(--border);border-radius:4px;background:var(--input);color:var(--fg-dim);font:11px/1.5 var(--mono);word-break:break-all}
+html.bench-shell .bench-ext-warn{margin:6px 0 12px;color:var(--fg-mute);font-size:12px;line-height:1.6}
+html.bench-shell .bench-ext-row{display:flex;justify-content:flex-end;gap:8px}
+html.bench-shell .bench-ext-row button{height:26px;padding:0 12px;border:1px solid var(--widget-border);border-radius:4px;background:var(--input);color:var(--fg);cursor:pointer}
+html.bench-shell .bench-ext-open:not(:disabled){background:var(--accent,#0078d4);border-color:var(--accent,#0078d4);color:#fff}
+html.bench-shell .bench-ext-open:disabled{opacity:.55;cursor:default}
+/* ── ⑪(2026-09-20 用户第 11 条)：首屏防闪 ────────────────────────────────────────────────
+   用户原话：「刷新时先看到所有内容堆在一起，约 1 秒后才正常」。这段**必须在 head 的静态表里**
+   （不依赖 JS/补丁）：补丁/外壳把关键布局接管完之前，body 先不画；`<head>` 里那段同步脚本在
+   DOMContentLoaded、以及 1.2s/3s 两个硬兜底时刻摘掉闸门 ⇒ 任何异常路径下最迟 1.2s 必定显示，
+   不会出现"永远白屏"。`?shell=off`/静态托管同样会显示（兜底定时器无条件跑）。
+   判据（门禁 G 组）：`html[data-bench-ready]` 必须出现且 body 可见；并且**每一帧**只要 body 可见，
+   三列就已经是最终布局（`#sidebar` 右缘 ≤ `#main` 左缘），即"从没有在堆叠态被人看见过"。 */
+html.bench-shell:not([data-bench-ready]) body{visibility:hidden}
+html.bench-shell[data-bench-ready] body{visibility:visible}
+/* ②(2026-09-20 用户第 3 条) 调试模式开关搬进页签内部后的那一行（与补丁 SITE_LAYOUT_CSS 逐字同文）。 */
+html.bench-shell .dbg-mode-row{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--border)}
+/* ⑦⑧(2026-09-24 用户第 7/8 条) 三个日志页签共用一个灰框选中态；调试页签文案 `调试模式·ON / OFF`
+   由 bench-patch.js 的 paintDbgTab() 写 `data-dbg=on|off`，颜色只看这个属性（ON 正常绿 / OFF 正常红）。 */
+html.bench-shell #logs .logs-tab.active[aria-selected="true"]{box-shadow:inset 0 0 0 1px var(--border)}
+html.bench-shell #logs #tab-debug[data-dbg="on"]{color:var(--bench-dbg-on,#3fb950)}
+html.bench-shell #logs #tab-debug[data-dbg="off"]{color:var(--bench-dbg-off,#e5534b)}
+/* ── 窄屏/堆叠布局（2026-09-18 真机：安卓手机 412px + 平板"桌面版网站" 980px）──────────
+   桌面宽窗口正常、窄视口错乱的真因：三列是固定 300+320+其余 ⇒ 980px 内容塞进 412px 视口，
+   横向溢出 + 舞台那条 `minmax(140px,1fr)` 与产物 `#stage-scale` 的容器查询单位形成循环依赖
+   ⇒ 舞台高度爆到 1600px+（实测 412×915 时 #stage-slot=1619px、#main 行=270/1618/6/220）。
+   这里在窄视口改成**单列堆叠 + 舞台给确定高度 + 关掉容器查询**，并把头部 tab 允许换行/横滚。
+
+   判定**只有一处**：`<head>` 里的同步脚本在首屏前给 `<html>` 加 `.bench-narrow`（第一帧就对，
+   不需要等产物启动）；下面的规则一律以 `html.bench-shell.bench-narrow` 起头。
+   为什么闸门不是 @media：手机/平板开"桌面版网站"时**布局视口恒为 980px**，
+   `@media (max-width:860px)` 永不匹配（真机实测 clientWidth=980、matchMedia=false），
+   而 980 这个宽度**任何小于 980 的阈值都拦不住** ⇒ 阈值取 1180（必须 > 980）。
+   平板实测（OPPO Pad 4 Pro 3392×2400 / 桌面模式 / screen.width=1696）：改前 `narrow=false`
+   ⇒ 桌面三列塞进 980px、舞台只有 448×252、文档 scrollWidth 2940（3 倍溢出）。 */
+html.bench-shell body{overflow-x:hidden}
+/* 横向溢出**必须也在根元素上裁一刀**。①(2026-09-18) 之后 `#pages-track` 已不再是 300% 宽的横排轨道
+   （页签改成互斥的独立页面 ⇒ 轨道本身不再横向溢出），但这条保留作兜底：历史实测在部分引擎里
+   `body{overflow-x:hidden}` **不传播到视口** —— 2026-09-18 无头 Firefox 121 / 980px 视口下
+   `window.scrollTo(9999,0)` 之后 `window.scrollX=1960`（真的能横向拖走两屏）。将来任何一处
+   子元素超宽都会再触发同一个问题，根元素裁一刀与 body 那条并存、不冲突。 */
+html.bench-shell{overflow-x:hidden}
+html.bench-shell.bench-mid{--mpw-lib-w:240px;--mpw-props-w:260px}
+/* ── ⑭(P-142 2026-09-19 用户第 1 项)「资源管理器」要能收纳（`#sidebar-toggle` 那个把手）────────────
+   用户原话：「8901 最左边的资源管理器，也要设置一个可以将它收纳起来的按键」。
+   状态类挂在 **`<body>`** 上（`bench-nav-collapsed`，由 `<body>` 开头的同步脚本按 localStorage 加 ⇒ 首帧即生效，
+   不闪一下展开态）。为什么挂 body 而不是 <html>：`tests/demo-check.mjs` 的 D8 会把本文件里
+   `SITE_LAYOUT_CSS` 的每条选择器自动前缀成 `html.bench-shell <选择器>` —— 只有**后代选择器**能被那条
+   防漂移判据表达；类挂 body，规则就仍进得了 SITE_LAYOUT_CSS（D8 照旧逐条守）。
+   收起 = 网格第 1 列只剩 26px（`--mpw-lib-w`），`#workbench` 是
+   `grid-template-columns:var(--mpw-lib-w,300px) auto minmax(0,1fr)` ⇒ `#main`/`#workspace`/`#stage`
+   **真的**多出 300−26（mid 档 240−26）像素：不留空白占位、也不靠盖住谁。
+   `#sidebar > :not(#sidebar-toggle){display:none}` ⇒ 列表/标题/工具条全撤（连将来新增的子节点也一并撤，
+   不留空洞）；那条 26px 的窄边**就是**这个按钮本身（展开把手）。 */
+html.bench-shell #sidebar{position:relative}
+html.bench-shell #sidebar-toggle{position:absolute;top:0;right:0;width:26px;height:35px;display:flex;align-items:center;justify-content:center;padding:0;border:0;background:transparent;color:var(--fg-dim);cursor:pointer;z-index:3}
+html.bench-shell #sidebar-toggle:hover{background:var(--hover,rgba(255,255,255,.07));color:var(--fg)}
+html.bench-shell #sidebar-toggle svg{display:block}
+html.bench-shell body.bench-nav-collapsed{--mpw-lib-w:26px}
+html.bench-shell body.bench-nav-collapsed #sidebar{border-right:1px solid var(--border)}
+html.bench-shell body.bench-nav-collapsed #sidebar > :not(#sidebar-toggle){display:none!important}
+html.bench-shell body.bench-nav-collapsed #sidebar-toggle{position:static;flex:1 1 auto;width:100%;height:auto}
+html.bench-shell body.bench-nav-collapsed #sidebar-toggle svg{transform:rotate(180deg)}
+/* ── ⑭(P-142 2026-09-19 用户第 2/3 项) 声音控件挂点：右侧「壁纸配置」栏的**下半部分** ─────────────
+   组件（P-138 NowPlaying）只吃三个旋钮（morph/corner/stroke）、**没有音量/受控接口**
+   （见 `demo/now-playing/README.md` §3 与 `mount.tsx`）⇒ 下半部 = 组件卡片（收起 78 / 展开 189，
+   由组件自己 morph）+ 本补丁自己的传输条（音量/静音/真实进度，见 bench-patch.js ⑭）。
+   浮层化（absolute）而不是塞进属性表的流里：`#props-body` 的 `padding-bottom` 把**展开态**高度
+   （`--mpw-np-cover` = 卡片 189 + 传输条 30）也算进去 ⇒ 两个状态下每一个属性项都滚得到
+   （"展开后属性项被永久遮住且滚不到"是不变量上被禁掉的，门禁逐项断言）。
+   `#np-mount` 归 React 独占；`#np-mount > *{pointer-events:none}` + `.snd button{pointer-events:auto}`
+   让卡片四周那圈透明区**不吃点击**（收起时上下各 55.5px 的空隙照常点得到后面的属性项）。 */
+html.bench-shell #props{position:relative;--mpw-np-card:189px;--mpw-np-strip:0px;--mpw-np-cover:var(--mpw-np-card)}
+html.bench-shell #np-audio{display:none!important}
+html.bench-shell #np-host{position:absolute;left:0;right:0;bottom:0;height:var(--mpw-np-cover);display:flex;flex-direction:column;justify-content:flex-end;pointer-events:none;z-index:5}
+html.bench-shell #np-host > *{pointer-events:auto}
+html.bench-shell #np-mount{height:var(--mpw-np-card);display:flex;justify-content:center;align-items:flex-start;pointer-events:none}
+html.bench-shell #np-mount > *{pointer-events:none}
+html.bench-shell #np-mount .snd button{pointer-events:auto}
+html.bench-shell #np-mount .snd [data-mpw-np-vol-range], html.bench-shell #np-mount .snd [data-mpw-np-volnum]{pointer-events:auto}
+html.bench-shell #props-body{padding-bottom:calc(20px + var(--mpw-np-cover))}
+html.bench-shell #props, html.bench-shell #props-body{scrollbar-width:thin;scrollbar-color:var(--widget-border,#3c3c3c) transparent}
+html.bench-shell #props-body::-webkit-scrollbar{width:10px;height:10px}
+html.bench-shell #props-body::-webkit-scrollbar-track{background:transparent}
+html.bench-shell #props-body::-webkit-scrollbar-thumb{background:var(--widget-border,#3c3c3c);border-radius:6px;border:2px solid transparent;background-clip:content-box}
+html.bench-shell #props-body::-webkit-scrollbar-thumb:hover{background:var(--accent,#0078d4);background-clip:content-box}
+html.bench-shell #props[data-np="missing"] #props-body{padding-bottom:20px}
+html.bench-shell #props[data-np="missing"] #np-host{display:none}
+html.bench-shell #np-mute{flex:none;width:22px;height:22px;display:flex;align-items:center;justify-content:center;padding:0;border:0;border-radius:4px;background:transparent;color:var(--fg);cursor:pointer}
+html.bench-shell #np-mute:hover{background:var(--hover,rgba(255,255,255,.07))}
+html.bench-shell #np-seek::before{content:"";position:absolute;left:0;right:0;top:6px;height:3px;border-radius:2px;background:var(--input)}
+html.bench-shell #np-run{position:absolute;left:0;top:6px;height:3px;width:0;border-radius:2px;background:var(--accent,#0078d4)}
+html.bench-shell #np-stage{flex:0 1 auto;min-width:0;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--fg-mute)}
+html.bench-shell #np-audio{height:var(--mpw-np-strip);display:flex;align-items:center;gap:6px;padding:0 8px;background:color-mix(in srgb,var(--panel) 86%,transparent);border-top:1px solid var(--border);font-size:11px;color:var(--fg-dim);min-width:0;max-width:100%;box-sizing:border-box;overflow:hidden}
+html.bench-shell #np-seek{position:relative;flex:2 1 32px;min-width:24px;height:14px;padding:0;border:0;background:transparent;cursor:pointer}
+html.bench-shell #np-time{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--fg-mute)}
+html.bench-shell .bench-props-group{margin:0 0 8px;border:1px solid var(--border);border-radius:6px;overflow:hidden}
+html.bench-shell .bench-props-group > .bench-props-group-head{display:flex;align-items:center;gap:6px;padding:5px 8px;cursor:pointer;background:color-mix(in srgb,var(--panel) 70%,transparent);font-size:12px;color:var(--fg-dim);user-select:none}
+html.bench-shell .bench-props-group > .bench-props-group-head:hover{background:var(--hover,rgba(255,255,255,.06))}
+html.bench-shell .bench-props-group > .bench-props-group-head .bench-props-group-caret{flex:none;transition:transform .12s linear}
+html.bench-shell .bench-props-group[data-collapsed="1"] > .bench-props-group-head .bench-props-group-caret{transform:rotate(-90deg)}
+html.bench-shell .bench-props-group[data-collapsed="1"] > .bench-props-group-body{display:none}
+html.bench-shell .bench-props-group > .bench-props-group-body{padding:2px 6px 4px}
+html.bench-shell .bench-props-group .prop, html.bench-shell .bench-props-group .prop-text{margin-top:2px}
+/* ①B(P-201 2026-09-25) 「渲染器设置（WE 自带）」= 补丁自己画的固定清单（`.bench-we-*`）。
+   与 demo/bench-patch.js 的 SITE_LAYOUT_CSS 逐条等价（D8 会逐条比对，改一处必须改两处）。 */
+html.bench-shell .bench-we-group > .bench-props-group-body{padding:4px 8px 6px}
+html.bench-shell .bench-we-row{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;padding:3px 0;font-size:12.5px;color:var(--fg);min-width:0}
+html.bench-shell .bench-we-status{margin:0 0 4px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;color:var(--fg-mute);font-size:11.5px;line-height:1.6;background:color-mix(in srgb,var(--panel) 60%,transparent)}
+html.bench-shell .bench-we-row > .bench-we-label{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html.bench-shell .bench-we-row > .bench-we-ctl{flex:none;display:flex;align-items:center;gap:6px;min-width:0}
+html.bench-shell .bench-we-row > .bench-we-ctl input[type="range"]{width:104px;min-width:0;max-width:100%}
+html.bench-shell .bench-we-row > .bench-we-ctl input[type="checkbox"]{margin:0}
+html.bench-shell .bench-we-row > .bench-we-val{flex:none;min-width:36px;text-align:right;font-variant-numeric:tabular-nums;color:var(--fg-dim)}
+html.bench-shell .bench-we-row > .bench-we-api{flex:1 1 100%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--mono,ui-monospace,SFMono-Regular,monospace);font-size:10.5px;color:var(--fg-mute)}
+html.bench-shell .bench-we-row > .bench-we-why{flex:1 1 100%;min-width:0;color:var(--fg-mute);font-size:11.5px;line-height:1.6}
+html.bench-shell .bench-we-row > .bench-we-tag{flex:none;padding:1px 6px;border:1px solid var(--border);border-radius:999px;font-size:10.5px;color:var(--fg-dim)}
+html.bench-shell .bench-we-row[data-we-avail="0"] > .bench-we-ctl{opacity:.55}
+html.bench-shell .bench-we-row[data-we-avail="0"] > .bench-we-val{opacity:.55}
+html.bench-shell .bench-we-hint{margin-top:4px;padding-top:4px;border-top:1px dashed var(--border);color:var(--fg-mute);font-size:11.5px;line-height:1.6}
+/* ⚠ 这一整块**没有 @media 包裹**（2026-09-18 修）：原来那次"去掉媒体查询依赖"的编辑把 `@media(…){`
+   这一行删掉了，却留下了块内的规则和末尾那个 `}` ⇒ ①多出一个孤立的大括号；②末尾 4 条本该"只在窄屏生效"
+   的规则（工具栏字号 / site-tab / 设置弹层宽度）**泄漏到所有桌面宽度**；③其中一条选择器写成了
+   `html.bench-shell.bench-narrow  html.bench-shell #toolbar`（元素不可能是自己的后代 ⇒ 死规则）。
+   现在：多余 `}` 删除、4 条规则收回 `.bench-narrow` 里、死选择器改正。
+   静态把守：`tests/demo-check.mjs` 的 D9（大括号平衡 + 判定阈值唯一 + 安全网与类规则零冲突）。 */
+  /* ①(2026-09-18) 窄屏改成"**文档流 + 页面内滚动**"，而不是桌面那种"一屏三列"：
+     手机上一屏放不下三列，强行放会横向溢出/舞台爆高。这里让 .page 自身可纵向滚动，
+     左两栏与右列按自然高度堆叠；舞台关掉容器查询并给 max-height；控制台保持可拖动/可收起。 */
+  html.bench-shell.bench-narrow #site-header{flex-wrap:wrap;height:auto;min-height:44px;padding:6px 10px;row-gap:6px}
+  html.bench-shell.bench-narrow #site-tabs{overflow-x:auto;max-width:100%}
+  html.bench-shell.bench-narrow #pages-track{height:auto;min-height:0;align-items:stretch}
+  html.bench-shell.bench-narrow .page{overflow-y:auto;overflow-x:hidden}
+  html.bench-shell.bench-narrow #page-console{display:block}
+  /* ⑪(2026-09-19 真机实测 + 用户要求) 窄屏/横屏下**控制台（#main：切换栏 + 工具条 + 舞台 + 输出）排在面板之前**。
+     实测（980×690 横屏"桌面版网站"）：改前文档流顺序 = 侧栏 152 + 属性栏 152 + 切换栏 32 + 工具条 112 +
+     舞台 331 + 输出 105，`#logs` 的 top=779 > 视口高 690 ⇒ **首屏完全看不到输出**（可见高度 0），
+     用户原话「下面的输出的地方，这个地方他看不到…可见的范围非常小」。
+     这里**只改窄屏的排列顺序**（CSS `order`，不动 DOM ⇒ 不改 id 结构/产物契约，也不改桌面网格布局）：
+     首屏 = 切换栏 32 + 工具条 112 + 舞台 331 + 输出 ≥180 ⇒ 输出的可见高度 ≈153px（≥120px 判据）。
+     面板（资源管理器 / 壁纸配置）随后堆叠，页面内滚动照旧。 */
+  html.bench-shell.bench-narrow #workbench{display:flex!important;flex-direction:column;height:auto!important}
+  html.bench-shell.bench-narrow #main{display:flex!important;flex-direction:column;order:-1;height:auto!important;overflow:visible}
+  html.bench-shell.bench-narrow #sidebar,
+  html.bench-shell.bench-narrow #props{width:auto!important;max-height:clamp(140px,22vh,320px);overflow:auto;border-right:0;border-bottom:1px solid var(--border)}
+  /* ⑭(P-142 2026-09-19 用户第 1 项) 窄屏/堆叠布局下三列变一列（没有"第 1 列宽度"可收）⇒ 收起 = 侧栏塌成
+     一条 34px 高的横条（只剩把手；`#sidebar > :not(#sidebar-toggle){display:none}` 在非窄屏块里已给）。
+     这条只在 `.bench-narrow` 类块里（安全网不重复：收起态本来就靠脚本加类，脚本没跑 = 根本没收起）。 */
+  html.bench-shell.bench-narrow body.bench-nav-collapsed #sidebar{flex:none;height:34px;min-height:34px;max-height:34px}
+  html.bench-shell.bench-narrow body.bench-nav-collapsed #sidebar-toggle{flex-direction:row}
+  html.bench-shell.bench-narrow #main{display:flex!important;flex-direction:column;height:auto!important;overflow:visible}
+  html.bench-shell.bench-narrow #editor-chrome{flex:none}
+  html.bench-shell.bench-narrow #workspace{flex:none;min-height:0}
+  /* 舞台：关掉容器查询（断掉与 minmax(1fr) 的循环依赖）+ 确定高度上限 */
+  /* 舞台：定高不变量（46vh）+ 16:9 + 居中 + 不超宽。产物那套容器查询单位在窄屏会与 1fr 互相喂高度、
+     在"桌面模式"的旧引擎里还可能整条声明失效 ⇒ 这里用**纯 CSS 定值**兜死，任何级联/引擎都塌不了。 */
+  html.bench-shell.bench-narrow #stage-slot{min-height:48vh}
+  html.bench-shell.bench-narrow #stage-frame{container-type:normal!important;padding:8px;min-height:48vh}
+  html.bench-shell.bench-narrow #stage-scale{width:min(100%,calc(46vh * 16 / 9))!important;height:auto!important;aspect-ratio:16/9;margin:0 auto}
+  html.bench-shell.bench-narrow #stage,
+  html.bench-shell.bench-narrow #frame{height:100%!important;width:100%!important}
+  html.bench-shell.bench-narrow #logs{flex:none;max-height:70vh;overflow:auto}
+  /* ⑪(2026-09-19 用户要求「输出区至少能看几行」) 窄屏/横屏下给输出区一个**可见高度下限**。
+     现场：窄屏 `#main` 是"文档流 + 页面内滚动"（display:flex;height:auto），`#logs{flex:none}` 的高度
+     完全由内容决定 —— 而内容里真正会长的只有 `#logbody{flex:1;min-height:0}`（产物 CSS）：内容少
+     （静态托管下 `#logbody` 常常只有 1~2 行）时整个面板 = `.logs-head`(35px) + `#diag-offline`(≈40px)
+     ≈ 75px，真机观感就是"只看得见自带的第一行 / 静态托管无 diag 后端"。
+     下限 180px（≈9 行 @12px/1.55）随视口长到 320px；`#main:not(.logs-collapsed)` 排除收起态 ——
+     收起是用户的显式选择（`#main.logs-collapsed` + 产物 `#logbody{display:none}`），不许被这条顶开。 */
+  html.bench-shell.bench-narrow #main:not(.logs-collapsed) #logs{min-height:clamp(180px,38vh,320px)}
+  html.bench-shell.bench-narrow #logs-splitter{display:none}      /* 窄屏不做拖动调高，交给自然高度 + 滚动 */
+
+  html.bench-shell.bench-narrow #toolbar{gap:4px}
+  html.bench-shell.bench-narrow #toolbar label,html.bench-shell.bench-narrow #toolbar .mini{font-size:11px}
+  html.bench-shell.bench-narrow .site-tab{padding:0 9px;font-size:12.5px}
+  html.bench-shell.bench-narrow #settings-pop{width:min(92vw,330px);right:0}
+/* 舞台尺寸：**回到容器查询**（产物那套 `width:min(100cqi,calc(100cqb*16/9))` 本来就是
+   "容器内最大的 16:9"）。上一次(2026-09-18)把容器类型关掉是为了断掉**窄屏**下 `100cqb` 与
+   `minmax(1fr)` 互相喂高度的循环 —— 但它在**宽屏**留下了另一个洞：我们的
+   `#stage-scale{width:100%!important;height:auto!important}` 变成"宽度铺满 + aspect-ratio 撑高"，
+   1360×900 实测 2255×1268 塞进 508px 高的槽 ⇒ 只看得见画面左上角（用户第 8 条）。
+   现在：
+     · 宽屏：`container-type:size` 打开（特异性 (1,1,1)，**低于**窄屏块的 (1,2,1)）+ 只钉
+       `aspect-ratio:16/9`、把尺寸交回产物那条 `:not(.fixed-res)` 的容器查询 ⇒ 预览永远是"容器内最大的
+       16:9"，完整落在可视区内、宽高比恒 16:9（本改动的大前提是上面 `#main{minmax(0,1fr)}` 已经让
+       `#main` 真的是 740 宽，容器因此有确定尺寸 —— 容器查询单位要有确定尺寸才有意义）；
+     · 窄屏：`.bench-narrow` 块的 `container-type:normal!important` + 定值宽高（特异性更高、源序在后）
+       ⇒ 与 2026-09-18 的窄屏修复逐字一致，不受本改动影响；
+     · `.fixed-res`（选了具体分辨率）：产物自己把 `#stage-scale` 的宽高与 `#stage` 的 `transform:scale()`
+       算好后写成**内联样式**，这里不再用 `!important` 覆盖它（旧规则会把缩放盒打回 100% ⇒ 画面被放大裁切）。 */
+html.bench-shell #stage-frame{container-type:size!important;padding:12px}
+html.bench-shell #stage-scale{aspect-ratio:16/9}
+/* ── P-158（①②③⑤⑥⑦⑨⑩）本批新增的外壳样式 ─────────────────────────────────────────
+   与 demo/bench-patch.js 的 SITE_LAYOUT_CSS 逐条等价（tests/demo-check.mjs D8 会逐条比对）。 */
+/* ③(P-158) 被 `.bench-rd` 接管的原生 select 必须**视觉隐藏**：这条以前是 mpw-select.js 干的
+   （它给 select 打 `hidden`），本批工具条改用 `.bench-rd` 独占后它就不再被设置了 —— 实测 5 个原生下拉
+   全部 `display:block` 露在工具条上（"每个选项后面多出一个下拉框"的另一半）。回退干净：`destroy()` 摘掉
+   这个 class，select 立刻恢复可见。 */
+html.bench-shell select.bench-rd-native{display:none!important}
+/* ①(P-164) 标签标题省略号 + 右端常驻 `×`：名字再长也不把 × 顶到很远的地方（用户点名的形态）。
+   `#current` 的文本由产物写（写 textContent 会冲掉子节点）⇒ 它的 `×` 是**兄弟节点** `.wp-x-cur`，
+   紧贴右缘 ⇒ 视觉上仍是同一格。静态表与 SITE_LAYOUT_CSS 逐条同文（D8 守）。
+   ⚠ 但"兄弟节点"同时是 **flex 条上的独立一项**：它落在 `#current` 的边框盒**之外**、还与第 2 个标签
+   零间距贴着 ⇒ 用户第 4 条实测的"第 1 位的叉号超出自己的框 / 大框串到第 2 个壁纸里"（见下面 ⑦ 那段）。 */
+html.bench-shell #editor-tabs .tab{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html.bench-shell .wp-tab{padding:0 4px 0 10px}
+html.bench-shell .wp-tab .wp-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html.bench-shell .wp-x{flex:none;width:22px;min-width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;padding:0;border:0;border-radius:4px;background:transparent;color:var(--fg-dim);font-size:14px;line-height:1;cursor:pointer}
+html.bench-shell .wp-x:hover{background:var(--accent,#0078d4);color:#fff}
+html.bench-shell .wp-x-cur{align-self:center;height:22px;min-height:22px;border-radius:4px}
+html.bench-shell .wp-x-cur:hover{background:var(--accent,#0078d4);color:#fff}
+/* ⑦(2026-10-12 用户 :8902 实测第 4 条「壁纸标签第 1 位的叉号超出自己的框；有第 2 个壁纸时那个叉号的
+   大框会串到第 2 个壁纸里；第 2/3… 位正常，任何壁纸排到第 1 位就复现」) **只坏第 1 位**的根因：
+   `#current` 的 `×` 是兄弟节点（理由见上），所以它是 `#editor-tabs` 这条 flex 上的**独立 flex 项**，
+   占在 `#current` 边框盒**右侧的 22px 槽位**里 —— 无头 Firefox 实测（修前）：`#current` 右缘 x=95.5，
+   `.wp-x-cur` 左缘 x=95.5（**整块在框外**）、右缘 117.5，而第 2 个标签正好从 117.5 开始（**零间距贴死**）
+   ⇒ "超出自己的框" + "大框串到第 2 个壁纸里"两条现象同源。第 2/3… 位的 `×` 是 `.wp-tab` 的**子节点**，
+   天然在框内（实测第 2 格：tab [117.5,317.5]、`×` [290.5,312.5] ⊆ 框内）⇒ 与"排到第 1 位才坏"一致。
+   修法（纯几何，不动 DOM 归属）：宿主格**预留** `×` 的宽度（`padding-right:32px`）→ `×` 用负左外边距
+   挪回框内（`margin-left:-26px`）→ 外边距盒宽度 `-26+22+4 = 0` ⇒ 后续标签**不新增任何占位**。取这两个
+   数字就是为了**逐像素镜像**生成标签那一格（`.wp-tab{gap:6px}` + `padding:0 4px 0 10px`）：文字内容盒
+   右缘 = 格子右缘 − 32，`×` 盒 = [右缘−26, 右缘−4] ⇒ ① 标题与 `×` 之间留 **6px**（与 `.wp-tab` 的 gap
+   一致）；② `×` 右缘距格子右边 **4px**（与 `.wp-tab` 的右内边距一致）；③ `×` 完全落在 `#current` 的
+   边框盒内。修后实测（无头 Firefox，夹具 CSS 从真源装配）：`#current` 右缘 111.5、`×` [85.5,107.5] ⊆
+   框内且右缘留 4px、标题右缘 78.5（间距 7px）、第 2 个标签从 111.5 开始（与 `×` 右缘留 4px）。
+   ⚠ 同一处还必须把**产物给 `.tab` 的 `display:flex` 改成 `block`**：`#current` 里没有子元素、标题是
+   裸文本 ⇒ flex 容器会把这段文本变成**匿名 flex item**，而 `text-overflow:ellipsis` 是**块容器**的属性、
+   管不到匿名项 ⇒ 标题**从不被省略号截断**，只被 `overflow:hidden` 按**内边距盒**（= 格子右缘）硬裁。
+   修前这不算问题（`×` 在框外、标题顶到 825 也不撞它）；修后 `×` 进了框内 ⇒ 长标题会**画到 `×` 底下**
+   （真页面 `夜莺…窗畔弦歌` 实测：标题布局右缘 796、`×` 盒 [774,796] ⇒ 逐字叠在叉号上）。
+   所以宿主态改成 `display:block;line-height:32px`（块容器 ⇒ 省略号生效，单行 32px 居中与 flex 的
+   `align-items:center` 视觉等价）⇒ 标题在**内容盒右缘**（格子右缘 − 32 = `×` 左缘 − 6）截断，
+   与 `×` 之间稳定留 6px（真页面复测：`textGap=6`、`rightInset=4`、`gapToTab2=4`）。 */
+html.bench-shell #editor-tabs #current.wp-cur-has-x{display:block;line-height:32px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:32px}
+html.bench-shell .wp-x-cur{margin-left:-26px;margin-right:4px}
+html.bench-shell #wp-switch{position:relative}
+html.bench-shell #wp-add{flex:none;width:34px;min-width:34px;height:auto;border:0;border-left:1px solid var(--border);background:transparent;color:var(--fg-dim);font-size:16px;line-height:1;cursor:pointer}
+html.bench-shell #wp-add[aria-expanded="true"]{background:var(--accent,#0078d4);color:#fff}
+html.bench-shell #wp-panel{position:absolute;left:0;top:100%;z-index:60;width:min(560px,100%);max-height:min(62vh,460px);overflow:auto;background:var(--panel);border:1px solid var(--border);border-radius:0 0 8px 8px;box-shadow:0 14px 40px rgba(0,0,0,.38);padding:8px}
+html.bench-shell #wp-panel[hidden]{display:none!important}
+html.bench-shell .wp-panel-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:2px 4px 6px}
+html.bench-shell #wp-panel-head{padding:0 6px 8px;color:var(--fg-mute);font-size:11.5px}
+html.bench-shell .wp-seg{display:inline-flex;align-items:center;border:1px solid var(--border);border-radius:6px;overflow:hidden}
+html.bench-shell .wp-seg .seg-btn{appearance:none;font:inherit;font-size:12px;color:var(--fg-dim);background:transparent;border:0;padding:3px 10px;cursor:pointer}
+html.bench-shell .wp-seg .seg-btn + .seg-btn{border-left:1px solid var(--border)}
+html.bench-shell .wp-seg .seg-btn.active{background:var(--accent,#0078d4);color:#fff}
+html.bench-shell .wp-row{display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--border)}
+html.bench-shell .wp-row-go{flex:1;min-width:0;display:flex;align-items:center;gap:8px;min-height:32px;padding:4px 8px;border:0;background:transparent;color:var(--fg);font:inherit;font-size:12.5px;text-align:left;cursor:pointer}
+html.bench-shell .wp-row-go:hover{background:var(--hover,rgba(255,255,255,.07))}
+html.bench-shell .wp-row .wp-kind{flex:none;font-size:11px;padding:1px 6px;border:1px solid var(--border);border-radius:999px;color:var(--fg-mute)}
+html.bench-shell .wp-row .wp-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html.bench-shell .wp-row .wp-pin{flex:none;width:32px;min-height:32px;border:0;background:transparent;color:var(--fg-mute);font-size:14px;cursor:pointer}
+html.bench-shell .wp-row .wp-pin.on{color:#e3b341}
+html.bench-shell .bench-kind{display:inline-block;margin-left:6px;padding:0 5px;border:1px solid var(--border);border-radius:999px;font-size:10px;color:var(--fg-mute)}
+html.bench-shell .bench-status-kind{margin-left:6px;padding:0 5px;border:1px solid var(--border);border-radius:999px;font-size:10px;color:var(--fg-mute)}
+html.bench-shell #lib-source{display:block;padding:2px 10px 6px;color:var(--fg-mute);font-size:11.5px;line-height:1.5;word-break:break-all}
+html.bench-shell #lib-source[data-kind="default"]{color:#d29922}
+html.bench-shell #props-body input[type=range], html.bench-shell #props input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:999px;background:var(--border);outline:none;cursor:pointer}
+html.bench-shell #props-body input[type=range]::-webkit-slider-thumb, html.bench-shell #props input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:14px;height:14px;border:0;border-radius:50%;background:var(--accent,#0078d4);cursor:pointer}
+html.bench-shell #props-body input[type=range]::-moz-range-thumb, html.bench-shell #props input[type=range]::-moz-range-thumb{width:14px;height:14px;border:0;border-radius:50%;background:var(--accent,#0078d4);cursor:pointer}
+html.bench-shell #logs .logs-tab{appearance:none;font:inherit;font-size:12.5px;color:var(--fg-dim);background:transparent;border:0;border-radius:4px;padding:0 8px;height:24px;cursor:pointer}
+html.bench-shell #logs .logs-tab[aria-selected="true"]{color:var(--fg);background:color-mix(in srgb,var(--fg) 14%,transparent)}
+html.bench-shell #diag-body{display:none;margin:0;padding:6px 10px;font:11.5px/1.55 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:auto}
+html.bench-shell #logs[data-view="diag"] #diag-body{display:block;flex:1;min-height:0}
+html.bench-shell #logs[data-view="diag"] #logbody{display:none}
+html.bench-shell #main.logs-collapsed #diag-body{display:none!important}
+html.bench-shell #diag-body .diag-line.err{color:#f85149}
+html.bench-shell #diag-body .diag-line[data-source="renderer"]{color:var(--fg-dim)}
+/* ②(P-164) 调试模式视图（与 SITE_LAYOUT_CSS 逐条同文）：只用一个 `.dbg-*` 子树，不碰宿主 UI */
+html.bench-shell #debug-body{display:none}
+html.bench-shell #logs[data-view="debug"] #debug-body{display:flex;flex-direction:column;flex:1;min-height:0;overflow:auto}
+html.bench-shell #logs[data-view="debug"] #logbody{display:none}
+html.bench-shell #logs[data-view="debug"] #diag-body{display:none}
+html.bench-shell .dbg-actions{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+html.bench-shell .dbg-actions button{appearance:none;font:inherit;font-size:12px;color:var(--fg);background:var(--input);border:1px solid var(--border);border-radius:6px;padding:3px 10px;cursor:pointer}
+html.bench-shell .dbg-actions button:hover{background:var(--accent,#0078d4);border-color:var(--accent,#0078d4);color:#fff}
+html.bench-shell .dbg-state{color:var(--fg-mute);font-size:11.5px}
+html.bench-shell .dbg-layer{padding:6px 10px;font:11.5px/1.6 ui-monospace,Menlo,Consolas,monospace;color:var(--fg);border-bottom:1px solid var(--border);white-space:pre-wrap;overflow-wrap:anywhere}
+html.bench-shell .dbg-log{flex:1;min-height:0;margin:0;padding:6px 10px;overflow:auto;font:11.5px/1.55 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+html.bench-shell .dbg-log .dbg-err{color:#f85149}
+/* ── 纯 CSS 安全网（≤1180px）────────────────────────────────────────────────────────────
+   闸门是 `<head>` 同步脚本加的 `.bench-narrow`；这一段是**它没跑成时**的兜底（脚本抛异常、被拦，
+   或将来有人把判定改坏）：光靠"宽度"就能让舞台不塌、三列改堆叠。声明**逐字取自** `.bench-narrow` 块，
+   `tests/demo-check.mjs` D9 会断言这里每一条都能在类块里找到逐字同款（⇒ 两处不可能漂移）。
+   本块声明在类块**之后**：两处同时命中时按同值收尾，不存在互相打架。 */
+@media (max-width:1180px){
+  html.bench-shell #workbench{display:flex!important;flex-direction:column;height:auto!important}
+  html.bench-shell #main{display:flex!important;flex-direction:column;order:-1;height:auto!important;overflow:visible}
+  html.bench-shell #stage-slot{min-height:48vh}
+  html.bench-shell #stage-frame{container-type:normal!important;padding:8px;min-height:48vh}
+  html.bench-shell #stage-scale{width:min(100%,calc(46vh * 16 / 9))!important;height:auto!important;aspect-ratio:16/9;margin:0 auto}
+  html.bench-shell #main:not(.logs-collapsed) #logs{min-height:clamp(180px,38vh,320px)}
+  /* ④(2026-09-24 用户第 4 条 · 实测补口)：上面那条"窄屏面板限高 + 自身可滚"原来**只**写在
+     `.bench-narrow` 类块里（首屏同步脚本加的类），而安全网只搬了 7 条 ⇒ **加载后把窗口拉窄**
+     （类没被重新加上）时左栏/属性面板仍吃产物的 `overflow:hidden`，被 `#workbench` 的 flex 列一挤
+     就只剩几十像素、内容**直接被裁掉**（浏览器实测读数：`#sidebar` clientH=55 / scrollH=195，
+     子节点 `sidebar-section-head`/`libpath`/`sidebar-tools` 全在框外）。
+     修法：把类块里那条逐字搬进安全网（`.bench-narrow` 类块里仍有同款 —— D9 的"零漂移"判据照旧成立，
+     方向是"安全网的每条都要有类块同款"，这条本来就满足）。 */
+  html.bench-shell #sidebar,
+  html.bench-shell #props{width:auto!important;max-height:clamp(140px,22vh,320px);overflow:auto;border-right:0;border-bottom:1px solid var(--border)}
+  html.bench-shell #stage,
+  html.bench-shell #frame{height:100%!important;width:100%!important}
+}
+</style>
+    <!-- P-240（2026-10-06 任务书 §2.1）「图层开关」弹层的专用样式。
+         为什么独立成块、不进上面的 bench-shell-static：D8 门禁要求静态块与 bench-patch.js 的
+         SITE_LAYOUT_CSS 逐条等价 —— 那份常量只管**首屏布局**（防"一帧全屏放大"回归）；本块全是
+         弹层细节（首屏时面板 hidden，不影响首帧），收进来反而破坏 D8 的比对口径。
+         定位照抄 #wp-panel 这条已被验证的同款弹层模式（position:absolute + z-index:60）：
+         #pages-track 有 contain:paint（fixed 定位会被它当包含块并裁剪），absolute 挂在
+         #layer-switch（position:relative）上从按钮正下方展开，不受影响。
+         ①(2026-10-11 用户实测「面板右侧有一部分超出屏幕」) 锚点从 `left:0` 改**右对齐**：
+         按钮是 `#tb-row4` 最后一个控件、紧贴参数栏右端 ⇒ `left:0` 会让 360px 面板整体向右铺出
+         视口（`max-width` 只限宽、管不住右边界）。改 `right:0` 后面板从按钮右缘**向左**展开，
+         右边界天然落在按钮右缘以内；宽度/高度再由 bench-patch.js 的 `layerPanelFit()` 按
+         **视口**夹取（写行内 width/maxHeight），窄屏也不会压到左边或底部。 -->
+    <style id="layer-switch-css">
+/* 容器：占位与工具条其它控件同高（按钮吃产物 `#toolbar button` 的 24px 基础样式） */
+html.bench-shell #layer-switch{position:relative;flex:0 0 auto;min-width:0}
+html.bench-shell #layer-switch-btn[disabled]{opacity:.45;cursor:not-allowed}
+/* 弹层本体：**右对齐**在按钮右缘正下方；宽度/高度由 `layerPanelFit()` 按视口夹取后写行内样式，
+   这里的 width/max-width/max-height 只是**没有 JS 时**的静态兜底（防首帧一屏宽/一出屏）。
+   溢出策略：面板自身可滚动（`.lsw-list` 另有一层 max-height 内部滚动）⇒ 窄屏/矮屏不越界。 */
+html.bench-shell #layer-switch-panel{position:absolute;right:0;left:auto;top:calc(100% + 4px);z-index:60;width:360px;max-width:min(92vw,560px);max-height:min(70vh,520px);overflow:auto;background:var(--panel);border:1px solid var(--border);border-radius:0 0 8px 8px;box-shadow:0 14px 40px rgba(0,0,0,.38);padding:8px;display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--fg)}
+html.bench-shell #layer-switch-panel[hidden]{display:none!important}
+/* 顶栏四键：全选 / 全不选 / 只留当前层 / **恢复默认**（⑦2026-10-12 用户第 6 条）。
+   `flex-wrap:wrap` 是给窄视口的：面板宽度由 `layerPanelFit()` 按视口夹到最小 220px，四个按钮
+   （2/3/5/4 个汉字）在 220px 里一行放不下 ⇒ 换行，而不是把第 4 个按钮挤出去/裁掉。 */
+html.bench-shell #layer-switch .lsw-bar{display:flex;gap:6px;flex-wrap:wrap;min-width:0}
+html.bench-shell #layer-switch .lsw-bar button{flex:0 0 auto}
+html.bench-shell #layer-switch .lsw-bar button[disabled]{opacity:.45;cursor:not-allowed}
+/* 层行列表：内部滚动（限高）+ 行内省略；容器层 checkbox 置灰 */
+html.bench-shell #layer-switch .lsw-list{max-height:34vh;overflow-y:auto;min-width:0;display:flex;flex-direction:column;gap:1px;border:1px solid var(--border);border-radius:6px;padding:2px}
+html.bench-shell #layer-switch .lsw-row{display:flex;align-items:center;gap:6px;padding:1px 4px;border-radius:4px;min-width:0}
+html.bench-shell #layer-switch .lsw-row:hover{background:var(--btn-hover)}
+html.bench-shell #layer-switch .lsw-row[data-dbg-current="1"]{background:var(--active-sel,#0078d4);color:var(--list-active-fg,#fff)}
+html.bench-shell #layer-switch .lsw-row input[type="checkbox"]{margin:0;flex:0 0 auto}
+html.bench-shell #layer-switch .lsw-row input[type="checkbox"]:disabled{opacity:.4;cursor:not-allowed}
+html.bench-shell #layer-switch .lsw-idx{flex:0 0 auto;color:var(--fg-mute);font-size:11px;font-variant-numeric:tabular-nums}
+html.bench-shell #layer-switch .lsw-row[data-dbg-current="1"] .lsw-idx{color:inherit}
+html.bench-shell #layer-switch .lsw-name{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+/* 「只留」小按钮：悬停/当前行才出现（不占额外宽度常态） */
+html.bench-shell #layer-switch .lsw-keep{flex:0 0 auto;visibility:hidden;font-size:11px;height:18px;padding:0 6px}
+html.bench-shell #layer-switch .lsw-row:hover .lsw-keep,html.bench-shell #layer-switch .lsw-row[data-dbg-current="1"] .lsw-keep{visibility:visible}
+/* 底栏：状态行（隐藏 n/m 层）+ 复制当前状态 */
+html.bench-shell #layer-switch .lsw-foot{display:flex;align-items:center;gap:8px}
+html.bench-shell #layer-switch-status{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--fg-mute);font-size:11.5px}
+    </style>
+    <script>
+      // 首屏前加类（在 <head> 里同步执行 ⇒ 第一帧就按新布局渲染）；?shell=off = 新样式总回退
+      (function () {
+        try {
+          if (/[?&]shell=(off|0|false|no)\b/.test(location.search)) return
+          var de = document.documentElement
+          de.classList.add('bench-shell')
+          // ①(2026-09-18 真机：手机开着"桌面版网站"，UA 是 Windows、布局视口 980px，媒体查询因此永不匹配)
+          //   窄屏判定**不靠媒体查询**：视口≤860，或"视口明显大于真实屏幕宽 + 粗指针/小屏" ⇒ 判为窄屏。
+          try {
+            var vw = de.clientWidth || window.innerWidth || 0
+            var sw = (window.screen && window.screen.width) || 0
+            // 只认两条可靠信号：①视口≤1180；②视口明显大于真实屏幕宽（真机"桌面版网站"：布局视口 980 / 屏幕 412 ⇒ 命中）。
+            //   不用"触摸设备"当判据：带触摸屏的笔电与部分环境会误判（本机 emulation 就复现了误判）。
+            // ⚠ 阈值必须 > 980：桌面版网站的手机/平板布局视口恒为 980px（写 860 时永不命中，平板真机实测过）。
+            //   1180 = "三列放不下"的实测分界（详解见本文件静态样式块顶部那段注释）。
+            var narrow = vw <= 1180 || (sw >= 200 && vw > sw * 1.5)
+            if (narrow) de.classList.add('bench-narrow')
+            if (vw <= 1100) de.classList.add('bench-mid')
+          } catch (e) {}
+          // ①(2026-09-18) 在产物启动**之前**把它的"活动视图"键写成 explorer：
+          //   产物启动时 `O(存的值 === 'explorer' ? 'explorer' : 'docs')`，任何非 explorer 都会切到 docs(README)。
+          //   这里抢先写好 ⇒ 它自己就走非 docs 分支，属性抖动与"闪 README"从源头消失（CSS 锁仍作为第二道保险）。
+          try { localStorage.setItem('we-bench-view', 'explorer') } catch (e) {}
+          // ⑪(2026-09-20 用户第 11 条) 首屏防闪的**摘闸门**：静态表里
+          //   `html.bench-shell:not([data-bench-ready]) body{visibility:hidden}` 让补丁/外壳接管之前
+          //   不画任何一帧。这里给出三个摘闸门时刻，全部无条件执行（不依赖补丁是否成功）：
+          //     ① DOMContentLoaded（defer/module 脚本跑完之后 ⇒ 正常路径这里就已经是最终布局）；
+          //     ② 补丁显式调用 `window.__benchReady()`（外壳初始化完成时更早一点）；
+          //     ③ 1.2s / 3.0s 两个硬兜底 —— 任何异常路径下最迟 1.2s 必定显示，不可能永远白屏。
+          try {
+            var ready = function () { try { de.setAttribute('data-bench-ready', '') } catch (e) {} }
+            window.__benchReady = ready
+            document.addEventListener('DOMContentLoaded', function () { setTimeout(ready, 0) })
+            setTimeout(ready, 1200)
+            setTimeout(ready, 3000)
+          } catch (e) {}
+        } catch (e) {}
+      })()
+    </script>
+  </head>
+  <body>
+    <!-- ⑭(P-142 2026-09-19 用户第 1 项) 「资源管理器」收纳状态**首帧**生效。
+         静态表里的 ⑭ 规则一律写成 `html.bench-shell body.bench-nav-collapsed …`，这段同步脚本在
+         body 内容**之前**执行 ⇒ 解析到 #sidebar 时宽度已经是对的（不会先画一下展开态再跳）。
+         键名照本仓既有风格（`bench-*`）：`bench-sidebar-collapsed`，'1' = 收起，其余 = 展开。
+         运行期的对账/兜底/aria 在 `bench-patch.js` 的 `initNavSound()`（读同一个键、同一个值域）。 -->
+    <script>
+      (function () {
+        try {
+          if (/[?&]shell=(off|0|false|no)\b/.test(location.search)) return
+          if (localStorage.getItem('bench-sidebar-collapsed') !== '1') return
+          document.body.classList.add('bench-nav-collapsed')
+        } catch (e) {}
+      })()
+    </script>
+    <!-- C 组：全局错误兜底（error/unhandledrejection → 可见条 + 写入输出区；不是插件依赖，纯自写最小实现） -->
+    <div id="bench-errorbar" class="bench-errorbar glass" hidden>
+      <strong id="bench-error-title" data-i18n="error.title">页面脚本出错（已兜底）</strong>
+      <code id="bench-error-msg"></code>
+      <span id="bench-error-note" data-i18n="error.logged">详情已写入输出区</span>
+      <button type="button" id="bench-error-close" data-i18n="error.dismiss">关闭</button>
+    </div>
+    <header id="site-header">
+      <div id="site-brand">
+        <span class="brand-dot" aria-hidden="true"></span>
+        <span class="brand-name" data-i18n="app.title">wallpaper-engine-webgl</span>
+        <span id="app-version"></span>
+        <span id="offline-tag" class="offline-tag" hidden data-i18n="offline.tag" data-i18n-title="offline.diagTitle">离线</span>
+      </div>
+
+      <nav id="site-tabs" role="tablist" aria-label="页面 / Pages">
+        <button type="button" class="site-tab active" id="tab-console" role="tab" aria-selected="true" aria-controls="page-console" data-i18n="nav.console">控制台</button>
+        <button type="button" class="site-tab" id="tab-docs" role="tab" aria-selected="false" aria-controls="page-docs" data-i18n="nav.docs">说明</button>
+        <button type="button" class="site-tab" id="tab-wpset" role="tab" aria-selected="false" aria-controls="page-wpset" data-i18n="nav.wpset">壁纸设置</button>
+        <span id="site-tab-ink" aria-hidden="true"></span>
+      </nav>
+
+      <div id="site-actions">
+        <button type="button" id="settings-btn" aria-haspopup="dialog" aria-expanded="false" data-i18n="nav.settings" data-i18n-title="nav.settingsTip" title="语言 / 主题 / 归属与许可">设置</button>
+          <button type="button" class="act theme-btn" id="theme-toggle" title="主题：深色" data-i18n-title="theme.dark" aria-label="主题 / Theme">
+            <!-- ⑫c(2026-09-19 用户要求「不要跟随系统」) `ic-auto` 那个"圆环+半黑"图标**不再显示**：
+                 按钮只在深色/浅色两态间切换（脚本按 data-mode 切换下面两个 svg 的 hidden）。
+                 保留它只为兼容旧缓存 HTML 的 querySelectorAll('.ic') 循环（不匹配 ic-dark/ic-light ⇒ 会被 hidden）。 -->
+            <svg class="ic ic-auto" viewBox="0 0 16 16" width="17" height="17" aria-hidden="true" hidden>
+              <circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.2" />
+              <path fill="currentColor" d="M8 3.2a4.8 4.8 0 0 0 0 9.6V3.2z" />
+            </svg>
+            <svg class="ic ic-dark" viewBox="0 0 16 16" width="17" height="17" aria-hidden="true" hidden>
+              <path fill="currentColor" d="M9.8 1.2a6.8 6.8 0 1 0 4.9 11.5A7.6 7.6 0 0 1 9.8 1.2z" />
+            </svg>
+            <svg class="ic ic-light" viewBox="0 0 16 16" width="17" height="17" aria-hidden="true" hidden>
+              <circle cx="8" cy="8" r="3.2" fill="currentColor" />
+              <path fill="currentColor" d="M7.25.5h1.5v2.4h-1.5V.5zm0 12.6h1.5v2.4h-1.5v-2.4zM15.5 7.25v1.5h-2.4v-1.5h2.4zM2.9 8.75H.5v-1.5h2.4v1.5zm10.1-4.7l-1.06 1.06-1.06-1.06 1.06-1.06 1.06 1.06zM5.12 10.88L4.06 11.94 3 10.88l1.06-1.06 1.06 1.06zm0-5.76L4.06 5.18 3 4.12l1.06-1.06 1.06 1.06zm5.76 7.42l1.06 1.06-1.06 1.06-1.06-1.06 1.06-1.06z" />
+            </svg>
+          </button>
+        <div id="settings-pop" role="dialog" aria-label="设置" hidden>
+          <label class="lang-box" data-i18n-title="lang.title">
+            <span class="pop-k" data-i18n="nav.lang">语言</span>
+            <select id="lang" aria-label="Language">
+              <option value="zh">简体中文</option>
+              <option value="en">English</option>
+            </select>
+          </label>
+          <!-- ⑫c(2026-09-19 用户要求「切换深色暗色的地方，你就留两个开关，一个是深色，一个是暗色，
+               不要跟随系统」) 主题 = **两个明确开关**，不再有"跟随系统"这一态：
+               · 两个按钮各自是一条明确指令（不再循环），按下态由 `aria-pressed` + `.theme-opt[aria-pressed="true"]` 表达；
+               · 文案复用既有 i18n 键 `theme.dark`/`theme.light`（DICT 仍镜像上游 bench/i18n.ts，T1 逐键比对不许删键）；
+               · `#theme-state`（跟随系统那行）已删除 —— JS 里保留查询只为兼容旧缓存 HTML。 -->
+          <div class="pop-row" id="theme-row">
+            <span class="theme-seg" role="group" aria-label="主题 / Theme" data-i18n-title="nav.theme" title="主题">
+              <button type="button" class="theme-opt" id="theme-dark" aria-pressed="false" data-i18n="theme.dark" data-i18n-title="theme.dark" title="主题：深色">主题：深色</button>
+              <button type="button" class="theme-opt" id="theme-light" aria-pressed="false" data-i18n="theme.light" data-i18n-title="theme.light" title="主题：浅色">主题：浅色</button>
+            </span>
+          </div>
+          <div class="pop-row"><span class="pop-k" data-i18n="nav.backend">后台</span><span id="backend-state" class="pop-val"></span></div>
+          <p class="pop-note" data-i18n="nav.backendNote">静态托管（GitHub Pages）没有本机 Node 后端：壁纸库列表 / 属性保存 / 删除 / 诊断流在线上不可用 —— 这是设计如此，不是故障；「选择文件夹」纯前端扫描仍可用。</p>
+          <!-- ①(2026-09-20 用户要求) 面板里只留**一行超链接**：署名与许可全文属仓库文档，
+               界面负责把你指到唯一权威位置（README 的「许可与归属」章节）。
+               上游 MIT 全文文件（demo/LICENSE-webwallgl*）**文件保留**，只是不再在页面上单独列出。 -->
+            <span id="credit-line-footer">许可与归属：<a id="credit-link-footer" href="https://github.com/XHR666/wallpaper-engine-web-loader#%E8%AE%B8%E5%8F%AF%E4%B8%8E%E5%BD%92%E5%B1%9Elicense--credits" target="_blank" rel="noopener noreferrer" data-i18n="credit.link">README · 许可与归属（GPL-3.0-or-later + 上游 MIT）</a></span>
+          </div>
+        </div>
+      </div>
+
+      <div id="bench-legacy-anchors" hidden aria-hidden="true">
+        <span id="open-pkg"></span>
+        <input id="pkg-file" type="file" hidden disabled />
+        <span id="sponsor-btn"></span>
+        <button type="button" id="act-docs"></button>
+        <button type="button" id="act-explorer"></button>
+      </div>
+    </header>
+
+    <div id="pages-track">
+      <section class="page" id="page-console" role="tabpanel" aria-labelledby="tab-console">
+    <div id="workbench">
+      <aside id="sidebar">
+        <!-- ⑭(P-142 2026-09-19 用户第 1 项) 收纳把手：收起后整个资源管理器只剩这一条 26px 的窄边
+             （静态表：`body.bench-nav-collapsed #sidebar > :not(#sidebar-toggle){display:none!important}`）。
+             用**原生 `<button>`**：Tab 可达、Enter/Space 由浏览器派发 click ⇒ 不再补 keydown
+             （补了就是"键盘一次 + click 再一次" = 双重翻转，正是用户点名的"点几次就重复开/关"）。
+             `aria-expanded` 由 bench-patch.js 的 `setNavCollapsed()` 维护（收起 = false）。
+             文案**不进 DICT**（T1 把词典逐键钉在上游 bench/i18n.ts 上）⇒ 双语静态串，运行期同步 title/aria-label。 -->
+        <button type="button" id="sidebar-toggle" aria-controls="sidebar" aria-expanded="true" title="收起资源管理器 / Collapse explorer" aria-label="收起资源管理器 / Collapse explorer">
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M9.8 3.2 5 8l4.8 4.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </button>
+        <div class="sidebar-title" data-i18n="sidebar.title">资源管理器</div>
+        <div class="sidebar-section-head">
+          <span id="lib-count" data-i18n="sidebar.libCount">壁纸库</span>
+          <button type="button" id="pick-lib" data-i18n-title="sidebar.pickLib" title="选择壁纸库文件夹（也可继续用 WE_LIBRARY）" data-i18n="btn.pickLib">选择文件夹</button>
+          <!-- 第七批（用户第 17/18 条）：插件同款「选择文件」入口（由 bench-patch.js 接管；capture 阶段抢在 bundle 之前） -->
+          <button type="button" id="pick-file" data-i18n-title="pick.fileTitle" title="浏览并选择单个文件（scene.pkg / project.json 可直接预览）" data-i18n="btn.pickFile">选择文件</button>
+          <button type="button" id="clear-local" data-i18n="local.clear" data-i18n-title="local.clearTitle" title="清空本地库与当前选择">清空</button>
+        </div>
+        <p id="libpath" class="muted" title=""></p>
+        <div id="bench-backend-note" class="bench-backend-note" hidden></div>
+        <div class="sidebar-tools">
+          <input id="filter" type="search" placeholder="过滤标题 / itemId" data-i18n-ph="ph.filter" />
+          <!-- ⑨b(P-158) 产物自己的**类型过滤宿主**搬到这里（原来被塞在 `#bench-legacy-anchors[hidden]` 里、
+               一个 `.seg-btn` 都没有 ⇒ 产物 `Pe` 永远停在 'scene'，web/video 明明在库返回里却看不到）。
+               按钮由 bench-patch.js 生成：全部 / 场景 / Web / 视频（前三个直接驱动产物自己的委托处理器）。 -->
+          <span id="type-filter" class="wp-seg" role="radiogroup" aria-label="壁纸类型过滤 / Wallpaper type filter"></span>
+        </div>
+        <!-- ⑩(P-158) 「当前库来源」显式写出来：本机默认目录 / 你选的目录 / 空 / 无后端（不许假装已选） -->
+        <span id="lib-source" class="bench-lib-source" data-kind="none"></span>
+        <ul id="list"></ul>
+      </aside>
+
+          <aside id="props" hidden>
+            <div class="props-head">
+              <div class="props-head-main">
+                <strong data-i18n="props.title">壁纸配置</strong>
+                <span id="props-state"></span>
+              </div>
+              <div class="props-head-actions">
+                <button type="button" id="props-reset" data-i18n="props.reset">恢复默认</button>
+                <button type="button" id="props-close" data-i18n="props.collapse">收起</button>
+              </div>
+            </div>
+            <div class="props-row">
+              <input id="props-filter" type="search" placeholder="过滤属性名 / 文案" data-i18n-ph="ph.propsFilter" />
+              <label class="check"><input id="props-all" type="checkbox" /> <span data-i18n="props.showHidden">显示条件隐藏项</span></label>
+            </div>
+            <div id="props-body"></div>
+            <!-- ⑭(P-142 2026-09-19 用户第 2/3 项) 声音控件 = 「壁纸配置」栏的**下半部分**。
+                 · `#np-mount` 归 React 独占（P-138 的 NowPlaying，`mountNowPlaying(el, {morph,corner,stroke})`）。
+                   **③(2026-09-25 用户第 3 条)** 音量控件现在也在**卡片内部**（组件受控档自带音量轨 +
+                   静音第四键，样式见 `demo/now-playing/now-playing.css` 的 `.snd-clock input[type="range"]`）：卡片下面那条
+                   独立的 `#np-volbar`（上一轮的做法）已整块撤掉，`#np-audio` 只剩静音/进度/时间/曲目名。
+                   `applyAudio()` 是音量的唯一真源：它把值经 `npApp.update({data})` 推给组件，
+                   **不再直接写 `#np-volume.value`**（那个元素现在由 React 渲染）。
+                 · `#np-audio` 是本补丁自己的传输条：订阅同源 iframe 里 `<video>` 的
+                   `timeupdate`/`durationchange`，播放/暂停仍由**组件的播放键**驱动（bench-patch.js ⑭c）。
+                 浮层化（`position:absolute`）⇒ 不参与 `#props-body` 的产物渲染；它盖住的那部分由
+                 `#props-body` 的 `padding-bottom` 预留（展开态高度也算了 ⇒ 每一项都滚得到）。 -->
+            <div id="np-host" role="group" aria-label="声音控件 / Sound control">
+              <div id="np-mount"></div>
+              <div id="np-audio">
+                <button type="button" id="np-mute" aria-pressed="true" title="静音 / Mute" aria-label="静音 / Mute">
+                  <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+                    <path d="M2.6 6h2.1L7.8 3.4v9.2L4.7 10H2.6z" fill="currentColor" />
+                    <path id="np-mute-wave" d="M10.2 6.1a2.7 2.7 0 0 1 0 3.8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" hidden />
+                    <path id="np-mute-slash" d="M10 5.4l3.9 5.2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+                  </svg>
+                </button>
+                <button type="button" id="np-seek" title="跳转 / Seek" aria-label="进度 / Progress"><span id="np-run"></span></button>
+                <span id="np-time">0:00 / 0:00</span>
+                <span id="np-stage">未发现视频壁纸 / no video</span>
+              </div>
+            </div>
+          </aside>
+
+      <div id="main">
+        <div id="editor-chrome">
+          <div id="wp-switch">
+            <!-- ⑨(P-158) 切换栏只放**已选/常用**：产物自己的「当前壁纸」tab + 用户固定过的 tab（位置固定、顺序稳定）。
+                 完整库列表在右边的 `#wp-panel` 里，**显式点 ＋ 才展开**（用户第 9 条：不再"一次性全导入"）。 -->
+            <div id="editor-tabs">
+              <div class="tab active" id="current" role="tab" aria-selected="true" data-i18n="tab.wallpaper">未选择壁纸</div>
+            </div>
+            <button type="button" id="wp-add" aria-expanded="false" aria-controls="wp-panel"
+              data-i18n="wp.add" data-i18n-title="wp.addTitle" title="展开壁纸库列表 / Expand the wallpaper library">＋</button>
+            <div id="wp-panel" hidden role="dialog" aria-label="壁纸库列表 / Wallpaper library">
+              <div class="wp-panel-row">
+                <span id="wp-type-mirror" class="wp-seg" role="radiogroup" aria-label="壁纸类型 / Wallpaper type"></span>
+              </div>
+              <div id="wp-panel-head"></div>
+              <div id="wp-panel-list"></div>
+            </div>
+          </div>
+          <div id="toolbar">
+            <!-- ⑩(P-228f 2026-10-05) 参数栏按**四行**重排（用户给的顺序）：行容器是显式 `.tb-row`，
+                 不靠 flex 自动换行碰运气 ⇒ 每行内容固定、与窗口宽度无关。
+                   第 1 行：分辨率 / Fit / DPR / FPS / 滤镜
+                   第 2 行：音量 / 系统实况 / 启用麦克风 / 音条源
+                   第 3 行：渲染器 / 指针注入 / 鼠标尾迹 / 长度·粗细·颜色
+                   第 4 行：收起参数栏 + 暂停 / 重挂载 / 释放 / 新窗口 / 壁纸配置 + 三个新档位
+                          （去除开屏动画 / Web 渲染模式 / 流式播放）
+                 两条状态行（音条状态、渲染器来源）**搬出参数栏**：它们是一整句如实原因，
+                 留在参数栏里既占地方又把行数顶乱；现在作为紧凑状态片放在输出面板的页签行尾，
+                 全部取值与含义写在第 3 个页签「对应API」里（页签已按此改名）。 -->
+            <div class="tb-row" id="tb-row1">
+              <label data-i18n-title="toolbar.resolutionTip" title="舞台逻辑分辨率（iframe 视口）"><span data-i18n="toolbar.resolution">分辨率</span>
+                <span class="bench-rd">
+                  <button type="button" id="bench-rd-btn" class="bench-rd-btn" aria-haspopup="listbox" aria-expanded="false" data-i18n-title="res.pick" title="选择分辨率">自适应 16:9</button>
+                  <ul id="bench-rd-list" class="bench-rd-list" role="listbox" aria-label="分辨率"></ul>
+                  <select id="resolution">
+                  <option value="fit" data-i18n="res.fit">自适应 16:9</option>
+                  <option value="1280x720">1280 × 720 · HD</option>
+                  <option value="1366x768">1366 × 768</option>
+                  <option value="1440x900">1440 × 900</option>
+                  <option value="1600x900">1600 × 900</option>
+                  <option value="1680x1050">1680 × 1050</option>
+                  <option value="1920x1080">1920 × 1080 · FHD</option>
+                  <option value="1920x1200">1920 × 1200 · 16:10</option>
+                  <option value="2560x1080">2560 × 1080 · 超宽</option>
+                  <option value="2560x1440">2560 × 1440 · QHD</option>
+                  <option value="2560x1600">2560 × 1600</option>
+                  <option value="3440x1440">3440 × 1440 · 超宽</option>
+                  <option value="3840x2160">3840 × 2160 · 4K</option>
+                  <option value="1080x1920">1080 × 1920 · 竖屏</option>
+                  <option value="1440x2560">1440 × 2560 · 竖屏</option>
+                  </select>
+                </span>
+              </label>
+              <label>fit
+                <select id="fit">
+                  <option value="cover">cover</option>
+                  <option value="contain">contain</option>
+                  <option value="stretch">stretch</option>
+                </select>
+              </label>
+              <label id="lab-dpr">DPR
+                <select id="dpr">
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select>
+              </label>
+              <label id="lab-fps" data-i18n-title="fps.uncappedTitle" title="不加帧率上限（按显示器刷新率出帧）">FPS
+                <select id="fps">
+                  <option value="30">30</option>
+                  <option value="60" selected>60</option>
+                  <option value="120">120</option>
+                  <option value="1000" data-i18n="fps.uncapped">无上限</option>
+                </select>
+              </label>
+              <label class="fx"><span data-i18n="toolbar.filter">滤镜</span>
+                <select id="fx" data-i18n-title="toolbar.filterTip">
+                  <option value="none" selected data-i18n="filter.none">无</option>
+                  <option value="blur" data-i18n="filter.blur">高斯模糊</option>
+                  <option value="grayscale" data-i18n="filter.grayscale">黑白</option>
+                  <option value="sepia" data-i18n="filter.sepia">怀旧</option>
+                  <option value="vivid" data-i18n="filter.vivid">鲜艳</option>
+                  <option value="warm" data-i18n="filter.warm">暖色</option>
+                  <option value="cool" data-i18n="filter.cool">冷色</option>
+                  <option value="invert" data-i18n="filter.invert">反色</option>
+                  <option value="brighten" data-i18n="filter.brighten">提亮</option>
+                  <option value="darken" data-i18n="filter.darken">压暗</option>
+                  <option value="contrast" data-i18n="filter.contrast">高对比</option>
+                </select>
+              </label>
+            </div>
+            <div class="tb-row" id="tb-row2">
+              <label class="vol"><span data-i18n="toolbar.volume">音量</span>
+                <input id="volume" type="range" min="0" max="1" step="0.05" value="0" />
+              </label>
+              <label class="check" data-i18n-title="toolbar.liveTip" title="歌名走 Node/media-control；音频可视化走麦克风（测试台无系统声卡环回）">
+                <input id="live-system" type="checkbox" checked />
+                <span data-i18n="toolbar.live">系统实况</span>
+              </label>
+              <label class="check" id="mic-box" data-i18n-title="toolbar.micTip" title="默认关：关着时页面一次都不会请求麦克风；开着时才在壁纸/功能声明需要时请求">
+                <input id="mic-enable" type="checkbox" />
+                <span data-i18n="toolbar.mic">启用麦克风</span>
+              </label>
+              <label data-i18n-title="toolbar.bandfeedTip" title="音条（音频条）的数据源：壁纸 = 只用包内音轨，没有就如实全 0；麦克风 = 显式请求麦克风（还要勾「启用麦克风」）；模拟 = 确定性模拟源（只看形态）；关 = 不接任何源。换档会重挂载渲染器">
+                <span data-i18n="toolbar.bandfeed">音条源</span>
+                <select id="bandfeed">
+                  <option value="auto" selected data-i18n="bandfeed.wallpaper">壁纸</option>
+                  <option value="mic" data-i18n="bandfeed.mic">麦克风</option>
+                  <option value="sim" data-i18n="bandfeed.sim">模拟</option>
+                  <option value="off" data-i18n="bandfeed.off">关</option>
+                </select>
+              </label>
+            </div>
+            <div class="tb-row" id="tb-row3">
+              <label data-i18n-title="toolbar.rendererSrcTip" title="预览用哪个渲染器：上游产物页 = demo/renderer/index.html（不可重建的 minified 包）；本仓渲染器 = 同源 /webloader/（本仓 core）。换档会重挂载预览">
+                <span data-i18n="toolbar.rendererSrc">渲染器</span>
+                <select id="renderer-src">
+                  <option value="repo" selected data-i18n="rendererSrc.repo">本仓渲染器</option>
+                  <option value="upstream" data-i18n="rendererSrc.upstream">上游产物</option>
+                </select>
+              </label>
+              <label class="check" data-i18n-title="toolbar.pointerPushTip" title="模拟桌面壁纸窗口：遮罩挡住原生鼠标事件，改用 __wp.pushPointer 推送坐标 —— 与宿主对接的是同一条通道">
+                <input id="pointer-push" type="checkbox" />
+                <span data-i18n="toolbar.pointerPush">指针注入</span>
+              </label>
+              <label class="check" id="trail-box" data-i18n-title="trail.tip" title="仅在开启「指针注入」后可用">
+                <input type="checkbox" id="trail-on" disabled />
+                <span data-i18n="trail.on">鼠标尾迹</span>
+              </label>
+              <label class="mini"><span data-i18n="trail.len">长度</span><input type="number" id="trail-len" min="2" max="120" value="24" disabled /></label>
+              <label class="mini"><span data-i18n="trail.width">粗细</span><input type="number" id="trail-w" min="1" max="10" value="2" disabled /></label>
+              <label class="mini"><span data-i18n="trail.color">颜色</span><input type="color" id="trail-color" value="#7dd3fc" disabled /></label>
+            </div>
+            <div class="tb-row" id="tb-row4">
+              <button type="button" id="pause" data-i18n="toolbar.pause">暂停</button>
+              <button type="button" id="reload" data-i18n="toolbar.reload">重挂载</button>
+              <button type="button" id="release" data-i18n="toolbar.release">释放</button>
+              <button type="button" id="open" data-i18n="toolbar.open">新窗口</button>
+              <button type="button" id="toggle-props" data-i18n="toolbar.props">壁纸配置</button>
+              <!-- ②1) 去除开屏动画：直接从开屏动画之后开始播放（渲染器档位 `?skipintro=1`）。 -->
+              <label class="check" id="intro-box" data-i18n-title="toolbar.introSkipTip" title="跳过壁纸开屏动画（开头那段放大/运镜），直接从开屏之后开始播放">
+                <input type="checkbox" id="intro-skip" />
+                <span data-i18n="toolbar.introSkip">去除开屏动画</span>
+              </label>
+              <!-- ②2) Web 壁纸渲染模式：沙箱（默认，独立作用域）/ 兼容（同页直跑）。渲染器档位 `?webmode=`。 -->
+              <label data-i18n-title="toolbar.webModeTip" title="Web 壁纸的执行方式：沙箱 = 隔离作用域（安全，个别壁纸跑不起来）；兼容 = 同页直跑（兼容性最好）">
+                <span data-i18n="toolbar.webMode">Web 渲染</span>
+                <select id="web-mode">
+                  <option value="compat" selected data-i18n="webMode.compat">兼容</option>
+                  <option value="sandbox" data-i18n="webMode.sandbox">沙箱</option>
+                  <option value="auto" data-i18n="webMode.auto">自动</option>
+                </select>
+              </label>
+              <!-- ═══ MPW-PARALLAX-FLAG-BEGIN ⑦(2026-10-12 用户 :8902 第 2/3 条「视差 / x-ray 没生效」的**页面侧根因 C**)
+                   为什么要有这个控件：渲染器（`demo.html:8905`）的 `parallaxOff = !/^(1|official|legacy)$/.test(?parallax)`
+                   ⇒ **缺省关**；而测试台此前**从不**往预览 iframe 的 URL 里写 `?parallax=`（`demo/bench-patch.js` 里
+                   `parallax` 只出现在词典文案里）⇒ 相机视差 + 对象级 `parallaxDepth` 在默认档**整体停用**，
+                   用户"看不到视差"就是这么来的。这里把渲染器**已有的**四个取值原样接到页面上（**不改 core 的判定** ✗）：
+                     控件 = 勾选框：勾 = `parallax=1`（开·官方公式），取消 = `parallax=0`（关 = 渲染器缺省）；
+                     另两个 A/B 档 `legacy`（开 + 旧 lwe 近似式）/ `official`（与 `1` 同义）由**本页 URL** 进，
+                     并**优先于**勾选态（`?parallax=legacy`），这样主表登记的 A/B 用法在测试台上直接可用。
+                   为什么是勾选框、不是下拉：工具条原生 select 的个数被既有判据硬编码（`bench-ui-headless`
+                   S3a/S3b 钉"8 个 select / 8 个 .bench-rd"）⇒ 多一个下拉会红别人的判据；勾选框同样一眼可见、
+                   一键可关，且与旁边「流式播放」同一种控件形态。
+                   默认 **勾上（`1`）**：测试台是"作者本意的预览面"，用户这一轮正是要看视差；一键可关。
+                   DOM 位置：**在「流式播放」之前** —— 判据 `bench-ui-headless` LS1 要求「图层开关」是
+                   `#hybrid-box` 的**相邻兄弟**，夹在中间会把它判红 ✗。 ═══ -->
+              <label class="check" id="parallax-box" data-i18n-title="toolbar.parallaxTip" title="视差（相机层 + 对象级 parallaxDepth）：勾上 = 层跟鼠标位移（官方公式）；取消 = 层不跟鼠标（截图/验收要固定位置时用）。A/B 档 `legacy`（旧 lwe 近似式）/ `official` 由本页 URL 走：`?parallax=legacy` 优先于这里的勾选态">
+                <input type="checkbox" id="parallax" checked />
+                <span data-i18n="toolbar.parallax">视差</span>
+              </label>
+              <!-- ═══ MPW-PARALLAX-FLAG-END ═══ -->
+              <!-- ③ DSH 进程流式播放（hybrid）：默认开；关掉即退回"整包先落盘再播"。渲染器档位 `?hybrid=`。 -->
+              <label class="check" id="hybrid-box" data-i18n-title="toolbar.hybridTip" title="DSH 进程流式播放（hybrid）：边取边播，不等整包落盘；关掉则先取完整包再播">
+                <input type="checkbox" id="hybrid" checked />
+                <span data-i18n="toolbar.hybrid">流式播放</span>
+              </label>
+              <!-- P-240（2026-10-06 任务书 §2.1）「图层开关」：逐层诊断台 —— 不开控制台、不改代码，
+                   逐层开关 / 单层隔离 / 一键复制可复现状态。DOM 位置硬要求：**紧随「流式播放」之后**
+                   （判据 bench-ui-headless LS1 用相邻兄弟判定）。隐藏集合写进本页 URL 的 `?hide=`
+                   （登记 docs/README-DIAGNOSTICS.md 主表，diag-flag-check 双向对账）。 -->
+              <!-- ═══ MPW-LSW-PANEL-BEGIN ⑦(2026-10-12 用户 :8902 第 6 条「图层开关里面加一个恢复默认」)
+                   切片标记：面板 DOM 全在这一对标记之间（判据按标记切片，与 MPW-PROPS-PANEL / MPW-FX-PANEL 同风格）。
+                   本块新增的只有 `.lsw-bar` 第 4 个按钮 `#layer-reset`（恢复默认）；其余按钮/列表/底栏逐字未动。 ═══ -->
+              <div class="layer-switch" id="layer-switch">
+                <button type="button" id="layer-switch-btn" aria-expanded="false" aria-controls="layer-switch-panel"
+                        data-i18n="toolbar.layerSwitch" data-i18n-title="toolbar.layerSwitchTip"
+                        title="取消勾选 = 该层不参与渲染（逐层排查用）；只在「本仓渲染器」档生效">图层开关</button>
+                <div id="layer-switch-panel" hidden>
+                  <div class="lsw-bar">
+                    <button type="button" id="layer-all" data-i18n="layers.all">全选</button>
+                    <button type="button" id="layer-none" data-i18n="layers.none">全不选</button>
+                    <button type="button" id="layer-only-cur" data-i18n="layers.onlyCurrent" data-i18n-title="layers.keepCurrentTip">只留当前层</button>
+                    <!-- ⑦(2026-10-12 用户第 6 条) **恢复默认 = 回到壁纸文件默认态**（本仓唯一口径：默认勾选 =
+                         文件语义，见 `layerSwitchState()`）：清空用户隐藏集（顺带删掉 URL 的 `?hide=` ⇒ 刷新页面
+                         逐位一致）+ 清空强制显示集（文件里 `visible:false` 的层回到"不勾"）。与「全选」的区别：
+                         全选会把文件里 false 的层也勾上（强制显示），本按钮**不动**它们的文件语义。 -->
+                    <button type="button" id="layer-reset" data-i18n="layers.reset" data-i18n-title="layers.resetTip">恢复默认</button>
+                  </div>
+                  <div id="layer-switch-list" class="lsw-list"></div>
+                  <div class="lsw-foot">
+                    <span id="layer-switch-status"></span>
+                    <button type="button" id="layer-copy-state" data-i18n="layers.copyState">复制当前状态</button>
+                  </div>
+                </div>
+              </div>
+              <!-- ═══ MPW-LSW-PANEL-END ═══ -->
+            </div>
+          </div>
+        </div>
+
+        <div id="workspace">
+          <div id="stage-slot">
+            <div id="stage-frame">
+              <div id="stage-scale">
+                <div id="stage">
+                  <iframe id="frame" title="renderer" allow="microphone"></iframe>
+                  <div id="empty" data-i18n="stage.empty">从左侧选择一个壁纸开始渲染</div>
+                  <!-- 指针注入遮罩：开启时盖在 iframe 上吃掉原生鼠标事件，
+                       模拟桌面 underlay 层（页面收不到 mousemove），坐标改由
+                       __wp.pushPointer 推送。默认 hidden，不影响真鼠标路径。 -->
+                  <div id="pointer-veil" hidden></div>
+                  <!-- 鼠标尾迹画布（P-批：仅在「指针注入」开启时显示；pointer-events:none 不挡事件） -->
+                  <canvas id="trail-canvas" class="trail-canvas" hidden></canvas>
+                </div>
+              </div>
+              <!-- A8 全屏：进入按钮常驻；退出按钮仅在 :fullscreen 下显示（不依赖 F12/Esc） -->
+              <div class="stage-tools">
+                <button type="button" id="fs-enter" data-i18n="fs.enter" data-i18n-title="fs.enterTitle" title="全屏预览">全屏</button>
+                <button type="button" id="fs-exit" data-i18n="fs.exit" data-i18n-title="fs.exitTitle" title="退出全屏（也可按 Esc）">退出全屏</button>
+              </div>
+              <div id="stage-badge" hidden></div>
+            </div>
+          </div>
+          <section id="docs-view" hidden>
+            <div id="docs-body"></div>
+          </section>
+        </div>
+
+        <div id="logs-splitter" role="separator" aria-orientation="horizontal" aria-label="控制台高度" title="拖动调整控制台高度（双击复位）"></div>
+        <section id="logs">
+          <div class="logs-head">
+            <button type="button" id="toggle-logs" aria-expanded="true" data-i18n-title="logs.collapse" title="折叠输出">
+              <svg id="ico-logs-up" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+              <svg id="ico-logs-down" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+            </button>
+            <!-- ⑥⑦(P-158) 两行文字改成**真页签**：`#tab-logs` = 输出（补丁+产物日志），
+                 `#tab-diag` = 渲染器诊断流（自己订阅 `/api/diag-stream`，`#diag-body` 显示）。
+                 行尾的「清空 / 复制输出」两个按钮**常驻**（收起态也不隐藏，见静态 CSS 里那条
+                 `#main.logs-collapsed #clear-logs{display:inline-flex!important}`）。 -->
+            <button type="button" id="tab-logs" class="logs-tab panel-tab active" role="tab" aria-selected="true" aria-controls="logbody" data-i18n="logs.head">输出</button>
+            <button type="button" id="tab-diag" class="logs-tab" role="tab" aria-selected="false" aria-controls="diag-body" data-i18n="logs.diag">渲染器诊断（/diag）</button>
+            <!-- ②(P-164) 「调试模式」页签：逐层查看（左右键，与 :8899 同一效果）+ 立即上报 + 截图 + 当前层信息/日志。
+                 键盘只在本页签激活期间被接管，退出即恢复默认（不留全局拦截）。 -->
+            <button type="button" id="tab-debug" class="logs-tab" role="tab" aria-selected="false" aria-controls="debug-body" data-i18n="logs.debug">调试模式</button>
+            <!-- ⑧(P-228f 2026-10-05) 这两条**如实状态**（渲染器来源 / 音条状态）原先挂在页签行尾。
+                 ①(2026-10-11 用户第 3 条：去掉「调试模式」旁边的这两项) 两个**状态片**已从 UI 移除：
+                 `#status-renderer-src` / `#status-bandfeed` 的 DOM 不再存在 ⇒ 它们的**逻辑照旧**（URL
+                 改写、`?bandfeed=` 档位、渲染器探针、图层开关的档位门控都不看 DOM），读数改由
+                 `window.__benchPatch.rendererSrcStatus()` / `bandFeedStatus()` 探针提供（门禁与真机
+                 排查走同一条入口，形状与原来的 `data-mpw-*` 一致：`{text, attrs, kind, source}`）。
+                 全部取值与含义见第 3 个页签「对应API」的状态表。 -->
+            <span class="spacer"></span>
+            <button type="button" id="clear-logs" data-i18n="logs.clear">清空</button>
+            <button type="button" id="copy-logs" data-i18n="copy.logs" data-i18n-title="copy.logs" title="复制输出">复制输出</button>
+          </div>
+          <div id="diag-offline" class="diag-offline" hidden></div>
+          <pre id="logbody"></pre>
+          <pre id="diag-body" role="log" aria-live="polite" aria-label="渲染器诊断流 / renderer diagnostics"></pre>
+          <!-- ②(P-164) 调试视图：按用户给的草图 —— 一行两个按钮 / 一行当前层信息 / 一块日志 -->
+          <div id="debug-body" hidden>
+            <!-- ②(2026-09-20 用户第 3 条) 「调试模式」的**开关搬进页签内部**（原来点页签本身就是开关 ⇒
+                 点「渲染器诊断」那一页会把调试模式关掉）。页签从此只切视图：本行的复选框是**唯一**的
+                 模式开关；`aria-checked`/`data-on` 由 bench-patch.js 的 `setDebugMode()` 维护。 -->
+            <div class="dbg-mode-row">
+              <label class="check" id="dbg-mode-box" data-i18n-title="dbg.switchTip" title="逐层查看（左右键）+ 隔离图层；只在本页打开调试视图时接管键盘，Alt 退出">
+                <input id="dbg-mode" type="checkbox" role="switch" aria-checked="false" />
+                <span data-i18n="dbg.switch">开启调试模式</span>
+              </label>
+            </div>
+            <div class="dbg-actions">
+              <button type="button" id="dbg-report" data-i18n="dbg.report">立即上报</button>
+              <button type="button" id="dbg-shot" data-i18n="dbg.shot">截图</button>
+              <span id="dbg-state" class="dbg-state"></span>
+            </div>
+            <div id="dbg-layer" class="dbg-layer" role="status" aria-live="polite"></div>
+            <pre id="dbg-log" class="dbg-log" role="log" aria-live="polite"></pre>
+          </div>
+        </section>
+      </div>
+    </div>
+      </section>
+
+      <!-- ② 说明（自写 README，替换原作者文档）：内容见本页静态 HTML，便于微调 -->
+      <section class="page" id="page-docs" role="tabpanel" aria-labelledby="tab-docs">
+        <div class="doc-wrap lang-zh" lang="zh-CN">
+          <h1>使用说明（本页自写）</h1>
+          <p class="doc-lede">这是 <strong>wallpaper-engine-web-loader</strong> 的浏览器端测试台：一个静态页面 + WebGL2，
+            不装 Wallpaper Engine、不装任何 Windows 依赖，就能实时渲染 <code>scene.pkg</code> / <code>.mpkg</code> 场景壁纸。
+            本仓库<strong>不分发任何真实壁纸</strong>，默认载入的是我们自己用算术生成的合成样例。</p>
+
+          <h2>界面怎么读</h2>
+          <table>
+            <thead><tr><th>区域</th><th>是什么</th></tr></thead>
+            <tbody>
+              <tr><td>顶部 tab（控制台 / 说明 / 壁纸设置）</td><td>三个页面：控制台＝渲染与调试；说明＝本页；壁纸设置＝<em>壁纸自带选项</em>与对应 API 的对照表</td></tr>
+              <tr><td>左侧「选择壁纸」</td><td>壁纸库列表（本机后端提供，或点「选择文件夹」在浏览器里扫描本地目录）</td></tr>
+              <tr><td>左侧「壁纸参数」</td><td>当前壁纸 <code>project.json</code> 里声明的可自定义项（滑条 / 勾选 / 取色 / 下拉 / 文本、条件隐藏项）</td></tr>
+              <tr><td>右侧「设置1」</td><td>分辨率 / 适应方式 / DPR / FPS 上限 / 音量 / 系统实况 / 指针注入 / 鼠标尾迹 / 暂停·重挂载·释放·新窗口·滤镜</td></tr>
+              <tr><td>右侧「壁纸」</td><td>渲染舞台（iframe 内跑渲染器）；右上角有全屏按钮</td></tr>
+              <tr><td>右侧「控制台」</td><td>渲染器日志与 <code>/diag</code> 诊断流；顶栏按钮可收起，拖动上沿可调高度</td></tr>
+              <tr><td>底部状态栏</td><td>库数量 / 当前壁纸 / 分辨率 / DPR / 帧率上限 / 实测 FPS</td></tr>
+            </tbody>
+          </table>
+
+          <h2>三步开始</h2>
+          <ol>
+            <li>点顶部 <strong>设置 → 语言</strong> 选中文/英文；<strong>主题</strong>一行给了<strong>两个开关</strong>（深色 / 浅色，不再有"跟随系统"），点旁边的太阳/月亮按钮则在两者之间来回切。</li>
+            <li>壁纸：默认已载入合成样例；要换自己的，点「选择文件夹」（纯前端扫描，文件不离开浏览器）或把壁纸放进本机后端配置的库目录。</li>
+            <li>调参：选中壁纸后在左侧「壁纸参数」里改；右侧「设置1」调分辨率 / FPS / 音量等运行参数。</li>
+          </ol>
+
+          <h2>顶部壁纸切换栏（设置1 上方）</h2>
+          <p>那一行就是「切换栏」：当前壁纸是第一个 tab（标题即壁纸名），后面是本页补丁按壁纸库生成的其它壁纸 tab，
+            最右边的 <strong>＋</strong> 会切到「选择未选中的壁纸」——它把左侧列表切到「选择壁纸」并过滤掉当前项，
+            你在左边点一个就完成切换。</p>
+
+          <h2>壁纸设置（第 3 个 tab）</h2>
+          <p>那张表把 Wallpaper Engine 自带的壁纸选项（翻转 / 播放速度 / 显示颜色选项：亮度·对比度·饱和度·色调偏移 …）
+            与<strong>本页能改它的方式</strong>一一对上：能改的给出 API / JSON 键 / 查询参数，WE 自带不需要写的明确标「自带，无需实现」。</p>
+
+          <h2>在线版（GitHub Pages）会少什么</h2>
+          <p>线上是纯静态托管，没有本机 Node 后端：<strong>壁纸库列表 / 属性保存 / 删除 / 打开所在文件夹 / 渲染器诊断流</strong>
+            （<code>/api/*</code> 与 <code>/diag</code>）全部不可用 —— 这是设计如此，不是故障，页面会把这些控件置灰并写明原因。
+            「选择文件夹」纯前端扫描照常可用，默认壁纸仍是合成样例。完整功能请在本仓库源码目录跑
+            <code>node server/we-scene-demo-server.mjs 8899</code>（或 <code>bash start-demo.sh</code>）。</p>
+
+          <h2>许可与归属</h2>
+          <ul>
+            <li>本仓库渲染器：<strong>GPL-3.0-or-later</strong>；第三方与参考资料逐条登记在 <a href="../THIRD-PARTY.md">THIRD-PARTY.md</a>。</li>
+            <li><strong>命名说明</strong>：本项目有两个名称：<strong>WEwebLoader</strong>；npm 包名与仓库名仍是 <code>wallpaper-engine-web-loader</code>。</li>
+            <li>本页是 <strong>WebWallGL</strong> 静态构建产物的补丁版再分发，上游
+              <a href="https://github.com/oneincase/webwallgl" target="_blank" rel="noopener noreferrer">oneincase/webwallgl</a>
+              （<strong>MIT © 2026 oneincase</strong>），许可全文随页分发：
+              <a href="./LICENSE-webwallgl-MIT.txt">LICENSE-webwallgl-MIT.txt</a>、<a href="./LICENSE-webwallgl">LICENSE-webwallgl</a>。</li>
+            <li>图标 Lucide（ISC）；合成样例由 <code>tools/make-sample.mjs</code> 生成，无第三方内容。</li>
+          </ul>
+        </div>
+
+        <div class="doc-wrap lang-en" lang="en">
+          <h1>User guide (written for this page)</h1>
+          <p class="doc-lede">This is the browser-side test bench of <strong>wallpaper-engine-web-loader</strong>: one static page plus
+            WebGL2 renders Wallpaper Engine <code>scene.pkg</code> / <code>.mpkg</code> wallpapers live — no Wallpaper Engine install,
+            no Windows dependencies. This repository <strong>redistributes no real wallpaper</strong>; the default is a synthetic sample we generate ourselves.</p>
+
+          <h2>Reading the layout</h2>
+          <table>
+            <thead><tr><th>Area</th><th>What it is</th></tr></thead>
+            <tbody>
+              <tr><td>Top tabs (Console / Guide / Wallpaper settings)</td><td>Three pages: console (render + debug), this guide, and the table mapping Wallpaper Engine's own wallpaper options to the API that changes them</td></tr>
+              <tr><td>Left “Choose wallpaper”</td><td>The library list (from the local Node backend, or scanned in-browser via “Choose folder”)</td></tr>
+              <tr><td>Left “Wallpaper parameters”</td><td>The customizable items declared in the wallpaper's <code>project.json</code></td></tr>
+              <tr><td>Right “Settings 1”</td><td>Resolution / fit / DPR / FPS cap / volume / live system / pointer injection / mouse trail / pause · remount · release · new window · filter</td></tr>
+              <tr><td>Right “Wallpaper”</td><td>The render stage (the renderer runs inside an iframe); fullscreen button top-right</td></tr>
+              <tr><td>Right “Console”</td><td>Renderer log and the <code>/diag</code> stream; collapse with the button, drag the top edge to resize</td></tr>
+              <tr><td>Status bar</td><td>Library counts / current wallpaper / resolution / DPR / FPS cap / measured FPS</td></tr>
+            </tbody>
+          </table>
+
+          <h2>Three steps to start</h2>
+          <ol>
+            <li>Top <strong>Settings → Language</strong>; the <strong>Theme</strong> row gives <strong>two explicit switches</strong> (dark / light — there is no “follow system” mode any more), and the sun/moon button toggles between the two.</li>
+            <li>Wallpaper: the synthetic sample is already loaded; use “Choose folder” for your own (read in-browser, files never leave it).</li>
+            <li>Tune: wallpaper-specific knobs on the left, runtime knobs (resolution / FPS / volume) in “Settings 1”.</li>
+          </ol>
+
+          <h2>Wallpaper switcher (above “Settings 1”)</h2>
+          <p>The current wallpaper is the first tab (its title is the wallpaper name); further tabs are generated from the library by this
+            page's patch, and the <strong>＋</strong> at the right jumps to “choose another wallpaper” — it switches the left list to
+            “Choose wallpaper”, filters out the current item, and one click there performs the switch.</p>
+
+          <h2>Wallpaper settings (third tab)</h2>
+          <p>The table pairs Wallpaper Engine's own wallpaper options (flip / playback rate / colour options: brightness, contrast,
+            saturation, hue shift …) with <strong>how this page changes them</strong>: an API, a JSON key or a query parameter where one
+            exists; “built-in, nothing to implement” where Wallpaper Engine already owns it.</p>
+
+          <h2>What the online (GitHub Pages) build lacks</h2>
+          <p>Online is plain static hosting with no local Node backend, so the library listing, property saving, deleting,
+            reveal-in-folder and the diagnostics stream (<code>/api/*</code>, <code>/diag</code>) are unavailable — by design, not a
+            failure; those controls are greyed out with the reason shown. “Choose folder” still works and the default wallpaper remains
+            the synthetic sample. For the full bench run <code>node server/we-scene-demo-server.mjs 8899</code> in the source tree.</p>
+
+          <h2>Licence &amp; attribution</h2>
+          <ul>
+            <li>This repository's renderer: <strong>GPL-3.0-or-later</strong>; third-party components are itemised in <a href="../THIRD-PARTY.md">THIRD-PARTY.md</a>.</li>
+            <li><strong>Naming note:</strong> this product is now called <strong>WEwebLoader</strong>; the upstream project is still <strong>WebWallGL</strong> (<code>oneincase/webwallgl</code>, MIT) — its attribution and licence are unchanged.</li>
+            <li>This page is a patched redistribution of the <strong>WebWallGL</strong> static build by
+              <a href="https://github.com/oneincase/webwallgl" target="_blank" rel="noopener noreferrer">oneincase/webwallgl</a>
+              (<strong>MIT © 2026 oneincase</strong>); both licence copies ship with the page:
+              <a href="./LICENSE-webwallgl-MIT.txt">LICENSE-webwallgl-MIT.txt</a>, <a href="./LICENSE-webwallgl">LICENSE-webwallgl</a>.</li>
+            <li>Icons: Lucide (ISC). The synthetic sample is generated by <code>tools/make-sample.mjs</code> and carries no third-party content.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ③ 壁纸设置：WE 自带选项 ↔ 本页 API 对照（用户点名要的第 3 个页面） -->
+      <section class="page" id="page-wpset" role="tabpanel" aria-labelledby="tab-wpset">
+        <div class="doc-wrap lang-zh" lang="zh-CN">
+          <h1>壁纸设置 ↔ 对应 API</h1>
+          <p class="doc-lede">三类来源分清楚：<span class="tag tag-we">WE 自带</span> 无需我们实现；
+            <span class="tag tag-ok">本页已实现</span> 给出可直接用的 API；<span class="tag tag-todo">需实现</span> 给出计划中的键名与挂点。
+            右侧「设置1」里出现的开关就是本页的实现面；「壁纸参数」里的项来自壁纸自己的 <code>project.json</code>。</p>
+
+          <h2>0. 参数栏档位 → 预览 URL 参数（第 4 行起是动作按钮与新档位）</h2>
+          <p>参数栏按四行排列：①分辨率 Fit DPR FPS 滤镜 ②音量 系统实况 启用麦克风 音条源
+            ③渲染器 指针注入 鼠标尾迹 长度·粗细·颜色 ④收起参数栏 + 暂停/重挂载/释放/新窗口/壁纸配置 + 三个新档位。
+            改档只改写预览 iframe 的查询串（同一条改写链），需要重挂载的档位会自动挂一次。</p>
+          <table>
+            <thead><tr><th>参数栏控件</th><th>落到哪里</th><th>取值与说明</th></tr></thead>
+            <tbody>
+              <tr><td>分辨率</td><td><code>?res=</code>（舞台逻辑分辨率 = iframe 视口）</td><td><code>fit</code>（自适应 16:9）或 <code>1280x720</code> / <code>1920x1080</code> / <code>3440x1440</code> / 竖屏 …；只改舞台盒，不改壁纸内容</td></tr>
+              <tr><td>Fit</td><td><code>?fit=cover|contain|stretch</code></td><td>内容比例 ≠ 舞台比例时的铺法</td></tr>
+              <tr><td>DPR</td><td><code>?res=dpr</code> / <code>?res=dpr1..dpr5</code></td><td>活档位：画布 = 显示尺寸 × min(设备 DPR, 档位上限)，尺寸/DPR 一变就重算</td></tr>
+              <tr><td>FPS</td><td><code>?sceneFps=30|60|120|1000</code></td><td>1000 = 不加帧率上限（跟显示器刷新率）</td></tr>
+              <tr><td>滤镜</td><td>预览舞台的 CSS filter（不写 URL）</td><td>无 / 高斯模糊 / 黑白 / 怀旧 / 鲜艳 / 暖色 / 冷色 / 反色 / 提亮 / 压暗 / 高对比；存在 <code>localStorage.bench-filter</code>，等价于 <code>#stage{filter:…}</code></td></tr>
+              <tr><td>音量</td><td><code>__wp.setVolume()</code>（NP 卡片受控档）</td><td>同时作用于包内音轨与视频元素</td></tr>
+              <tr><td>系统实况</td><td><code>?liveSystem=1</code></td><td>歌名/进度走 Node media-control；音频条另走「音条源」</td></tr>
+              <tr><td>启用麦克风</td><td>闸门（不写 URL）</td><td>默认关：关着时页面一次都不请求麦克风（<code>getUserMedia</code> 不调用）</td></tr>
+              <tr><td>音条源</td><td><code>?bandfeed=auto|mic|sim|off</code></td><td>壁纸（包内音轨，需要 <code>?audio=1</code> —— 本页在壁纸档自动补）· 麦克风 · 模拟 · 关</td></tr>
+              <tr><td>渲染器</td><td>预览 iframe 的路径</td><td>本仓渲染器 = 同源 <code>/webloader/</code>（无需 :8899）；上游产物 = <code>/wallpaper-engine-webgl/renderer/index.html</code></td></tr>
+              <tr><td>指针注入 / 鼠标尾迹</td><td>测试台本地功能</td><td>注入走 <code>__wp.pushPointer(x,y)</code>（与宿主同一条通道）；尾迹只在开启注入后可用</td></tr>
+              <tr><td><strong>去除开屏动画</strong></td><td><code>?skipintro=1</code></td><td>跳过壁纸开头那段放大/运镜，直接从开屏之后开始播；默认不跳过</td></tr>
+              <tr><td><strong>Web 渲染</strong></td><td><code>?webframe=compat|sandbox|auto</code></td><td>Web 壁纸的执行方式（渲染器档位名）：<strong>兼容</strong> = 同页直跑、兼容性最好（本页默认）；沙箱 = 隔离作用域、更安全但个别壁纸跑不起来；自动 = 由渲染器判定（被宿主嵌入时解析成 sandbox）</td></tr>
+              <tr><td><strong>流式播放</strong></td><td><code>?hybrid=1</code></td><td>DSH 进程流式播放（hybrid）：宿主"边取边播"的声明；工具条默认开。**渲染器侧的边界**：首帧前必须整包（`parsePkg` + 效果资产预取 P-206 必须在 `loadScene()` 之前 await 完），所以渲染器只**如实发布** <code>window.__mpwHybrid = {requested, mode:'full-fetch', hostStream:false, note}</code>，把流式那一半指回宿主（插件 hybrid = 宿主边取边喂）</td></tr>
+              <tr><td>收起参数栏</td><td><code>localStorage.bench-bar</code></td><td>只收第 1~3 行的参数，第 4 行的动作按钮与新档位保持可用</td></tr>
+              <tr><td>暂停/重挂载/释放/新窗口/壁纸配置</td><td><code>__wp.setPaused</code> / 产物自己的重挂载 / <code>release</code> / 新标签打开预览 / 展开右侧配置列</td><td>与产物页同一套按钮语义</td></tr>
+            </tbody>
+          </table>
+
+          <h2>0b. 两条状态行的**全部取值**（原在参数栏，现移到输出面板页签行尾）</h2>
+          <p>参数栏只留控件；如实状态片放在「输出 / 渲染器诊断 / 调试模式」页签那一行的右端（单行省略，悬停看全文）。
+            状态永远是**读数**，不是承诺：读不到就写读不到的原因。</p>
+          <table>
+            <thead><tr><th>状态片</th><th>取值</th><th>含义</th></tr></thead>
+            <tbody>
+              <tr><td rowspan="6">渲染器来源</td><td><code>loading</code></td><td>本仓渲染器正在加载（刚换档/刚挂载的 4 秒内也走这条，避免把"还没跑到"写成结论）</td></tr>
+              <tr><td><code>repo</code></td><td>本仓渲染器（画布读数 <code>宽×高 @DPR</code>）</td></tr>
+              <tr><td><code>repo-degraded</code></td><td>本仓渲染器，但有几项能力**明确降级**（逐项点名，如 <code>setFit</code>/<code>loadSceneFile</code>/<code>pushWheel</code>）</td></tr>
+              <tr><td><code>notRepo</code></td><td>档位是本仓，但当前文档看着不像本仓渲染器（附当前 URL）</td></tr>
+              <tr><td><code>unreachable</code></td><td>打不开同源 <code>/webloader/</code>（附原因；回退请选「上游产物」）</td></tr>
+              <tr><td><code>upstream</code></td><td>上游产物（minified 包）：画质与透明按上游口径</td></tr>
+              <tr><td rowspan="7">音条状态</td><td><code>idle</code></td><td>等待渲染器回报（刚挂载的 4 秒内）</td></tr>
+              <tr><td><code>live</code></td><td>有数据源：包内音轨（<code>?audio=1</code> 的 sound 层）/ 麦克风 / 模拟（形态可见，不是真实频谱）</td></tr>
+              <tr><td><code>off</code></td><td>音条源 = 关：渲染器不接任何数据源</td></tr>
+              <tr><td><code>silent</code></td><td>无数据（附原因：没有音源/已静音/麦克风闸门没勾/授权被拒/浏览器不支持…）</td></tr>
+              <tr><td><code>unsupported</code></td><td>这个渲染器不认 <code>?bandfeed=</code>（档位只写进了 URL）</td></tr>
+              <tr><td><code>not-in-url</code></td><td>档位**没写进**预览 URL（本页改写链的问题，不是渲染器不认）</td></tr>
+              <tr><td><code>—</code></td><td>渲染器还没起来 / 还没出过帧（不谎报静音）</td></tr>
+            </tbody>
+          </table>
+
+          <h2>1. Wallpaper Engine 自带的壁纸选项</h2>
+          <table>
+            <thead><tr><th>WE 里的名字</th><th>WE 内部键（本机 ui_zh-chs.json 实测）</th><th>本页怎么改（API / 键 / 参数）</th><th>状态</th></tr></thead>
+            <tbody>
+              <tr><td>翻转（水平翻转）</td><td><code>ui_browse_properties_alignment_flip_horizontally</code></td><td>渲染输出整体 <code>transform: scaleX(-1)</code>：<code>__wp.setDisplay({flipH:true})</code> / <code>?fliph=1</code>（对应 CSS 变量 <code>--mpw-flip-h</code>）</td><td><span class="tag tag-todo">需实现</span></td></tr>
+              <tr><td>对齐方式 / 缩放</td><td><code>ui_browse_properties_alignment</code> · <code>…_alignment_zoom</code></td><td>已实现：工具条「分辨率 / 适应方式」（<code>#fit</code>）＋ <code>?fit=cover|contain|stretch</code>；缩放走壁纸 <code>project.json → general.zoom</code> 与相机层 zoom</td><td><span class="tag tag-ok">已实现</span></td></tr>
+              <tr><td>播放速度 0.5–2×</td><td><code>ui_browse_properties_playback_rate</code></td><td>全局动画/视频时间倍率：<code>__wp.setPlaybackRate(1.5)</code> / <code>?rate=1.5</code>（乘到动画 dt 与 <code>video.playbackRate</code>）</td><td><span class="tag tag-todo">需实现</span></td></tr>
+              <tr><td>显示颜色选项（总开关）</td><td><code>ui_browse_properties_show_color_options</code></td><td>打开后才显示下面四项；关闭时四项不参与滤镜：<code>__wp.setDisplay({colorOptions:false})</code></td><td><span class="tag tag-todo">需实现</span></td></tr>
+              <tr><td>亮度 / 对比度 / 饱和度 / 色调偏移</td><td><code>ui_browse_properties_brightness</code> · <code>_contrast</code> · <code>_saturation</code> · <code>_hue_shift</code></td><td>合成一条 CSS filter 挂在渲染输出上：<code>brightness(b) contrast(c) saturate(s) hue-rotate(h deg)</code>；API <code>__wp.setDisplay({brightness:1.1, contrast:1.05, saturation:1.2, hue:15})</code>，查询参数 <code>?bright=1.1&amp;contrast=1.05&amp;satur=1.2&amp;hue=15</code>。做法与 DSH 插件一致（插件就是 CSS filter，见 <code>dsh-mpkg-wallpaper/lib/client.js</code> 的「画面亮度」段）</td><td><span class="tag tag-todo">需实现</span></td></tr>
+              <tr><td>音量 / 静音</td><td><code>ui_browse_monitors_mute</code> · WE 全局音量</td><td>已实现：工具条「音量」滑条 <code>#volume</code>；页面内 <code>__wp.setVolume(0.5)</code></td><td><span class="tag tag-ok">已实现</span></td></tr>
+              <tr><td>对动作做出反应（视差/陀螺仪）</td><td><code>ui_browse_properties_parallax</code></td><td><strong>不做</strong>（用户口径：无陀螺仪 / 不做这项）；若将来做，走指针注入通道 <code>__wp.pushPointer(x,y)</code> 已有</td><td><span class="tag tag-we">不做</span></td></tr>
+              <tr><td>录音（WE 自带录屏 / 录音音量）</td><td><code>ui_settings_hotkeys_action_recording</code> · <code>ui_settings_recording_volume</code></td><td>WE 客户端自带功能，不在页面内实现；要录屏用系统/浏览器自带录制（<code>MediaRecorder</code> 可后续按需加）</td><td><span class="tag tag-we">自带</span></td></tr>
+            </tbody>
+          </table>
+
+          <h2>2. 壁纸自己的可调项（<code>project.json → general.properties</code>）</h2>
+          <table>
+            <thead><tr><th>项</th><th>本页怎么改</th><th>状态</th></tr></thead>
+            <tbody>
+              <tr><td>滑条 / 勾选 / 取色 / 下拉 / 文本 / 分组标题 / 条件隐藏</td><td>左侧「壁纸参数」面板直接改；等价的 URL 形式 <code>?props=name:value,…</code>（本机后端会落盘保存）</td><td><span class="tag tag-ok">已实现</span></td></tr>
+              <tr><td>粒子层 / 动画层 / 文本层覆盖</td><td>属性面板里同名项（<code>visible/alpha/color/brightness/origin/scale/size/parallaxDepth/text</code>）</td><td><span class="tag tag-ok">已实现</span></td></tr>
+            </tbody>
+          </table>
+
+          <h2>3. 运行参数（不属于 WE，但调试常用）</h2>
+          <table>
+            <thead><tr><th>参数</th><th>API / 控件</th></tr></thead>
+            <tbody>
+              <tr><td>逻辑分辨率 / 适应方式 / DPR</td><td><code>#resolution</code> · <code>#fit</code> · <code>#dpr</code>；查询参数 <code>?res=1920x1080&amp;fit=cover&amp;dpr=1</code></td></tr>
+              <tr><td>FPS 上限</td><td><code>#fps</code>（无上限 = 跟随显示器）</td></tr>
+              <tr><td>系统实况（歌名 / 频谱）</td><td><code>#live-system</code>；本机后端读 media-control，频谱走麦克风</td></tr>
+              <tr><td>指针注入 / 鼠标尾迹</td><td><code>#pointer-push</code> · <code>#trail-on</code>；坐标通道 <code>__wp.pushPointer(x,y)</code></td></tr>
+              <tr><td>质量档位 / AA / 滤镜</td><td><code>?q=low|mid|high</code> · <code>?aa=fxaa|msaa4</code> · <code>#fx</code></td></tr>
+              <!-- ⑪(2026-09-24 用户第 11 条)「壁纸设置里的 **API 列表不全**、中英不同步 ⇒ 补齐并让中英同源」：
+                   下面这 7 行 = 本页**真实存在**、但原表漏掉的实现面（中英两表逐行同键，判据见
+                   `tests/bench-issue0924a-line-A-test.mjs` 的 A11 与浏览器探针 `docBilingualProbe()`）。 -->
+              <tr><td>音量 / 静音（NP 条里那条）</td><td><code>#np-volume</code> · <code>#np-mute</code> · 工具条 <code>#volume</code>；API <code>__wp.setVolume(0.5)</code></td></tr>
+              <tr><td>启用麦克风（闸门）</td><td><code>#mic-enable</code>（默认关：关着时 <code>getUserMedia</code> 一次都不调）</td></tr>
+              <tr><td>音条源</td><td><code>#bandfeed</code> · 查询参数 <code>?bandfeed=auto|mic|sim|off</code></td></tr>
+              <tr><td>渲染器来源</td><td><code>#renderer-src</code> · 同源 <code>/webloader/</code>（:8902 自己直供，不需要 :8899）/ 上游产物</td></tr>
+              <tr><td>暂停 / 重挂载 / 释放 / 新窗口</td><td><code>#pause</code> · <code>#reload</code> · <code>#release</code> · <code>#open</code>（释放 = 真停：停渲染器 + 清 iframe + 停轮询，且不再自愈重挂）</td></tr>
+              <tr><td>图片去重（属性面板富文本）</td><td>缺省 = 整面板去重（同一张只画一遍）；对照档 <code>?propimg=once|row|all</code></td></tr>
+              <tr><td>输出 / 诊断 / 调试页签</td><td><code>#tab-logs</code> · <code>#tab-diag</code> · <code>#tab-debug</code>；诊断流 <code>/api/diag-stream</code>；调试模式开关 <code>#dbg-mode</code></td></tr>
+            </tbody>
+          </table>
+
+          <h2>4. 怎么自己试</h2>
+          <pre><code>// 浏览器控制台（先选中一张壁纸，等 __wp 就绪）
+const wp = document.querySelector('#frame').contentWindow.__wp
+wp.setDisplay({ brightness: 1.15, contrast: 1.05, saturation: 1.2, hue: 12 })  // 颜色选项
+wp.setDisplay({ flipH: true })                                                // 翻转
+wp.setPlaybackRate(1.5)                                                       // 播放速度
+wp.setVolume(0.4)                                                             // 音量
+wp.pushPointer(0.5, 0.5)                                                      // 指针（归一化坐标）</code></pre>
+          <p class="doc-note">说明：上表中标 <span class="tag tag-todo">需实现</span> 的 API 是本页下一步要接的键名（写成文档先定契约，
+            实现后本页会把状态改成「已实现」并补一条门禁）。WE 自带项不需要我们写任何代码。</p>
+        </div>
+
+        <div class="doc-wrap lang-en" lang="en">
+          <h1>Wallpaper settings ↔ the API that changes them</h1>
+          <h2>0. Toolbar flags → preview URL parameters (row 4 holds the actions and the new flags)</h2>
+          <p>The options bar has four rows: (1) resolution · Fit · DPR · FPS · filter, (2) volume · live system ·
+            enable microphone · audio-bar source, (3) renderer · pointer injection · mouse trail · length/width/colour,
+            (4) collapse + pause / remount / release / new window / wallpaper config + the three new flags.
+            Changing a flag only rewrites the query string of the preview iframe (one single rewrite chain); tiers that need
+            a remount get one automatically.</p>
+          <table>
+            <thead><tr><th>Toolbar control</th><th>Where it lands</th><th>Values and notes</th></tr></thead>
+            <tbody>
+              <tr><td>Resolution</td><td><code>?res=</code> (stage logical resolution = iframe viewport)</td><td><code>fit</code> (adaptive 16:9) or <code>1280x720</code> / <code>1920x1080</code> / <code>3440x1440</code> / portrait …; it changes the stage box only, never the wallpaper content</td></tr>
+              <tr><td>Fit</td><td><code>?fit=cover|contain|stretch</code></td><td>How content is fitted when its aspect ratio differs from the stage</td></tr>
+              <tr><td>DPR</td><td><code>?res=dpr</code> / <code>?res=dpr1..dpr5</code></td><td>Live tier: canvas = display size × min(device DPR, cap); recomputed whenever size or DPR changes</td></tr>
+              <tr><td>FPS</td><td><code>?sceneFps=30|60|120|1000</code></td><td>1000 = no frame-rate cap (follows the display refresh)</td></tr>
+              <tr><td>Filter</td><td>CSS filter on the preview stage (no URL parameter)</td><td>None / blur / grayscale / sepia / vivid / warm / cool / invert / brighten / darken / contrast; stored in <code>localStorage.bench-filter</code>, equivalent to <code>#stage{filter:…}</code></td></tr>
+              <tr><td>Volume</td><td><code>__wp.setVolume()</code> (the NP card is the controlled surface)</td><td>Applies to in-package tracks and to video elements alike</td></tr>
+              <tr><td>Live system</td><td><code>?liveSystem=1</code></td><td>Title/progress come from the Node media-control side; audio bars are driven by the audio-bar source below</td></tr>
+              <tr><td>Enable microphone</td><td>A gate (no URL parameter)</td><td>Off by default: while off the page never requests a microphone (<code>getUserMedia</code> is not called)</td></tr>
+              <tr><td>Audio-bar source</td><td><code>?bandfeed=auto|mic|sim|off</code></td><td>Wallpaper (in-package track; needs <code>?audio=1</code>, which this page adds automatically in that mode) · microphone · simulated · off</td></tr>
+              <tr><td>Renderer</td><td>The preview iframe path</td><td>This repo = same-origin <code>/webloader/</code> (no :8899 needed); upstream product = its own renderer entry page</td></tr>
+              <tr><td>Pointer injection / mouse trail</td><td>Bench-local features</td><td>Injection goes through <code>__wp.pushPointer(x,y)</code> (the same channel the native host uses); the trail is available only after injection is on</td></tr>
+              <tr><td><strong>Skip intro</strong></td><td><code>?skipintro=1</code></td><td>Skips the wallpaper's opening zoom / camera move and starts right after it; off by default</td></tr>
+              <tr><td><strong>Web render</strong></td><td><code>?webframe=compat|sandbox|auto</code></td><td>How web wallpapers execute (the renderer's own tier name): <strong>compat</strong> = run in-page, best compatibility (the default here); sandbox = isolated scope, safer but a few wallpapers fail; auto = decided by the renderer (resolves to sandbox when embedded in a host)</td></tr>
+              <tr><td><strong>Streaming</strong></td><td><code>?hybrid=1</code></td><td>DSH process streaming (hybrid): the host declares “play while fetching”; on by default in the toolbar. <strong>Renderer-side boundary</strong>: the first frame needs the whole package (`parsePkg` plus the P-206 effect-asset prefetch, which must complete before `loadScene()`), so the renderer only publishes <code>window.__mpwHybrid = {requested, mode:'full-fetch', hostStream:false, note}</code> and points the streaming half back at the host (the plugin\u2019s hybrid streams on the host side)</td></tr>
+              <tr><td>Collapse options</td><td><code>localStorage.bench-bar</code></td><td>Hides rows 1–3 only; the action buttons and flags in row 4 stay available</td></tr>
+              <tr><td>Pause / remount / release / new window / wallpaper config</td><td><code>__wp.setPaused</code> / the product's own remount / <code>release</code> / open the preview in a new tab / expand the config column</td><td>Same button semantics as the product page</td></tr>
+            </tbody>
+          </table>
+
+          <h2>0b. Every value of the two status chips (moved out of the options bar into the output panel tab row)</h2>
+          <p>The options bar keeps controls only; the honest status chips live at the right end of the tab row
+            (Output / Renderer diagnostics / Debug mode), truncated to one line with the full text on hover.
+            A status is always a reading, never a promise: when something cannot be read, the reason is written instead.</p>
+          <table>
+            <thead><tr><th>Chip</th><th>Value</th><th>Meaning</th></tr></thead>
+            <tbody>
+              <tr><td rowspan="6">Renderer source</td><td><code>loading</code></td><td>This repo's renderer is loading (also used during the first 4 s after a remount, so a not-yet-finished start is never reported as a conclusion)</td></tr>
+              <tr><td><code>repo</code></td><td>This repo's renderer (canvas reading <code>width×height @DPR</code>)</td></tr>
+              <tr><td><code>repo-degraded</code></td><td>This repo's renderer with a few capabilities explicitly degraded (each one named, e.g. <code>setFit</code>/<code>loadSceneFile</code>/<code>pushWheel</code>)</td></tr>
+              <tr><td><code>notRepo</code></td><td>The tier says this repo, but the current document does not look like it (the current URL is included)</td></tr>
+              <tr><td><code>unreachable</code></td><td>The same-origin <code>/webloader/</code> route cannot be opened (reason included; fall back to the upstream product tier)</td></tr>
+              <tr><td><code>upstream</code></td><td>Upstream product (minified bundle): image quality and transparency follow upstream</td></tr>
+              <tr><td rowspan="7">Audio-bar status</td><td><code>idle</code></td><td>Waiting for the renderer to report (within the first 4 s after a mount)</td></tr>
+              <tr><td><code>live</code></td><td>A source is present: in-package track (the <code>?audio=1</code> sound layer) / microphone / simulated (shape only, not a real spectrum)</td></tr>
+              <tr><td><code>off</code></td><td>Audio-bar source = off: the renderer takes no data source</td></tr>
+              <tr><td><code>silent</code></td><td>No data (reason included: no audio source / muted / microphone gate off / permission denied / browser unsupported …)</td></tr>
+              <tr><td><code>unsupported</code></td><td>This renderer ignores <code>?bandfeed=</code> (the mode only made it into the URL)</td></tr>
+              <tr><td><code>not-in-url</code></td><td>The mode was <strong>not</strong> written into the preview URL (a page-side rewrite-chain problem, not an unsupported renderer)</td></tr>
+              <tr><td><code>—</code></td><td>The renderer is not up yet / has not produced a frame (silence is not claimed)</td></tr>
+            </tbody>
+          </table>
+
+          <h1>Wallpaper settings ↔ the API that changes them</h1>
+          <p class="doc-lede">Three sources, kept apart: <span class="tag tag-we">WE built-in</span> (nothing for us to implement),
+            <span class="tag tag-ok">implemented here</span> (the API you can call today), <span class="tag tag-todo">to implement</span>
+            (agreed key names and the hook point). The toggles in “Settings 1” are this page's implementation surface; the items in
+            “Wallpaper parameters” come from the wallpaper's own <code>project.json</code>.</p>
+
+          <h2>1. Wallpaper Engine's own wallpaper options</h2>
+          <table>
+            <thead><tr><th>Name in WE</th><th>WE's internal key (measured from this machine's ui_zh-chs.json)</th><th>How this page changes it</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>Flip (horizontal)</td><td><code>ui_browse_properties_alignment_flip_horizontally</code></td><td>Whole output <code>transform: scaleX(-1)</code>: <code>__wp.setDisplay({flipH:true})</code> / <code>?fliph=1</code></td><td><span class="tag tag-todo">to implement</span></td></tr>
+              <tr><td>Alignment / zoom</td><td><code>ui_browse_properties_alignment</code> · <code>…_alignment_zoom</code></td><td>Implemented: toolbar “Resolution / fit” (<code>#fit</code>) and <code>?fit=cover|contain|stretch</code>; zoom follows <code>project.json → general.zoom</code> and camera-layer zoom</td><td><span class="tag tag-ok">implemented</span></td></tr>
+              <tr><td>Playback rate 0.5–2×</td><td><code>ui_browse_properties_playback_rate</code></td><td>Global time multiplier: <code>__wp.setPlaybackRate(1.5)</code> / <code>?rate=1.5</code> (multiplies animation dt and <code>video.playbackRate</code>)</td><td><span class="tag tag-todo">to implement</span></td></tr>
+              <tr><td>Show colour options (master)</td><td><code>ui_browse_properties_show_color_options</code></td><td>When off, the four below are excluded from the filter chain: <code>__wp.setDisplay({colorOptions:false})</code></td><td><span class="tag tag-todo">to implement</span></td></tr>
+              <tr><td>Brightness / contrast / saturation / hue shift</td><td><code>ui_browse_properties_brightness</code> · <code>_contrast</code> · <code>_saturation</code> · <code>_hue_shift</code></td><td>One CSS filter on the render output: <code>brightness() contrast() saturate() hue-rotate()</code>; <code>__wp.setDisplay({brightness:1.1,contrast:1.05,saturation:1.2,hue:15})</code>, query <code>?bright=…&amp;contrast=…&amp;satur=…&amp;hue=…</code>. Same approach the DSH plugin already uses (CSS filter — see its “screen brightness” section)</td><td><span class="tag tag-todo">to implement</span></td></tr>
+              <tr><td>Volume / mute</td><td><code>ui_browse_monitors_mute</code> · WE global volume</td><td>Implemented: toolbar “Volume” slider <code>#volume</code>; in-page <code>__wp.setVolume(0.5)</code></td><td><span class="tag tag-ok">implemented</span></td></tr>
+              <tr><td>React to motion (parallax / gyroscope)</td><td><code>ui_browse_properties_parallax</code></td><td><strong>Not doing</strong> (no gyroscope); the pointer channel <code>__wp.pushPointer(x,y)</code> already exists if wanted later</td><td><span class="tag tag-we">N/A</span></td></tr>
+              <tr><td>Recording (WE recorder / recording volume)</td><td><code>ui_settings_hotkeys_action_recording</code> · <code>ui_settings_recording_volume</code></td><td>Owned by the WE client; not implemented in-page (system/browser recording is the alternative)</td><td><span class="tag tag-we">built-in</span></td></tr>
+            </tbody>
+          </table>
+
+          <h2>2. The wallpaper's own properties (<code>project.json → general.properties</code>)</h2>
+          <table>
+            <thead><tr><th>Item</th><th>How to change it</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>Slider / checkbox / colour / combo / text / group / condition-hidden</td><td>The left “Wallpaper parameters” panel; URL form <code>?props=name:value,…</code> (the local backend persists it)</td><td><span class="tag tag-ok">implemented</span></td></tr>
+              <tr><td>Particle / animation / text layer overrides</td><td>Same-name items in the properties panel</td><td><span class="tag tag-ok">implemented</span></td></tr>
+            </tbody>
+          </table>
+
+          <h2>3. Runtime parameters (not WE's, but the usual debugging knobs)</h2>
+          <table>
+            <thead><tr><th>Parameter</th><th>API / control</th></tr></thead>
+            <tbody>
+              <tr><td>Logical resolution / fit / DPR</td><td><code>#resolution</code> · <code>#fit</code> · <code>#dpr</code>; query <code>?res=1920x1080&amp;fit=cover&amp;dpr=1</code></td></tr>
+              <tr><td>FPS cap</td><td><code>#fps</code> (uncapped = follow the display)</td></tr>
+              <tr><td>Live system (title / spectrum)</td><td><code>#live-system</code>; the local backend reads media-control, the spectrum comes from the microphone</td></tr>
+              <tr><td>Pointer injection / mouse trail</td><td><code>#pointer-push</code> · <code>#trail-on</code>; coordinate channel <code>__wp.pushPointer(x,y)</code></td></tr>
+              <tr><td>Quality tiers / AA / filter</td><td><code>?q=low|mid|high</code> · <code>?aa=fxaa|msaa4</code> · <code>#fx</code></td></tr>
+              <!-- ⑪(issue 11) The rows below are real implementation surfaces that the original table missed;
+                   the zh and en tables are kept row-for-row identical (gate: A11 in
+                   `tests/bench-issue0924a-line-A-test.mjs`, plus the browser probe `docBilingualProbe()`). -->
+              <tr><td>Volume / mute (the NP bar one)</td><td><code>#np-volume</code> · <code>#np-mute</code> · toolbar <code>#volume</code>; API <code>__wp.setVolume(0.5)</code></td></tr>
+              <tr><td>Enable microphone (gate)</td><td><code>#mic-enable</code> (off by default: while off <code>getUserMedia</code> is never called)</td></tr>
+              <tr><td>Audio bar source</td><td><code>#bandfeed</code> · query param <code>?bandfeed=auto|mic|sim|off</code></td></tr>
+              <tr><td>Renderer source</td><td><code>#renderer-src</code> · same-origin <code>/webloader/</code> (served by :8902 itself, no :8899 needed) / upstream product</td></tr>
+              <tr><td>Pause / remount / release / new window</td><td><code>#pause</code> · <code>#reload</code> · <code>#release</code> · <code>#open</code> (release really stops: renderer stopped + iframe cleared + polling stopped, and no self-healing remount)</td></tr>
+              <tr><td>Image dedup (rich property panel)</td><td>Default = whole-panel dedup (each picture drawn once); A/B gear <code>?propimg=once|row|all</code></td></tr>
+              <tr><td>Output / diagnostics / debug tabs</td><td><code>#tab-logs</code> · <code>#tab-diag</code> · <code>#tab-debug</code>; diagnostics stream <code>/api/diag-stream</code>; debug switch <code>#dbg-mode</code></td></tr>
+            </tbody>
+          </table>
+
+          <h2>4. Try it yourself</h2>
+          <pre><code>// Browser console (pick a wallpaper first and wait for __wp)
+const wp = document.querySelector('#frame').contentWindow.__wp
+wp.setDisplay({ brightness: 1.15, contrast: 1.05, saturation: 1.2, hue: 12 })
+wp.setDisplay({ flipH: true })
+wp.setPlaybackRate(1.5)
+wp.setVolume(0.4)
+wp.pushPointer(0.5, 0.5)</code></pre>
+          <p class="doc-note">Rows marked <span class="tag tag-todo">to implement</span> are the key names this page will wire next
+            (documented first as a contract; when implemented the status flips to “implemented” and a gate covers it). Wallpaper Engine's
+            own options need no code from us.</p>
+        </div>
+      </section>
+    </div>
+
+    <footer id="statusbar">
+      <span id="status-lib" title=""></span>
+      <span class="status-sep"></span>
+      <span id="status-count"></span>
+      <span class="grow"></span>
+      <span id="status-item"></span>
+      <span id="status-res" data-i18n="status.adaptive">自适应 16:9</span>
+      <span id="status-dpr" data-i18n="status.dpr" data-i18n-title="status.dprTitle" title="窗口 devicePixelRatio —— 影响渲染分辨率与性能">DPR（设备像素比） 1</span>
+      <span id="status-fps" data-i18n-title="status.capTitle" title="帧率上限（工具条 fps）">上限 60</span>
+      <span id="status-live-fps" class="idle" data-i18n-title="status.liveTitle" title="壁纸实测帧率（渲染循环最近 500ms）">— FPS</span>
+    </footer>
+
+    <!-- ①(2026-09-17 真机事故自愈) **过期补丁自检**：本站入口文件 `bench-patch.js` 没有内容哈希，
+         一旦被 HTTP 启发式缓存或旧 Service Worker 钉住，就会出现"新 HTML + 旧补丁"的混合体
+         （真机表现：整页布局错乱、左上角出现未翻译的 nav.console 文本、控制台不渲染）。
+         这里在加载后自检"外壳 CSS 是否真的注入了"，没注入就**自动重载一次**（sessionStorage 守卫只重载一次，
+         不会打转；`?shell=off` 是刻意的旧行为，不触发）。旧补丁里没有这段代码也无所谓 —— 它在新 HTML 里。 -->
+    <script>
+      (function () {
+        try {
+          if (/[?&]shell=(off|0|false|no)\b/.test(location.search)) return
+          addEventListener('load', function () {
+            setTimeout(function () {
+              try {
+                // 两个条件都满足才算"新补丁已就位"：外壳 CSS 已注入 + 外壳对象已建立。
+                // 旧补丁（缓存里的）两条都不满足 ⇒ 触发一次自动重载，把新补丁拉进来。
+                var ok = !!document.querySelector('#bench-site-style') && typeof window.__benchShell === 'object' && window.__benchShell !== null
+                if (ok) { try { sessionStorage.removeItem('bench-stale-reload') } catch (e) {} return }
+                if (!document.querySelector('#pages-track')) return           // 不是新版 HTML：不管
+                if (sessionStorage.getItem('bench-stale-reload')) return      // 已经重载过一次
+                sessionStorage.setItem('bench-stale-reload', '1')
+                location.reload()
+              } catch (e) {}
+            }, 1500)
+          })
+        } catch (e) {}
+      })()
+    </script>
+    <script type="module" src="./bench-patch.js"></script>
+  </body>
+</html>
