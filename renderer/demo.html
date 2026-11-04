@@ -8321,7 +8321,7 @@ function loadScene() {
   // ①(P-77) 属性面板 + window.__mpwProps 是页级单例：多实例时只有 primary 实例装（其余格子不重复装面板）。
   //   这里必须用 `typeof PAGE === 'undefined' || PAGE` 写法：props-panel-test T10 会把这一段**切出来**
   //   单独执行（`new Function(...)` 里没有 PAGE 绑定）⇒ 兜底 true，切片行为与改动前逐位一致。
-  if (typeof PAGE === 'undefined' || PAGE) {
+  if ((typeof PAGE === 'undefined' || PAGE) && !(typeof MPW_NOUI !== 'undefined' && MPW_NOUI)) {
   try { propsPanel = installPropsPanel() } catch (e) { logf('⚠ P-61 属性面板装载失败: ' + ((e && e.message) || e)) }
   // ①(P-61) 诊断常备：即使 ?nopanel 关了面板（或包没有属性表），也把 __mpwProps 挂上供 /report 消费
   try { window.__mpwProps = propsDiagPayload() } catch (e) { /* ignore */ }
@@ -8469,7 +8469,7 @@ function loadScene() {
       + ' · 署名「' + API.authorLine(catalog[0], lang) + '」· 参数 ' + catalog[0].params.length + ' 项 · 目标图层候选 ' + rows.length + ' 个')
     return { root: handle.root, button: btnEl, api: API, handle: handle, state: st, instancesOf: instancesOf, apply: apply, remove: removeAll, setOpen: (o) => setOpen(o, true) }
   }
-  if (typeof PAGE === 'undefined' || PAGE) {
+  if ((typeof PAGE === 'undefined' || PAGE) && !(typeof MPW_NOUI !== 'undefined' && MPW_NOUI)) {
     try { fxPanel = installFxPanel() } catch (e) { logf('⚠ 内置效果面板装载失败: ' + ((e && e.message) || e)) }
   }
   // ═══ MPW-FX-MOUNT-END ═══
@@ -8505,7 +8505,7 @@ function loadScene() {
     // ①(P-77) 逐层调试 UI（角标 + "加载此层"按钮 + 键鼠监听）是页级单例：多实例时只在 primary 实例上装，
     //   否则 N 个角标会叠在一起。`?ln=` 的**层过滤**语义不变（那是 scene 级的，随实例各自生效）。
     //   `typeof` 写法同 props 门：time-variation-test 会从这里切 KB/CTRL/MSG/BTN 片段单独执行。
-    if (typeof PAGE === 'undefined' || PAGE) {
+    if ((typeof PAGE === 'undefined' || PAGE) && !(typeof MPW_NOUI !== 'undefined' && MPW_NOUI)) {
     const stack = []   // 组合栈：进入容器时压入 { id, list:[子层在 scene.layers 的索引], pos }
     const total = () => scene.layers.length
     const curList = () => (stack.length ? stack[stack.length - 1].list : scene.layers.map((_, i) => i))
@@ -9355,7 +9355,7 @@ function loadScene() {
   //   `/report` 的 log 过滤收 `[we-scene]` 行 → 上报里能直接看到"列表就绪 @Xms"早于下面那行
   //   `纹理加载完成 (Yms)`（即"先出列表、后出画面"）。
   // ①(P-77) 🔊 音频面板是页级单例：多实例时只有 primary 实例装（其余实例的 pkg 不做音轨枚举）
-  const audioPanelEarly = (typeof PAGE === 'undefined' || PAGE) ? installAudioPanel() : null
+  const audioPanelEarly = ((typeof PAGE === 'undefined' || PAGE) && !(typeof MPW_NOUI !== 'undefined' && MPW_NOUI)) ? installAudioPanel() : null
   // ①(任务单 P6) `?noui=1` ⇒ 首帧兜底：装上就藏（root+按钮），不改面板契约（DOM id / __mpwAudio 不动）
   try {
     if ((typeof PAGE === 'undefined' || PAGE) && typeof MPW_NOUI !== 'undefined' && MPW_NOUI && audioPanelEarly && audioPanelEarly.root) {
@@ -11423,7 +11423,7 @@ if (!MPW_PROPS_COMPAT_LEGACY) {
   //   （见 `加载图层纹理` 那行上面：列表不再等全量纹理）；这里这次是兜底 + 切片单元契约
   //   （`audio-panel-test.mjs` 要求块内可见 `audioPanel`）——`installAudioPanel` 幂等，第二次直接返回同一份。
   // ①(P-77) 🔊 音频面板是页级单例：多实例时第二次（这里）也只由 primary 实例调用（幂等）
-  const audioPanel = (typeof PAGE === 'undefined' || PAGE) ? installAudioPanel() : null
+  const audioPanel = ((typeof PAGE === 'undefined' || PAGE) && !(typeof MPW_NOUI !== 'undefined' && MPW_NOUI)) ? installAudioPanel() : null
   // ①(任务单 P6) 兜底安装点的同款 `?noui=1` 处置（幂等：early 路已藏则重复藏无害）
   try {
     if ((typeof PAGE === 'undefined' || PAGE) && typeof MPW_NOUI !== 'undefined' && MPW_NOUI && audioPanel && audioPanel.root) {

@@ -216,6 +216,7 @@ try {
       check('C8 noui=1 首帧前同步加 class（不靠首帧后）', /<head>\s*<script>try\{if\(new URLSearchParams\(location\.search\)\.get\('noui'\)==='1'\)document\.documentElement\.classList\.add\('mpw-noui'\)/.test(demo), 'early noui class');
       check('C9 壁纸 canvas cover 全屏', /html\.mpw-noui canvas[\s\S]*?width:\s*100vw !important[\s\S]*?height:\s*100vh !important[\s\S]*?object-fit:\s*cover !important/.test(demo), 'cover css');
       check('C10 已删除右下角「交互」按钮创建', !/const ixBtn = document\.createElement/.test(clientSrc) && !/appendChild\(ixBtn\)/.test(clientSrc), 'ixBtn removed');
+    check('C11 壁纸模式不初始化 props/fx/逐层调试/音频面板', /!\(typeof MPW_NOUI !== 'undefined' && MPW_NOUI\)/.test(demo) && /const audioPanelEarly = \(\(typeof PAGE === 'undefined' \|\| PAGE\) && !\(typeof MPW_NOUI/.test(demo), 'noui init guards');
     } catch (e2) { check('C8-C10 renderer/demo.html 读取', false, String(e2 && e2.message)); }
     } catch (e2) { check('C7 renderer/demo.html 读取', false, String(e2 && e2.message)); }
 } catch (e) { check('C1 client.js 合同断言', false, String(e && e.message)); }
