@@ -27,6 +27,25 @@ eq('A6 其它端口不动', S.migrateLegacyBase('http://127.0.0.1:9000/webloader
 eq('A7 显式 sceneRendererUrl 时不动', S.migrateLegacyBase('http://127.0.0.1:8902/webloader/?pkgurl=x', { sceneRendererUrl: 'http://127.0.0.1:8902/webloader/' }), 'http://127.0.0.1:8902/webloader/?pkgurl=x');
 eq('A8 sceneBaseLegacy 回退位不动', S.migrateLegacyBase('http://127.0.0.1:8899/?pkgurl=x', { sceneBaseLegacy: true }), 'http://127.0.0.1:8899/?pkgurl=x');
 eq('A9 非 http(s) 不动', S.migrateLegacyBase('file:///tmp/renderer/?x=1'), 'file:///tmp/renderer/?x=1');
+/* B. 渲染器 webUrl 内的 pkgurl/thumbpost 旧宿主根路径 */
+{
+  const rawOld = 'http://127.0.0.1:3080/raw?custom=1&file=' + encodeURIComponent('丛雨.mpkg');
+  const thumbOld = 'http://127.0.0.1:3080/custom-scene-thumb';
+  const enc = encodeURIComponent;
+  const cases = [
+    ['绝对 :8902/webloader', 'http://127.0.0.1:8902/webloader/?pkgurl=' + enc(rawOld) + '&embed=1&thumbpost=' + enc(thumbOld)],
+    ['相对 /webloader', '/webloader/?pkgurl=' + enc(rawOld) + '&embed=1&thumbpost=' + enc(thumbOld)],
+  ];
+  for (const [name, input] of cases) {
+    const out = S.migrateLegacyBase(input, {});
+    const u = new URL(out, 'http://127.0.0.1:3080/');
+    const pkgurl = u.searchParams.get('pkgurl') || '';
+    const thumb = u.searchParams.get('thumbpost') || '';
+    ok('B ' + name + ' → 仍指向 /webloader/', u.pathname === '/webloader/', out.slice(0, 120));
+    ok('B ' + name + ' → pkgurl 补 HOST_BASE', pkgurl.indexOf('/api/mpkg-wallpaper/raw?') > 0, pkgurl);
+    ok('B ' + name + ' → thumbpost 补 HOST_BASE', thumb.indexOf('/api/mpkg-wallpaper/custom-scene-thumb') > 0, thumb);
+  }
+}
 
 cancelWorldTimers();
 console.log(`\n===== renderer-legacy-base: ${pass} 通过 / ${fail} 失败 =====`);

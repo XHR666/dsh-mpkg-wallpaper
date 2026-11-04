@@ -204,6 +204,10 @@ try {
   check('C3 mpwSceneIdentityFromWebUrl 用 location.href 作 base（相对 URL 不抛）',
     /new URL\(String\(url \|\| ""\), \(typeof location/.test(clientSrc), 'identity 相对 base');
   check('C4 沙箱 strict 属性不变（无 allow-same-origin）', /const MPW_SANDBOX_STRICT_ATTR = "allow-scripts allow-pointer-lock";/.test(clientSrc), 'B6 strict 一字不动');
+    check('C5 场景 pkgurl 走宿主 HOST_BASE（不是根 /raw）',
+      /mpwHostAbsUrl\(HOST_BASE \+ "\/raw\?"/.test(clientSrc) && !/mpwHostAbsUrl\("\/raw\?"/.test(clientSrc), 'pkgurl 路径');
+    check('C6 场景 thumbpost 走宿主 HOST_BASE（不是根 /custom-scene-thumb）',
+      /mpwHostAbsUrl\(HOST_BASE \+ "\/custom-scene-thumb"\)/.test(clientSrc) && !/mpwHostAbsUrl\("\/custom-scene-thumb"\)/.test(clientSrc), 'thumbpost 路径');
 } catch (e) { check('C1 client.js 合同断言', false, String(e && e.message)); }
 
 /* ── D. 只发文件：webloader 块内不得搬渲染器业务端点 ── */
