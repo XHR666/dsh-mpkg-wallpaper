@@ -1,5 +1,5 @@
 <!doctype html><!-- 参照来源许可声明：本文件提到的 wer-ref/ 是第三方参考实现（Aromatic05/wallpaper-engine-renderer，GPL-2.0-only，非 WE 官方代码、非「真值源」），与本项目（GPL-3.0-or-later）许可不兼容 —— 仅用于行为对照，不得复制/改写/逐行翻译其代码、注释、常量组织或错误文案。we-layerd-ref/（Aromatic05/we-layerd）无任何许可（保留所有权利），同样仅行为对照。血缘自查结论见 docs/WER-REF-LICENSE-AUDIT.md。 本文件中所有 `wer-ref …` 形式的引用都是**行为对照**引注（只引用行为结论，未复制其代码/注释/常量组织）。 --><html><head>
-<script>try{if(new URLSearchParams(location.search).get('noui')==='1')document.documentElement.classList.add('mpw-noui')}catch(e){}</script><meta charset="utf-8">
+<script>try{var __q=new URLSearchParams(location.search);var __embed=__q.has('embed')&&__q.get('embed')!=='0';var __hide=__embed?(__q.get('noui')!=='0'):(__q.get('noui')==='1');if(__hide)document.documentElement.classList.add('mpw-noui')}catch(e){}</script><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>we-scene 验证</title><style>
 body{margin:0;background:#111;color:#eee;font-family:system-ui}
@@ -461,7 +461,7 @@ html.mpw-noui canvas {
         + '</div>'
       var sample = el.querySelector('#mpw-empty-state-sample')
       // ① 同页换源：只加 `?id=`，**不**用根相对 `/…`（那会跳到 origin 根的测试台页）
-      if (sample) sample.setAttribute('href', location.pathname + '?id=sample-synthetic')
+      if (sample) sample.setAttribute('href', '/webloader/samples/sample-synthetic/scene.pkg')
       var close = el.querySelector('#mpw-empty-state-close')
       if (close) close.addEventListener('click', function (ev) { if (ev && ev.preventDefault) ev.preventDefault(); mpwEmptyStateHide() })
       document.body.appendChild(el)
@@ -1906,7 +1906,8 @@ const MPW_PROP_PUSH_RAW = (() => { try { return new URLSearchParams(location.sea
    播放控件。运行期切换走 postMessage op `mpw-ui-set`（[props-compat] 块），这里只管"装上就不可见"。
    显式读一次（diag-flag-check 抓取规则）；主表已登记（docs/README-DIAGNOSTICS.md）。 */
 const MPW_NOUI_RAW = (() => { try { return new URLSearchParams(location.search).get('noui') } catch (e) { return null } })()
-const MPW_NOUI = String(MPW_NOUI_RAW || '') === '1'
+const MPW_EMBED = (() => { try { const q = new URLSearchParams(location.search); return q.has('embed') && q.get('embed') !== '0' } catch (e) { return false } })()
+const MPW_NOUI = MPW_EMBED ? String(MPW_NOUI_RAW || '') !== '0' : String(MPW_NOUI_RAW || '') === '1'
 try { window.__mpwNoUi = MPW_NOUI } catch (e) { /* 无 window */ }
 try { if (MPW_NOUI) document.documentElement.classList.add('mpw-noui') } catch (e) { /* 无 document */ }
 /** `?proppush=legacy`（`off`/`0`/`false` 同义）= 回到改动前（P-203 之前没有这条通道）。 */
@@ -3154,7 +3155,7 @@ const headerCache = new Map();      // name → { txt, at }（txt 为 '' = 这�
 const HEADER_FAIL_RETRY_MS = 3000;
 const headerUrls = (name) => {
   const base = String(name).replace(/^.*\//, '');
-  return ['/shaders/' + base, '/weassist/shaders/' + base, '/' + String(name).replace('shaders/', '')];
+  return ['/webloader/shaders/' + base];
 };
 async function fetchHeader(name) {
   const hit = headerCache.get(name);
@@ -5209,7 +5210,7 @@ function loadScene() {
     //   自带的合成样例，而不是把 404 的 "no scene" 字节喂给 parsePkg 报一个看不懂的错。
     //   ①**只在未显式指定包来源时**替换（无 ?id= 且非多实例 ?ids=）；显式指定的包拿不到就如实报错。
     if (!r.ok && !qs.has('id') && !MPW_MULTI_IDS) {
-      const url2 = '/pkg/sample-synthetic'
+      const url2 = '/webloader/samples/sample-synthetic/scene.pkg'
       const r2 = await fetchT(url2, null, NET_TIMEOUT_MS, '自带合成样例')
       if (!r2 || !r2.ok) throw new Error('默认包 ' + id + ' HTTP ' + r.status + '，自带合成样例 sample-synthetic HTTP ' + ((r2 && r2.status) || '超时'))
       logf('⚠ 默认包 ' + id + ' 不可用（HTTP ' + r.status + '）—— 本仓库不分发真实壁纸 → 改用自带合成样例 sample-synthetic')
@@ -7451,7 +7452,7 @@ function loadScene() {
   // ①(P-86) 纯函数：四级链的降级顺序 `'repo'` → `'we'` → `null`（`null` = 最后落到 sans-serif）
   const textFontNextTier = (tier) => (tier === 'repo' ? 'we' : null)
   // ①(P-86) 纯函数：级 → URL。②仓库自带（文件名过映射表；encodeURIComponent 处理空格与非 ASCII）
-  const repoFontUrl = (fp) => '/assets/fonts/' + encodeURIComponent(repoFontNameOf(fp))
+  const repoFontUrl = (fp) => '/webloader/assets/fonts/' + encodeURIComponent(repoFontNameOf(fp))
   // ①(P-81) 纯函数：③本机 WE 的 URL = `/weassist/fonts/<basename>`；basename 必须 encodeURIComponent
   //   （WE 自带字体里有带空格的 `Blackout 2 AM.ttf`，不编码会 404；服务端对 `%20` 是 decodeURIComponent 后取文件）
   const weFontUrl = (fp) => '/weassist/fonts/' + encodeURIComponent(String(fp).split('/').pop())
@@ -8115,6 +8116,27 @@ function loadScene() {
   // ②(P-64 第 15 项) 脚本缓存的 `applyUserProperties` 只跑一次（官方语义）：面板改值后必须复位，
   //   否则"只在 applyUserProperties 里读用户属性"的脚本（日月循环 3326873240 的 timevarying/display/
   //   morningtime…）永远停在旧值。`invalidateUserProps` 由 elysia/scene-scripts.js 导出（P-62）。
+  /** 2026-11-05 壁纸模式（不装属性面板）下的运行期属性应用链：
+      宿主 mpwWebApplyProps 场景档按名字读 window.__mpwPropsApplyHost；面板不装时也必须可用，
+      否则设置/脚本推属性静默 ok:false。逻辑与面板 applyAll 同一套（只是不刷 UI）。 */
+  function applyPropsHost(why, key) {
+    const gated = lib.gatedOffNames(propsSchema, propsMap)
+    window.__mpwUserProps = propsMap
+    const st = lib.applyUserProperties(scene, propsMap, { schema: propsSchema, gated })
+    try { lib.applyScriptProps(sceneObj, propsMap, { schema: propsSchema, gated }) } catch (e) { /* 脚本属性失败不影响渲染层 */ }
+    const invalidated = invalidateScriptPropsCache()
+    const retimed = (why === 'reset') || (typeof key === 'string' && TIME_PROP_KEYS.has(key))
+      || (Array.isArray(key) && key.some((k) => TIME_PROP_KEYS.has(k)))
+    let timePicked = null
+    if (retimed) {
+      try {
+        window.__mpwTime = lib.applyTimeVariation(scene, Object.assign({ properties: propsMap, log: logf }, propsPanelTimeArg(propsMap, propsSchema)))
+        timePicked = window.__mpwTime ? window.__mpwTime.picked : null
+      } catch (e) { /* 时段重算失败不影响其他属性 */ }
+    }
+    try { window.__mpwProps = propsDiagPayload() } catch (e) { /* ignore */ }
+    return { why, stats: st, gated: [...gated], invalidated, retimed, timePicked }
+  }
   function invalidateScriptPropsCache() {
     if (!propsCache) return 0
     try { return (typeof propsInvalidate === 'function') ? (propsInvalidate(propsCache) || 0) : 0 } catch (e) { return 0 }
@@ -8326,6 +8348,8 @@ function loadScene() {
   // ①(P-61) 诊断常备：即使 ?nopanel 关了面板（或包没有属性表），也把 __mpwProps 挂上供 /report 消费
   try { window.__mpwProps = propsDiagPayload() } catch (e) { /* ignore */ }
   }
+  /* 2026-11-05 壁纸模式不装面板也要保留属性应用链（否则宿主推属性 ok:false）。 */
+  try { if (typeof window !== 'undefined' && !window.__mpwPropsApplyHost) window.__mpwPropsApplyHost = applyPropsHost } catch (e) {}
   // ═══ MPW-FX-MOUNT-BEGIN ①(2026-10-12) 内置效果面板**装载**（顶栏按钮 + fixed 面板；页级单例）═══
   // 这一层是"效果可被选中/应用"的**宿主侧接线**（渲染机制在 core：内置素材表 + 效果链回退级）：
   //   · 清单/署名/参数面**全部读 core 的 `builtinEffectCatalog()`** ⇒ 面板与 shader 同源（不另抄一份表）；
@@ -11072,7 +11096,7 @@ if (!MPW_PROPS_COMPAT_LEGACY) {
                     .catch((e) => logf('⚠ 缩略图上报异常(' + tag + '): ' + e.message))
                 } catch (e) { logf('⚠ 缩略图生成失败: ' + e.message) }
               }
-              postThumb('first')
+              if (__first) postThumb('first')
               if (!window.__mpwThumbRefreshHook) {
                 window.__mpwThumbRefreshHook = 1
                 window.__mpwThumbPostFn = postThumb

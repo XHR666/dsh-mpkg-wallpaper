@@ -274,7 +274,7 @@ step "1/12 语法检查 lib/*.js"
 gate_begin 1
 if [ "$GATE_RUN" = 1 ]; then           # ← 缓存命中时整块跳过（SKIP-CACHED）
 for f in lib/*.js; do
-  if node --check "$f"; then echo "  ✓ $f"; else echo "  ✗ $f 语法错误"; fail=1; fi
+  if node --check "$f"; then echo "  ✓ $f"; else echo "  ✗ $f 语法错误"; fail=$((fail + 1)); fi
 done
 
 fi                                     # ← 第 1 步结束
@@ -740,7 +740,6 @@ node tools/thumb-sched-test.mjs || fail=$((fail + 1))
 #   初始化/持久化/位置两入口/切换确认与快照还原/导入安全（恶意样例逐条）/删除/导出/i18n 8 组
 #   + 5 条变异自证（期望红集 == 实际红集）。约 12s（含两轮 3.5s 落盘闸门等待）。
 node tools/preset-test.mjs || fail=$((fail + 1))
-node tools/preset-test.mjs || fail=$((fail + 1))
 # ①(2026-11-03 #7) 更新检测"模拟新版本"调试路径判据（纯 Node）：?updcheck=fake 闸在真请求前 /
 #   fake 读数形状（hasUpdate/contentDiff/9.9.9）/ 徽标与确认弹窗接线 + 2 条变异自证。约 1s。
 node tools/update-fake-test.mjs || fail=$((fail + 1))
@@ -763,7 +762,6 @@ node tools/market-topbar-glass-test.mjs || fail=$((fail + 1))
 #   两态圆角逐键相等（统一 --mpw-side-radius 令牌）/ 两态 transition 逐字一致（与宿主 grid
 #   过渡同参数）/ 拖拽与 reduced-motion 让位 / tooltip 去裁切（打标/摘标/滚动容器反向）
 #   + 4 条变异自证（期望红集 == 实际红集）。约 6s。
-node tools/sidebar-collapse-geo-test.mjs || fail=$((fail + 1))
 node tools/sidebar-collapse-geo-test.mjs || fail=$((fail + 1))
 # ①(2026-11-03 #Bug4) tooltip-unclip 布局位移判据（纯 Node）：unclip 默认关（兜底开关在）/
 #   兜底开时 body/[class*="frame"]/滚动容器永不碰 / 放开前后 scrollHeight·clientHeight 变化

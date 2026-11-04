@@ -54,6 +54,9 @@ ok(iL && iL.ident === 'library|abc123|scene.pkg' && iL.kind === 'library', 'libr
 eq(T.identity('http://127.0.0.1:8899/?id=3719111841'), null, '非 pkgurl 渲染器 URL → 无身份（不武装）')
 ok(T.beaconUrl(iC).indexOf('/custom-scene-thumb?folder=f1&file=scene.pkg&lastpost=1') >= 0, 'custom 信标 URL')
 ok(T.beaconUrl(iL).indexOf('/library-scene-thumb?ltoken=abc123&file=scene.pkg&lastpost=1') >= 0, 'library 信标 URL')
+const iR = T.identity('http://127.0.0.1:8899/?pkgurl=' + encodeURIComponent('http://127.0.0.1:3080/api/mpkg-wallpaper/raw?custom=1&file=%E4%B8%9B%E9%9B%A8.mpkg') + '&embed=1')
+ok(iR && iR.ident === 'custom||丛雨.mpkg' && iR.folder === '', '根层 custom 场景身份（无 folder，与 host 同构）')
+ok(T.beaconUrl(iR).indexOf('/custom-scene-thumb?folder=&file=') >= 0, '根层 custom 信标 URL')
 
 /* ---------- T4 看门狗状态机 ---------- */
 console.log('\n== T4 看门狗：武装/确认/超时兜底/恢复 ==')
