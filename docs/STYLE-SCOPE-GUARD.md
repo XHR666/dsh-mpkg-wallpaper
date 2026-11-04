@@ -239,3 +239,4 @@ bash tools/check.sh                           # 门禁第 11 步就是全量模�
 | `host:task-manager-page` | anchor | `[data-testid="task-manager-page"]` | 宿主机「自动化任务」页容器（data-testid 稳定）：壁纸模式下该页用 bg-base 铺出一整片白色蒙层，改为透明直接透出壁纸；只影响该页面 | 本表 |
 | `host:model-menu-list` | refine | `[class*="_7KE1Ra_groups"]` | 模型/推理等级弹层内的滚动列表容器（也带 role=menu，宿主给它伪元素加了 blur）：只允许关伪元素模糊，避免与外壳 blur 叠加成双层 | 本表 |
 | `host:list-4ub78` | anchor | `[class*="_list_4ub78_7"]` | 宿主下拉列表家族（权限/更多操作/模型列表等共用 `_list_`）：只允许关掉它内层伪元素模糊，避免与外壳 blur 叠成双层 | 本表 |
+| `host:team-inner` | anchor | `[class*="VoX2oq_member"]` / `[class*="VoX2oq_task"]` | 宿主智能体团队面板内部成员/任务卡片（`data-team-panel` 子层）：2026-11-04 层叠审计把它们的第二层 63% 白底透明化，保留边框/阴影，消除团队内"更白"；不改布局/z | 本表 |
