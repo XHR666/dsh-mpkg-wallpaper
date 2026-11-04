@@ -211,6 +211,12 @@ try {
     try {
       const demo = fs.readFileSync(path.join(PLUGIN, 'renderer', 'demo.html'), 'utf8');
       check('C7 壁纸 noui 模式隐藏调试 chrome', /html\.mpw-noui #bar/.test(demo) && /html\.mpw-noui #__mpwLnTag/.test(demo) && /classList\.add\('mpw-noui'\)/.test(demo), 'bar/fps/lnTag/noui class');
+    try {
+      const demo = fs.readFileSync(path.join(PLUGIN, 'renderer', 'demo.html'), 'utf8');
+      check('C8 noui=1 首帧前同步加 class（不靠首帧后）', /<head>\s*<script>try\{if\(new URLSearchParams\(location\.search\)\.get\('noui'\)==='1'\)document\.documentElement\.classList\.add\('mpw-noui'\)/.test(demo), 'early noui class');
+      check('C9 壁纸 canvas cover 全屏', /html\.mpw-noui canvas[\s\S]*?width:\s*100vw !important[\s\S]*?height:\s*100vh !important[\s\S]*?object-fit:\s*cover !important/.test(demo), 'cover css');
+      check('C10 已删除右下角「交互」按钮创建', !/const ixBtn = document\.createElement/.test(clientSrc) && !/appendChild\(ixBtn\)/.test(clientSrc), 'ixBtn removed');
+    } catch (e2) { check('C8-C10 renderer/demo.html 读取', false, String(e2 && e2.message)); }
     } catch (e2) { check('C7 renderer/demo.html 读取', false, String(e2 && e2.message)); }
 } catch (e) { check('C1 client.js 合同断言', false, String(e && e.message)); }
 

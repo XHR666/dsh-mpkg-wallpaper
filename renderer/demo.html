@@ -1,4 +1,5 @@
-<!doctype html><!-- 参照来源许可声明：本文件提到的 wer-ref/ 是第三方参考实现（Aromatic05/wallpaper-engine-renderer，GPL-2.0-only，非 WE 官方代码、非「真值源」），与本项目（GPL-3.0-or-later）许可不兼容 —— 仅用于行为对照，不得复制/改写/逐行翻译其代码、注释、常量组织或错误文案。we-layerd-ref/（Aromatic05/we-layerd）无任何许可（保留所有权利），同样仅行为对照。血缘自查结论见 docs/WER-REF-LICENSE-AUDIT.md。 本文件中所有 `wer-ref …` 形式的引用都是**行为对照**引注（只引用行为结论，未复制其代码/注释/常量组织）。 --><html><head><meta charset="utf-8">
+<!doctype html><!-- 参照来源许可声明：本文件提到的 wer-ref/ 是第三方参考实现（Aromatic05/wallpaper-engine-renderer，GPL-2.0-only，非 WE 官方代码、非「真值源」），与本项目（GPL-3.0-or-later）许可不兼容 —— 仅用于行为对照，不得复制/改写/逐行翻译其代码、注释、常量组织或错误文案。we-layerd-ref/（Aromatic05/we-layerd）无任何许可（保留所有权利），同样仅行为对照。血缘自查结论见 docs/WER-REF-LICENSE-AUDIT.md。 本文件中所有 `wer-ref …` 形式的引用都是**行为对照**引注（只引用行为结论，未复制其代码/注释/常量组织）。 --><html><head>
+<script>try{if(new URLSearchParams(location.search).get('noui')==='1')document.documentElement.classList.add('mpw-noui')}catch(e){}</script><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>we-scene 验证</title><style>
 body{margin:0;background:#111;color:#eee;font-family:system-ui}
@@ -31,6 +32,14 @@ html.mpw-noui #logbar,
 html.mpw-noui #__mpwLnTag,
 html.mpw-noui #mpw-audio-panel,
 html.mpw-noui #mpw-audio-btn { display: none !important; }
+/* 壁纸模式按实际屏幕覆盖裁切（用户要求：不要上下黑边，左右按需裁切） */
+html.mpw-noui canvas {
+  /* 壁纸铺满：fitCanvas() 仍算 16:9 盒，这里在壁纸模式覆盖成整屏，再用 cover 裁切 */
+  position: fixed !important; inset: 0 !important;
+  left: 0 !important; top: 0 !important;
+  width: 100vw !important; height: 100vh !important;
+  object-fit: cover !important;
+}
 /* ①(N6 2026-09-14 用户决策 C) 顶栏 🔊 音频面板：现场解析当前包内音轨，逐条播放/下载；状态记 localStorage */
 #mpw-audio-panel{position:fixed;top:38px;right:8px;z-index:12;width:340px;max-height:60vh;overflow:auto;background:rgba(0,0,0,.85);border:1px solid #468;border-radius:8px;padding:6px 8px;font:12px monospace;display:none}
 #mpw-audio-panel.open{display:block}
