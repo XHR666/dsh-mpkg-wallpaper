@@ -150,6 +150,14 @@ else {
   fs.writeFileSync(path.join(probeScene, 'scene.pkg'), Buffer.concat([head, nl, nm, off, body]));
 }
 fs.writeFileSync(path.join(probeHome, '.dsh-mpkg-wallpaper', 'custom-dir.json'), JSON.stringify({ dir: probeCustom }));
+/* ①(2026-11-06 P0-2 收尾轮) `/weassist` 是**条件注册**路由（lib/index.js：MPW_WE_ASSETS 或
+   插件同级 wallpaper_engine/assets 存在才注册）。源码探针在真仓布局下看得到兄弟目录 ⇒ 49 条，
+   bundle 探针在隔离 tmp 布局下看不到 ⇒ 48 条 —— 路由 parity 断言被"环境差异"打红（非产物缺陷）。
+   修法（不放宽判据）：给**两侧**同一个 MPW_WE_ASSETS 夹具 ⇒ 条件确定成立、两边都注册，
+   并新增 /weassist 的行为 parity 断言（200 + 同字节 + 防穿越）。 */
+const probeWeAssets = path.join(probeHome, 'we-assets');
+fs.mkdirSync(path.join(probeWeAssets, 'materials', 'lut'), { recursive: true });
+fs.writeFileSync(path.join(probeWeAssets, 'materials', 'lut', 'neutral.tex'), 'WE-ASSETS-FIXTURE\n');
 
 // 子进程探针：与 tools/scene-audio-route-test.mjs 同款口径（route 桩 + 直接调 handler），结果以 JSON 回传
 const PROBE = `
@@ -201,6 +209,22 @@ try {
   out.calls.noFolder = { status: noFolder.status };
   const lib = await call(base + '/library-scene-audio', { url: base + '/library-scene-audio?ltoken=nope' });
   out.calls.badToken = { status: lib.status };
+  /* /weassist（prefix 路由）：夹具文件 200 + 同字节；越界 403/404（parity + 安全面） */
+  async function callAny(method, url, headers = {}) {
+    const bare = url.split('?')[0];
+    const r = routes.find((x) => x.kind === 'exact' && x.path === bare)
+      || routes.find((x) => x.kind === 'prefix' && (bare === x.path || bare.startsWith(x.path + '/')));
+    if (!r) return { status: 0, headers: {}, body: Buffer.alloc(0), missing: true };
+    const res = new Res();
+    const done = new Promise((resolve) => res.on('finish', resolve));
+    await r.handler({ method, url, headers }, res);
+    await Promise.race([done, new Promise((r2) => setTimeout(r2, 3000))]);
+    return { status: res.status, headers: res.headers, body: res.body };
+  }
+  const wa = await callAny('GET', '/weassist/materials/lut/neutral.tex');
+  out.calls.weassist = { status: wa.status, sha: sha(wa.body), missing: !!wa.missing };
+  const waTrav = await callAny('GET', '/weassist/' + encodeURIComponent('..') + '/' + encodeURIComponent('..') + '/custom-dir.json');
+  out.calls.weassistTraversal = { status: waTrav.status };
   const ping = await call(base + '/ping');
   const pj = JSON.parse(ping.body.toString('utf8'));
   out.calls.ping = { status: ping.status, keys: Object.keys(pj).sort(), ok: pj.ok };
@@ -208,7 +232,7 @@ try {
 console.log('__PROBE__' + JSON.stringify(out));
 `;
 function probe(modulePath, home) {
-  const r = run(['--input-type=module', '-e', PROBE], { MPW_PROBE_MODULE: modulePath, DSH_HOME: home });
+  const r = run(['--input-type=module', '-e', PROBE], { MPW_PROBE_MODULE: modulePath, DSH_HOME: home, MPW_WE_ASSETS: probeWeAssets });
   const line = r.stdout.split('\n').find((l) => l.startsWith('__PROBE__'));
   let json = null;
   try { json = line ? JSON.parse(line.slice('__PROBE__'.length)) : null; } catch { /* 下面报 */ }
@@ -231,6 +255,8 @@ if (srcProbe.json && bndProbe.json) {
   ok(c.rawOob.status === 416, '（口径自检）越界 Range → 416', 'status=' + c.rawOob.status);
   ok(c.rawOptions.status === 204 && /range/i.test(c.rawOptions.allowHeaders), '（口径自检）OPTIONS → 204 + allow-headers: Range', 'status=' + c.rawOptions.status);
   ok(c.traversal.status === 403 && c.noFolder.status === 403 && c.badToken.status === 404, '（口径自检）403/403/404 安全面', [c.traversal.status, c.noFolder.status, c.badToken.status].join('/'));
+  ok(c.weassist && c.weassist.status === 200 && c.weassist.sha && c.weassist.sha.length === 16 && !c.weassist.missing, '（口径自检）/weassist 夹具 200 且读到内容', JSON.stringify(c.weassist));
+  ok(c.weassistTraversal && (c.weassistTraversal.status === 403 || c.weassistTraversal.status === 404), '（口径自检）/weassist 越界拒绝（realpath 防穿越）', String(c.weassistTraversal && c.weassistTraversal.status));
   ok(c.audio.status === 200 && c.audio2.cacheHit === true, '（口径自检）音频清单 200 + 第二次 cacheHit', 'count=' + c.audio.count + ' source=' + c.audio.source);
   ok(realPkg ? c.audio.count > 0 : c.audio.count === 0, '（口径自检）语料音轨数符合预期', (realPkg ? '真包 ' + path.basename(path.dirname(realPkg)) : '最小包') + ' count=' + c.audio.count);
 }
@@ -250,6 +276,10 @@ const isoDir = mkFixture('iso');
 const isoBundle = path.join(isoDir, 'dsh-mpkg-wallpaper.bundle.mjs');
 fs.copyFileSync(bundleAbs, isoBundle);
 process.env.DSH_HOME = mkFixture('home');                       // DATA_DIR 在加载期由它决定
+/* ①(2026-11-06) /weassist 条件路由：源码模块（真仓布局）看得到兄弟 wallpaper_engine/assets、
+   隔离拷贝看不到 ⇒ 路由 parity 被"环境差异"打红。给进程统一 MPW_WE_ASSETS（与 ③ 段同一夹具）
+   ⇒ 两侧注册面一致；条件路由的"注册与否"由 MPW_WE_ASSETS 的显式 env 决定，parity 才有意义。 */
+process.env.MPW_WE_ASSETS = probeWeAssets;
 const srcMod = await import(pathToFileURL(path.join(ROOT, 'lib/index.js')).href);
 const srcRoutes = await applyMod(srcMod);
 const srcPing = JSON.parse((await call(srcRoutes, '/api/mpkg-wallpaper/ping')).body.toString('utf8'));

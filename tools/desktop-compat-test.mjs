@@ -71,9 +71,14 @@ ok('A1 常量与助手都在：`MPW_HOST_FALLBACK_ORIGIN` = 与 DSH 第一方同
 /* 只判**代码**（复用上面已有的 `CLIENT_CODE = stripComments(CLIENT)`）：注释里会引用历史写法
    （如"3.13.11 起这里一直是 location.origin 拼 HOST_BASE"），那属于文档而不是残留代码 ——
    否则判据会被自己的说明打红（本轮真踩到）。 */
-ok('A2 **没有残留的裸相对宿主 URL**：`HOST_BASE + "` 形态 0 处、`location.origin + HOST_BASE` 0 处（全部经 HOST_URL）',
-  (CLIENT_CODE.match(/HOST_BASE \+ ["']/g) || []).length === 0 && !/location\.origin \+ HOST_BASE/.test(CLIENT_CODE),
-  'HOST_BASE+ 命中=' + (CLIENT_CODE.match(/HOST_BASE \+ ["']/g) || []).length)
+/* ①(2026-11-06 判据演进留痕) A2 原契约「`HOST_BASE + "` 形态 0 处」来自"HOST_BASE 是绝对 URL、
+   一律经 HOST_URL 拼接"的年代。db802e6（2026-11-05 scene 404 修复）起，交给渲染器 iframe 的
+   pkgurl/thumbpost 改为 `mpwHostAbsUrl(HOST_BASE + "/…")`——外层 mpwHostAbsUrl 仍保证**绝对**
+   （A6 正是断言这一点），所以"裸拼接"的判定收窄为：**不经 mpwHostAbsUrl 包裹**的 HOST_BASE 拼接
+   必须 0 处。语义不变：任何离开客户端的宿主 URL 都必须绝对；只是"绝对"的实现口径承认包装器。 */
+ok('A2 **没有残留的裸相对宿主 URL**：不经 mpwHostAbsUrl 包裹的 `HOST_BASE + "` 形态 0 处、`location.origin + HOST_BASE` 0 处',
+  ((CLIENT_CODE.replace(/mpwHostAbsUrl\(HOST_BASE \+ /g, '').match(/HOST_BASE \+ ["']/g) || []).length === 0) && !/location\.origin \+ HOST_BASE/.test(CLIENT_CODE),
+  'HOST_BASE+ 未包裹命中=' + ((CLIENT_CODE.replace(/mpwHostAbsUrl\(HOST_BASE \+ /g, '').match(/HOST_BASE \+ ["']/g) || []).length))
 ok('A3 验活探针走**路径还原**（桌面档下 URL 可能带 `http://dsh.internal` 前缀）：`mpwHostPathOf(url)`',
   /const u = mpwHostPathOf\(url\);/.test(CLIENT) && !/if \(u\.indexOf\(location\.origin\) === 0\) u = u\.slice/.test(CLIENT))
 ok('A4 ffprobe 探测链存在且两个调用点都走它（不再裸名 `execFileSync(\'ffprobe\'`）',
@@ -82,11 +87,13 @@ ok('A4 ffprobe 探测链存在且两个调用点都走它（不再裸名 `execFi
   && /const probeBin = \(resolveFfprobe\(\) \|\| \{\}\)\.path \|\| 'ffprobe';/.test(SERVER)
   && (SERVER_CODE.match(/execFileSync\(probeBin,/g) || []).length === 2
   && !/execFileSync\('ffprobe'/.test(SERVER_CODE))
+/* ①(2026-11-06 判据演进留痕) A6 原正则钉的是 `mpwHostAbsUrl("/raw?")` 旧形态；db802e6 起代码改为
+   `mpwHostAbsUrl(HOST_BASE + "/raw?…")`（外层包装器不变 ⇒ 仍绝对）。语义不变，只追上现行形态。 */
 ok('A6 **交给别的文档/源**的宿主 URL 必须绝对：场景渲染器的 `pkgurl` 与 `thumbpost` 都走 `mpwHostAbsUrl()`',
-  /const rawUrl = mpwHostAbsUrl\("\/raw\?"/.test(CLIENT)
-  && /thumbpost=" \+ encodeURIComponent\(mpwHostAbsUrl\("\/custom-scene-thumb"\)\)/.test(CLIENT)
+  /const rawUrl = mpwHostAbsUrl\(HOST_BASE \+ "\/raw\?"/.test(CLIENT)
+  && /thumbpost=" \+ encodeURIComponent\(mpwHostAbsUrl\(HOST_BASE \+ "\/custom-scene-thumb"\)\)/.test(CLIENT)
   && /①\(2026-10-02\) 交给渲染器 iframe ⇒ 必须绝对/.test(CLIENT),
-  JSON.stringify([/const rawUrl = mpwHostAbsUrl/.test(CLIENT), /thumbpost=" \+ encodeURIComponent\(mpwHostAbsUrl/.test(CLIENT)]))
+  JSON.stringify([/const rawUrl = mpwHostAbsUrl\(HOST_BASE \+ "\/raw\?"/.test(CLIENT), /thumbpost=" \+ encodeURIComponent\(mpwHostAbsUrl\(HOST_BASE \+ "\/custom-scene-thumb"\)\)/.test(CLIENT)]))
 ok('A5 排查通道：宿主 `GET /compat` 只读路由 + 客户端 `window.__mpwCompat`',
   /path: BASE \+ '\/compat'/.test(SERVER) && /window\.__mpwCompat = mpwCompatReport/.test(CLIENT)
   && /function mpwCompatReport\(\)/.test(CLIENT))
