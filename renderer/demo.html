@@ -1,5 +1,5 @@
 <!doctype html><!-- 参照来源许可声明：本文件提到的 wer-ref/ 是第三方参考实现（Aromatic05/wallpaper-engine-renderer，GPL-2.0-only，非 WE 官方代码、非「真值源」），与本项目（GPL-3.0-or-later）许可不兼容 —— 仅用于行为对照，不得复制/改写/逐行翻译其代码、注释、常量组织或错误文案。we-layerd-ref/（Aromatic05/we-layerd）无任何许可（保留所有权利），同样仅行为对照。血缘自查结论见 docs/WER-REF-LICENSE-AUDIT.md。 本文件中所有 `wer-ref …` 形式的引用都是**行为对照**引注（只引用行为结论，未复制其代码/注释/常量组织）。 --><html><head>
-<script>try{var __q=new URLSearchParams(location.search);var __embed=__q.has('embed')&&__q.get('embed')!=='0';var __hide=__embed?(__q.get('noui')!=='0'):(__q.get('noui')==='1');if(__hide)document.documentElement.classList.add('mpw-noui')}catch(e){}</script><meta charset="utf-8">
+<script>try{var __q=new URLSearchParams(location.search);var __embed=__q.has('embed')&&__q.get('embed')!=='0';var __hide=__embed?(__q.get('noui')!=='0'):(__q.get('noui')==='1');if(__hide){document.documentElement.classList.add('mpw-noui');var __mpwNouiCleanup=function(){try{['bar','fps','log','logbar','__mpwLnTag','__mpwHealthTag'].forEach(function(id){var e=document.getElementById(id);if(e&&e.parentNode)e.parentNode.removeChild(e)})}catch(e){}};if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',__mpwNouiCleanup)}else{__mpwNouiCleanup()}}}catch(e){}</script><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>we-scene 验证</title><style>
 body{margin:0;background:#111;color:#eee;font-family:system-ui}
@@ -1126,6 +1126,9 @@ const MPW_DIAG_CAP_PER_SEC = 20
 function mpwDiagMirror(m) {
   try {
     if (typeof window === 'undefined' || window.top === window.self) return
+    // ①(Z3 2026-11-06) 壁纸模式（mpw-noui）不开这条调试日志通道：/diag 镜像是测试台读数用的，
+    //   嵌入态页面自己的报错已走 mpw-cap.errs / 空态卡，背景不允许再发调试日志。
+    if (document.documentElement.classList.contains('mpw-noui')) return
     const now = Date.now()
     if (now - mpwDiagWinAt > 1000) { mpwDiagWinAt = now; mpwDiagWinN = 0 }
     if (mpwDiagWinN >= MPW_DIAG_CAP_PER_SEC) { mpwDiagDropped++; window.__mpwDiagDropped = mpwDiagDropped; return }
@@ -9193,6 +9196,9 @@ if (!MPW_PROPS_COMPAT_LEGACY) {
             ? '该层是否画漏**本次未采样**（台账空，等下一次上报）'
             : layerHealthSummary.missing + ' 该画没画') + ' / ' + nErr + ' 层 0x50x'
         try {
+          // ①(Z3 2026-11-06) 壁纸模式（mpw-noui）不创建健康角标：这是调试面 DOM（任务 Z3 验收：
+          //   iframe DOM 无 #__mpwHealthTag），嵌入态的健康读数只随 /report payload 上报。
+          if (document.documentElement.classList.contains('mpw-noui')) throw 0
           let hs = document.getElementById('__mpwHealthTag')
           if (!hs) { hs = document.createElement('div'); hs.id = '__mpwHealthTag'
             hs.style.cssText = 'position:fixed;right:8px;bottom:8px;z-index:99999;background:#000c;color:#cf9;font:12px/1.5 monospace;padding:5px 9px;border-radius:6px;pointer-events:none'

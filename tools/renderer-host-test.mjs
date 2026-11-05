@@ -220,6 +220,30 @@ try {
     check('C12 根层自定义场景身份（custom||file）', /custom === "1"/.test(clientSrc) && /custom === '1'/.test(fs.readFileSync(path.join(PLUGIN, 'lib', 'index.js'), 'utf8')), 'root identity');
     check('C14 静态调试 UI 已从 demo 删除', !/<div id=bar>/.test(demo) && !/<script id="mpw-(log|props|fx)-panel">/.test(demo), 'bar/log/props/fx DOM gone');
     check('C13 缩略图只在首帧上报一次', /if \(__first\) postThumb\('first'\)/.test(demo), 'thumb first guard');
+    /* ── Z3（2026-11-06）壁纸模式下调试节点必须离场 + 调试日志通道必须门控 ──
+       判据做成纯函数：真树必须全绿；变异副本必须红且期望红集==实际红集（M3）。 */
+    const z3Checks = (demoSrc) => [
+      ['C15 noui 头脚本把调试节点从 DOM 移除（bar/fps/log/logbar/__mpwLnTag/__mpwHealthTag）',
+        /__mpwNouiCleanup/.test(demoSrc) && /'bar','fps','log','logbar','__mpwLnTag','__mpwHealthTag'/.test(demoSrc)],
+      ['C16 /diag 调试日志镜像被 mpw-noui 门控（壁纸模式零后台调试日志）',
+        /function mpwDiagMirror\(m\) \{[\s\S]{0,320}classList\.contains\('mpw-noui'\)/.test(demoSrc)],
+      ['C17 健康角标（#__mpwHealthTag）创建被 mpw-noui 门控',
+        /contains\('mpw-noui'\)\) throw 0[\s\S]{0,200}__mpwHealthTag/.test(demoSrc)],
+    ]
+    const z3Real = z3Checks(demo)
+    for (const [n, c] of z3Real) check(n + '（真树）', c, c ? 'ok' : 'MISSING');
+    {
+      const z3Mut = demo
+        .replace("'bar','fps','log','logbar','__mpwLnTag','__mpwHealthTag'", '[]')
+        .replace("if (document.documentElement.classList.contains('mpw-noui')) return", '/* 变异：镜像门控拆除 */')
+        .replace("if (document.documentElement.classList.contains('mpw-noui')) throw 0", '/* 变异：角标门控拆除 */')
+      const z3MutChanged = z3Mut !== demo && z3Mut.indexOf("'bar','fps','log','logbar'") < 0
+      const z3Red = z3Checks(z3Mut).filter(([, c]) => !c).map(([n]) => n.split(' ')[0])
+      const z3Expect = ['C15', 'C16', 'C17']
+      check('M3 变异自证：拆掉 noui 清理/门控 ⇒ Z3 判据必红（期望红集==实际红集）',
+        z3MutChanged && JSON.stringify(z3Red) === JSON.stringify(z3Expect),
+        `changed=${z3MutChanged} 期望=${JSON.stringify(z3Expect)} 实际=${JSON.stringify(z3Red)}`)
+    }
     } catch (e2) { check('C8-C10 renderer/demo.html 读取', false, String(e2 && e2.message)); }
     } catch (e2) { check('C7 renderer/demo.html 读取', false, String(e2 && e2.message)); }
 } catch (e) { check('C1 client.js 合同断言', false, String(e && e.message)); }
