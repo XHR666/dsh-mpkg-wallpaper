@@ -110,9 +110,9 @@ const st = tok && tok.token ? '&st=' + encodeURIComponent(tok.token) : '';
 const r10 = await call(B + '/raw', { url: B + '/raw?custom=1&file=fixture.mpkg' + st, headers: { origin: 'null' } });
 ok(r10.status === 200 && r10.headers['access-control-allow-origin'] === 'null' && /PKGV0022/.test(r10.body.toString()),
   'R1 沙箱帧（Origin: null + 合法 st）读**真容器** ⇒ 200 + ACAO: null + 字节完整（渲染器主链路）', 'status=' + r10.status + ' acao=' + JSON.stringify(r10.headers['access-control-allow-origin'] || null));
-const r11 = await call(B + '/raw', { url: B + '/raw?custom=1&file=song.flac', headers: { origin: 'http://127.0.0.1:8899' } });
-ok(r11.status === 200 && r11.headers['access-control-allow-origin'] === 'http://127.0.0.1:8899',
-  'R2 白名单渲染器源（8899/8902）读音轨 ⇒ 200 + 回显该源（跨源链路仍通）', 'status=' + r11.status + ' acao=' + JSON.stringify(r11.headers['access-control-allow-origin'] || null));
+const r11 = await call(B + '/raw', { url: B + '/raw?custom=1&file=song.flac', headers: { origin: 'http://127.0.0.1:3080' } });
+ok(r11.status === 200 && r11.headers['access-control-allow-origin'] === 'http://127.0.0.1:3080',
+  'R2 同源白名单读音轨 ⇒ 200 + 回显该源（跨源链路仍通）', 'status=' + r11.status + ' acao=' + JSON.stringify(r11.headers['access-control-allow-origin'] || null));
 const r12 = await call(B + '/raw', { url: B + '/raw?custom=1&file=fixture.mpkg', headers: { origin: 'https://evil.example' } });
 ok(r12.status === 200 && !r12.headers['access-control-allow-origin'],
   'R3 非白名单源读**白名单内**的容器：字节仍可被"盲取"，但**没有 ACAO** ⇒ 浏览器里读不回', 'status=' + r12.status + ' acao=' + JSON.stringify(r12.headers['access-control-allow-origin'] || null));

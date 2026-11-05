@@ -160,13 +160,13 @@ const oob = await call('/api/mpkg-wallpaper/raw', { url: '/api/mpkg-wallpaper/ra
 ok(oob.status === 416 && oob.headers['content-range'] === 'bytes */' + size, '越界 Range → 416 + bytes */size', 'status=' + oob.status);
 
 console.log('\n== R4 /raw 预检（Range 是非 safelist 请求头 → 浏览器必发 OPTIONS）==');
-const opt = await call('/api/mpkg-wallpaper/raw', { method: 'OPTIONS', url: '/api/mpkg-wallpaper/raw?folder=hina-scene&file=scene.pkg', headers: { origin: 'http://127.0.0.1:8899' } });
+const opt = await call('/api/mpkg-wallpaper/raw', { method: 'OPTIONS', url: '/api/mpkg-wallpaper/raw?folder=hina-scene&file=scene.pkg', headers: { origin: 'http://127.0.0.1:3080' } });
 ok(opt.status === 204, 'OPTIONS → 204', 'status=' + opt.status);
 ok(/range/i.test(String(opt.headers['access-control-allow-headers'] || '')) && opt.headers['access-control-allow-credentials'] === 'true', 'allow-headers: Range + allow-credentials', String(opt.headers['access-control-allow-headers'] || ''));
-ok(opt.headers['access-control-allow-origin'] === 'http://127.0.0.1:8899', '回显 Origin（带凭据请求不能用 *）', String(opt.headers['access-control-allow-origin'] || ''));
+ok(opt.headers['access-control-allow-origin'] === 'http://127.0.0.1:3080', '回显 Origin（带凭据请求不能用 *）', String(opt.headers['access-control-allow-origin'] || ''));
 
 console.log('\n== R5 /custom-scene-audio 音频清单探测 ==');
-const a1 = await call('/api/mpkg-wallpaper/custom-scene-audio', { url: '/api/mpkg-wallpaper/custom-scene-audio?folder=hina-scene', headers: { origin: 'http://127.0.0.1:8899' } });
+const a1 = await call('/api/mpkg-wallpaper/custom-scene-audio', { url: '/api/mpkg-wallpaper/custom-scene-audio?folder=hina-scene', headers: { origin: 'http://127.0.0.1:3080' } });
 ok(a1.status === 200, '200 JSON', 'status=' + a1.status);
 let body1 = {};
 try { body1 = JSON.parse(a1.body.toString('utf8')); } catch { /* 下面报 */ }
@@ -176,7 +176,7 @@ ok(eq(body1.tracks, direct.tracks), 'tracks 与 scanSceneAudio 逐项一致（pa
 ok(a1.body.length < 4096, 'body 极小（' + a1.body.length + ' 字节 ≪ 整包 ' + size + '）');
 ok((body1.stats || {}).bytesRead < size * 0.05, 'stats.bytesRead 只读头（' + ((body1.stats || {}).bytesRead) + ' 字节 < 整包 5%）');
 ok(body1.stats.headReads === (body1.tracks || []).length, 'stats.headReads = 候选条数', 'headReads=' + (body1.stats || {}).headReads);
-ok(a1.headers['access-control-allow-origin'] === 'http://127.0.0.1:8899' && a1.headers['access-control-allow-credentials'] === 'true', 'CORS：回显 Origin + 允许凭据');
+ok(a1.headers['access-control-allow-origin'] === 'http://127.0.0.1:3080' && a1.headers['access-control-allow-credentials'] === 'true', 'CORS：回显 Origin + 允许凭据');
 const a2 = await call('/api/mpkg-wallpaper/custom-scene-audio', { url: '/api/mpkg-wallpaper/custom-scene-audio?folder=hina-scene' });
 const body2 = JSON.parse(a2.body.toString('utf8'));
 ok(body2.stats.cacheHit === true && eq(body2.tracks, body1.tracks), '第二次 cacheHit=true 且清单不变', 'cacheHit=' + body2.stats.cacheHit);

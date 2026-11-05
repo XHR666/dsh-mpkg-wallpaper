@@ -75,8 +75,8 @@ console.log('\n== H6 P-204 签发收口（身份真实 + 同源）==')
 eq(call(BASE + '/scene-thumb-token?scene=' + encodeURIComponent('custom|f1|nope.pkg')).code, 403, 'H6 身份指向不存在的文件 → 403')
 eq(call(BASE + '/scene-thumb-token?scene=' + encodeURIComponent('custom||notes.txt')).code, 403, 'H6 身份是 .txt（非容器/媒体）→ 403')
 eq(call(BASE + '/scene-thumb-token?scene=' + encodeURIComponent('custom|f1|scene.pkg'), { origin: 'null' }).code, 403, 'H6 Origin:null（沙箱帧）自签 → 403（改前 200，令牌门形同虚设）')
-eq(call(BASE + '/scene-thumb-token?scene=' + encodeURIComponent('custom|f1|scene.pkg'), { origin: 'http://127.0.0.1:8899' }).code, 200, 'H6 白名单源（渲染器 :8899）签发 → 200（跨源严格档链路仍通）')
-eq(call(BASE + '/scene-thumb-token?scene=' + encodeURIComponent('custom|..|scene.pkg'), { origin: 'http://127.0.0.1:8899' }).code, 403, 'H6 folder 带 `..` → 403')
+eq(call(BASE + '/scene-thumb-token?scene=' + encodeURIComponent('custom|f1|scene.pkg'), { origin: 'http://127.0.0.1:3080' }).code, 200, 'H6 白名单源（同源 :3080）签发 → 200（跨源严格档链路仍通）')
+eq(call(BASE + '/scene-thumb-token?scene=' + encodeURIComponent('custom|..|scene.pkg'), { origin: 'http://127.0.0.1:3080' }).code, 403, 'H6 folder 带 `..` → 403')
 
 /* H2/H3/H4 /raw */
 console.log('\n== H2–H4 /raw 的 Origin:null 闸门 ==')
@@ -92,9 +92,9 @@ const rawOk = call(RAW + '&st=' + encodeURIComponent(mj.token), { origin: 'null'
 ok(rawOk.code !== 403, 'H3 正确 token → 越过 token 闸门（code=' + rawOk.code + '）')
 const rawLegacy = call(RAW)
 ok(rawLegacy.code !== 403, 'H4 无 Origin 头（旧链路）→ 不因 token 被拒（零回归，code=' + rawLegacy.code + '）')
-const rawLegacyOrigin = call(RAW, { origin: 'http://127.0.0.1:8899' })
-ok(rawLegacyOrigin.code !== 403, 'H4 legacy iframe 来源（:8899）→ 不因 token 被拒（零回归）')
-ok(String(rawLegacyOrigin.headers['access-control-allow-origin'] || '') === 'http://127.0.0.1:8899', 'H4b 白名单源回显 ACAO（跨源读得回）')
+const rawLegacyOrigin = call(RAW, { origin: 'http://127.0.0.1:3080' })
+ok(rawLegacyOrigin.code !== 403, 'H4 legacy iframe 来源（:3080）→ 不因 token 被拒（零回归）')
+ok(String(rawLegacyOrigin.headers['access-control-allow-origin'] || '') === 'http://127.0.0.1:3080', 'H4b 白名单源回显 ACAO（跨源读得回）')
 const rawEvil = call(RAW, { origin: 'https://evil.example' })
 ok(rawEvil.code !== 403 && !rawEvil.headers['access-control-allow-origin'], 'H4c 非白名单源 → **没有 ACAO**（P-204 F1：任意网页不再能跨源读回本机文件）')
 
