@@ -140,6 +140,449 @@ html.mpw-noui canvas {
 #mpw-display-box select{font:12px monospace;background:#141414;color:#eee;border:1px solid #666;border-radius:4px;padding:0 2px}
 #mpw-display-box button{font:12px monospace;background:#1b1b1b;color:#eee;border:1px solid #666;border-radius:6px;padding:1px 6px;cursor:pointer}
 </style></head><body>
+<script>
+
+// ═══ ①(B6 渲染器沙箱 2026-09-14) 渲染器侧兼容层：iframe 去掉 allow-same-origin 后是**不透明源**。
+//   插件只在 URL 里给信号：sandbox=strict（当前是不透明源）、thumbtoken=<宿主签发的场景 token>。
+//   本块在解析期执行（早于下面的 module 脚本），只暴露能力、不改渲染管线；不带这两个参数时全部 no-op。
+//   对外 API：
+//     __mpwStrict/__mpwOpaque/__mpwThumbToken   只读信号
+//     __mpwFixMedia(el)/__mpwFixAllMedia(root)  strict 时给 http(s) 的 img/video/audio 加 crossOrigin='anonymous'
+//     __mpwSafeDataURL(cv,type,q)               canvas 读回守卫：失败置 __mpwTainted=true 并返回 null（不抛）
+//     __mpwCap()/__mpwCapPush()/__mpwCapErr(msg)/__mpwCapMarkFrame()   mpw-cap 能力上报（契约 §2.2）
+//   注意：这里**故意不用** URLSearchParams.get 读这两个参数 —— diag-flag-check.mjs 会把 location 绑定的
+//   URLSearchParams 上的 get('x') 当作"诊断开关"抓取并与 README-DIAGNOSTICS.md 主表双向比对，
+//   而 sandbox/thumbtoken 是插件注入的模式信号、不是诊断开关（本任务不改文档）。手写解析避免误报。
+(function () {
+  function param(name) {
+    var s = String(location.search || '')
+    if (s.charAt(0) === '?') s = s.slice(1)
+    if (!s) return ''
+    var parts = s.split('&')
+    for (var i = 0; i < parts.length; i++) {
+      var eq = parts[i].indexOf('=')
+      if (eq < 0) continue
+      var k = parts[i].slice(0, eq)
+      try { k = decodeURIComponent(k.replace(/\+/g, ' ')) } catch (e) {}
+      if (k !== name) continue
+      var v = parts[i].slice(eq + 1)
+      try { v = decodeURIComponent(v.replace(/\+/g, ' ')) } catch (e) {}
+      return v
+    }
+    return ''
+  }
+  var STRICT = param('sandbox') === 'strict'
+  var TOKEN = param('thumbtoken')
+  function probeOpaque() {
+    try {
+      // 标准信号优先（Window.origin 在不透明源下就是字符串 'null'）；不可用时才退回 localStorage 探测，
+      // 避免"第三方存储被禁 → localStorage 抛错"被误判成不透明源。
+      var raw = (window.origin !== undefined && window.origin !== null) ? window.origin
+        : ((typeof document !== 'undefined' && document.origin !== undefined) ? document.origin : null)
+      if (raw !== null) return String(raw) === 'null'
+    } catch (e) {}
+    try { window.localStorage.getItem('__mpwOpaqueProbe'); return false } catch (e) { return true }
+  }
+  var OPAQUE = probeOpaque()
+  window.__mpwStrict = STRICT
+  window.__mpwOpaque = OPAQUE
+  window.__mpwThumbToken = TOKEN || ''
+
+  // ---- canvas 读回守卫：不透明源 + 跨源纹理未带 CORS 时 toDataURL 抛 SecurityError ----
+  function markTainted() { try { if (!window.__mpwTainted) window.__mpwTainted = true; capPush() } catch (e) {} }
+  window.__mpwSafeDataURL = function (canvas, type, quality) {
+    try { return canvas.toDataURL(type, quality) } catch (e) { markTainted(); return null }
+  }
+
+  // ---- strict：http(s) 的纹理/视频/音频必须带 crossOrigin，否则 canvas 被污染（blob:/data: 不动）----
+  function isHttp(u) { return /^https?:\/\//i.test(String(u || '')) }
+  function fixMedia(el) {
+    if (!STRICT || !el || !el.tagName) return el
+    var tag = String(el.tagName).toLowerCase()
+    if (tag !== 'img' && tag !== 'video' && tag !== 'audio') return el
+    try {
+      var src = el.currentSrc || el.src || (el.getAttribute ? el.getAttribute('src') : '') || ''
+      if (!isHttp(src)) return el
+      if (el.crossOrigin !== 'anonymous') el.crossOrigin = 'anonymous'
+    } catch (e) {}
+    return el
+  }
+  function fixAllMedia(root) {
+    if (!STRICT) return
+    try {
+      var host = root || document
+      var list = host.querySelectorAll ? host.querySelectorAll('img,video,audio') : []
+      for (var i = 0; i < list.length; i++) fixMedia(list[i])
+    } catch (e) {}
+  }
+  window.__mpwFixMedia = fixMedia
+  window.__mpwFixAllMedia = fixAllMedia
+  if (STRICT) {
+    try {
+      var mo = new MutationObserver(function (muts) {
+        for (var i = 0; i < muts.length; i++) {
+          var mu = muts[i]
+          var added = mu.addedNodes || []
+          for (var j = 0; j < added.length; j++) {
+            var n = added[j]
+            if (!n || n.nodeType !== 1) continue
+            fixMedia(n); fixAllMedia(n)
+          }
+          if (mu.type === 'attributes' && mu.target) fixMedia(mu.target)
+        }
+      })
+      var moStart = function () {
+        try { mo.observe(document.documentElement || document, { childList: true, subtree: true, attributes: true, attributeFilter: ['src'] }) } catch (e) {}
+        fixAllMedia(document)
+      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', moStart)
+      else moStart()
+    } catch (e) {}
+  }
+
+  // ---- mpw-cap（契约 §2.2）：脚本初始化 / 首帧出画 / 能力变化各一次；同内容不重发 ----
+  var CAP_ERRS = []
+  var CAP_FATAL = false
+  var CAP_LAST = ''
+  var CAP_FRAME = false
+  function capObj() {
+    return {
+      type: 'mpw-cap', v: 1,
+      ok: !CAP_FATAL,
+      opaque: OPAQUE,
+      sceneId: param('id'),
+      firstFrame: CAP_FRAME || !!window.__mpwFirstFrame,
+      tainted: !!window.__mpwTainted,
+      thumbToken: !!TOKEN,
+      errs: CAP_ERRS.slice(0, 3),
+    }
+  }
+  function capPush() {
+    try {
+      var obj = capObj()
+      var j = JSON.stringify(obj)
+      if (j === CAP_LAST) return obj
+      CAP_LAST = j
+      window.__mpwCapLast = obj
+      try { window.parent.postMessage(obj, '*') } catch (e) {}
+      return obj
+    } catch (e) { return null }
+  }
+  window.__mpwCap = function () { return capObj() }
+  window.__mpwCapPush = capPush
+  window.__mpwCapErr = function (msg) {
+    try { if (CAP_ERRS.length < 3) CAP_ERRS.push(String(msg).slice(0, 80)) } catch (e) {}
+    CAP_FATAL = true
+    return capPush()
+  }
+  window.__mpwCapMarkFrame = function () { CAP_FRAME = true; return capPush() }
+  capPush()
+  // 首帧兜底观察（WebGL 路径会置 __mpwFirstFrame；此窗与插件 legacy-fallback 的 8s 判定对齐）
+  var tries = 0
+  var timer = setInterval(function () {
+    tries++
+    if (window.__mpwFirstFrame) { CAP_FRAME = true; capPush(); clearInterval(timer); return }
+    if (tries >= 32) clearInterval(timer)
+  }, 250)
+  // ═══ MPW-EMPTYSTATE-BEGIN ②(2026-10-13 P-345 语义纠正) **「没有壁纸」= 合法空态；只有「选了但取不到」才提示** ═══
+  /* P-343 把"没有壁纸"当成了要提示的异常 ✗ —— 它不是异常，是**合法空态** ✓（用户口径）。
+     现在两条路径**彻底分离**：
+       ⓐ **合法空态（没有壁纸）** ⇒ 页面**什么都不显示**：不要占位/提示/报错、不要全屏纯黑、
+          不要吞指针；底色 = 直接打开时的**中性浅色**，被宿主 iframe 嵌进来时**透明**
+          （由宿主自己的背景显示 = 用户说的"正常的白"）。落在 `mpwApplyNoWallpaperPage()`：
+          加 `html.mpw-no-wallpaper`（藏 canvas 与调试 chrome + 换底），boot 里**直接 return**
+          ⇒ 不加载任何包、不报任何错、没有"永远撤不掉的占位"。
+       ⓑ **失败态（选了壁纸但取不到/解不开）** ⇒ 才显示**诊断占位**：底部卡片、非纯黑、
+          **可关闭**、且**不吞关键交互**（容器 `pointer-events:none`，只有卡片里的控件自己 auto）。
+     判定"没有壁纸"的**证据**（拿证据定，不许猜 ✗）：
+       · 宿主显式 `embed=1`（插件挂场景渲染器时**恒带**，见本文件 `embedMode()`）
+         **且** URL 里**没有任何**来源参数（pkgurl / pkgpath / scenefile / id / ids / type / video / mode）；或
+       · 宿主显式 `?nowallpaper=1`（"我这边没有选壁纸"）。
+     「首帧即撤」保留 ✓，但它只服务失败态（健康路径零打扰）。
+     判据：tests/empty-state-no-black-test.mjs（A 空态 / B 失败态 / 双向 / ≥3 组变异自证）。 */
+  /** 手写解析 `?a=1&b=2` ⇒ 普通对象。
+   *  **故意不用 `URLSearchParams.get`**：`nowallpaper` / `scenefile` 是宿主注入的**模式信号**、
+   *  不是诊断开关，而 `tests/diag-flag-check.mjs` 会把 `.get('<字面量>')` 一律当成诊断开关去与
+   *  `docs/README-DIAGNOSTICS.md` 主表双向比对（本任务不改那份文档）。同一口径的既有先例见本文件
+   *  开头 MPW-SANDBOX 块对 `sandbox`/`thumbtoken` 的处理。 */
+  function mpwParseQuery(search) {
+    var out = {}
+    try {
+      var s = String(search || '').replace(/^\?/, '')
+      var parts = s ? s.split('&') : []
+      for (var i = 0; i < parts.length; i++) {
+        var kv = parts[i]
+        if (!kv) continue
+        var eq = kv.indexOf('=')
+        var k = eq < 0 ? kv : kv.slice(0, eq)
+        var v = eq < 0 ? '' : kv.slice(eq + 1)
+        try { k = decodeURIComponent(k.replace(/\+/g, ' ')); v = decodeURIComponent(v.replace(/\+/g, ' ')) } catch (e) {}
+        if (!(k in out)) out[k] = v
+      }
+    } catch (e) {}
+    return out
+  }
+  /** 统一取"参数表"：**URLSearchParams 形状**（判据注入）或已是普通对象；都没有就手写解析本页 URL。 */
+  function mpwQueryMap(q) {
+    try {
+      if (q && typeof q.forEach === 'function') { var o = {}; q.forEach(function (v, k) { o[String(k)] = String(v) }); return o }
+      if (q && typeof q === 'object') return q
+    } catch (e) {}
+    try { return mpwParseQuery(location.search) } catch (e2) { return {} }
+  }
+  /** 本页是否被**当成壁纸**嵌进宿主（= 仓库既有契约：`embed` 存在且不为 `0`，与 `embedMode()` 同规则）。 */
+  function mpwEmbedded() {
+    try {
+      var m = mpwParseQuery((window.location && window.location.search) || '')
+      return Object.prototype.hasOwnProperty.call(m, 'embed') && m['embed'] !== '0'
+    } catch (e) { return false }
+  }
+  /** URL 里的"壁纸来源"分类（纯函数；`q` = URLSearchParams 形状或参数对象）。 */
+  function mpwWallpaperSourceKind(q) {
+    try {
+      var m = mpwQueryMap(q)
+      if (String(m['nowallpaper'] || '') === '1') return 'none'          // 宿主显式告知：未选择壁纸
+      if (m['pkgurl'] || m['pkgpath']) return 'container'
+      if (String(m['scenefile'] || '') === '1') return 'container'
+      if (m['video']) return 'video'
+      var t = String(m['type'] || '').toLowerCase()
+      if (t === 'web' || t === 'video') return t
+      if (m['id'] || m['ids']) return 'id'
+      if (m['mode']) return 'demo'                                       // 演示档自带默认包
+      return 'none'
+    } catch (e) { return 'none' }
+  }
+  /** **合法空态**的唯一判定（有证据才成立）：来源分类为 none，且宿主显式"嵌进来"或显式 `nowallpaper=1`。 */
+  function mpwNoWallpaper(q, embedded) {
+    try {
+      var m = mpwQueryMap(q)
+      if (mpwWallpaperSourceKind(m) !== 'none') return false
+      var explicit = String(m['nowallpaper'] || '') === '1'
+      return !!(embedded || explicit)
+    } catch (e) { return false }
+  }
+  /** 现场判定（读当前 URL）—— boot 短路与两个失败入口共用这一处证据。 */
+  function mpwIsLegalEmptyNow() {
+    try { return mpwNoWallpaper(null, mpwEmbedded()) } catch (e) { return false }
+  }
+  /** 合法空态落到页面上：中性/透明底 + 藏 canvas 与调试 chrome（**不建占位、不报错、不写日志**）。 */
+  function mpwApplyNoWallpaperPage() {
+    try {
+      var de = document.documentElement
+      var cls = String(de.className || '')
+      if (cls.indexOf('mpw-no-wallpaper') < 0) de.className = (cls ? cls + ' ' : '') + 'mpw-no-wallpaper'
+      if (mpwEmbedded() && String(de.className).indexOf('mpw-embedded') < 0) de.className += ' mpw-embedded'
+      return true
+    } catch (e) { return false }
+  }
+  /**
+   * 空态 / 失败态裁决（纯函数：无 DOM、无网络 ⇒ 判据可逐形态断言）。
+   * @param {{hasFrame?:boolean, err?:string, legalEmpty?:boolean, q?:object, embedded?:boolean}} o
+   * @returns {{show:boolean, kind:string, title:string, detail:string}}
+   *   kind：`rendering`（已出帧）· `legal-empty`（**合法空态：一个字都不显示**）·
+   *         `fetch-failed`（选了但取不到）· `no-webgl` · `no-frame` · `error`
+   */
+  function mpwEmptyStatePlan(o) {
+    var s = o || {}
+    if (s.hasFrame) return { show: false, kind: 'rendering', title: '', detail: '' }
+    var legal = (s.legalEmpty === true) || (s.q ? mpwNoWallpaper(s.q, s.embedded) : false)
+    if (legal) return { show: false, kind: 'legal-empty', title: '', detail: '' }
+    var err = String(s.err || '')
+    if (/无 WebGL|WebGL2|WebGL context/i.test(err)) {
+      return { show: true, kind: 'no-webgl', title: '壁纸无法出画：本设备/浏览器没有可用的 WebGL2', detail: err }
+    }
+    if (/pkgurl|pkgpath|场景包|取包|容器|sample-synthetic|\/pkg\b|\bHTTP\s*[45]\d\d/i.test(err)) {
+      return { show: true, kind: 'fetch-failed', title: '壁纸取不到：容器打不开（404/超时）', detail: err }
+    }
+    if (!err) return { show: true, kind: 'no-frame', title: '壁纸未能出画：7 秒内没有首帧', detail: '' }
+    return { show: true, kind: 'error', title: '壁纸未能出画', detail: err }
+  }
+  /** 诊断占位（**只服务失败态**；惰性建一次；`data-mpw-empty` 承载 kind，探针/判据都读它）。
+   *  刻意做成**底部卡片**而不是全屏遮罩：P-343 的全屏遮罩会吞掉所有点击（用户点不动任何东西，
+   *  只能去设置里把壁纸清掉才恢复）⇒ 这里容器 `pointer-events:none`，只有卡片里的控件自己 `auto`。 */
+  function mpwEmptyStateEl() {
+    try {
+      var el = document.getElementById('mpw-empty-state')
+      if (el) return el
+      el = document.createElement('div')
+      el.id = 'mpw-empty-state'
+      el.setAttribute('style', 'position:fixed;left:50%;bottom:12px;transform:translateX(-50%);'
+        + 'z-index:2147483000;max-width:min(560px,92vw);box-sizing:border-box;'
+        + 'background:#ffffff;color:#1f2328;border:1px solid #d0d7de;border-radius:10px;'
+        + 'box-shadow:0 6px 24px rgba(0,0,0,.18);font:13px/1.6 system-ui,sans-serif;padding:12px 14px;'
+        + 'text-align:left;pointer-events:none')
+      el.innerHTML = '<div id="mpw-empty-state-title" style="font-weight:600;margin-bottom:4px"></div>'
+        + '<div id="mpw-empty-state-detail" style="opacity:.75;font:11px/1.5 monospace;word-break:break-all;margin-bottom:8px"></div>'
+        + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
+        + '<a id="mpw-empty-state-sample" style="pointer-events:auto;color:#0550ae;text-decoration:none;border:1px solid #d0d7de;border-radius:6px;padding:3px 10px">用自带合成样例渲染</a>'
+        + '<a id="mpw-empty-state-bench" href="/" style="pointer-events:auto;color:#0550ae;text-decoration:none;border:1px solid #d0d7de;border-radius:6px;padding:3px 10px">打开测试台</a>'
+        + '<button id="mpw-empty-state-close" type="button" style="pointer-events:auto;margin-left:auto;font:12px system-ui;cursor:pointer;background:#f6f8fa;color:#1f2328;border:1px solid #d0d7de;border-radius:6px;padding:3px 10px">关闭</button>'
+        + '</div>'
+      var sample = el.querySelector('#mpw-empty-state-sample')
+      // ① 同页换源：只加 `?id=`，**不**用根相对 `/…`（那会跳到 origin 根的测试台页）
+      if (sample) sample.setAttribute('href', '/webloader/samples/sample-synthetic/scene.pkg')
+      var close = el.querySelector('#mpw-empty-state-close')
+      if (close) close.addEventListener('click', function (ev) { if (ev && ev.preventDefault) ev.preventDefault(); mpwEmptyStateHide() })
+      document.body.appendChild(el)
+      return el
+    } catch (e) { return null }
+  }
+  /** kind → 默认标题（`plan()` 之外的兜底；面板/探针直接调 `show` 时也用得上）。 */
+  var MPW_EMPTY_TITLES = {
+    'fetch-failed': '壁纸取不到：容器打不开（404/超时）',
+    'no-webgl': '壁纸无法出画：本设备/浏览器没有可用的 WebGL2',
+    'no-frame': '壁纸未能出画：7 秒内没有首帧',
+    'error': '壁纸未能出画',
+  }
+  function mpwEmptyStateShow(kind, detail, title) {
+    try {
+      // ②(P-345) 合法空态**永远不显示**占位（哪怕调用方硬调）：证据说话，不靠调用点自觉
+      if (mpwIsLegalEmptyNow() && String(kind) !== 'explicit') { mpwEmptyStateHide(); return null }
+      var el = mpwEmptyStateEl()
+      if (!el) return null
+      var k = String(kind || 'error')
+      el.setAttribute('data-mpw-empty', k)
+      var t = el.querySelector('#mpw-empty-state-title'), d = el.querySelector('#mpw-empty-state-detail')
+      if (t) t.textContent = String(title || MPW_EMPTY_TITLES[k] || MPW_EMPTY_TITLES.error)
+      if (d) d.textContent = String(detail || '')
+      el.style.display = 'block'
+      return el
+    } catch (e) { return null }
+  }
+  function mpwEmptyStateHide() {
+    try {
+      var el = document.getElementById('mpw-empty-state')
+      if (!el) return
+      el.removeAttribute('data-mpw-empty')
+      el.style.display = 'none'
+    } catch (e) {}
+  }
+  /** 启动失败统一入口：`err` 是异常或字符串；**合法空态 ⇒ 什么都不做**；已出首帧 ⇒ 不显示。 */
+  function mpwEmptyStateFail(err) {
+    try {
+      var hasFrame = !!(typeof window !== 'undefined' && window.__mpwFirstFrame)
+      var plan = mpwEmptyStatePlan({ hasFrame: hasFrame, legalEmpty: mpwIsLegalEmptyNow(), err: String((err && err.message) || err || '') })
+      if (!plan.show) { mpwEmptyStateHide(); return plan }
+      mpwEmptyStateShow(plan.kind, plan.detail, plan.title)
+      return plan
+    } catch (e) { return null }
+  }
+  /** 7s 看门狗那种"没有异常、只有最后一行日志"的入口（同样先过合法空态这一关）。 */
+  function mpwEmptyStateFromLog(lastLine) {
+    try {
+      var hasFrame = !!(typeof window !== 'undefined' && window.__mpwFirstFrame)
+      var plan = mpwEmptyStatePlan({ hasFrame: hasFrame, legalEmpty: mpwIsLegalEmptyNow(), err: String(lastLine || '') })
+      if (!plan.show) return null
+      mpwEmptyStateShow(plan.kind, plan.detail, plan.title)
+      return plan
+    } catch (e) { return null }
+  }
+  try {
+    window.__mpwEmptyState = {
+      plan: mpwEmptyStatePlan, show: mpwEmptyStateShow, hide: mpwEmptyStateHide,
+      fail: mpwEmptyStateFail, fromLog: mpwEmptyStateFromLog, el: mpwEmptyStateEl, titles: MPW_EMPTY_TITLES,
+      embedded: mpwEmbedded, sourceKind: mpwWallpaperSourceKind, noWallpaper: mpwNoWallpaper,
+      applyPage: mpwApplyNoWallpaperPage, isLegalEmptyNow: mpwIsLegalEmptyNow,
+    }
+  } catch (e) {}
+  /* ②(P-345) **解析期**就把合法空态落到页面上（早于 module）：不留黑闪、不加载任何包。 */
+  try { if (mpwIsLegalEmptyNow()) mpwApplyNoWallpaperPage() } catch (e) {}
+  // ═══ MPW-EMPTYSTATE-END ═══
+  // ═══ MPW-MODULE-WATCHDOG-BEGIN ①(P-135 甲 2026-09-19) ═══
+  // 看门狗：module 脚本 7s 内没启动（静态 import 404/非 JS MIME/解析失败/半截写入/顶层抛错）→ 主动 ok:false。
+  //   初始的 ok:true 已发出，插件 8s 窗口不会再兜底；不主动判失败的话 strict 下就是永久白屏（契约 §1）。
+  // ①(P-135 甲) **本块必须把失败原因写进 `#log`**：旧实现只 postMessage 给插件宿主，页面自己一个字都不说
+  //   ⇒ 用户在 `#log` 里永远只看到初始的 `loading…`（= 用户原话"整面板只有 loading…、后面什么都没有"）
+  //   且"脚本没到"与"到了但某个 await 没回"**无法区分**。本块把这两类写成两条可区分的话：
+  //     · 甲 `__mpwModuleStarted` 未置位 ⇒ `❌ …module 未启动（脚本没到）…` + 早期 error/资源错误摘要；
+  //     · 乙 已置位但 7s 无首帧   ⇒ `⚠ …已启动但 7s 无首帧… 最后一行日志 = <#log 末行>`（不发 ok:false：
+  //       慢包不该被判死，插件 8s 窗口照旧）。
+  //   健康路径（7s 前已出首帧）**一行都不写** —— tests/load-timeout-test.mjs 有这个断言钉住。
+  function __mpwWatchdogNote(msg) {
+    try {
+      var el = document.getElementById('log')
+      if (el) el.textContent += msg + '\n'
+    } catch (e) {}
+    try { console.error(msg) } catch (e) {}
+  }
+  function __mpwLastLogLine() {
+    try {
+      var el = document.getElementById('log')
+      var parts = String((el && el.textContent) || '').split('\n').filter(function (s) { return s.replace(/\s/g, '') !== '' })
+      return parts.length ? parts[parts.length - 1].slice(0, 160) : '(空)'
+    } catch (e) { return '(读不到 #log)' }
+  }
+  function __mpwLogText() {
+    try { var el = document.getElementById('log'); return String((el && el.textContent) || '') } catch (e) { return '' }
+  }
+  // 甲分支要回答"卡在哪一步"：DOM 有没有就绪、页面的 module 脚本还在不在（半截写入/被 CSP 拦都会变 0）
+  function __mpwReadyState() {
+    try { return String(document.readyState || '?') } catch (e) { return '?' }
+  }
+  function __mpwModuleScriptCount() {
+    try {
+      var n = document.querySelectorAll ? document.querySelectorAll('script[type="module"]').length : -1
+      return n >= 0 ? n : '?'
+    } catch (e) { return '?' }
+  }
+  // 早于 module 的失败（静态 import 图 404 / MIME 非 JS / 顶层抛错）不会被 module 自己的监听接到
+  //   （那些监听在 module 体内，见 demo.html 的 `❌ 页面错误`）；这里补一版，并把摘要留给 7s 看门狗。
+  var __mpwEarlyErrs = []
+  function __mpwEarlyNote(kind, detail) {
+    if (window.__mpwModuleStarted) return          // module 起来后由 module 自己的监听负责（不重复记）
+    var line = '❌ ' + kind + (detail ? '：' + detail : '')
+    if (__mpwEarlyErrs.length < 5) __mpwEarlyErrs.push(line.slice(0, 200))
+    __mpwWatchdogNote(line)
+  }
+  try {
+    window.addEventListener('error', function (e) {
+      try {
+        var t = e && e.target
+        var isEl = !!(t && t !== window && t.nodeType === 1)
+        // 只对 **脚本类**资源失败写面板（img/link 之类的失败不影响 module 是否执行；
+        // 健康页面上的一个 404 图标不该在日志里冒充"渲染器错误"）
+        if (isEl && t.tagName !== 'SCRIPT') return
+        if (isEl) { __mpwEarlyNote('脚本资源加载失败', String(t.src || '(inline module)').slice(0, 200)); return }
+        __mpwEarlyNote('脚本错误', String((e && (e.message || e.error)) || e).slice(0, 200)
+          + (e && e.filename ? ' @' + String(e.filename).split('/').pop() + ':' + (e.lineno || 0) : ''))
+      } catch (err) {}
+    }, true)
+    window.addEventListener('unhandledrejection', function (e) {
+      try {
+        var r = e && e.reason
+        __mpwEarlyNote('未处理的 Promise 拒绝', String((r && (r.message || r)) || r).slice(0, 200))
+      } catch (err) {}
+    })
+  } catch (e) {}
+  setTimeout(function () {
+    try {
+      if (window.__mpwModuleStarted) {
+        if (window.__mpwFirstFrame) return        // 健康路径：**不写一行**（7s 前已出首帧）
+        // 只对**场景包装载已经开始**的页面说话：纯视频/视频壁纸路径不会写 `加载场景 …`
+        //   （那条日志在 type=video 路由之后），它们 7s 没有"渲染器首帧"是正常的 ⇒ 不打扰。
+        if (__mpwLogText().indexOf('加载场景 ') < 0) return
+        __mpwWatchdogNote('⚠ 7s 内没有首帧，但 module 已启动（`window.__mpwModuleStarted=1`）'
+          + '= "到了但某个 await 没回"这一类：最后一行日志 = ' + __mpwLastLogLine()
+          + '（对照 docs/RENDER-BUGS-20260918.md §1.4 判据表；P-135 起每个网络/解码 await 超时都会自写一行 `⚠ 超时 <URL>`）')
+        // ①(2026-10-13 空态修复) 只写日志的话用户看到的仍是一块全屏黑画布 ⇒ 同时立起看得见的占位
+        try { if (window.__mpwEmptyState) window.__mpwEmptyState.fromLog(__mpwLastLogLine()) } catch (e) {}
+        return
+      }
+      __mpwWatchdogNote('❌ 渲染器 module 未启动（7s 内 `window.__mpwModuleStarted` 未置位）= "脚本没到"这一类：'
+        + '静态 import 404 / 非 JS MIME / 解析失败 / 文件半截写入 / 顶层抛错之一'
+        + (__mpwEarlyErrs.length
+          ? '；已捕获 ' + __mpwEarlyErrs.length + ' 条早期错误：\n    ' + __mpwEarlyErrs.join('\n    ')
+          : '；**未捕获任何脚本/资源错误** ⇒ 疑模块图里某个请求无响应或 MIME 非 JS（控制台 Network 看第一条未完成的请求）')
+        + '；诊断：document.readyState=' + __mpwReadyState()
+        + '，页面内 module 脚本 ' + __mpwModuleScriptCount() + ' 个，首条日志本应是 ❌/✅ WebGL2')
+      window.__mpwCapErr('module-not-started')
+    } catch (e) {}
+  }, 7000)
+  // ═══ MPW-MODULE-WATCHDOG-END ═══
+})();
+  
+</script>
+
 
 <div id=fps>--</div>
 <canvas id=sc></canvas>
@@ -1807,6 +2250,9 @@ function fetchWithTimeout(url, ms) {
 //     **绝不** reject 出去打断 loadScene 的 `Promise.all`（旧实现单张位图解码失败会把整包纹理链打断）；
 //   · 阈值只在这里定义一次（模块常量）；逃生口讨论见 docs/PATCHES.md 的 P-135 条。
 const NET_TIMEOUT_MS = 8000      // 网络请求（取包/取公共资产/取着色器/上报）上限
+/* 2026-11-05 修复：236MB 级 scene.pkg 在设备上 8s 内读不完 ⇒ 旧壁纸/大包在 DSH 内必失败，
+   独立渲染器却能加载。取**场景包正文**单独放宽（网络资产仍 8s），失败仍会明确报错。 */
+const PKG_TIMEOUT_MS = 90000
 const DECODE_TIMEOUT_MS = 8000   // 本地解码/字体等异步（createImageBitmap / FontFace.load）上限
 const MPW_TIMED_OUT = { __mpwTimeout: true }
 function mpwNowMs() { return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now() }
@@ -3758,7 +4204,7 @@ function loadScene() {
   let buf = null
   // ①(P-135 乙) 取包阶段（`加载场景` 之后）是全链路唯一**不能跳过**的资源：超时只能如实报错，
   //   但错误必须是"看得懂的一行"（含 URL 与上限），而不是永久静默停在这一行日志。
-  const pkgTimeoutErr = (what) => new Error(what + ' 取包失败或超时（上限 ' + NET_TIMEOUT_MS + 'ms）')
+  const pkgTimeoutErr = (what) => new Error(what + ' 取包失败或超时（上限 ' + PKG_TIMEOUT_MS + 'ms）')
   /* ①(P-261 2026-10-07) **本地文件交接优先**：`__wp.loadSceneFile(blob)` 把字节写进 IndexedDB 后带
      `?scenefile=1` 重载本页 ⇒ 这里取回（并删除）当成包来源。取不到就如实记一行并回落常规来源。 */
   let __sceneFileRec = null
@@ -3792,20 +4238,20 @@ function loadScene() {
     //   跨源时改 `omit`（宿主鉴权那条路本来也走不通，代理 `/pkgurl?u=` 才是正解）。
     let okDirect = false
     try {
-      const rd = await fetchT(pkgUrlQ, { credentials: mpwCredentialMode(pkgUrlQ) }, NET_TIMEOUT_MS, '直连宿主')
+      const rd = await fetchT(pkgUrlQ, { credentials: mpwCredentialMode(pkgUrlQ) }, PKG_TIMEOUT_MS, '直连宿主')
       if (!rd) logf('直连失败（超时或网络异常），改用服务端代理')
       else if (rd.ok) {
-        const b = await bufT(rd, pkgUrlQ, NET_TIMEOUT_MS, '直连宿主正文')
+        const b = await bufT(rd, pkgUrlQ, PKG_TIMEOUT_MS, '直连宿主正文')
         if (b) { buf = new Uint8Array(b); okDirect = true; logf('直连成功 ' + buf.length + ' 字节') }
         else logf('直连失败（正文超时），改用服务端代理')
       } else logf('直连失败 HTTP ' + rd.status + '，改用服务端代理')
     } catch (e) { logf('直连异常: ' + e.message + '，改用服务端代理') }
     if (!okDirect) {
       const url = '/pkgurl?u=' + encodeURIComponent(pkgUrlQ)
-      const r = await fetchT(url, null, NET_TIMEOUT_MS, '服务端代理')
+      const r = await fetchT(url, null, PKG_TIMEOUT_MS, '服务端代理')
       if (!r) throw pkgTimeoutErr('pkgurl')
       if (!r.ok) throw new Error('pkgurl HTTP ' + r.status)
-      const b = await bufT(r, url, NET_TIMEOUT_MS, '服务端代理正文')
+      const b = await bufT(r, url, PKG_TIMEOUT_MS, '服务端代理正文')
       if (!b) throw pkgTimeoutErr('pkgurl 正文')
       buf = new Uint8Array(b)
     }
