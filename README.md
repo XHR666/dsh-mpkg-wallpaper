@@ -276,7 +276,7 @@ tab 顺序与面板一致，固定为 `TAB_ORDER = ["source","wallpaper","appear
 | 播放/暂停同时控制壁纸 | `npLinkWallpaper` | 开 | Now playing 的播放/暂停与进度同时驱动壁纸自身；关 = 只驱动本插件播放器（壁纸媒体是唯一声源时控件**如实 disabled**） | 关 |
 | Web 帧模式（网页壁纸） | `webFrameMode` | `auto` | 网页壁纸 iframe 的**三档**：`auto` = 隔离沙箱，被浏览器策略挡住 / shim 没报到时**只在沙箱内降档**（去掉 shim 标记重载，仍是不透明源），**不会自动升同源**（默认）；`sandbox` = 强制隔离，**不**自动降档（原因写进状态，可查）；`compat` = 兼容档（同源 + 不带 shim 标记，**只有用户显式选它才到得了**）。状态见 `window.__mpwWebFrame` 与 `#mpw-bgWrap[data-mpw-webframe-mode\|-reason\|-attr\|-fallback\|-autocompat\|-degraded]`，台账 `window.__mpwWebFrameGuard`（详见 [docs/WEB-WALLPAPER.md](docs/WEB-WALLPAPER.md) §3.0） | 选 `auto`；也可用 `?webframe=auto\|sandbox\|compat` 临时覆盖（不改设置） |
 | 自动降级到兼容档（高风险） | `webFrameAutoCompat` | 关 | **风险回退口**：打开后 auto 档才允许在"被策略挡住"时自动降 `compat` —— 那意味着**这张第三方壁纸的脚本与 DSH 同源**（可读宿主界面/本地存储、可带 cookie 打插件路由）。关着时只记账 + 面板提示手动切。判据 `tools/web-frame-origin-guard-test.mjs`（详见 [docs/SECURITY-ROUTES.md](docs/SECURITY-ROUTES.md) F5） | 关 |
-| 渲染器上游白名单 | `sceneUrlWhitelist` | 空 | **跨源回退口**：`sceneRendererUrl`/`sceneExtUrl` 默认只允许 http(s) **回环**（127.0.0.1/localhost/::1）与"和页面同主机的字面 IP"；跨源上游必须把它的 **origin** 填在这里（逗号/空格分隔）才会被使用，否则一律拒绝并回落 `127.0.0.1:8902`（记账 + 日志，不静默）。⚠ 登记进来的上游会**连同场景令牌 `st` 一起放行**（详见 [docs/SECURITY-ROUTES.md](docs/SECURITY-ROUTES.md) F6） | 清空 = 只允许回环 |
+| 渲染器上游白名单 | `sceneUrlWhitelist` | 空 | **跨源回退口**：`sceneRendererUrl`/`sceneExtUrl` 默认只允许 http(s) **回环**（127.0.0.1/localhost/::1）与"和页面同主机的字面 IP"；跨源上游必须把它的 **origin** 填在这里（逗号/空格分隔）才会被使用，否则一律拒绝并回落**同源** `/webloader/`（记账 + 日志，不静默）。⚠ 登记进来的上游会**连同场景令牌 `st` 一起放行**（详见 [docs/SECURITY-ROUTES.md](docs/SECURITY-ROUTES.md) F6） | 清空 = 只允许回环 |
 | 水平翻转（镜像） | `flipX` | 关 | 壁纸左右镜像 | 关 |
 | 垂直翻转（镜像） | `flipY` | 关 | 壁纸上下镜像 | 关 |
 | 解码帧率上限 | `fpsCap` | 无限制 | 源帧率超限时宿主 ffmpeg 抽帧转码（24/30/48/60） | 选「无限制」 |
@@ -391,7 +391,7 @@ tab 顺序与面板一致，固定为 `TAB_ORDER = ["source","wallpaper","appear
 | `aquaTintStrength` | 45 | 面板取色的壁纸主色混合比例；运行时读取，无控件 |
 | `glassColor` / `glassAlpha` | 空 / 12 | 早期 WebGL 液态玻璃的遗留键：只随备份导出/导入与「恢复默认」走动，**无控件、无读取点** |
 | `webInteraction` | `pointer` | 网页壁纸交互档位（`off`/`pointer`/`full`）：**无面板控件**，用 URL `?mpwinteract=…` 或写存档 |
-| `sceneRendererUrl` | `http://127.0.0.1:8902/webloader/` | 场景渲染器地址，可覆盖（默认 = 一站式测试台 :8902 直供的 `/webloader/`；旧默认是 `:8899`） |
+| `sceneRendererUrl` | `/webloader/` | 场景渲染器地址，可覆盖（默认 = 插件宿主**同源**托管的 `/webloader/`；历史默认 `http://127.0.0.1:8902/webloader/`、`:8899` 已迁移到同源，旧值仍可显式覆盖） |
 | `npVolume` | 100 | Now playing 卡片里的**音量电平**（0..100，落到真实元素）；默认档**从不写元素音量**，只有你动过才写 |
 | `glassWindow` | — | **已退役删除**：无控件、无读取点，功能已被 `settingsBlur` + `dialogBlur`/`popoverBlur` 覆盖；源码与 zh/en 字典 0 残留 |
 
@@ -531,7 +531,7 @@ tab 顺序与面板一致，固定为 `TAB_ORDER = ["source","wallpaper","appear
 - **插件侧 URL 逃生口**：见 §6.1。
 - **渲染器侧诊断开关**：见 §6.2。
 
-**宿主路由的来源闸门（P-204）**：三处 ACAO 回显白名单化（`/raw`、场景音频、缩略图上报，外加 `/lg` 静态 JS）：只放 `Origin: null`（沙箱帧）与 `http://127.0.0.1:3080|8899|8902`（含 `localhost`）；非白名单**一个 `Access-Control-Allow-*` 都不发**。非 GET 写请求过闸门：`Sec-Fetch-Site`（有则必须 `same-origin`/`none`）+ `Origin` 白名单；`/scene-thumb-token` 与 `/settings` 连 GET 也过闸。`/custom-dir` 拒敏感目录；`/raw` 的 `file` 有扩展名白名单。回退口（默认关，排障用）：`MPW_CSRF=0`、`MPW_CORS_LEGACY=1`、`MPW_CORS_ORIGINS=a,b`、`MPW_CUSTOM_DIR_ALLOW_ANY=1`；`GET /api/mpkg-wallpaper/security` 只读播报当前生效值。完整规格见 [`docs/SECURITY-ROUTES.md`](docs/SECURITY-ROUTES.md)，判据 `node tools/sec-route-guard-test.mjs`。
+**宿主路由的来源闸门（P-204）**：三处 ACAO 回显白名单化（`/raw`、场景音频、缩略图上报，外加 `/lg` 静态 JS）：只放 `Origin: null`（沙箱帧）与 `http://127.0.0.1:3080` / `http://localhost:3080`（旧测试台 `8899`/`8902` 已移出默认白名单；确需跨源旧测试台时显式 `MPW_CORS_ORIGINS`）；非白名单**一个 `Access-Control-Allow-*` 都不发**。非 GET 写请求过闸门：`Sec-Fetch-Site`（有则必须 `same-origin`/`none`）+ `Origin` 白名单；`/scene-thumb-token` 与 `/settings` 连 GET 也过闸。`/custom-dir` 拒敏感目录；`/raw` 的 `file` 有扩展名白名单。回退口（默认关，排障用）：`MPW_CSRF=0`、`MPW_CORS_LEGACY=1`、`MPW_CORS_ORIGINS=a,b`、`MPW_CUSTOM_DIR_ALLOW_ANY=1`；`GET /api/mpkg-wallpaper/security` 只读播报当前生效值。完整规格见 [`docs/SECURITY-ROUTES.md`](docs/SECURITY-ROUTES.md)，判据 `node tools/sec-route-guard-test.mjs`。
 
 **网页帧同源逃逸 + 可控上游（P-205）**：自动降档落点恒为沙箱档（`allow-scripts`，不透明源）；入站消息**同时**校验 `ev.origin` 与"这个帧应有的来源"；`compat` 只能由用户显式设置。设置里的外链只认 http(s) **回环** / "与页面同主机的字面 IP" / **显式白名单**（`sceneUrlWhitelist`）；场景令牌 `st` 只在目标过闸门时下发；非法目标一律拒绝使用（回落默认回环）+ 记账 `window.__mpwSceneUrlGuard` + `console.warn` + `/diag` 信标。判据（都在 `tools/check.sh` 第 5 步）：`node tools/web-frame-origin-guard-test.mjs` 与 `node tools/scene-url-token-guard-test.mjs`。
 
@@ -573,7 +573,7 @@ tab 顺序与面板一致，固定为 `TAB_ORDER = ["source","wallpaper","appear
 
 插件提供两条路径：
 
-1. **外部渲染器 iframe（首选）**：本机渲染器（默认 `http://127.0.0.1:8902/webloader/`，旧默认 `:8899`）在线时，场景以 iframe 挂载。渲染器离线/首帧超时则由**看门狗**回退静态帧并在提示条说明，可手动「重新挂载渲染器」。渲染器地址可用 `sceneRendererUrl` 覆盖。
+1. **外部渲染器 iframe（首选）**：渲染器（默认**同源** `/webloader/`，由插件宿主直接托管；历史外部端口 `:8902`/`:8899` 已不再是默认）在线时，场景以 iframe 挂载。渲染器离线/首帧超时则由**看门狗**回退静态帧并在提示条说明，可手动「重新挂载渲染器」。渲染器地址可用 `sceneRendererUrl` 覆盖。
 2. **容器内素材提取（兜底，`lib/pkg-extract.js`，MIT，采用自 [elysia395/dsh-wallpaper-engine](https://github.com/elysia395/dsh-wallpaper-engine)）**：
    - **静态帧**：解析 PKG（LZ4 解压）+ TEX 纹理解码，按"面积 × 格式权重 × 路径惩罚"选主纹理
    - **图层合成**：解析 `scene.json` 的全部 image 图层，按源坐标/尺寸在 canvas 上合成（最多 24 层）
