@@ -27,6 +27,7 @@
  *          的内存错误环，随页关闭即消失；不动用户档位/设置）。
  */
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { pathToFileURL } from 'node:url'
@@ -34,7 +35,9 @@ import { withAudioMute } from './_audio-mute.mjs'
 
 const argv = process.argv.slice(2)
 const arg = (n, d) => { const i = argv.indexOf('--' + n); return i >= 0 && argv[i + 1] ? argv[i + 1] : d }
-const OUT = arg('out', '/tmp/zcode-live')
+/* ①(对抗审查 P1-1 2026-11-06) 默认输出目录不得写死 /tmp 字面量（仓库红线：临时目录一律 os.tmpdir()，
+   cross-platform 的 code-tmp-literal 静态门禁会抓）。 */
+const OUT = arg('out', path.join(os.tmpdir(), 'zcode-live'))
 const AUTHORITY = arg('authority', '127.0.0.1:3080')
 const PLUGIN = path.resolve(import.meta.dirname, '..')
 
@@ -127,6 +130,11 @@ try {
       frameOpacity: f ? String(f.style.opacity || '') : null, deferMark: w ? String(w.getAttribute('data-mpw-scene-defer') || '') : null }
   }).catch(() => null)
   ok(!!vis && vis.wrapVisible && vis.wrapRect && vis.wrapRect[2] > 800 && vis.wrapRect[3] > 600, 'S5 壁纸层满屏可见（无源不可用状态/无黑屏）', JSON.stringify(vis))
+  /* ①(对抗审查 P1-2) 兜底提示必须落在**壁纸面**：无 WebGL 环境 strict 必失败 ⇒ 提示条应在；
+     硬件 GL 出画成功 ⇒ 提示条应退场。 */
+  const noteLive = await page.evaluate(() => { const n = document.getElementById('mpw-sceneNote'); return n ? String(n.textContent || '') : null }).catch(() => null)
+  if (!glOk) ok(!!noteLive && noteLive.indexOf('刷新壁纸') >= 0, 'S6 strict 失败（无 WebGL 环境）⇒ 壁纸面底部提示条在', noteLive ? noteLive.slice(0, 60) : 'missing')
+  else ok(!noteLive, 'S6 出画成功 ⇒ 壁纸面底部提示条已退场', String(noteLive))
   if (glOk) {
     ok(!!vis && vis.frameOpacity === '1', 'S5b 场景帧 opacity=1（已出画）', String(vis && vis.frameOpacity))
     ok(!!vis && vis.deferMark === null, 'S5c 挂起标记已摘除', String(vis && vis.deferMark))

@@ -168,6 +168,9 @@ console.log('\n== B. 无 token 首挂 ⇒ 不建 legacy URL、不挂帧（deferr
   ok(!!SB.diag().tokenFailLast && /token-route|token-fetch/.test(String(SB.diag().tokenFailLast.why)), 'B3b tokenFailLast 台账在（不静默）')
   const hint = P.takePending()
   ok(!!hint && hint.indexOf('场景壁纸暂未挂载') >= 0 && hint.indexOf('刷新壁纸') >= 0, 'B4 底部明确可操作提示（含「刷新壁纸」）', String(hint).slice(0, 60))
+  /* ①(对抗审查 P1-2) 提示必须落在**壁纸面**：宿主页底部常驻提示条（不依赖设置面板打开）。 */
+  const noteEl = globalThis.document.getElementById('mpw-sceneNote')
+  ok(!!noteEl && String(noteEl.textContent || '').indexOf('刷新壁纸') >= 0, 'B4b 壁纸面底部提示条在（#mpw-sceneNote，含「刷新壁纸」）', noteEl ? String(noteEl.textContent || '').slice(0, 50) : 'missing')
   ok(!/[?&]pkgurl=/.test(String(frame.getAttribute('src') || '')), 'B5 场景帧 src 未被导航')
   eq(SB.diag().deferred, null, 'B6 token 取不到 ⇒ 挂起记录收尾清空（不悬挂）')
   restore()
@@ -204,6 +207,8 @@ console.log('\n== D. 恢复路径 token-first：挂起 → token 到手 → 原�
   const src1 = String(frame.getAttribute('src') || '')
   ok(/[?&]sandbox=strict(&|$)/.test(src1), 'D1 token 到手 ⇒ 场景帧以 strict URL 挂载', src1.slice(0, 90))
   ok(decodeURIComponent(src1).indexOf('st=TK.hold') >= 0, 'D1b pkgurl 内带 st=')
+  /* ①(对抗审查 P1-2) 挂载成功 ⇒ 底部兜底提示条退场（成功态不残留旧告警）。 */
+  ok(!globalThis.document.getElementById('mpw-sceneNote'), 'D1c 挂载成功 ⇒ 底部提示条已摘除')
   const dec = decodeURIComponent(src1)
   ok(dec.indexOf('custom=1') >= 0 && dec.indexOf('folder=f1') >= 0 && dec.indexOf('file=scene.pkg') >= 0, 'D2 原 pkgurl 业务参数逐字保留（custom/folder/file）')
   eq(SB.diag().deferred, null, 'D3 挂起记录已消费')
@@ -250,6 +255,8 @@ console.log('\n== F. strict 失败 ⇒ 保持兜底（绝不以 legacy 同源重
   ok(!/[?&]sandbox=strict(&|$)/.test(String((lastIframe(diagEvents) || {}).url || '')) === false || true, 'F4b 最后一帧仍是当初的 strict 帧（未被改挂）')
   const hint = P.takePending()
   ok(!!hint && hint.indexOf('场景壁纸暂未挂载') >= 0, 'F5 底部提示（保持静态画面兜底）')
+  const noteF = globalThis.document.getElementById('mpw-sceneNote')
+  ok(!!noteF && String(noteF.textContent || '').indexOf('刷新壁纸') >= 0, 'F5b strict 失败 ⇒ 壁纸面底部提示条在（P1-2）', noteF ? String(noteF.textContent || '').slice(0, 50) : 'missing')
   /* G. 用户重选 = 显式重试 ⇒ 清 failed 表、重新走 strict */
   applyScene(T); await flush()
   eq(SB.plan(IDENT).mode, 'strict', 'G1 用户显式重选 ⇒ failed 表清空、计划回 strict')

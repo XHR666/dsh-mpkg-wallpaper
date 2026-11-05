@@ -208,6 +208,9 @@ const LEDGER = [
   LI('tools/np-media-live-probe.mjs', 'host-root', ["arg('settings', '", P, "root/.dsh-mpkg-wallpaper/settings.json')"], '手工真机探针读用户真机 settings.json 的默认路径（--settings 可覆盖）'),
   LI('tools/integrity-check.mjs', 'host-root', ["'", P, "root/Desktop/' + 'DSHarea'"], '门禁**自己的自指图案**（按片段拼装，躲开自己）：本条就是"允许宿主根字面量出现"的唯一理由'),
   LI('tools/secret-scan-test.mjs', 'host-root', ["'", P, "root/Desktop/' + 'DSHarea'"], '同上：敏感信息门禁的自指图案（与 integrity-check 互为交叉校验，两处都要留）'),
+  /* ①(2026-11-06 对抗审查 P2-5) 存量补账：A9 断言的 file:// 输入夹具字符串（db802e6 引入该行）——
+     是"非 http(s) URL 原样不动"断言的**样本**，不是任何代码的落盘位置；按账本规则逐条登记。 */
+  LI('tools/renderer-legacy-base-test.mjs', 'code-tmp-literal', ["S.migrateLegacyBase('file://", TMP, "/renderer/?x=1')"], 'A9 断言的**输入夹具字符串**（file:// 非 http(s) URL 样本，断言原样不动），不是落盘位置'),
 ]
 
 /* ═══════════════════════ 取 tracked 文件（node_modules/.git 天然不在内） ═══════════════════════ */
