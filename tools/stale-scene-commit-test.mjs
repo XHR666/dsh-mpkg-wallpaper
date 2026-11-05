@@ -72,9 +72,15 @@ const reset = () => { for (const k of GUARDS) { try { delete globalThis[k] } cat
 
 const diag = []
 let tokenOk = true
+/** ①(P0-2 token-first) 'hold' = token 路由挂起（fetch 不落定），测「token 迟到」用；
+ *  releaseHeldToken() 手动放行 ⇒ 模拟"挂起期间 token 才到手"。 */
+let tokenHold = false
+let holdResolvers = []
+const releaseHeldToken = () => { const rs = holdResolvers; holdResolvers = []; for (const r of rs) r({ ok: true, token: 'TK.test', exp: Math.floor(Date.now() / 1000) + 1800 }) }
 const fetchImpl = async (url, opts) => {
   const u = String(url)
   if (u.indexOf('/scene-thumb-token') >= 0) {
+    if (tokenHold) return new Promise((res) => holdResolvers.push((body) => res({ ok: true, status: 200, json: async () => body })))
     return tokenOk
       ? { ok: true, status: 200, json: async () => ({ ok: true, token: 'TK.test', exp: Math.floor(Date.now() / 1000) + 1800 }) }
       : { ok: false, status: 404, json: async () => ({}) }
@@ -136,6 +142,7 @@ const boot = (clientPath) => {
   fakeOn()
   diag.length = 0
   tokenOk = true
+  tokenHold = false; holdResolvers = []
   const W = loadPlugin({ quiet: true, clientPath: clientPath || CLIENT, fetch: fetchImpl })
   const doc = globalThis.document
   const ids = new Map()
@@ -222,8 +229,11 @@ ok('G2 宿主 diag 落证 scene-sandbox/stale-drop', diag.some((d) => d.kind ===
 ok('G2 丢掉的这次**没有**落 strict-fallback（旧写法会落）', !diag.some((d) => d.kind === 'scene-sandbox' && d.why === 'strict-fallback'))
 ok('G2 迟到不把该 ident 记成 strict-failed（否则切回同一 scene 会被无谓降级 legacy）', !SB().diag().failed[IDENT], JSON.stringify(SB().diag().failed))
 
-/* ══════════ G3 ②切走再切回同一 scene ⇒ 正常重挂（合法路径别被一起挡掉） ══════════ */
-console.log('\n== G3 ② 切回同一 scene ⇒ 合法重挂照旧（strict→legacy 回退） ==')
+/* ══════════ G3 ②切走再切回同一 scene ⇒ strict 失败不再退 legacy（P0-2 演进） ══════════
+   原判据（已随 P0-2 废弃）：「strict 失败 → 一次性回退 legacy 重挂（reattaches +1、URL 去 strict）」——
+   那条回退路会把刚关上的同源窗再挖开；新契约：失败 ⇒ failed 表 + diag + 底部提示 + 海报兜底，
+   **不重挂**；恢复 = 用户重选/刷新（重选清 failed 表重新走 strict）。 */
+console.log('\n== G3 ② strict 失败 ⇒ 不退 legacy（failed 表 + 兜底提示，不重挂） ==')
 const reN0 = SB().diag().reattaches, sdN0 = SB().diag().staleDrops, ifN1 = iframes().length
 const backOk = mountScene()
 ok('G3 切回同一 scene 挂载成功', backOk === true, String(backOk))
@@ -233,50 +243,49 @@ eq('G3 切回后重新武装了 8s 一次性看门狗', timers(8000).length, 1)
 const fired = fireDue(8000)                        // 这次是真的"定时器到点"（表里的那条）
 eq('G3 定时器推到点（真回调）1 条', fired, 1)
 flush()
-eq('★ G3 合法重挂发生（reattaches +1）', SB().diag().reattaches, reN0 + 1)
-ok('★ G3 重挂原因是 strict-fallback（与"丢弃"分得开）', String((SB().diag().reattachLast || {}).why || '').indexOf('strict-fallback:') === 0, JSON.stringify(SB().diag().reattachLast))
+eq('★ G3 失败不触发重挂（reattaches 不变 —— 原判据「回退重挂 legacy」已废弃）', SB().diag().reattaches, reN0)
 eq('★ G3 丢弃计数不变（合法路径没被误判 stale）', SB().diag().staleDrops, sdN0)
-ok('G3 该 ident 记入 strict-failed（此后该场景走 legacy，避免黑屏）', /^cap-/.test(String(SB().diag().failed[IDENT] || '')), JSON.stringify(SB().diag().failed))
-eq('G3 回退确实重挂了渲染器帧（挂载 1 次 + 回退重挂 1 次）', iframes().length, ifN1 + 2)
-ok('G3 回退后挂载的是 legacy URL（不再带 sandbox=strict）', !/[?&]sandbox=strict(&|$)/.test(String((lastIframe() || {}).url || '')), String((lastIframe() || {}).url || '').slice(0, 120))
+ok('G3 该 ident 记入 strict-failed（不再自动重试；用户重选/刷新即重试）', /^cap-/.test(String(SB().diag().failed[IDENT] || '')), JSON.stringify(SB().diag().failed))
+eq('G3 没有回退重挂的渲染器帧（只保留最初那次 strict 挂载）', iframes().length, ifN1 + 1)
+ok('G3 最后一帧仍是 strict URL（没有被改挂 legacy）', /[?&]sandbox=strict(&|$)/.test(String((lastIframe() || {}).url || '')), String((lastIframe() || {}).url || '').slice(0, 120))
 ok('G3 宿主 diag 落证 scene-sandbox/strict-fallback', diag.some((d) => d.kind === 'scene-sandbox' && d.why === 'strict-fallback'))
 eq('G3 定时器到点后不再悬挂', timers(8000).length, 0)
 eq('G3 到点后档位仍是 scene（合法路径没被挡掉）', sec().converted, 'scene')
+ok('G3 底部提示可见（保持静态画面兜底，不黑屏不静默）', /场景壁纸暂未挂载/.test(P().takePending() || ''), String(P().takePending() || '').slice(0, 60))
 
-/* ══════════ G4 同族：token 迟到（mpwSandboxMaybeUpgrade） ══════════ */
-console.log('\n== G4 同族：token 迟到 —— 换档后丢弃 / 仍在同一 scene 则升级重挂 ==')
+/* ══════════ G4 同族：token-first 挂起迟到（mpwSandboxMaybeUpgrade） ══════════
+   原判据（已随 P0-2 废弃）：「无 token 先挂 legacy → token 迟到时把 legacy 升级 strict」。
+   新契约：无 token **不挂**（deferred 挂起）；token 迟到（挂起期间用户已换档）⇒ 丢弃并记账；
+   未换档 ⇒ 一次性挂载 strict（reattaches +1，URL 带 sandbox=strict）。 */
+console.log('\n== G4 同族：token-first 挂起 —— 换档后丢弃 / 仍在同一 scene 则挂载 strict ==')
 boot()
-tokenOk = false
-SB().prefetch(IDENT); await sleep(12)
-eq('G4 无 token ⇒ 计划 legacy(no-token)', SB().plan(IDENT).reason, 'no-token')
-mountScene(); flush()
-await sleep(12)                                    // 等挂载期那次预取（404）落地：否则 pending 会把下面的迟到 token 挡掉
-eq('G4 legacy 挂载未武装 8s 定时器', timers(8000).length, 0)
-eq('G4 legacy 挂载也记了档位签名（否则 token 迟到会拿旧签名误判）', SB().diag().sigRecorded, true)
+tokenHold = true                                   // token 路由挂起：fetch 不落定 ⇒ 挂起记录保持
+mountScene(); flush()                              // 无 token（还没放行）⇒ deferred 挂起，不挂帧
+eq('G4 无 token ⇒ 计划 deferred(no-token)', SB().plan(IDENT).reason, 'no-token')
+eq('G4 挂起中不产生渲染器帧（原判据「legacy 挂载照常」已废弃）', iframes().length, 0)
+eq('G4 挂起中未武装 8s 定时器（没有 commit）', timers(8000).length, 0)
+ok('G4 挂起记录在案（diag.deferred.hasMeta）', !!(SB().diag().deferred && SB().diag().deferred.hasMeta), JSON.stringify(SB().diag().deferred))
 switchToWeb(WEB_A)
 const ifN2 = iframes().length
-tokenOk = true
-SB().prefetch(IDENT); await sleep(12)              // token 迟到：用户早已切走
-eq('★ G4 token 迟到：计划升级被丢弃（staleDrops +1）', SB().diag().staleDrops, 1)
+releaseHeldToken(); await sleep(12)                // token 迟到：用户早已切走
+eq('★ G4 token 迟到：挂起挂载被丢弃（staleDrops +1）', SB().diag().staleDrops, 1)
 eq('★ G4 token 迟到：没有重挂（reattaches = 0）', SB().diag().reattaches, 0)
 eq('★ G4 token 迟到：档位仍是 web A', sec().converted, 'web')
 eq('G4 token 迟到：webUrl 未被改回旧 scene', sec().webUrl, WEB_A)
 eq('G4 token 迟到：没有新的渲染器帧', iframes().length, ifN2)
-ok('G4 token 迟到：丢弃原因写明是 upgrade（台账可分辨）', String((SB().diag().staleLast || {}).why || '').indexOf('upgrade:') === 0, JSON.stringify(SB().diag().staleLast && SB().diag().staleLast.why))
-/* 合法对照：另一个 scene 的 token 在"它仍是当前档"时到达 ⇒ 必须照旧升级重挂 */
-tokenOk = false
-SB().prefetch('custom|f1|scene2.pkg'); await sleep(12)
-mountScene('scene2.pkg'); flush()
-await sleep(12)                                    // 等挂载期那次预取（404）落地：否则 pending 会把下面的重试挡掉
-eq('G4b scene2 legacy 挂载（未武装定时器）', timers(8000).length, 0)
+ok('G4 token 迟到：丢弃原因写明是 deferred-drop（台账可分辨）', String((SB().diag().staleLast || {}).why || '').indexOf('deferred-drop:') === 0, JSON.stringify(SB().diag().staleLast && SB().diag().staleLast.why))
+ok('G4 token 迟到：挂起记录已消费', SB().diag().deferred === null, JSON.stringify(SB().diag().deferred))
+/* 合法对照：另一个 scene 的 token 在"它仍是当前档"时到达 ⇒ 必须照旧一次性挂载 strict */
+tokenHold = true
+mountScene('scene2.pkg'); flush()                  // scene2 同样挂起（token 还没放行）
+eq('G4b scene2 挂起中不产生渲染器帧', iframes().length, ifN2)
 const ifN3 = iframes().length
-tokenOk = true
-SB().prefetch('custom|f1|scene2.pkg'); await sleep(12)   // 没换档 ⇒ 升级是合法的
-eq('★ G4b 未换档 ⇒ 正常升级重挂（reattaches +1）', SB().diag().reattaches, 1)
-ok('★ G4b 重挂用的是 strict URL（真的升级了）', /[?&]sandbox=strict(&|$)/.test(String((lastIframe() || {}).url || '')), String((lastIframe() || {}).url || '').slice(0, 120))
-eq('G4b 升级后帧数 +1', iframes().length, ifN3 + 1)
-eq('G4b 丢弃计数没再涨（合法升级没被误判）', SB().diag().staleDrops, 1)
-eq('G4b 升级后 8s 定时器已武装', timers(8000).length, 1)
+releaseHeldToken(); await sleep(12)                // 没换档 ⇒ 挂载是合法的
+eq('★ G4b 未换档 ⇒ token 到手后挂载（reattaches +1）', SB().diag().reattaches, 1)
+ok('★ G4b 重挂用的是 strict URL（真的挂上了）', /[?&]sandbox=strict(&|$)/.test(String((lastIframe() || {}).url || '')), String((lastIframe() || {}).url || '').slice(0, 120))
+eq('G4b 挂载后帧数 +1', iframes().length, ifN3 + 1)
+eq('G4b 丢弃计数没再涨（合法挂载没被误判）', SB().diag().staleDrops, 1)
+eq('G4b 挂载后 8s 定时器已武装', timers(8000).length, 1)
 
 /* ══════════ G5 ④变异必红（内存副本；真树一字不动） ══════════ */
 console.log('\n== G5 变异自证（真源码副本，真树不动）==')
@@ -299,13 +308,11 @@ async function probe(clientPath) {
     A.converted = sec().converted; A.webUrl = sec().webUrl; A.failed = !!d.failed[IDENT]
   } catch (e) { A.err = String((e && e.message) || e) }
   try {
-    boot(clientPath)                                 // B：token 迟到（legacy 挂载 → 切走 → token 到手）
-    tokenOk = false
-    SB().prefetch(IDENT); await sleep(12)
-    mountScene(); flush(); await sleep(12)
+    boot(clientPath)                                 // B：token-first 挂起迟到（挂起 → 切走 → token 迟到才到手）
+    tokenHold = true
+    mountScene(); flush()
     switchToWeb(WEB_A)
-    tokenOk = true
-    SB().prefetch(IDENT); await sleep(12)
+    releaseHeldToken(); await sleep(12)
     const d2 = SB().diag()
     B.droppedUpgrade = d2.staleDrops; B.reattachedUpgrade = d2.reattaches; B.converted2 = sec().converted
   } catch (e) { B.err = String((e && e.message) || e) }
@@ -322,11 +329,19 @@ const criteria = (x) => [
 ]
 
 const MUTS = [
-  ['D1 去 stale 判定（token 升级路径）', 'if (mpwSandboxStaleNow("upgrade:" + ident)) return;', '', 'M6'],
-  ['D2 去 stale 判定（8s 失败路径的先行核对）', 'if (mpwSandboxStaleNow(why)) return;\n\t\t\t\t__mpwSandboxFailed[ident] = String(reason || "unknown").slice(0, 60);', '__mpwSandboxFailed[ident] = String(reason || "unknown").slice(0, 60);', 'M3'],
+  /* ①(P0-2 2026-11-06) 判据演进留痕：
+     D1 原锚点 `if (mpwSandboxStaleNow("upgrade:" + ident)) return;`（legacy→strict 升级路径）已随
+        P0-2 移除；新锚点 = token-first 挂起的迟到判定（dfd.sig 核对）。语义不变：迟到丢弃必须核对当前档。
+     D2 原期望 M3（那时失败路径会**重挂**，去 stale 判定 ⇒ 翻盘）；P0-2 后失败路径**不重挂**（只记
+        failed 表），去 stale 判定的危害 = 给已切走的场景记 failed（M5）+ 丢弃计数漏记（M4）⇒ 期望改 M5。
+     D5 原期望 M6（MarkSig 恒空 ⇒ legacy 升级拿旧签名误判）；新语义下挂起挂载的签名是 dfd.sig（不经
+        MarkSig）⇒ M6 不再受它影响；受害的是 8s 失败路径的迟到判定 ⇒ M4/M5 红，期望改 M4。
+     D6 锚点 `__mpwSandboxStaleDrops++` 现收敛在 mpwSandboxStaleDropRecord 一处（两条迟到路径共用）。 */
+  ['D1 去 stale 判定（token-first 挂起的迟到核对）', 'if (dfd.sig && sectionSigNow() !== dfd.sig) {', 'if (false) {', 'M6'],
+  ['D2 去 stale 判定（8s 失败路径的先行核对）', 'if (mpwSandboxStaleNow(why)) return;\n\t\t\t\t__mpwSandboxFailed[ident] = String(reason || "unknown").slice(0, 60);', '__mpwSandboxFailed[ident] = String(reason || "unknown").slice(0, 60);', 'M5'],
   ['D3 去换档取消（showWebEl 里那条取消调用）', 'else mpwSandboxCancelStrictWatch("showWebEl:non-strict");', 'else { /* 变异：不取消 */ }', 'M2'],
   ['D4 clearTimeout 空转（取消函数不真清）', 'clearTimeout(__mpwSandboxStrictTimer);\n\t\t\t\t__mpwSandboxStrictTimer = 0;\n\t\t\t\t__mpwSandboxWatchCancels++;', '__mpwSandboxStrictTimer = 0;\n\t\t\t\t__mpwSandboxWatchCancels++;', 'M2'],
-  ['D5 档位签名不记（MarkSig 恒空）', 'const s = readSection();\n\t\t\t\t__mpwSandboxLastSig = String(s.converted || "") === "scene" ? sectionSigNow() : "";', 'const s = readSection();\n\t\t\t\t__mpwSandboxLastSig = "";', 'M6'],
+  ['D5 档位签名不记（MarkSig 恒空 ⇒ 8s 失败路径迟到判定失效）', 'const s = readSection();\n\t\t\t\t__mpwSandboxLastSig = String(s.converted || "") === "scene" ? sectionSigNow() : "";', 'const s = readSection();\n\t\t\t\t__mpwSandboxLastSig = "";', 'M4'],
   ['D6 丢弃不记账（staleDrops 不涨）', '__mpwSandboxStaleDrops++;', '', 'M4'],
 ]
 const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'mpw-stale-b1-'))

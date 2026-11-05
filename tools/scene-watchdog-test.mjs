@@ -119,6 +119,21 @@ globalThis.fetch = realFetch
 T.disarm(false)
 
 /* ---------- T5 作用域修复（P0）+ T6 调试参数/lowmem 透传 ---------- */
+/* ①(P0-2 token-first 2026-11-06 判据演进留痕) applySceneViaRenderer 现在**无 token 不挂载**（deferred）。
+   T5–T7 断言的是 URL 拼装参数（ln/lowmem/res）——先给该场景签一枚 token（走真 prefetch 链路），
+   挂载为 strict；strict URL 同样携带这些参数，断言语义不变（原断言"无 token 也直接挂"已废弃）。 */
+{
+  const realFetchT5 = globalThis.fetch
+  globalThis.fetch = async (u, o) => {
+    if (String(u).indexOf('/scene-thumb-token') >= 0) {
+      return { ok: true, status: 200, json: async () => ({ ok: true, token: 'TK.wd', exp: Math.floor(Date.now() / 1000) + 1800 }) }
+    }
+    return realFetchT5(u, o)
+  }
+  try { globalThis.__mpwSandbox.prefetch('custom|f1|scene.pkg') } catch (e) { console.error('T5 token 预取失败:', e.message) }
+  await flush()
+  globalThis.fetch = realFetchT5
+}
 console.log('\n== T5/T6 applySceneViaRenderer：作用域修复 + 参数拼接 ==')
 ok(typeof T.applyScene === 'function', 'applyScene 暴露给测试（函数定义后挂接）')
 // 桥缺席（面板从未渲染）：修复前这里抛 ReferenceError → 被吞 → 静默 return false（场景壁纸全部回退静态帧）
