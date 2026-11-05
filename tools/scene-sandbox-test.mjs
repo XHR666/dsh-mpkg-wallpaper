@@ -54,7 +54,7 @@ function mkEl(tag, cls) {
     getAttribute: (k) => (attrs.has(String(k)) ? attrs.get(String(k)) : null),
     removeAttribute: (k) => attrs.delete(String(k)),
     hasAttribute: (k) => attrs.has(String(k)),
-    appendChild(c) { this.children.push(c); c.parentElement = this; return c },
+    appendChild(c) { this.children.push(c); c.parentElement = this; c.parentNode = this; return c },
     removeChild(c) { this.children = this.children.filter((x) => x !== c); return c },
     remove() { if (this.parentElement) this.parentElement.removeChild(this) },
     querySelector(sel) { return queryAll(this, sel)[0] || null },
@@ -201,6 +201,11 @@ console.log('\n== D. 恢复路径 token-first：挂起 → token 到手 → 原�
   restoreLegacy(P, LEGACY_URL)
   ok(!!SB.diag().deferred && SB.diag().deferred.hasUrl, 'D0 挂起中（hasUrl），帧未导航', JSON.stringify(SB.diag().deferred))
   ok(!/[?&]pkgurl=/.test(String(frame.getAttribute('src') || '')), 'D0b 等待期间帧保持兜底（不挂 legacy）')
+  /* ①(审查复核 P2) 先让提示条真的存在（模拟此前一次兜底失败），D1c 的"挂载即摘"才是实断言
+     （否则 D 世界从未创建过提示条 ⇒ 恒真；且桩 DOM 的 appendChild 必须回填 parentNode，
+     否则摘除行判 n.parentNode 在桩里是死代码——两处已补）。 */
+  SB.holdFallback('token-unavailable', IDENT, 'sim-prior-fail')
+  ok(!!globalThis.document.getElementById('mpw-sceneNote'), 'D0c 预置：底部提示条在（D1c 的前提）')
   resolveHeldTokens(); await flush()
   /* 恢复路径经 showWebEl 挂载 —— 不产生 renderer-iframe diag 事件（那是 applySceneViaRenderer 的），
      挂载证据 = 场景帧 src 本身。 */
@@ -208,7 +213,7 @@ console.log('\n== D. 恢复路径 token-first：挂起 → token 到手 → 原�
   ok(/[?&]sandbox=strict(&|$)/.test(src1), 'D1 token 到手 ⇒ 场景帧以 strict URL 挂载', src1.slice(0, 90))
   ok(decodeURIComponent(src1).indexOf('st=TK.hold') >= 0, 'D1b pkgurl 内带 st=')
   /* ①(对抗审查 P1-2) 挂载成功 ⇒ 底部兜底提示条退场（成功态不残留旧告警）。 */
-  ok(!globalThis.document.getElementById('mpw-sceneNote'), 'D1c 挂载成功 ⇒ 底部提示条已摘除')
+  ok(!globalThis.document.getElementById('mpw-sceneNote'), 'D1c 挂载成功 ⇒ 底部提示条已摘除（实断言：D0c 预置过）')
   const dec = decodeURIComponent(src1)
   ok(dec.indexOf('custom=1') >= 0 && dec.indexOf('folder=f1') >= 0 && dec.indexOf('file=scene.pkg') >= 0, 'D2 原 pkgurl 业务参数逐字保留（custom/folder/file）')
   eq(SB.diag().deferred, null, 'D3 挂起记录已消费')
@@ -261,6 +266,8 @@ console.log('\n== F. strict 失败 ⇒ 保持兜底（绝不以 legacy 同源重
   applyScene(T); await flush()
   eq(SB.plan(IDENT).mode, 'strict', 'G1 用户显式重选 ⇒ failed 表清空、计划回 strict')
   eq(iframes(diagEvents).length, n0 + 1, 'G2 重选真的重新挂载（strict）')
+  /* ①(审查复核 P2) F5b 时提示条在 → 重挂成功（showWebEl 真挂载）后必须摘除（双向断言的"退场"方向）。 */
+  ok(!globalThis.document.getElementById('mpw-sceneNote'), 'G3 重挂成功 ⇒ 底部提示条已摘除（F5b 的退场方向）')
   restore()
 }
 
@@ -304,17 +311,37 @@ async function probeReds(clientPath, which) {
       W.restore()
     } catch (e) { reds.push('C1', 'C1b', 'C2', 'C3') }
   }
-  if (which === 'M1') {
-    /* D 组：token 到手 ⇒ 恢复挂载必须仍工作（变异不许把功能整个打死）；证据 = 场景帧 src。 */
+  if (which === 'M1' || which === 'M3') {
+    /* D 组：token 到手 ⇒ 恢复挂载必须仍工作（变异不许把功能整个打死）；证据 = 场景帧 src。
+       ①(审查复核 P2) M3 额外断言 D1c：预置提示条（SB.holdFallback）→ 挂载 ⇒ 必须被摘。 */
     try {
       const W = world({ tokenMode: 'hold', clientPath })
       const { SB, P, diagEvents, frame } = W
       restoreLegacy(P, LEGACY_URL)
+      if (which === 'M3') {
+        SB.holdFallback('token-unavailable', IDENT, 'sim-prior-fail')
+        if (!globalThis.document.getElementById('mpw-sceneNote')) reds.push('D0c')
+      }
       resolveHeldTokens(); await flush()
       const srcD = String(frame.getAttribute('src') || '')
       if (!/[?&]sandbox=strict(&|$)/.test(srcD)) reds.push('D1')
+      if (which === 'M3' && !!globalThis.document.getElementById('mpw-sceneNote')) reds.push('D1c')
       W.restore()
-    } catch (e) { reds.push('D1') }
+    } catch (e) { if (which === 'M3') { reds.push('D1', 'D1c') } else reds.push('D1') }
+  }
+  if (which === 'M3') {
+    /* G 组：strict 失败 → 提示条在（F5b 语义）→ 用户重选重挂成功 ⇒ 必须摘（G3）。 */
+    try {
+      const W = world({ clientPath })
+      const { SB, T, diagEvents } = W
+      SB.prefetch(IDENT); await flush()
+      applyScene(T); await flush()
+      SB.fail('unit-test'); await flush()
+      if (!globalThis.document.getElementById('mpw-sceneNote')) reds.push('F5b')
+      applyScene(T); await flush()   // 用户重选 ⇒ 清 failed ⇒ strict 重挂
+      if (!!globalThis.document.getElementById('mpw-sceneNote')) reds.push('G3')
+      W.restore()
+    } catch (e) { reds.push('F5b', 'G3') }
   }
   return reds.sort()
 }
@@ -338,6 +365,13 @@ const MUTS = [
       ['mpwSandboxHoldFallback("token-unavailable", ident, why);',
        'try { const __d = __mpwSandboxDeferred; const __f = bgElements().frame; if (__d && __d.url && __f) __f.setAttribute("src", String(__d.url)); } catch {}'],
     ], expect: ['C2'] },
+  { id: 'M3', what: '拆掉 showWebEl 挂载点的提示条摘除行（退场方向判据必须能失败）',
+    /* ①(审查复核 P2) 锚点 = showWebEl 里 defer 标记摘除 + 注释 + 提示条摘除的三行组合（唯一）。
+       期望红集：D1c（D0c 预置过提示条，挂载后仍在）+ G3（F5b 后重挂成功仍在）。 */
+    repl: [
+      ['try { if (wrap && wrap.removeAttribute) wrap.removeAttribute("data-mpw-scene-defer") } catch (e) {}\n\t\t\t/* ①(对抗审查 P1-2) 场景帧真挂载 ⇒ 底部兜底提示条退场（成功态不残留旧告警）。 */\n\t\t\ttry { mpwSceneNoteRemove() } catch (e) {}',
+       'try { if (wrap && wrap.removeAttribute) wrap.removeAttribute("data-mpw-scene-defer") } catch (e) {}'],
+    ], expect: ['D1c', 'G3'] },
 ]
 const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'mpw-p02-tokenfirst-'))
 for (const m of MUTS) {

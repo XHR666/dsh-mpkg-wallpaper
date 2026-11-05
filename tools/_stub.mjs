@@ -127,9 +127,11 @@ export function installStubs(opts = {}) {
     getAttribute(k) { const key = String(k); return this.__attrs.has(key) ? this.__attrs.get(key) : null },
     removeAttribute(k) { this.__attrs.delete(String(k)) },
     hasAttribute(k) { return this.__attrs.has(String(k)) },
-    appendChild(c) { this.children.push(c); c.parentElement = this; return c },
+    appendChild(c) { this.children.push(c); c.parentElement = this; c.parentNode = this; return c },
     insertBefore(c) { return this.appendChild(c) },
-    removeChild(c) { this.children = this.children.filter((x) => x !== c); return c },
+    /* ①(审查复核 P2 2026-11-06) removeChild 同步注销 byId 索引：真 DOM 里 getElementById 不返回
+       已离树节点；桩原实现离树后仍按 id 命中 ⇒ "挂载后摘除提示条"这类判据在桩里永远假红。 */
+    removeChild(c) { this.children = this.children.filter((x) => x !== c); try { if (c && c.__id && byId.get(String(c.__id)) === c) byId.delete(String(c.__id)) } catch {} return c },
     remove() { if (this.parentElement) this.parentElement.removeChild(this) },
     addEventListener(k, f) { (listeners[k] = listeners[k] || []).push(f) },
     removeEventListener() {}, querySelector: () => null, querySelectorAll: () => [], closest: () => null,
