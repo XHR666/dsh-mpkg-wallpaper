@@ -148,9 +148,13 @@ function check(label, patch, css) {
   const popOn = patch.popoverBlur || patch.aquaMask || patch.aquaTint
   if (popOn && !popBlur) note('[' + label + '] 浮层虚化应生效但规则缺失')
   // 9) 弹层表面底色兜底（用户"浮层看得穿"的根治项）：只要不透明度被调低，就必须发规则
-  if (typeof patch.popoverAlpha === 'number' && patch.popoverAlpha < 100) {
+  /* 2026-11-05 UI 统一表面后，弹层表面 alpha 语义并入 surfaceWhite（popoverAlpha 只作兼容读入）。
+     旧判据仍按 popoverAlpha 算 0.94，会把正确产物判红；改为跟 surfaceWhite，缺省退回 94。 */
+  const popExpectedPct = (typeof patch.surfaceWhite === 'number') ? patch.surfaceWhite
+    : (typeof base.surfaceWhite === 'number' ? base.surfaceWhite : 94);
+  if (popExpectedPct < 100) {
     if (!/--mpw-pop-alpha/.test(t)) note('[' + label + '] 调低了弹层不透明度却没发表面底色规则（会重新"看得穿"）')
-    else if (t.indexOf('--mpw-pop-alpha, ' + (patch.popoverAlpha / 100).toFixed(2)) < 0) note('[' + label + '] 弹层不透明度未按设置生效（期望 ' + (patch.popoverAlpha / 100).toFixed(2) + '）')
+    else if (t.indexOf('--mpw-pop-alpha, ' + (popExpectedPct / 100).toFixed(2)) < 0) note('[' + label + '] 弹层不透明度未按 surfaceWhite 生效（期望 ' + (popExpectedPct / 100).toFixed(2) + '）')
   }
 }
 
