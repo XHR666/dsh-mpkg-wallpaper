@@ -8,6 +8,7 @@
 //
 // 用法: node tools/css-matrix.mjs [--client <path>] [--random 600] [--css <out.css>]
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { loadPlugin, readSection } from './_stub.mjs'
@@ -132,7 +133,18 @@ function check(label, patch, css) {
   //    （宿主用 wSkVaW_header 类名复用折叠行头，被我们的玻璃/圆角误伤）。判据语义不变：
   //    仍要求“存在一条 .wSkVaW_header…::before 且带 backdrop-filter 的规则”。
   const frost = rules(t).some(([sel, body]) => /\.wSkVaW_header(?::not\([^()]*\))*::before/.test(sel) && /backdrop-filter/.test(body) && !/backdrop-filter\s*:\s*none/.test(body))
-  if (typeof patch.headerBg === 'boolean' && typeof patch.headerBlur === 'boolean') {
+  if (patch.lgTest) {
+    /* ①(2026-11-06 Z4 口径演进留痕) lgTest（液态玻璃测试模式）是 buildCss 的**特殊构建分支**：
+       lib/client.js buildCss 对 lgTest 强制 `headerBg:false / headerBlur:false`（规格=「外观类全部禁用，
+       纯环境测玻璃」，用户实测口径）——上面的普通档断言不知道这个覆盖，把"该禁用"判成"规则缺失"。
+       产品无缺陷，判据分支显式条件化（原两条误报留痕：'该有顶栏磨砂但规则缺失' /
+       '有磨砂层但缺 --mpw-hdr-blur 半径变量' —— 它们把 lgTest 的正确产物当普通档判了）。
+       lgTest 自己的契约（双向断言）：
+         L3 反向：普通档 frost 规则**不得**出现（外观开关不许穿透测试模式）；
+         L2 正向：浮动玻璃半径必须带 `var(--mpw-hdr-blur, 24px)` 回退（普通档的定义被禁用后半径不悬空）。 */
+    if (frost) note('[' + label + '] lgTest 应禁用顶栏磨砂却出现普通磨砂规则（测试模式被外观开关穿透）')
+    if (!/var\(--mpw-hdr-blur,\s*24px\)/.test(t)) note('[' + label + '] lgTest 浮动玻璃缺 var(--mpw-hdr-blur, 24px) 回退半径（磨砂层无半径）')
+  } else if (typeof patch.headerBg === 'boolean' && typeof patch.headerBlur === 'boolean') {
     const wantFrost = (patch.headerBlur || !!patch.unifyTint) && patch.headerBg
     if (wantFrost && !frost) note('[' + label + '] 该有顶栏磨砂但规则缺失（虚化会"没效果"）')
     if (!wantFrost && frost) note('[' + label + '] 不该有顶栏磨砂却有（用户关掉的开关没生效）')
@@ -156,6 +168,38 @@ function check(label, patch, css) {
     if (!/--mpw-pop-alpha/.test(t)) note('[' + label + '] 调低了弹层不透明度却没发表面底色规则（会重新"看得穿"）')
     else if (t.indexOf('--mpw-pop-alpha, ' + (popExpectedPct / 100).toFixed(2)) < 0) note('[' + label + '] 弹层不透明度未按 surfaceWhite 生效（期望 ' + (popExpectedPct / 100).toFixed(2) + '）')
   }
+}
+
+/* ---------- 变异自证：--selftest-lgtest（Z4 ③「lgTest 去掉磨砂必须红」） ---------- */
+// 把 buildCss 的 lgTest 分支里「强制 headerBg/headerBlur 关闭」改回开启（= 外观开关穿透测试模式），
+// 在隔离副本上重跑矩阵 ⇒ L3（lgTest 反向对照）必须红，且**恰好**红这一条（普通档断言不受影响）。
+// 锚点唯一性 + 旧串消失都断言（R2：变异必须真的打上去）。
+const selftestLg = process.argv.includes('--selftest-lgtest')
+if (selftestLg) {
+  const { execFileSync } = await import('node:child_process')
+  const src = fs.readFileSync(clientPath, 'utf8')
+  const anchor = 'headerBlur: false, headerBlurAmount: 0, headerBg: false, aquaMask: false, aquaTint: false,'
+  const occ = src.split(anchor).length - 1
+  if (occ !== 1) { console.error('✗ lgTest 变异锚点不唯一（hit=' + occ + '）'); process.exit(1) }
+  const mutated = src.replace(anchor, 'headerBlur: true, headerBlurAmount: 0, headerBg: true, aquaMask: false, aquaTint: false,')
+  if (mutated.indexOf(anchor) >= 0) { console.error('✗ lgTest 变异没有生效（旧串仍在）'); process.exit(1) }
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mpw-lgtest-mut-'))
+  const mutClient = path.join(tmp, 'client.mut.js')
+  fs.writeFileSync(mutClient, mutated)
+  const LG_RED = 'lgTest 应禁用顶栏磨砂却出现普通磨砂规则（测试模式被外观开关穿透）'
+  let out = ''
+  try {
+    out = execFileSync(process.execPath, [fileURLToPath(import.meta.url), '--client', mutClient, '--random', '0'],
+      { encoding: 'utf8', timeout: 600000 })
+  } catch (e) { out = String((e && e.stdout) || '') + String((e && e.stderr) || '') }
+  try { fs.rmSync(tmp, { recursive: true, force: true }) } catch { /* ignore */ }
+  const hits = out.split('\n').filter((l) => l.includes(LG_RED))
+  const others = out.split('\n').filter((l) => l.trim().startsWith('- ') && !l.includes(LG_RED))
+  const okRed = hits.length === 1
+  const okOthers = others.length === 0
+  console.log((okRed ? '✓' : '✗') + ' 变异 L3 必红（期望恰 1 条穿透红，实际 ' + hits.length + ' 条）' + (okRed ? '' : '\n' + hits.join('\n')))
+  console.log((okOthers ? '✓' : '✗') + ' 变异无其它连带红（普通档断言口径未被带松）' + (okOthers ? '' : '\n' + others.join('\n')))
+  process.exit(okRed && okOthers ? 0 : 1)
 }
 
 /* ---------- 跑矩阵 ---------- */
