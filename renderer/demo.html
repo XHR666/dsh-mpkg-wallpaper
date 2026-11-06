@@ -2602,6 +2602,40 @@ async function bootInstance(inst) {
         + (__capsFalse.length ? '；明确降级 ' + __capsFalse.join('/') : '') + '（读数见 window.__mpwHostCaps）')
     } catch (e) { logf('⚠ 宿主 API 发布失败: ' + ((e && e.message) || e)) }
   }
+  /* ⑧(2026-11-06 用户要求 DSH 插件「壁纸设置 → 渲染器」等价接线) **宿主命令通道**：
+     strict iframe 是不透明源，宿主读不到也调不到本页的 window.__wp ⇒ 只能 postMessage：
+       {type:'mpw-host-cmd', op:'display', patch:{flipH,playbackRate,brightness,colorOptions,...}}
+       {type:'mpw-host-cmd', op:'sceneFps', v:24|30|48|60|0}
+       {type:'mpw-host-cmd', op:'renderDpr', v:<1..5>}
+     与插件侧 mpwScenePushDisplay() 一一对应（水平翻转 flipX / 播放速度 / 画面亮度 / 帧率上限）。
+     来源纪律与 mpwPropPushFromParent 同款（只认父页或自己）；未知 op 直接忽略、不抛。
+     回执：window.__mpwHostCmdLast / __mpwHostCmdCount（真机探针与判据据此核对"到没到"）。 */
+  try {
+    if (!window.__mpwHostCmdHooked) {
+      window.__mpwHostCmdHooked = 1
+      const MPW_HOST_CMD_TYPE = 'mpw-host-cmd'
+      const mpwHostCmdHandle = (ev) => {
+        let d = null
+        try { d = ev && ev.data } catch (e) { d = null }
+        if (!d || typeof d !== 'object' || d.type !== MPW_HOST_CMD_TYPE) return
+        try { if (!mpwPropPushFromParent(ev)) return } catch (e) { return }
+        const op = String(d.op || '')
+        const api = window.__wp || {}
+        const rec = { op: op, at: Date.now(), ok: false, why: '' }
+        try {
+          /* rec.res = API 的返回值（真机/判据据此核对"到没到 + 生效值"，如 sceneFps.want=30）；
+             只留 300 字符，避免大对象把诊断面撑爆。 */
+          const keepRes = (v) => { try { rec.res = JSON.parse(JSON.stringify(v === undefined ? null : v)); const s2 = JSON.stringify(rec.res); if (s2 && s2.length > 300) rec.res = s2.slice(0, 300) + '…' } catch (e) { rec.res = null } }
+          if (op === 'display') { if (typeof api.setDisplay === 'function') { rec.ok = true; keepRes(api.setDisplay(d.patch || {})) } }
+          else if (op === 'sceneFps') { if (typeof api.setSceneFps === 'function') { rec.ok = true; keepRes(api.setSceneFps(d.v)) } }
+          else if (op === 'renderDpr') { if (typeof api.setRenderDpr === 'function') { rec.ok = true; keepRes(api.setRenderDpr(d.v)) } }
+          else rec.why = 'unknown-op'
+        } catch (e) { rec.why = String((e && e.message) || e) }
+        try { window.__mpwHostCmdLast = rec; window.__mpwHostCmdCount = (window.__mpwHostCmdCount || 0) + 1 } catch (e) {}
+      }
+      window.addEventListener('message', mpwHostCmdHandle, false)
+    }
+  } catch (e) { /* 通道挂不上不影响渲染（只是宿主设置无法原生生效） */ }
   if (!inst.ctx) inst.ctx = { lost: 0, restored: 0, at: null }   // 每实例上下文丢失计数（多实例诊断逐格）
   let renderer = null, scene = null, pkg = null, textures = new Map(), rafId = null, renderBusy = false
   // ═══ MPW-GYRO-WIRING ①(用户 2026-09-24：移动端用陀螺仪实现鼠标视差) 接线（实现见顶部 MPW-GYRO 段）═══
