@@ -763,8 +763,8 @@ const MUTS = [
     expect: 'B',
     why: '①(NP-3) 把"无壁纸"那条 return 上的 NP 段删掉（= 真机 bug 原样：section 少了 image/webUrl 时'
       + '控件整份样式丢失、传输键掉到卡片外点不到；真机上用户的档正是这种半残档）',
-    mut: (s) => s.replace('return emitSurfaceTokens(css + buildUiCss(section, false)) + __npCss;',
-      'return emitSurfaceTokens(css + buildUiCss(section, false));'),
+    mut: (s) => s.replace('return emitSurfaceTokens(css + buildUiCss(section, false)) + noImagePopCss + __npCss;',
+      'return emitSurfaceTokens(css + buildUiCss(section, false)) + noImagePopCss;'),
   },
   {
     id: 'generated-region-drifted',
