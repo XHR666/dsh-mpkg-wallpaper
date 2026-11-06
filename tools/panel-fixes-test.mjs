@@ -174,4 +174,41 @@ console.log('\u001b[1m== (a2) 语言字典：zh/en 键集合必须一致 ==\u001
     !/scrollBody[^}]*overflow-y:\s*clip/.test(css))
 }
 
+/* ═══ HOOK 组（2026-11-06 真机：点「鼠标光晕」/「统一虚化」等开关 ⇒ 设置面板被错误边界替换） ═══
+   根因：滑条行旧实现是**渲染体内的内联函数**，函数体里调用 useRef/useEffect；而它的调用点大量位于
+   "开关开启后才渲染"的条件分支（如光晕亮度条只在光晕开启时出现）⇒ 拨一下开关就改变 hook 数量，
+   React 抛 #310/#300/#321，整块面板被"渲染失败"错误边界替换（真机可复现）。
+   修复 = 把 hook 收进独立组件 MpwSliderRow，sliderRow 只做 h() 工厂。
+   判据：工厂体里不许有 hook；hook 必须在组件体内；变异自证（塞回 hook ⇒ 必红）。 */
+{
+  const findSliderFactory = (text) => {
+    const start = text.indexOf('const sliderRow = (label, field, min, max, suffix, step, def) => {')
+    if (start < 0) return ''
+    const end = text.indexOf('const toggleRow = (label, desc, field, def, disabled, forceOn, shown) => {', start)
+    return end > start ? text.slice(start, end) : text.slice(start, start + 4000)
+  }
+  const findSliderComp = (text) => {
+    const start = text.indexOf('function MpwSliderRow(props) {')
+    if (start < 0) return ''
+    const marker = text.indexOf('function MpkgSection(props) {', start)
+    return marker > start ? text.slice(start, marker) : text.slice(start, start + 9000)
+  }
+  const checkHooks = (text) => {
+    const factory = findSliderFactory(text)
+    const comp = findSliderComp(text)
+    return {
+      factoryFound: !!factory, compFound: !!comp,
+      factoryHook: /react\.use[A-Z]/.test(factory),
+      compHook: /react\.useRef/.test(comp) && /react\.useEffect/.test(comp),
+    }
+  }
+  const r = checkHooks(src)
+  ok('HOOK1 已定位 sliderRow 工厂与 MpwSliderRow 组件', r.factoryFound && r.compFound)
+  ok('HOOK2 sliderRow 工厂体内无 hook（条件渲染安全）', r.factoryFound && !r.factoryHook)
+  ok('HOOK3 hook 已收进 MpwSliderRow 组件体内', r.compHook)
+  const fac = findSliderFactory(src)
+  const mutated = src.replace(fac, fac.replace('onPreview: (patch) => previewCss(patch),', 'const __rf = react.useRef(null);\n\t\t\t\tonPreview: (patch) => previewCss(patch),'))
+  ok('HOOK4 变异自证：工厂里塞回 hook ⇒ 判据必红', checkHooks(mutated).factoryHook === true && mutated !== src)
+}
+
 console.log(`\n结果: ${pass} 通过, ${fail} 失败`)
