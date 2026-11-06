@@ -124,6 +124,21 @@ const r15 = await call(B + '/custom-scene-thumb', { method: 'POST', url: B + '/c
 ok(r15.status === 403, 'R6 缩略图上报（evil 源盲发）⇒ 403（写路由全过闸门）', 'status=' + r15.status);
 const r16 = await call(B + '/diag', { method: 'POST', url: B + '/diag', headers: Object.assign({}, EVIL), body: JSON.stringify({ ok: true }) });
 ok(r16.status === 403, 'R7 /diag 盲写（evil 源）⇒ 403（8MB 落盘不再能被任意页面触发）', 'status=' + r16.status);
+/* ⑤(2026-11-06 真机 strict「假兜底」回归) 不透明源沙箱帧（strict 渲染器）的**唯一**写回调 = 首帧缩略图回传：
+   浏览器对 sandbox（无 allow-same-origin）帧统一报 `Origin: null` + `Sec-Fetch-Site: cross-site`（同主机也如此），
+   旧闸门一律 403 ⇒ 渲染器 "Failed to fetch" ⇒ 看门狗信标 lastPostAt 恒 0 ⇒ 场景明明出画也被兜底成静态帧。
+   放行只开这一条路由，且 handler 内 sceneToken 强校验必须仍在（R9 证明）。 */
+const OPAQUE = { origin: 'null', 'sec-fetch-site': 'cross-site', 'content-type': 'text/plain' };
+const opaqueThumbBody = (withTok) => JSON.stringify(Object.assign({
+  pkgurl: B + '/raw?custom=1&file=fixture.mpkg',
+  frame: 'data:image/jpeg;base64,' + 'A'.repeat(1200),
+}, withTok ? { sceneToken: tok && tok.token } : {}));
+const r17 = await call(B + '/custom-scene-thumb', { method: 'POST', url: B + '/custom-scene-thumb', headers: Object.assign({}, OPAQUE), body: opaqueThumbBody(true) });
+ok(r17.status === 200, 'R8 strict 渲染器首帧回传（Origin: null + cross-site + 合法 sceneToken）⇒ 200（看门狗信标可记账）', 'status=' + r17.status + ' body=' + r17.body.toString().slice(0, 120));
+const r18 = await call(B + '/custom-scene-thumb', { method: 'POST', url: B + '/custom-scene-thumb', headers: Object.assign({}, OPAQUE), body: opaqueThumbBody(false) });
+ok(r18.status === 403 && /scene token required/.test(r18.body.toString()), 'R9 不透明源但无 token ⇒ 403（闸门放行后 handler 的 token 强校验仍在跑）', 'status=' + r18.status + ' body=' + r18.body.toString().slice(0, 100));
+const r19 = await call(B + '/diag', { method: 'POST', url: B + '/diag', headers: Object.assign({}, OPAQUE), body: JSON.stringify({ ok: true }) });
+ok(r19.status === 403, 'R10 不透明源 + cross-site 对**其他**写路由（/diag）⇒ 仍 403（白名单只开 thumb 一条）', 'status=' + r19.status);
 
 console.log('\n== A3 回退口把守卫去掉 ⇒ **旧行为逐条复现**（变异必红的另一半） ==');
 process.env.MPW_CSRF = '0';
@@ -176,6 +191,13 @@ delete process.env.MPW_CUSTOM_DIR_ALLOW_ANY;
 process.env.MPW_CORS_ORIGINS = 'https://mirror.example';
 ok(T.corsOriginAllowed('https://mirror.example') === true, 'B17 MPW_CORS_ORIGINS 追加白名单生效');
 delete process.env.MPW_CORS_ORIGINS;
+/* ⑤(2026-11-06) 闸门的"不透明源写回调"白名单：只开 thumb 一条；其他写路由/非不透明源仍按 sfs 拦。 */
+const g7 = T.secGateDecision({ method: 'POST', headers: { 'sec-fetch-site': 'cross-site', origin: 'null' } }, { path: B + '/custom-scene-thumb' });
+ok(g7.block === false, 'B18 不透明源 strict 渲染器 POST /custom-scene-thumb ⇒ 放行到 handler（token 校验兜底）', g7.reason);
+const g8 = T.secGateDecision({ method: 'POST', headers: { 'sec-fetch-site': 'cross-site', origin: 'null' } }, { path: B + '/settings' });
+ok(g8.block === true, 'B19 不透明源对**其他**写路由仍拦（白名单只开 thumb 一条）', g8.reason);
+const g9 = T.secGateDecision({ method: 'POST', headers: { 'sec-fetch-site': 'cross-site', origin: 'https://evil.example' } }, { path: B + '/custom-scene-thumb' });
+ok(g9.block === true, 'B20 非不透明源对 /custom-scene-thumb 的跨站写 ⇒ 仍拦（只认 Origin: null）', g9.reason);
 
 /* ── C 变异自证（直接改守卫语义 ⇒ 断言必红） ─────────────────────────────────────────── */
 console.log('\n== C 变异自证（把守卫挑掉一条 ⇒ 同一组断言必须变红） ==');

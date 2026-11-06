@@ -1138,7 +1138,12 @@ function mpwDiagMirror(m) {
     img.src = '/diag?msg=' + encodeURIComponent('scene ' + (mpwDiagSceneId || '?') + ': ' + String(m).slice(0, 300))
   } catch (e) { /* 无 window / 无 Image：忽略 */ }
 }
-const logf = (m) => { log.textContent += m + '\n'; console.log(m); mpwDiagMirror(m); };
+/* ⑦(2026-11-06 真机 strict 场景不出画根因) 壁纸模式（noui）下 Z3 会在 DOMContentLoaded 把 #log 从 DOM
+   移除；而本页是 inline module + TLA 依赖 ⇒ module 体可能在 DOMContentLoaded **之后**才执行，
+   此时 `log` 已是 null ⇒ `logf()` 首调即 TypeError（`log.textContent`）⇒ module 顶层中断、
+   场景永不建帧（真机表现：strict cap ok:true / firstFrame:false / 10s 后 cap-no-first-frame 兜底）。
+   日志是调试面，绝不能反过来打断渲染 ⇒ 这里空安全（无 #log 就只走 console/diag 通道）。 */
+const logf = (m) => { try { if (log) log.textContent += m + '\n'; } catch (e) {} console.log(m); mpwDiagMirror(m); };
 
 // ═══ MPW-SCENEFILE-BEGIN ═══
 /* ①(P-261 2026-10-07) `__wp.loadSceneFile(blob)` 的**落地实现**（此前是"明确降级"的 no-op）：
@@ -9954,7 +9959,9 @@ if (!MPW_PROPS_COMPAT_LEGACY) {
     try { frameDeltaRing.push(now - last); if (frameDeltaRing.length > 120) frameDeltaRing.shift() } catch (e) { /* ignore */ }
     if (ft > 500) {
       const fpsNow = Math.round(frames * 1000 / ft)
-      fpsEl.textContent = fpsNow + ' fps'
+      /* ⑦(2026-11-06) 同 logf：壁纸模式（noui）下 #fps 已被移除 ⇒ fpsEl 为 null。
+         这行在**每帧**路径上，裸写会把 rAF 循环打死（首帧后 ~0.5s 卡住不动）——空安全。 */
+      try { if (fpsEl) fpsEl.textContent = fpsNow + ' fps' } catch (e) { /* 调试面失败不影响渲染 */ }
       // ②(P-64-MEDIA 轮顺带) 与 fps 同一次刷新：算滚动中位帧时间（120 帧窗，排序成本微秒级）
       try {
         // ①(P-77) 既有单例全局只由 primary 实例写；多实例时调度器把 active 实例的 fps 镜像到
