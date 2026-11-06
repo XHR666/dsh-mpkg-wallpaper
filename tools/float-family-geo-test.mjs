@@ -96,7 +96,7 @@ function ruleBody(css, sel) {
 const FAM = [
   { name: '标题栏', sel: 'body[data-mpw-float] .wSkVaW_header', bodyMust: /margin:\s*10px 16px 0/ },
   { name: '左栏', sel: 'body[data-mpw-float] .pI_x6G_sidebarCol', bodyMust: /margin:\s*12px(\s*!important)?\s*;/ },
-  { name: '右栏push', sel: 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]) [data-sidebar-right-panel="push"]', bodyMust: /top:\s*10px !important/ },
+  { name: '右栏push', sel: 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]:not(:has([data-sidebar-right-open="true"]))) [data-sidebar-right-panel="push"]', bodyMust: /top:\s*10px !important/ },
 ]
 
 console.log('== A. 解析级（注释配平 + 规则存活，float:on/off 两条产物路径）==')

@@ -99,13 +99,13 @@ console.log('== A. 统一收起/展开几何（buildCss float:on 真产物）=='
   /* ⑨(2026-10-30 任务书 §3) 左右栏圆角同源：右栏 push 面板 + dockkit pane/strip 也读
      同一枚 --mpw-side-radius（原 18px 字面量收编）⇒ 左栏两态（+根）与右栏逐值同源。
      （rs 规则带 !important，decl 原样返回 ⇒ 对照时剥掉。） */
-  const rsPush = ruleBody(css, 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]) [data-sidebar-right-panel="push"] {')
-  const rsDock = ruleBody(css, 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]) [data-dockkit-pane],\nhtml body[data-mpw-float]:not([data-mpw-rightbar-parked]) [data-dockkit-strip] {')
+  const rsPush = ruleBody(css, 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]:not(:has([data-sidebar-right-open="true"]))) [data-sidebar-right-panel="push"] {')
+  const rsDock = ruleBody(css, 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]:not(:has([data-sidebar-right-open="true"]))) [data-dockkit-pane],\nhtml body[data-mpw-float]:not([data-mpw-rightbar-parked]:not(:has([data-sidebar-right-open="true"]))) [data-dockkit-strip] {')
   const rPush = String(decl(rsPush, 'border-radius') || '').replace(/\s*!important$/, '')
   const rDock = String(decl(rsDock, 'border-radius') || '').replace(/\s*!important$/, '')
   // ①(2026-11-03 演进留痕) 同 A1：令牌定义从"18px 字面量"演进为"跟随宿主 --dsw-radius-panel 档"
   // ①(2026-11-03 第三轮 §2③) pane/strip 规则拆分后 dockkit 读数从 rDock 一条变两条
-  const rDockPane = String(decl(ruleBody(css, 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]) [data-dockkit-pane] {'), 'border-radius') || '').replace(/\s*!important$/, '')
+  const rDockPane = String(decl(ruleBody(css, 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]:not(:has([data-sidebar-right-open="true"]))) [data-dockkit-pane] {'), 'border-radius') || '').replace(/\s*!important$/, '')
   ok('A7 §3 左右栏同源：右栏 push/dockkit-pane 的 border-radius 也是 var(--mpw-side-radius)（令牌跟随宿主 panel 档）',
     rPush === 'var(--mpw-side-radius)' && rDockPane === 'var(--mpw-side-radius)' && /--mpw-side-radius:\s*var\(--dsw-radius-panel,\s*26px\);/.test(css),
     `push=${rPush} pane=${rDockPane}`)
@@ -255,8 +255,8 @@ function runChecks(clientPath) {
     const collapsed = ruleBody(css, 'body[data-mpw-float] [data-sidebar-collapsed] .pI_x6G_sidebarCol,')
     r.A2 = decl(expanded, 'border-radius') === 'var(--mpw-side-radius)' && decl(collapsed, 'border-radius') === 'var(--mpw-side-radius)'
       && decl(ruleBody(css, 'body[data-mpw-float] [data-mpw-sidebar-root] {'), 'border-radius') === 'var(--mpw-side-radius)'
-    r.A7 = String(decl(ruleBody(css, 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]) [data-sidebar-right-panel="push"] {'), 'border-radius') || '').replace(/\s*!important$/, '') === 'var(--mpw-side-radius)'
-      && String(decl(ruleBody(css, 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]) [data-dockkit-pane],\nhtml body[data-mpw-float]:not([data-mpw-rightbar-parked]) [data-dockkit-strip] {'), 'border-radius') || '').replace(/\s*!important$/, '') === 'var(--mpw-side-radius)'
+    r.A7 = String(decl(ruleBody(css, 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]:not(:has([data-sidebar-right-open="true"]))) [data-sidebar-right-panel="push"] {'), 'border-radius') || '').replace(/\s*!important$/, '') === 'var(--mpw-side-radius)'
+      && String(decl(ruleBody(css, 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]:not(:has([data-sidebar-right-open="true"]))) [data-dockkit-pane],\nhtml body[data-mpw-float]:not([data-mpw-rightbar-parked]:not(:has([data-sidebar-right-open="true"]))) [data-dockkit-strip] {'), 'border-radius') || '').replace(/\s*!important$/, '') === 'var(--mpw-side-radius)'
       && /--mpw-side-radius:\s*18px;/.test(css)
     const tExp = decl(expanded, 'transition'), tCol = decl(collapsed, 'transition')
     r.A3 = !!tExp && tExp === tCol && tExp.indexOf('--mpw-side-dur') >= 0
@@ -339,7 +339,7 @@ for (const m of MUTANTS) {
   // G-MUT：把磨砂 backdrop-filter 写到 pane（滚动容器）上 ⇒ G1a 必红
   reset()
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mpw-rs-g-'))
-  const anchor = 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]) [data-dockkit-pane] {'
+  const anchor = 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]:not(:has([data-sidebar-right-open="true"]))) [data-dockkit-pane] {'
   const i2 = CLIENT.indexOf(anchor)
   if (i2 < 0) throw new Error('G-MUT 锚点缺失')
   const j2 = CLIENT.indexOf('\n}', i2)
