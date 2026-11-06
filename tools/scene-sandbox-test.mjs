@@ -362,7 +362,7 @@ const MUTS = [
        C1 在 flush 前读数、变异体也是绿的（导航发生在 fetch 失败之后）；C3 提示仍由
        deferredSettled→holdFallback 兜住。判别点集中且唯一 = 该变异只破坏这一条。 */
     repl: [
-      ['mpwSandboxHoldFallback("token-unavailable", ident, why);',
+      ['mpwSandboxHoldFallback("token-unavailable", ident, why, { ident: ident, reason: "token-unavailable", host: (function () { try { return location.href } catch (e) { return "" } })() });',
        'try { const __d = __mpwSandboxDeferred; const __f = bgElements().frame; if (__d && __d.url && __f) __f.setAttribute("src", String(__d.url)); } catch {}'],
     ], expect: ['C2'] },
   { id: 'M3', what: '拆掉 showWebEl 挂载点的提示条摘除行（退场方向判据必须能失败）',
