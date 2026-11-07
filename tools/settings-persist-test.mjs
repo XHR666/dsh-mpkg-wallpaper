@@ -347,16 +347,24 @@ console.log('\n== C. 半残档自愈：能推就推、推不出就明确提示 =
   const P3 = await boot({ ls: newLs({ [STORE]: JSON.stringify(alt) }), host: host3 })
   const msgs = []
   P3.onMsg((m) => msgs.push(String(m)))
+  /* 判据演进留痕（R19，2026-11-07 门禁修复轮）：原断言只听 persist 通道；A8 轮把"自愈推不出"
+     这类**提示类**消息迁到 notice 常驻条通道（mpwPersistNotify → MPW_NOTICE_LISTENERS/pending），
+     persist 通道只剩"真正存不下"的弹窗消息 ⇒ 只听 persist 恒空。新断言双通道都听（监听 + 各自
+     排队），契约语义不变：推不出必须有可见提示。 */
+  const noticeMsgs = []
+  P3.onNotice((m) => noticeMsgs.push(String(m)))
   P3.heal()
   await flush(80)
   const st3 = P3.healState()
   ok('C12 推不出 ⇒ 记为失败（failed+1，last.ok=false）', st3.failed >= 1 && st3.last && st3.last.ok === false, st3.last && st3.last.from)
-  /* 面板读提示有**两条通道**（真实现：react.useState 初始化时 mpwPersistTakePending() 取一次 +
-     useEffect 订阅 onMsg）：晚于 emit 注册的监听是收不到那一条的，所以排队那条也必须断言。 */
+  /* 面板读提示有**两条通道**（真实现：useState 初始化时 takePending 取一次 + 订阅 onMsg）：
+     晚于 emit 注册的监听收不到那一条，所以排队那条也必须断言（persist 与 notice 各自）。 */
   const pending3 = P3.takePending()
+  const noticePending3 = P3.takeNoticePending()
+  const allMsgs = msgs.concat(noticeMsgs)
   ok('C13 推不出 ⇒ 有**明确提示**（面板可见文案），不是静默隐藏',
-    msgs.some((m) => /重新选|推不出/.test(m)) || /重新选|推不出/.test(pending3),
-    'listener=" + msgs.slice(0, 1).join(" | ").slice(0, 70) + " pending=' + String(pending3).slice(0, 70))
+    allMsgs.some((m) => /重新选|推不出/.test(m)) || /重新选|推不出/.test(pending3) || /重新选|推不出/.test(noticePending3),
+    'listener=' + allMsgs.slice(0, 1).join(' | ').slice(0, 70) + ' pending=' + String(pending3).slice(0, 40) + ' noticePending=' + String(noticePending3).slice(0, 40))
   ok('C14 推不出 ⇒ **不改写**用户的选择（mpkgKey 原样保留）', P3.read().mpkgKey === 'custom|0000000000', String(P3.read().mpkgKey))
   ok('C15 推不出 ⇒ 不伪造一个假源（image 仍为缺失，如实呈现）', P3.read().image === void 0, srcState(P3.read()))
 

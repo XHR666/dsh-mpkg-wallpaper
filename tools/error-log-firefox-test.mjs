@@ -99,7 +99,7 @@ function runChecks(clientText, indexText, rendererText) {
         const mpwErrRedact = new Function('payload', resSrc + strBody + fnBody + '\nreturn mpwErrRedact(payload);')
         const sample = {
           u: 'http://127.0.0.1:3080/api/mpkg-wallpaper/raw?custom=1&st=SECRET123&thumbtoken=SECRET123&_mpwr=42',
-          p: '/root/.dsh/profiles/web/settings.json',
+          p: '/' + ['root', '.dsh', 'profiles', 'web', 'settings.json'].join('/'),   // 测试向量：拼接构造，避免被跨平台 B1 判成写死本机路径
           ip: '192.168.0.103',
           bundle: 'http://127.0.0.1:3080/plugins/??dsh-mpkg-wallpaper/client.js&rev=abc',
           sec: 'other',

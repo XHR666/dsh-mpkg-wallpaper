@@ -339,12 +339,22 @@ console.log('\n== D8. tab 同格堆叠（2026-11-02 左移根治）的产物与�
   loadPlugin({ quiet: true });
   const css = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({}) : '');
   cancelWorldTimers();
-  const iRow = css.indexOf('.mpw_tabBody > .mpw_tabRow > * {');
-  const rowBody = iRow >= 0 ? css.slice(css.indexOf('{', iRow) + 1, css.indexOf('}', iRow)) : '';
+  /* 判据演进留痕（R19，2026-11-07 门禁修复轮）：原断言只取**第一条** `.mpw_tabBody > .mpw_tabRow > *`
+     规则体；后来产物里在该规则之前又出现了一条紧凑的 `visibility:hidden` 独立规则 ⇒ 首条规则体不再
+     含 grid-area ⇒ 恒红（基线 64476d4 即红）。新断言扫描**全部**同选择器规则体，要求"存在一条同时含
+     grid-area/visibility/min-width"——语义不变（同格堆叠规则在位），且 M6 变异仍必红。 */
+  const rowBodies = [];
+  {
+    let i0 = -1;
+    while ((i0 = css.indexOf('.mpw_tabBody > .mpw_tabRow > * {', i0 + 1)) >= 0) {
+      rowBodies.push(css.slice(css.indexOf('{', i0) + 1, css.indexOf('}', i0)));
+    }
+  }
+  const gridRule = rowBodies.find((b) => b.indexOf('grid-area: 1 / 1;') >= 0);
   ok('D8a CSS 产物含同格堆叠规则（grid-area:1/1 + visibility:hidden + min-width:0）',
-    iRow >= 0 && rowBody.indexOf('grid-area: 1 / 1;') >= 0
-    && rowBody.indexOf('visibility: hidden;') >= 0 && rowBody.indexOf('min-width: 0;') >= 0,
-    rowBody.trim().slice(0, 100));
+    rowBodies.length >= 1 && !!gridRule
+    && gridRule.indexOf('visibility: hidden;') >= 0 && gridRule.indexOf('min-width: 0;') >= 0,
+    (gridRule || rowBodies[0] || '').trim().slice(0, 100));
   const iAct = css.indexOf('.mpw_tabBody > .mpw_tabRow > [data-mpw-tabactive] {');
   const actBody = iAct >= 0 ? css.slice(css.indexOf('{', iAct) + 1, css.indexOf('}', iAct)) : '';
   ok('D8b 激活面板唯一可见（data-mpw-tabactive ⇒ visibility:visible）',

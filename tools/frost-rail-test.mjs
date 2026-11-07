@@ -323,7 +323,7 @@ if (process.argv[2] !== '--child') {
     ['冲突检测 detectConflicts', /mpwErr\("detectConflicts\(冲突检测\/自动关闭\)", e\)/],
     ['时段自动切换（60s 定时）', /mpwErr\("时段自动切换\(60s 定时\)", e\)/],
   ]) assert(pat.test(src), '★ 关键路径有 mpwErr 出口: ' + label)
-  assert(/function mpwErr\(where, e\)/.test(src), '★ mpwErr 已定义（统一出口：console.error + 环形缓冲 + 可选上报）')
+  assert(/function mpwErr\(where, e, detail\)/.test(src), '★ mpwErr 已定义（统一出口：console.error + 环形缓冲 + 可选上报；Z6 起带 detail 参数——R19：原断言 (where, e) → (where, e, detail)，语义不变）')
   assert(/console\.error\("\[dsh-mpkg-wallpaper\] " \+ where \+ " 失败:", e\)/.test(src), '★ mpwErr 必写 console.error（不再零痕迹）')
   assert(/localStorage\.getItem\('mpwdiag'\) !== '1'\) return 1;/.test(src), '★ mpwErr 的上报被 mpwdiag 门控（自动上报默认关，用户发布纪律①）')
   // 关键路径上不许再有裸 `catch {}`（漏一个就等于"再吞一轮"）
