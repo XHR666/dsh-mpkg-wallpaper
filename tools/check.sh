@@ -822,6 +822,7 @@ node tools/np-conflict-test.mjs || fail=$((fail + 1))                  # Z9：NP
 # ①(2026-11-08 Z10–Z15 轮) 本轮新判据同样登记进第 6 步（不新增步骤编号）：
 node tools/no-wallpaper-host-surfaces-test.mjs || fail=$((fail + 1))   # Z15：无壁纸 tooltip/轮次预览表面门控 + data-mpw-no-wallpaper 标记（A/B 双向 + 3 变异）
 node tools/error-note-dismiss-test.mjs || fail=$((fail + 1))           # Z10：底部黑条 ×关闭（①-⑦ + 3 变异：删按钮/不记账/越界副作用）
+node tools/renderer-source-switch-test.mjs || fail=$((fail + 1))       # Z11：渲染器来源两预设（内置默认/原仓库）+ guard 不绕过（3 变异）
 fi                                     # ← 第 6 步结束
 gate_end 6
 step "7/12 音频扫描提速（惰性索引 + Range/探测路由；真包与规格参考实现逐项一致）"
