@@ -1,5 +1,5 @@
 // tools/panel-fixes-test.mjs —— P-66（2026-09-15）**仅**覆盖两个插件自身真 bug 的回归
-// 说明：用户报的 9 条界面问题经确认为 **webwallgl 测试台（:8901）** 的问题，不是 DSH 插件面板；
+// 说明：报障所述 9 条界面问题经确认为 **webwallgl 测试台（:8901）** 的问题，不是 DSH 插件面板；
 //       相关 UI 改动已全部回退。本文件只保留与那个界面无关、可独立复现的插件真 bug 断言：
 //   (a1) 渲染错误边界自身抛 `h is not defined` → 面板空白（连错误信息都看不到）
 //   (a2) zh/en 字典键集合不一致（en 缺 18 键 → 英文界面显示 key 原文；clock.* 只在 en → 中文界面出英文）
@@ -116,7 +116,7 @@ console.log('\u001b[1m== (a1) 渲染错误边界：出错时必须显示错误�
   // 复现：让组件体在 hooks 阶段抛错（真实场景同样存在：状态里的脏字段触发组件体计算抛错）→
   //   走 `MpkgSectionImpl` 的渲染错误边界。
   // 修复前：边界自身抛 `h is not defined`（h 是外层 try 块内的 const，catch 看不见）→
-  //   用户看到的是 `壁纸引擎设置区渲染异常：h is not defined`，**真因被吞**；
+  //   所见是 `壁纸引擎设置区渲染异常：h is not defined`，**真因被吞**；
   // 修复后：显示真实错误内容（`壁纸引擎设置渲染出错: boom-body`）。
   let threw = null, text = ''
   ARM_BODY_THROW = true

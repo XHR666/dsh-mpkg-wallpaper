@@ -43,10 +43,10 @@ if (process.argv[2] !== '--child') {
   const build = (patch) => String(globalThis.__mpwBuildCss(patch) || '')
   const strip = (t) => String(t).replace(/\/\*[\s\S]*?\*\//g, '')
 
-  // 多组设置：默认 / 用户真机设置 / 全开 / 会写 label token 的三个开关 / 侧栏关
+  // 多组设置：默认 / 真机设置 / 全开 / 会写 label token 的三个开关 / 侧栏关
   const cases = [
     ['默认(有壁纸)', { image: true, enabled: true }],
-    ['用户真机设置', { rightSidebarBlur: true, rightSidebarBlurAmount: 14, rightSidebarAlpha: 45, sidebarBlur: false, unifyTint: true, unifyAmount: 30, chatFollow: false, enabled: true, image: true }],
+    ['真机设置', { rightSidebarBlur: true, rightSidebarBlurAmount: 14, rightSidebarAlpha: 45, sidebarBlur: false, unifyTint: true, unifyAmount: 30, chatFollow: false, enabled: true, image: true }],
     ['全开', { image: true, enabled: true, sidebar: true, unifyTint: true, headerBg: true, headerBlur: true, float: true, lgCss: true, aquaMask: true, aquaTint: true, rightSidebarBlur: true, aquaInk: true, aquaTextEnhance: true, fontColorGray: true, fontColorGrayColor: '#8a94a6', sidebarAlpha: 35, headerFrostOwn: true, headerFrostAmount: 30 }],
     ['aqua+文本增强', { image: true, enabled: true, aquaInk: true, aquaTextEnhance: true }],
     ['灰字覆盖', { image: true, enabled: true, fontColorGray: true, fontColorGrayColor: '#8a94a6' }],
@@ -141,7 +141,7 @@ if (process.argv[2] !== '--child') {
 
   /* ══════════════════════════════════════════════════════════════════
      PART 1b —— ②(2026-09-16) 本轮三个视觉 bug 的**只增不减**回归断言
-     背景：用户实测①顶栏磨砂看不见 ②顶栏下描边被我们弄没 ③时间线条仍不可见。
+     背景：真机实测①顶栏磨砂看不见 ②顶栏下描边被我们弄没 ③时间线条仍不可见。
      已定案的真实原因与对应断言：
        ② 我们两条规则里写了 `border-bottom: 1px solid transparent !important;`
          （.wSkVaW_header 基础块、以及 headerBg && !headerBlur 分支）⇒ 下描边被抹掉。
@@ -389,10 +389,10 @@ function checkScenario(sc, r) {
     // ②(2026-09-16 真根因防复发) z-index 必须是 0：-1 会被父背景整片盖住（= "磨砂一直没有"）
     t('★ 注入层 z-index=0（不是 -1：负层会画在顶栏背景之下被盖住）', cssProp(r.cssText, 'z-index') === '0')
     /* ②(2026-10-04) chrome 表面只做模糊，不再叠 saturate(140%)（壁纸层自带 saturate(1.12)，
-       再乘 1.4 会让标题栏/侧栏比屏幕别处明显更粉 —— 用户真机读到的"粉色滤镜"）。 */
+       再乘 1.4 会让标题栏/侧栏比屏幕别处明显更粉 —— 真机读到的"粉色滤镜"）。 */
     t('内联 backdropFilter = blur(30px)（不含 saturate）', r.backdropFilter === 'blur(30px)')
     t('webkitBackdropFilter 同步设置', r.webkitBackdropFilter === 'blur(30px)')
-    /* ①(2026-10-02 表面模型重做) 底色不再是写死的 `rgba(255,255,255,0.38)`（那正是用户报的
+    /* ①(2026-10-02 表面模型重做) 底色不再是写死的 `rgba(255,255,255,0.38)`（那正是报障所述
        "标题栏固定白底、不受滑条影响"），而是「宿主底色 × 生效不透明度」的 color-mix：
        `color-mix(in srgb, var(--dsw-alias-bg-base) NN%, transparent)`。
        判据同步成"确实写入、且指向宿主 token、且是 color-mix"——比旧式写死 rgba 更强。 */
@@ -580,7 +580,7 @@ async function runChild(sc) {
     'broken-scope': { settings: { enabled: true, image: true, unifyTint: true, unifyAmount: 30 }, search: '', breakScope: true },
     'fade-sweep': { settings: { enabled: true, image: true, unifyTint: true, unifyAmount: 30 }, search: '' },
     'fade-sweep-before': { settings: { enabled: true, image: true, unifyTint: true, unifyAmount: 30 }, search: '', revertFadeSweep: true },
-    // ①(2026-09-17 用户实测"切会话时顶栏磨砂先消失、约 3 秒才回来")：顶栏被宿主重建后的自愈
+    // ①(2026-09-17 真机实测"切会话时顶栏磨砂先消失、约 3 秒才回来")：顶栏被宿主重建后的自愈
     remount: { settings: { enabled: true, image: true, unifyTint: true, unifyAmount: 30 }, search: '' },
     // 反向对照：把"挂自愈观察器"那一行从源码里删掉（= 修复前的旧行为）⇒ 断言必须变红
     'remount-before': { settings: { enabled: true, image: true, unifyTint: true, unifyAmount: 30 }, search: '', revertRemount: true },

@@ -5,7 +5,7 @@
 //   面板实底靠 data-mpw-solid-surface="l1" 标记（CSS 把背景刷回宿主主题原值）；打标原在
 //   节流重活（popHeavySync = rAF 合并 + 180ms 尾巴）⇒ 面板挂载/显形的首帧属性还没落，
 //   它自身 background:var(--dsw-alias-bg-layer-1)（有壁纸时被全局改半透明）直接画出来 =
-//   用户看到的"展开 0.2–0.5s 半透明（一层白滤镜透出文字）"。
+//   所见"展开 0.2–0.5s 半透明（一层白滤镜透出文字）"。
 //   修法 = 加号菜单磨砂首帧（a6a7dce）同型的**观察器同步快路**：mpwSolidSurfaceFast
 //   挂进 mpwTagPopoverFast（观察器回调 = 微任务、渲染前），对插入/显形节点定向检查、
 //   命中即同步打标 ⇒ t=0（首帧绘制前）属性已在；稳态兜底仍由 mpwSolidSurfaceSync 负责。

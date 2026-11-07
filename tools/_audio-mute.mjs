@@ -1,6 +1,6 @@
 // _audio-mute.mjs —— 探针启动的浏览器**一律静音**的 prefs（本仓唯一来源）
 //
-// 为什么要有它（2026-09-29 用户实测"幽灵声音"）：插件仓 20+ 个探针直接 `firefox.launch`，
+// 为什么要有它（2026-09-29 真机实测"幽灵声音"）：插件仓 20+ 个探针直接 `firefox.launch`，
 //   无头 Firefox（Playwright 品牌名 = Nightly）加载测试台/插件面时自动播放的媒体会真的建出
 //   PulseAudio 流（用户在 Volume Control(Playback) 里看到最多 5 路 `Nightly: …`）。
 //   Playwright 默认**放开**自动播放，浏览器策略挡不住 ⇒ 只能靠 prefs 把输出缩到 0。

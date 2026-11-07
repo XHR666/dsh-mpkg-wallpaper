@@ -104,7 +104,7 @@ ok(pkg.license === 'SEE LICENSE IN LICENSE', 'package.license = SEE LICENSE IN L
   ok(/GPL-3\.0-or-later/.test(rootLicense) && /MIT/.test(rootLicense) && /lib\/\*\*/.test(rootLicense) && /renderer\/\*\*/.test(rootLicense),
     'LICENSE 仍是"MIT + GPL-3.0-or-later"双许可说明页（点名两目录）')
 }
-// 历史踩坑（用户点名）：包名曾是 `we-scene-renderer`，与仓库名不一致 ⇒ 机器闸门防复发
+// 历史踩坑（点名要求）：包名曾是 `we-scene-renderer`，与仓库名不一致 ⇒ 机器闸门防复发
 ok(!/we-scene-renderer/.test(readmeAll), '★ README(中/英) 不残留旧包名 we-scene-renderer')
 ok(!/we-scene-renderer/.test(JSON.stringify(pkg)), '★ package.json 不残留旧包名 we-scene-renderer')
 

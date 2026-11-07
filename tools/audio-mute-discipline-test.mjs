@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // audio-mute-discipline-test.mjs — P-225 探针侧静音纪律判据（静态扫，纯 Node，不开浏览器）。
 //
-// 背景（用户实测"幽灵声音"）：插件仓 20+ 个探针直接 `firefox.launch`，无头 Firefox（Nightly）
+// 背景（真机实测"幽灵声音"）：插件仓 20+ 个探针直接 `firefox.launch`，无头 Firefox（Nightly）
 //   加载测试台/插件面时自动播放的媒体会真的建出 PulseAudio 流（最多 5 路 `Nightly: …`）。
 //   Playwright 默认放开自动播放 ⇒ 只能靠 prefs 三件套把输出缩到 0：
 //     `media.volume_scale='0'` + `media.autoplay.default=5` + `dom.audiochannel.mutedByDefault=true`

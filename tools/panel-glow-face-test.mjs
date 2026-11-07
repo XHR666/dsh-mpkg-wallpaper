@@ -6,7 +6,7 @@
 //     不产生 fixed containing block、不拦事件、不改布局；
 //   · JS：document 级 pointermove（rAF 节流）从 target 向上解析"面"，懒打 data-mpw-glow-face
 //     标记，写 --mpw-glow-x/y（面内坐标）与 --mpw-glow-r（⑫2026-10-31 §2：面**短边** 26%，
-//     90–160px 夹取——旧档长边 42%/90–380px 用户实测范围太大，已改小圆档）；
+//     90–160px 夹取——旧档长边 42%/90–380px 真机实测范围太大，已改小圆档）；
 //     alpha 由 rAF 缓动 0↔1（峰值 0.12 在 CSS calc 乘子，≤0.14）。
 //   改向记录（不许静默）：取代 2026-10-29 的 body 级 position:fixed; z-index:-1 光斑层 ——
 //     它被内容整体盖住 = 真机看不见（2026-10-30 任务书 §0.2 判定"实现存在但看不见"）。

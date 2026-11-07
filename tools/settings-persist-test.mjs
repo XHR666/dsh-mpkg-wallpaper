@@ -5,7 +5,7 @@
  * 真机现场（:3080，tools/settings-persist-live-probe.mjs 实测）：
  *   两处存储都是**半残档** —— `mpkgKey:"custom|3582362359"` 还在，`image`/`webUrl` **两个都没了**
  *   ⇒ lib/client.js 的 `buildCss` 里 `hasImage=!!(image||webUrl)` 为 false
- *   ⇒ `.mpw-bgWrap{display:none}` 生效 ⇒ **用户的壁纸不显示**（用户看到的就是"壁纸没了"）。
+ *   ⇒ `.mpw-bgWrap{display:none}` 生效 ⇒ **用户的壁纸不显示**（所见就是"壁纸没了"）。
  *
  * 本文件用 `tools/_stub.mjs` 把**真 lib/client.js** 在桩 DOM 里加载并 apply()，再用一个
  * **忠实镜像宿主 PUT 合并口径**的假宿主（见 FakeHost）驱动真设置路径。四组覆盖：

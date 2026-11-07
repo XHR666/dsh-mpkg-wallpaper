@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // tools/type-detect-test.mjs —— 「壁纸类型判定」离线判据（信号 × 现状 × 应然）
 //
-// 来历（用户点名场景）：**包含 mp4 的 scene 壁纸的 MPKG 形式，会不会被只识别成 MP4、丢掉 scene 效果？**
+// 来历（点名要求场景）：**包含 mp4 的 scene 壁纸的 MPKG 形式，会不会被只识别成 MP4、丢掉 scene 效果？**
 //   本机语料实测（`<工作区>/allwallpaper/**`，206 个容器）：
 //     · 容器级（根级单文件 .mpkg/.pkg 或已成条的 folderMpkg）：客户端 `applyCustomMpkg` 有
 //       「容器内有 scene.json ⇒ 交渲染器 `?pkgurl=`」这道闸门 ⇒ **不丢**（真包 `佩丽卡1_02.mpkg`：
@@ -12,7 +12,7 @@
 //          整个角色收藏夹塌成 **1 条 `scene`**，media 还是 `files.find(ANY_PKG_RE)` 随手挑中的
 //          那个容器（真包 `wallpaperE/伊蕾娜`：挑中的 `伊蕾娜1_8.mpkg` 里**没有** scene.json、
 //          只有 `File0001.mp4`）⇒ 其余 4 个容器（含真场景）全部不可达；点"使用"走 scene-video
-//          快路径时探测到的是那条**与该容器无关的松散视频** ⇒ 用户看到的就是"只剩视频"。
+//          快路径时探测到的是那条**与该容器无关的松散视频** ⇒ 所见就是"只剩视频"。
 //   修法：`lib/index.js` 的 `/custom-dir` —— 容器逐条拆（只看**直接子项**）+ 「唯一的 scene 信号
 //   是容器」时按**容器内容**定档；回退口 `typedetect=legacy` / `DSH_WE_TYPEDETECT=legacy`。
 //   判定表 / 实测对照 / 回退口：`docs/TYPE-DETECT.md`。
@@ -22,7 +22,7 @@
 //     `project.json.type` 的值 / 有 web 入口 / 只有图片 / 声明与内容不符 / 坏容器 / 符号链接容器。
 //   B 真机语料（`<工作区>/allwallpaper` 存在才跑，缺失 ⊘ SKIP）：**7 个"同时有 scene 与 mp4"
 //     的真包**逐项打印"实际档 vs 应然档"；含"容器里有 scene.json + 独立 mp4"的 MPKG 形式
-//     （用户点名）与 `scene.pkg` + 内嵌视频纹理的场景包。
+//     （点名要求）与 `scene.pkg` + 内嵌视频纹理的场景包。
 //   C 客户端半边（真 `lib/client.js` + `tools/_stub.mjs`）：`__mpwLifecycleTest.sourceFieldsFor` /
 //     `pickMount` 的档位映射 + **点击链的分流顺序**（源码级：容器内有 scene.json 的判定必须在
 //     视频纹理之前；scene 目录必须先试渲染器、再走 scene-video 快路径）。
@@ -120,7 +120,7 @@ const pkgSceneOnly = (magic) => buildPkg(magic, [
   ['preview.gif', GIF], ['project.json', J({ title: 'scene-only', type: 'scene', file: 'scene.json' })],
   ['scene.json', SCENE_JSON], ['models/bg.json', MODEL_JSON], ['effects/waterwaves/effect.json', EFFECT_JSON],
 ]);
-/** ①(用户点名) 容器里**同时有 scene 数据与内嵌 mp4**：project.json.file 指向 mp4，scene.json 是层/效果链，
+/** ①(点名要求) 容器里**同时有 scene 数据与内嵌 mp4**：project.json.file 指向 mp4，scene.json 是层/效果链，
     且**没有任何层引用那个 mp4**（真包 佩丽卡1_02 / 伊蕾娜_08 正是这个形状）。 */
 const pkgScenePlusMp4 = (magic) => buildPkg(magic, [
   ['preview.jpg', JPG], ['project.json', J({ title: 'scene+mp4', type: 'Scene', file: 'wallpaper.mp4' })],
@@ -156,7 +156,7 @@ mk('loose-video.mpkg', pkgVideoOnly('PKGM0014'));
 mk('d1-official-scene/scene.pkg', pkgSceneOnly('PKGV0022'));
 mk('d1-official-scene/project.json', J({ title: 'official', type: 'scene', file: 'scene.json' }));
 mk('d1-official-scene/preview.gif', GIF);
-// d2 ①(用户点名) 容器收藏夹：scene+mp4 容器 + 纯视频容器 + **松散视频**（松散视频不得否决拆条）
+// d2 ①(点名要求) 容器收藏夹：scene+mp4 容器 + 纯视频容器 + **松散视频**（松散视频不得否决拆条）
 mk('d2-collection-scene+mp4/a-scene+mp4.mpkg', pkgScenePlusMp4('PKGM0014'));
 mk('d2-collection-scene+mp4/b-video.mpkg', pkgVideoOnly('PKGM0014'));
 mk('d2-collection-scene+mp4/c-scene.pkg', pkgSceneOnly('PKGV0022'));
@@ -325,7 +325,7 @@ try {
     'A3 目录里有 `scene.pkg` ⇒ 目录条目 type=scene / media=scene.pkg / reason=scene-container',
     JSON.stringify(d1 && { t: d1.type, m: d1.media, r: d1.kindReason }));
 
-  // A4 ①(用户点名) 容器收藏夹：**松散视频不得否决逐容器拆条**（修复前整目录塌成 1 条 scene）
+  // A4 ①(点名要求) 容器收藏夹：**松散视频不得否决逐容器拆条**（修复前整目录塌成 1 条 scene）
   const a4 = colFiles.filter((f) => f.folderMpkg === true);
   ok(a4.length === 3 && a4.every((f) => f.type === 'mpkg'),
     'A4 目录里有「scene+mp4 容器 + 视频容器 + 松散 mp4」⇒ **逐容器 3 条**（松散视频不再否决拆条）',
@@ -336,7 +336,7 @@ try {
   const a4s = entryOf(all, 'd2-collection-scene+mp4', 'a-scene+mp4.mpkg');
   const tA4s = containerTruth(path.join(FX, 'd2-collection-scene+mp4', 'a-scene+mp4.mpkg'));
   ok(tA4s.hasSceneJson === true && tA4s.mp4.length === 1,
-    'A4c 该条目的容器内容真值：scene.json ✓ 且 独立 mp4 ✓（= 用户点名的"包含 mp4 的 scene 壁纸"形状）',
+    'A4c 该条目的容器内容真值：scene.json ✓ 且 独立 mp4 ✓（= 点名要求的"包含 mp4 的 scene 壁纸"形状）',
     JSON.stringify({ sceneJson: tA4s.hasSceneJson, mp4: tA4s.mp4, entries: tA4s.entries, declared: tA4s.declaredType }));
   ok(expectedTier(tA4s) === 'scene' && actualTier(a4s, tA4s) === 'scene',
     'A4d 应然档=scene，实际档=scene（容器里有场景数据 ⇒ 交渲染器，**不丢层与效果**）',

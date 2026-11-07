@@ -10,7 +10,7 @@
 //       border-radius:0 !important; box-shadow:none !important }
 //     html body:has([data-sidebar-collapsed]) [class*="sidebarCol"]:not([data-sidebar-right-panel])
 //       { padding:0 !important }
-//   用整类清零把这三件套连同 padding 一起杀掉 ⇒ 用户看到"收起后悬浮效果消失"；且右栏面板
+//   用整类清零把这三件套连同 padding 一起杀掉 ⇒ 所见"收起后悬浮效果消失"；且右栏面板
 //   （同命中 sidebarCol 子串）在左栏收起期间被误清。左移真因 2026-11-02 定案为设置页 tab 行
 //   N×100% 超宽撑破布局根（frame.scrollLeft=156），由 tab 同格堆叠根治 ⇒ 清零规则整体撤销。
 //

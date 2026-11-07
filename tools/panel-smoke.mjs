@@ -129,7 +129,7 @@ const ctx = {
   logger: { info() {}, warn() {}, error() {} },
 }
 // ①(2026-09-13) 捕获 apply 期间的 console.error：buildCss 抛错时只 console.error 不抛出，
-//   但样式表会保持为空 → 用户看到"整个画面错乱"。这里把它升级为测试失败。
+//   但样式表会保持为空 → 所见"整个画面错乱"。这里把它升级为测试失败。
 const applyErrors = []
 { const origErr = console.error; console.error = (...a) => { applyErrors.push(a.map((x) => (x && x.message) || String(x)).join(' ')); origErr.apply(console, a) } 
   try { plugin.apply(ctx) } finally { console.error = origErr } }
@@ -155,7 +155,7 @@ const cases = [
 ]
 /* ---------- 静态断言 -1（2026-09-13）：CSS 模板字符串的注释里不得出现反引号 ----------
    背景：连续两次把反引号写进模板字符串内的 CSS 注释 → 模板被提前终止 → buildCss 抛
-   ReferenceError → 样式表保持为空 → 用户看到"整个画面错乱"。这类错误语法检查不报（模板本身合法），
+   ReferenceError → 样式表保持为空 → 所见"整个画面错乱"。这类错误语法检查不报（模板本身合法），
    必须在静态层面拦。做法：找出所有 `css += \` ... \`` 片段，检查其内部是否还有反引号。 */
 try {
   const offenders = []
@@ -176,7 +176,7 @@ try {
 } catch (e) { console.error('静态检查-1异常:', e.message) }
 
 /* ---------- 静态断言 0（2026-09-13 新增）：生成 CSS 的**结构与关键锚点**必须成立 ----------
-   背景：用户实测刷新后"整个画面错乱（壁纸跑到 UI 下面）"，根因是插件样式表整体缺失/被
+   背景：真机实测刷新后"整个画面错乱（壁纸跑到 UI 下面）"，根因是插件样式表整体缺失/被
    CSS 解析错误吞掉 → .mpw-bgWrap 失去 position:fixed 掉进普通流。这里在 Node 里把 apply()
    生成的 CSS 收集起来做结构与锚点校验，这类问题以后刷新前就能拦下。 */
 try {

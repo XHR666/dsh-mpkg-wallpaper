@@ -205,7 +205,7 @@ const LEDGER = [
   LI('tools/dir-picker-probe.mjs', 'host-root', ["'", P, "root/.dsh/profiles/web/cordis.patch.yml'"], '同一条手工探针要"碰一下"本机 profile 的挂载文件来复现现场（用户手动跑，不进任何门禁）'),
   LI('tools/dir-picker-test.mjs', 'host-home', ["'", P, "home/u/Pictures'"], 'B 组假 DOM 用例的**合成夹具路径**（假用户 u），与断言里的期望值逐字同源'),
   LI('tools/dir-picker-test.mjs', 'host-home', ["'", P, "home/u/Pictures/a'"], '同上：按 Enter 进子目录那条断言的期望值'),
-  LI('tools/np-media-live-probe.mjs', 'host-root', ["arg('settings', '", P, "root/.dsh-mpkg-wallpaper/settings.json')"], '手工真机探针读用户真机 settings.json 的默认路径（--settings 可覆盖）'),
+  LI('tools/np-media-live-probe.mjs', 'host-root', ["arg('settings', '", P, "root/.dsh-mpkg-wallpaper/settings.json')"], '手工真机探针读真机 settings.json 的默认路径（--settings 可覆盖）'),
   LI('tools/integrity-check.mjs', 'host-root', ["'", P, "root/Desktop/' + 'DSHarea'"], '门禁**自己的自指图案**（按片段拼装，躲开自己）：本条就是"允许宿主根字面量出现"的唯一理由'),
   LI('tools/secret-scan-test.mjs', 'host-root', ["'", P, "root/Desktop/' + 'DSHarea'"], '同上：敏感信息门禁的自指图案（与 integrity-check 互为交叉校验，两处都要留）'),
   /* ①(2026-11-06 对抗审查 P2-5) 存量补账：A9 断言的 file:// 输入夹具字符串（db802e6 引入该行）——

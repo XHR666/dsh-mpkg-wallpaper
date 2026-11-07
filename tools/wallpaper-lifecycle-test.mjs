@@ -818,7 +818,7 @@ console.log('\n== N. C 切页：默认暂停+静音，且 hidden 期间我们自
   hide(true)
   ok('N2 页面隐藏 ⇒ 闸门生效（默认暂停开关 ⇒ hiddenBlock=true）', L.hiddenAudioBlock() === true, 'block=' + L.hiddenAudioBlock())
   ok('N3 隐藏时把壁纸 video 停住', !video || video.paused === true, video ? 'paused=' + video.paused : 'no-video')
-  /* 关键的现场形态（用户报的那种间歇）：页面已经 hidden，但**省电暂停这一轮没有跑过**
+  /* 关键的现场形态（报障所述那种间歇）：页面已经 hidden，但**省电暂停这一轮没有跑过**
      （visibilitychange 被节流/事件根本没派发 ⇒ `powPaused` 仍是 false）。
      此时唯一挡得住我们自己的重试链的就是 C 的 hidden 闸门 —— 下面这段就是为它写的。 */
   hide(false)                                     // 先回到可见并把 powPaused 复位
@@ -921,7 +921,7 @@ console.log('\n== P. C2 音频审计（play/volume/muted/Audio/AudioContext + is
     && /trigger: webaudioOnMuted \? "webaudio-on-muted"/.test(src)
     && /muteOnAudible \? "mute-on-but-audible"/.test(src)
     && /audible \? "audible-playback"/.test(src) && /window: list\.slice\(-12\)/.test(src))
-  /* ①(2026-09-20 用户点名「静音状态下还是突然冒出来的声音」) 把那次投诉**变成判据**：
+  /* ①(2026-09-20 点名要求「静音状态下还是突然冒出来的声音」) 把那次投诉**变成判据**：
      设置项 `mute === true`（面板写着静音）而元素却处在可听状态 ⇒ 必须单独一个 trigger 报上来，
      而不是混在泛化的 "audible-playback" 里（后者在设置本来就"不静音"时也会报，指认不了现场）。 */
   ok('P6b **静音设置开着却可听**是独立的可疑判据（trigger=mute-on-but-audible，同时带 `np.mute` 与可听状态两个事实）',

@@ -44,7 +44,7 @@
  * ⚠ 真机探针**不进** check.sh 常驻门禁（秒级门禁不该依赖用户 DSH 在不在），门禁只跑 `--selftest`。
  */
 import fs from 'node:fs'
-import { withAudioMute } from './_audio-mute.mjs'   // ①(P-225) 探针浏览器一律静音（用户实测幽灵声音）
+import { withAudioMute } from './_audio-mute.mjs'   // ①(P-225) 探针浏览器一律静音（真机实测幽灵声音）
 import os from 'node:os'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -72,7 +72,7 @@ const isShown = (k) => !!k && k.display !== 'none' && Number(k.w) > 0
 const paints = (k) => (k.tag === 'IMG' ? Number(k.nw) > 0 : (k.tag === 'VIDEO' ? Number(k.vw) > 0 : true))
 /** 同框可见计数（媒体 + 占位）。 */
 const shownCount = (kids) => (kids || []).filter(isShown).length
-/** 形态①②的判据：媒体可见但它没有画面 ⇒ 用户看到的"一块白底"。 */
+/** 形态①②的判据：媒体可见但它没有画面 ⇒ 所见"一块白底"。 */
 const blankVisible = (kids) => (kids || []).some((k) => (k.tag === 'IMG' || k.tag === 'VIDEO') && isShown(k) && !paints(k))
 /** `object-fit: contain` 下左右留边占框宽的比例（0 = 铺满；0.216 = 左右各约 1/5）。 */
 function sideBandFrac(box, nat) {
@@ -107,7 +107,7 @@ function paintedOk(sec, wrap, m) {
   return !!(m.img && m.img.src && m.img.complete && m.img.nw > 0)
 }
 /** "白白一片"的**像素判据**（症状②的机器版）：左右各 12% 竖条**又平又接近纯白**、
- *  而中间有内容 ⇒ 用户看到的就是"两边各约 1/5 是白块，只剩中间能预览"。
+ *  而中间有内容 ⇒ 所见就是"两边各约 1/5 是白块，只剩中间能预览"。
  *  留边本身不是罪（媒体 contain 不裁切是既有契约），罪在**留边露出的是框底色**。 */
 function whiteBandStats(stats) {
   const side = stats && stats.side, center = stats && stats.center
@@ -584,7 +584,7 @@ print(json.dumps({'w':W,'h':H,'left':col(0,b),'right':col(W-b,W),'center':col(in
       }
       let tl = await traceGet()
       const painted = paintedOk(snap.section, snap.wrap, snap.media)
-      /* 像素口径（独立于结构性判据）：壁纸对画面的贡献；≈0 = 用户看到的就是纯色底 */
+      /* 像素口径（独立于结构性判据）：壁纸对画面的贡献；≈0 = 所见就是纯色底 */
       const contrib = await wallContribution('switch' + idx + '-20s')
       console.log('     [' + idx + '] 像素差分（壁纸对画面的贡献）: ' + JSON.stringify(contrib))
       /* 白了 ⇒ 照用户现场点一下 NP 进度条，并把"救回来的是哪条路"留痕（B2）。 */

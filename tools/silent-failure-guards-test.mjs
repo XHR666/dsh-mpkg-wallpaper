@@ -264,7 +264,7 @@ console.log('\n== D. 帧内 localStorage 读取三态：读失败 ⇒ 报错 + �
     'D6 `applyWebCfg` 的守卫顺序：先三态读取 → 错误分支 showError(readFail) + return → **之后**才是 ls.setItem',
     JSON.stringify({ iRead, iGuard, iFail, iRet, iSet, bodyLen: body.length }))
   const dicts = (clientSrc.match(/"webcfg\.readFail": "/g) || []).length
-  ok(dicts === 2, 'D7 `webcfg.readFail` 文案中英两套字典都在（缺失 ⇒ 用户看到的是一串键名）', 'count=' + dicts)
+  ok(dicts === 2, 'D7 `webcfg.readFail` 文案中英两套字典都在（缺失 ⇒ 所见是一串键名）', 'count=' + dicts)
 }
 
 /* ══════════════ E. 结构性护栏：np blob URL 的每一个清 src 点都要 revoke（资源审计 #2） ══════════════ */

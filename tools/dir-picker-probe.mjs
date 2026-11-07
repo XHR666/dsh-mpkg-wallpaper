@@ -23,7 +23,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
-import { withAudioMute } from './_audio-mute.mjs'   // ①(P-225) 探针浏览器一律静音（用户实测幽灵声音）
+import { withAudioMute } from './_audio-mute.mjs'   // ①(P-225) 探针浏览器一律静音（真机实测幽灵声音）
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.resolve(here, '..')
@@ -333,7 +333,7 @@ else {
   check('before：容器无 overscroll-behavior:contain（滚轮会串联宿主）', String(B.opened.overscroll).indexOf('contain') < 0, 'overscroll=' + B.opened.overscroll)
   const bRebuild = (B.rebuilds || []).filter((r) => String(r.cls || '').indexOf('mask') >= 0)
   check('before：宿主重渲染会把选择器弹窗整棵子树重挂（.mpw_mask removed/added）', bRebuild.length >= 2, JSON.stringify(bRebuild.slice(0, 3)))
-  check('before：**面板重渲染后列表 scrollTop 归零 = 用户报的"跳回最顶"（真机复现）**',
+  check('before：**面板重渲染后列表 scrollTop 归零 = 报障所述"跳回最顶"（真机复现）**',
     B.afterWheel.st > 0 && B.afterForced.st === 0, `afterWheel=${B.afterWheel.st} → afterForced=${B.afterForced.st}`)
 }
 if (A && A.reached) {

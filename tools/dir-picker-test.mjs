@@ -584,7 +584,7 @@ if (!SKIP_LEGACY) {
   dom.scrollTop = 178
   const before = dom.scrollTop
   const nd = R.rerender()                 // 内容刷新 → 节点被重建（remount 语义）
-  ok('对照：旧写法丢位置（新节点 scrollTop=0）—— 用户看到的"自动弹跳到最顶上"', before === 178 && nd.scrollTop === 0, 'before=' + before + ' after=' + nd.scrollTop)
+  ok('对照：旧写法丢位置（新节点 scrollTop=0）—— 所见"自动弹跳到最顶上"', before === 178 && nd.scrollTop === 0, 'before=' + before + ' after=' + nd.scrollTop)
   ok('对照：旧写法容器无 overscroll-behavior ⇒ 滚轮到边界串联宿主面板', !nd.style.overscrollBehavior)
   ok('对照：旧写法容器无 overflow-anchor ⇒ 受 Firefox 滚动锚定搬动影响', !nd.style.overflowAnchor)
 }
