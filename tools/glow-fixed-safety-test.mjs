@@ -59,11 +59,14 @@ console.log('== A. 静态（倾斜移除 + 光晕保留 + float 完好）==')
 ok('A1 倾斜本体零残留：无 MPW_TILT_/mpwTilt 标识、无 data-mpw-tilt、无 perspective( 写入 style',
   !/const MPW_TILT_|function mpwTilt|data-mpw-tilt/.test(CLIENT)
   && !/\.style\.transform\s*=\s*"perspective\(/.test(CLIENT))
-ok('A2 光晕模块在位：mpwGlowSync 定义 + apply 接线 + __mpwGlowTest 出口',
+ok('A2 光晕模块在位：mpwGlowSync 定义 + 共享入口 mpwGlowApplyAll + 三处接线 + __mpwGlowTest 出口',
   CLIENT.includes('function mpwGlowSync(on)')
-  /* ⑫(2026-10-31 §2) 接线串更新：光晕开关（外观第 2 项"鼠标光晕"）接入后，同步点变为
-     "悬浮 body 属性 ∧ mpwGlowPref(section)"——悬浮关 ⇒ 光晕强制不生效。 */
-  && CLIENT.includes('try { mpwGlowSync(document.body.hasAttribute("data-mpw-float") && mpwGlowPref(section)) } catch {}')
+  /* ⑫(2026-10-31 §2) 同步口径：悬浮 body 属性 ∧ mpwGlowPref(section)（悬浮关 ⇒ 光晕强制不生效）。
+     ⑨(2026-11-07 #6) 该口径收进共享入口 mpwGlowApplyAll：web/scene 分支提前 return 也要落到同一入口
+     （旧写法只在非 web 共享尾调用 ⇒ 用 web/场景壁纸时光晕整段失效）。 */
+  && CLIENT.includes('function mpwGlowApplyAll(section)')
+  && /function mpwGlowApplyAll\(section\) \{[\s\S]{0,400}?mpwGlowSync\(!!\(document\.body\.hasAttribute\("data-mpw-float"\) && mpwGlowPref\(section\)\)\)/.test(CLIENT)
+  && (CLIENT.match(/mpwGlowApplyAll\(section\)/g) || []).length >= 3
   && CLIENT.includes('globalThis.__mpwGlowTest'))
 ok('A2b 倾斜安全阀接线已从快路摘除（mpwTagPopoverFast 不再调用 mpwTiltSafetyOnRecords）',
   !CLIENT.includes('try { mpwTiltSafetyOnRecords(records) } catch (e) {}'))

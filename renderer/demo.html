@@ -1854,8 +1854,56 @@ const MPW_DISPLAY = lib.defaultDisplayState()
 try { window.__mpwDisplay = MPW_DISPLAY } catch (e) { /* 无 window */ }
 const MPW_DISPLAY_CANVASES = new Map()   // 画布 → 注册时的**原始**内联值快照（反复开关不套娃叠加）
 let MPW_DISPLAY_APPLIED = { filter: '', transform: '', canvases: 0 }
+/* ═══ ⑨(2026-11-07 宿主设置等价接入 · 镜头) MPW-VIEW：镜头缩放 / 镜头位置 / 垂直翻转 ═══
+   与 display 同一机制（作用在"拥有渲染输出的元素"= #sc 的 CSS transform 上，不进 GL 管线），
+   但**单独一个 host cmd**（op:'view'）：宿主只在这些键变化时下发，display 的幂等/持久化口径不变。
+   合成顺序（与插件宿主对 video/img 的口径一致）：translate(镜头位置) → scale(镜头缩放) → 翻转。
+   flipH 仍由 display 的 buildDisplayTransform 提供；这里只补 flipV（渲染器原先没有垂直翻转能力）。
+   读数：window.__mpwViewState；非法/越界值一律钳位（不抛）。 */
+const MPW_VIEW = { zoom: 1, panX: 0, panY: 0, flipV: false }
+function mpwViewNum(v, lo, hi, dflt) {
+  const n = Number(v)
+  if (!Number.isFinite(n)) return dflt
+  return Math.max(lo, Math.min(hi, n))
+}
+function mpwViewTransform() {
+  try {
+    const z = mpwViewNum(MPW_VIEW.zoom, 0.1, 10, 1)
+    const px = mpwViewNum(MPW_VIEW.panX, -4000, 4000, 0)
+    const py = mpwViewNum(MPW_VIEW.panY, -4000, 4000, 0)
+    const parts = []
+    if (px !== 0 || py !== 0) parts.push('translate(' + px + 'px, ' + py + 'px)')
+    if (z !== 1) parts.push('scale(' + z + ')')
+    if (MPW_VIEW.flipV === true) parts.push('scaleY(-1)')
+    return parts.join(' ')
+  } catch (e) { return '' }
+}
+function mpwViewState() {
+  return { zoom: MPW_VIEW.zoom, panX: MPW_VIEW.panX, panY: MPW_VIEW.panY, flipV: MPW_VIEW.flipV === true, transform: mpwViewTransform() }
+}
+function mpwViewSet(patch) {
+  try {
+    const p = patch && typeof patch === 'object' ? patch : {}
+    if (p.zoom !== undefined) MPW_VIEW.zoom = mpwViewNum(p.zoom, 0.1, 10, 1)
+    if (p.panX !== undefined) MPW_VIEW.panX = mpwViewNum(p.panX, -4000, 4000, 0)
+    if (p.panY !== undefined) MPW_VIEW.panY = mpwViewNum(p.panY, -4000, 4000, 0)
+    if (p.flipV !== undefined) MPW_VIEW.flipV = !!p.flipV
+    mpwDisplayApplyAll()
+    try { window.__mpwViewState = mpwViewState() } catch (e) { /* 无 window */ }
+    return mpwViewState()
+  } catch (e) { return mpwViewState() }
+}
 function mpwDisplayApplyTo(el) {
   const r = lib.applyDisplayOptions(el, MPW_DISPLAY, MPW_DISPLAY_CANVASES.get(el))
+  /* ⑨ view：在 display 的既有 transform 之外合成镜头串；view 中性时逐字不动（不改写、不叠加）。 */
+  try {
+    const vt = mpwViewTransform()
+    if (vt) {
+      const base = String(r.transform || '').trim()
+      r.transform = base ? (vt + ' ' + base) : vt
+      if (el && el.style && el.style.transform !== r.transform) el.style.transform = r.transform
+    }
+  } catch (e) { /* view 失败不影响 display */ }
   MPW_DISPLAY_APPLIED = { filter: r.filter, transform: r.transform, canvases: MPW_DISPLAY_CANVASES.size }
   return r
 }
@@ -2017,6 +2065,9 @@ try {
   WP.setDisplay = (patch) => mpwDisplaySet(patch)
   WP.setPlaybackRate = (rate) => mpwDisplaySet({ playbackRate: rate })
   WP.displayState = () => mpwDisplayState()
+  /* ⑨(2026-11-07) 镜头（缩放/位置/垂直翻转）：与 display 同一机制，独立 op/API。 */
+  WP.setView = (patch) => mpwViewSet(patch)
+  WP.viewState = () => mpwViewState()
 } catch (e) { /* 无 window */ }
 mpwDisplayRegisterCanvas(cv)
 mpwDisplayUiInit()
@@ -2315,6 +2366,30 @@ function makeTextureDownsized(gl2, canvas, w, h) {
   return lib.makeTexture(gl2, null, w, h, canvas)
 }
 
+  /* ⑨(2026-11-07 #1 长时运行/上下文丢失自愈) **mpw-health 轻量心跳**：宿主侧早就有监听
+     （client.js 的 mpw-health → 连续 ctxLost/GL 错误自动重建 iframe），但渲染器此前**从不发送**
+     ⇒ 那条自愈是死代码。这里只发宿主真正消费的字段：ctxLost / glErrs / tex 统计 / frame / sceneId。
+     来源纪律：postMessage 只发给父页（与 mpw-audio-policy / mpw-cap 同一信任边界；父页自己校验 source）。 */
+  function mpwHealthPost(why) {
+    try {
+      if (window.parent === window) return
+      const ctx = window.__mpwCtx || null
+      const glErrs = window.__mpwGlErrs || null
+      let texBytes = 0
+      try { for (const t of (window.__mpwTexStats || [])) texBytes += Number(t && (t.bytes || t.byteSize || 0)) || 0 } catch (e) {}
+      window.parent.postMessage({
+        type: 'mpw-health',
+        why: String(why || ''),
+        ctxLost: ctx ? { lost: Number(ctx.lost) || 0, restored: Number(ctx.restored) || 0, at: ctx.at || null } : null,
+        glErrs: glErrs ? { n: Number(glErrs.n) || 0, codes: Array.isArray(glErrs.codes) ? glErrs.codes.slice(0, 20) : [] } : null,
+        texBytes: texBytes || null,
+        texCount: (window.__mpwTexStats || []).length || null,
+        frame: window.__mpwFrameNo || null,
+        sceneId: (window.__mpwSceneId || (window.__mpwBootMeta && window.__mpwBootMeta.id) || '')
+      }, '*')
+    } catch (e) { /* 通道失败不影响渲染 */ }
+  }
+try { window.__mpwHealthPost = mpwHealthPost } catch (e) {}
 async function bootInstance(inst) {
   // ①(2026-09-19 P0 修复) `objById`（scene.json 的 `objects[]` 按 id 建表）原来只在下面**内层块**里
   //   用 `const` 声明 ⇒ 块作用域；而 P-139 的附件锚点代码在**本函数**（`bootInstance`）的另一处用它
@@ -2607,7 +2682,10 @@ async function bootInstance(inst) {
        {type:'mpw-host-cmd', op:'display', patch:{flipH,playbackRate,brightness,colorOptions,...}}
        {type:'mpw-host-cmd', op:'sceneFps', v:24|30|48|60|0}
        {type:'mpw-host-cmd', op:'renderDpr', v:<1..5>}
-     与插件侧 mpwScenePushDisplay() 一一对应（水平翻转 flipX / 播放速度 / 画面亮度 / 帧率上限）。
+       {type:'mpw-host-cmd', op:'view', patch:{zoom,panX,panY,flipV}}   // 镜头缩放/位置/垂直翻转
+       {type:'mpw-host-cmd', op:'filter', v:'blur(20px) contrast(1.06)'}  // 壁纸层滤镜（合成，不覆盖）
+     与插件侧 mpwScenePushDisplay() 一一对应（水平翻转 flipX / 播放速度 / 画面亮度 / 帧率上限 /
+     分辨率上限 / 镜头缩放 / 镜头位置 / 垂直翻转 / 壁纸层磨砂模糊）。
      来源纪律与 mpwPropPushFromParent 同款（只认父页或自己）；未知 op 直接忽略、不抛。
      回执：window.__mpwHostCmdLast / __mpwHostCmdCount（真机探针与判据据此核对"到没到"）。 */
   try {
@@ -2629,6 +2707,10 @@ async function bootInstance(inst) {
           if (op === 'display') { if (typeof api.setDisplay === 'function') { rec.ok = true; keepRes(api.setDisplay(d.patch || {})) } }
           else if (op === 'sceneFps') { if (typeof api.setSceneFps === 'function') { rec.ok = true; keepRes(api.setSceneFps(d.v)) } }
           else if (op === 'renderDpr') { if (typeof api.setRenderDpr === 'function') { rec.ok = true; keepRes(api.setRenderDpr(d.v)) } }
+          /* ⑨(2026-11-07) 镜头缩放/位置/垂直翻转：宿主 mpwScenePushDisplay 的 view op。 */
+          else if (op === 'view') { if (typeof api.setView === 'function') { rec.ok = true; keepRes(api.setView(d.patch || d.v || {})) } }
+          /* ⑨(2026-11-07) 壁纸层滤镜（磨砂模糊/锐化）：复用既有 setFilter（与显示颜色选项合成，不覆盖）。 */
+          else if (op === 'filter') { if (typeof api.setFilter === 'function') { rec.ok = true; keepRes(api.setFilter(d.v == null ? '' : String(d.v))) } }
           else rec.why = 'unknown-op'
         } catch (e) { rec.why = String((e && e.message) || e) }
         try { window.__mpwHostCmdLast = rec; window.__mpwHostCmdCount = (window.__mpwHostCmdCount || 0) + 1 } catch (e) {}
@@ -8791,11 +8873,13 @@ function loadScene() {
         if (c2) { c2.fillStyle = '#222'; c2.fillRect(0, 0, ov.width, ov.height); c2.fillStyle = '#bbb'; c2.font = '28px sans-serif'; c2.fillText('渲染上下文丢失（显存不足），正在恢复…', 40, 60) }
         window.__mpwCtxLostHint = { drawn: !!c2, at: Date.now() }
       } catch (e) { try { window.__mpwCtxLostHint = { drawn: false, err: (e && e.message) || String(e) } } catch (e2) {} }
+      try { setTimeout(() => { try { mpwHealthPost('ctx-lost') } catch (e) {} }, 0) } catch (e) {}
     })
     cvEl.addEventListener('webglcontextrestored', () => {
       __ctxRec.restored++
       if (MPW_WRITE_GLOBALS) window.__mpwCtx.restored++
       try { logf('✅ WebGL 上下文已恢复（第 ' + __ctxRec.restored + ' 次）') } catch {}
+      try { setTimeout(() => { try { mpwHealthPost('ctx-restored') } catch (e) {} }, 0) } catch (e) {}
     })
   } catch {}
   // ①(P-104 2026-09-17 用户发布纪律①："像你这种测试用的自动上报的功能，这种你在上传仓库的时候
