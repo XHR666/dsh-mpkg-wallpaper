@@ -1,6 +1,6 @@
 // tools/no-wallpaper-host-surfaces-test.mjs — Z15（2026-11-08）无壁纸宿主浮层门控判据
 //
-// 现场（2026-11-08 用户报）：无壁纸（image 与 webUrl 都空）时，左侧栏会话 hover 预览
+// 现场（2026-11-08 交付轮）：无壁纸（image 与 webUrl 都空）时，左侧栏会话 hover 预览
 //（[class*="_copyable_"]/[class*="_card_38jqx_"]）、宿主 tooltip（[role="tooltip"]/_bubble_）
 // 与右侧轮次导航悬停预览（.eGxaPq_preview/.Y0dWHa_preview）整块透明；有壁纸时的半透明
 // 磨砂是既有设计（不许改坏）。

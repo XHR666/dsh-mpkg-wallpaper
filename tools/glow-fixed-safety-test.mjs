@@ -405,9 +405,12 @@ const MUT = [
       const j = s.lastIndexOf('}', i)
       return s.slice(0, i).lastIndexOf('backdrop-filter: blur(30px) !important') > s.slice(0, i).lastIndexOf('z-index: 5;') && s.slice(0, i).includes('z-index: 5;')
     } },
+  /* ①(2026-11-08 Z14a R19 留痕) 锚点随源演进：原 `[class*="_floatHeader_"] {` →
+     `header[class*="_floatHeader_"] {`（Z14a 把 G 块该族 tag 限定）→ 语义保持：
+     同一回归"菜单玻璃写回本体"仍必红（blur 从 none 改回写本体）。 */
   { id: 'M5', what: '菜单玻璃写回菜单本体（Bug5 回归复刻）⇒ C1 必红', expect: ['C1'],
-    patch: (s) => s.replace('[role="menu"], [class*="_menu_"]:not([class*="_pane_"]), [class*="_popover_"], [class*="_floatHeader_"] {\n  -webkit-backdrop-filter: none;\n  backdrop-filter: none;\n  z-index: 900 !important;\n}',
-      '[role="menu"], [class*="_menu_"]:not([class*="_pane_"]), [class*="_popover_"], [class*="_floatHeader_"] {\n  -webkit-backdrop-filter: blur(10px) saturate(150%);\n  backdrop-filter: blur(10px) saturate(150%);\n  z-index: 900 !important;\n}'),
+    patch: (s) => s.replace('[role="menu"], [class*="_menu_"]:not([class*="_pane_"]), [class*="_popover_"], header[class*="_floatHeader_"] {\n  -webkit-backdrop-filter: none;\n  backdrop-filter: none;\n  z-index: 900 !important;\n}',
+      '[role="menu"], [class*="_menu_"]:not([class*="_pane_"]), [class*="_popover_"], header[class*="_floatHeader_"] {\n  -webkit-backdrop-filter: blur(10px) saturate(150%);\n  backdrop-filter: blur(10px) saturate(150%);\n  z-index: 900 !important;\n}'),
     verify: (s) => s.indexOf('-webkit-backdrop-filter: blur(10px) saturate(150%);\n  backdrop-filter: blur(10px) saturate(150%);\n  z-index: 900 !important;') >= 0 },
   { id: 'M7', what: '左栏稳定层叠上下文规则被删（§2① 回归复刻）⇒ E1 必红', expect: ['E1'],
     patch: (s) => s.replace(/html body\[data-mpw-float\] \.pI_x6G_sidebarCol \{[^}]*\}/, ''),
