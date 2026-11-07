@@ -276,7 +276,7 @@ console.log('== F. 删除与导出 ==');
   let tree = w.render();
   clickNode(tree, 'data-mpw-preset-edit');
   tree = w.render();
-    // ①(2026-11-01 用户要求) 编辑态：预设 chip 右上角灰色 ×（不再展开删除列表）
+    // ①(2026-11-01 需求) 编辑态：预设 chip 右上角灰色 ×（不再展开删除列表）
     const editBtn1 = findNode(tree, (p) => p && p['data-mpw-preset-edit'] !== undefined);
     const editLabel = editBtn1 && Array.isArray(editBtn1.kids) ? editBtn1.kids.filter((k) => typeof k === 'string').join('') : '';
     ok('F1a 编辑态「编辑」按钮变为「退出编辑」', editLabel.indexOf('退出编辑') >= 0, editLabel);

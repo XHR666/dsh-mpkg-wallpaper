@@ -1,6 +1,6 @@
 // tools/dsh020-surface-probe.mjs —— **DSH 0.2.0-rc.2 真机只读探针**：把改版后的宿主表面 DOM 事实 dump 出来
 //
-// 为什么需要它（2026-10-09 用户报 5 处观感回归）：DSH 0.2.0 的前端把**全部哈希类名换掉了**
+// 为什么需要它（2026-10-09 报障 5 处观感回归）：DSH 0.2.0 的前端把**全部哈希类名换掉了**
 //   （`pI_x6G_*` / `wSkVaW_*` / `hHd-Xa_*` / `VOzbGW_*` / `P3OORG_*` / `uV2eYG_*` 在 0.2.0 产物里 0 命中），
 //   于是本插件按类名锚定的宿主表面规则（侧栏玻璃 / 顶栏磨砂 / 弹层去截断 / dockkit 分层…）大面积落空：
 //     · 右侧边栏**收纳态**仍画一层模糊底（右半屏被糊）
@@ -355,7 +355,7 @@ const STEP_RULES = (pats) => {
   return { ours: ours.slice(0, 40), host: host.slice(0, 40), counts: { ours: ours.length, host: host.length } }
 }
 
-/** 一次抓齐"用户报的五处"的全部事实（A/B 两次调用，用来分清是我们画的还是宿主画的） */
+/** 一次抓齐"报障所述五处"的全部事实（A/B 两次调用，用来分清是我们画的还是宿主画的） */
 const STEP_SNAPSHOT = () => {
   const P = globalThis.__sp
   const vw = innerWidth, vh = innerHeight
@@ -769,7 +769,7 @@ try {
   if (resp && (resp.status() === 401 || resp.status() === 403)) blocked('http-' + resp.status(), '首页要鉴权 Cookie')
   if (!resp || !resp.ok()) blocked('http-' + (resp ? resp.status() : 'none'), '首页不可用')
 
-  /* 等页面 + 插件都起来（插件在 = 我们的样式/层都在，读数才是用户看到的那个状态） */
+  /* 等页面 + 插件都起来（插件在 = 我们的样式/层都在，读数才是所见那个状态） */
   try { await page.waitForFunction(() => !!(globalThis.__mpwSectionTest && globalThis.__mpwPersist), null, { timeout: 45000 }) } catch (e) { result.pluginMissing = true }
   await page.waitForTimeout(3000)
   result.page = { title: await page.title(), status: resp.status(), pluginLoaded: !result.pluginMissing }
@@ -806,7 +806,7 @@ try {
       await page.waitForTimeout(500)
       result.menu[name].dump = await page.evaluate(STEP_DUMP_PAINTED, '[data-menu-material], [class*="_7KE1Ra_menu"]')
       await shot('menu-' + name)
-      /* ②(2026-10-10 第六批真机) 用户说的"带提供商的白块"在**二级菜单**里：点开"模型"行再扫全页 */
+      /* ②(2026-10-10 第六批真机) 所述"带提供商的白块"在**二级菜单**里：点开"模型"行再扫全页 */
       if (name === 'model') {
         /* 用真实鼠标点"模型"行（宿主只认真实指针事件；in-page click 会让菜单收起） */
         const r2 = await page.evaluate(() => {

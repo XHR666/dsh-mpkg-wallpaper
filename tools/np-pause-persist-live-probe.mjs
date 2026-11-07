@@ -2,7 +2,7 @@
 /**
  * np-pause-persist-live-probe.mjs —— **真机（:3080 用户 DSH）**验证 NP-5「音乐卡片的暂停意图要持久」。
  *
- * 用户原话（这一条就是判据的来源）：
+ * 需求（这一条就是判据的来源）：
  *   「音乐卡片暂停状态持久化（刷新后不得自动变播放）」
  *
  * 为什么必须真机跑：`tools/np-control-test.mjs` / `wallpaper-lifecycle-test.mjs` 的 R 组是**无浏览器**的
@@ -41,7 +41,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { execFileSync } from 'node:child_process'
-import { withAudioMute } from './_audio-mute.mjs'   // ①(P-225) 探针浏览器一律静音（用户实测幽灵声音）
+import { withAudioMute } from './_audio-mute.mjs'   // ①(P-225) 探针浏览器一律静音（真机实测幽灵声音）
 
 const argv = process.argv.slice(2)
 const arg = (n, d) => { const i = argv.indexOf('--' + n); return i >= 0 && argv[i + 1] ? argv[i + 1] : d }
@@ -85,7 +85,7 @@ if (argv.includes('--selftest')) {
   // ① 修好后的形状：联动开 + 暂停 + 无起播痕迹 ⇒ 0 违规
   ck(violationOf(okSample, true).length === 0, 'S1 联动开：载体 paused + 键 true + 卡片暂停 ⇒ 0 违规')
   ck(primeTraces(okSample).length === 0, 'S2 只有 apply-persisted-pause（不是起播） ⇒ 不算起播痕迹')
-  // ② 用户报的那个 bug（刷新后自动变播放）必须被抓到
+  // ② 报障所述那个 bug（刷新后自动变播放）必须被抓到
   const buggy = { media: [playing], persisted: false, cardPaused: false, ops: ['prime: calling-play', 'gesture-unlock'], plays: [{ tag: 'VIDEO', id: 'mpw-bgVideo' }] }
   ck(violationOf(buggy, true).length >= 3, 'S3 刷新后自动变播放（载体在播 + 键被抹 + 卡片变播放）必须被抓到', '违规 ' + violationOf(buggy, true).length + ' 条')
   ck(primeTraces(buggy).length >= 2, 'S4 起播链痕迹（ops + play() 调用）必须被抓到', '命中 ' + primeTraces(buggy).length + ' 条')
@@ -227,7 +227,7 @@ try {
     'P3 点卡片暂停 ⇒ ①`npPaused=true` 落盘（localStorage 独立读）②按联动开关落实（开=壁纸暂停 / 关=只静音）',
     JSON.stringify({ persisted: sPaused.persisted, cardPaused: sPaused.cardPaused, linkOn: linkOn, media: sPaused.media }))
 
-  // P4 刷新 ⇒ 30s 采样（这一条就是用户报的那个 bug）
+  // P4 刷新 ⇒ 30s 采样（这一条就是报障所述那个 bug）
   await page.reload({ waitUntil: 'domcontentloaded', timeout: 60000 })
   await page.waitForSelector(NP, { timeout: 60000 })
   const t0 = Date.now()

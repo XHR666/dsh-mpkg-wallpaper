@@ -1,6 +1,6 @@
 // tools/host-popover-probe.mjs —— **真机只读探针**：把宿主各个弹层/悬浮件的 DOM 事实 dump 出来
 //
-// 为什么要有它（2026-10-02 用户第 5 组现象）：用户报了 5 处观感问题（+ 菜单/权限弹层完全透明、
+// 为什么要有它（2026-10-02 第 5 组现象）：报障了 5 处观感问题（+ 菜单/权限弹层完全透明、
 //   模型选择的"提供商分组标题"是白色不透明长条、上下文占用圆圈白色不透明、标题栏子代理容器"模糊做得好"），
 //   还有 3 处（左栏像被取了壁纸主色 / 透明度 0 时悬浮失效 / 左栏收起动画掉帧）。
 //   这些**都不是我们插件的元素**，只能拿真页面读数说话：外层容器 → 内层表面的选择器链条、class/role/data-*、
@@ -478,7 +478,7 @@ const MENU_ITEMS = () => {
   }
   return { rootCls: String(root.className).slice(0, 60), count: out.length, items: out.slice(0, 20) }
 }
-/** 弹层里的"白色不透明长条"（用户说提供商分组标题是白色长条）与模型行 */
+/** 弹层里的"白色不透明长条"（口径：提供商分组标题是白色长条）与模型行 */
 const WHITE_BARS = () => {
   const H = globalThis.__pp; if (!H) return { err: 'page-helpers-missing' }
   const vis = H.VIS
@@ -800,7 +800,7 @@ const GLASS_PLACEMENT = async (arg) => {
   }
 }
 /* ── 1d ③(2026-10-05) 右栏头部按钮 tooltip 的"底色时有时无 + 白字"采样 ────────────────
-   用户真机："右栏右上角 收起侧边栏/全屏/分栏 的提示气泡底色忽有忽无，而且字是白的（浅底上看不清）"。
+   真机："右栏右上角 收起侧边栏/全屏/分栏 的提示气泡底色忽有忽无，而且字是白的（浅底上看不清）"。
    判据：悬停期间**逐帧采样** tooltip 的 computed bg/color/bf/标记属性，出现 ≥2 种取值 = 闪烁；
    同时记 token（--dsw-alias-tooltip-bg / --mpw-pop-surface）与祖先链最近的截断祖先，供判断是谁在改。 */
 const TIP_TARGETS = () => {

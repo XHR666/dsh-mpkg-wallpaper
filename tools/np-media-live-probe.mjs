@@ -35,7 +35,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { execFileSync } from 'node:child_process'
-import { withAudioMute } from './_audio-mute.mjs'   // ①(P-225) 探针浏览器一律静音（用户实测幽灵声音）
+import { withAudioMute } from './_audio-mute.mjs'   // ①(P-225) 探针浏览器一律静音（真机实测幽灵声音）
 
 const argv = process.argv.slice(2)
 const arg = (n, d) => { const i = argv.indexOf('--' + n); return i >= 0 && argv[i + 1] ? argv[i + 1] : d }
@@ -591,7 +591,7 @@ try {
     }
   }
 
-  /* ══════════════ J. ① 静音开/关真的改变元素（用户原话："开/关都听不到声音"）══════════════ */
+  /* ══════════════ J. ① 静音开/关真的改变元素（需求："开/关都听不到声音"）══════════════ */
   console.log('\n== J. ① 静音开关两档：元素 muted 跟着设置走（且开关是开关、音量是电平）==')
   {
     /* 每次 reload 之后都要：①确认在放；②做**一次真实手势**（浏览器的出声限制由手势解除）。

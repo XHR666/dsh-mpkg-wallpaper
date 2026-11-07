@@ -284,7 +284,7 @@ console.log('\n== D. 当前目录显示（标题上方；显示值 == 实际取�
     'first=' + JSON.stringify(first) + ' second=' + JSON.stringify(second));
 
   // D5：重扫入口/复制按钮在树（复制按钮为可选件，存在即可；不断言剪贴板行为——无浏览器）
-  ok('D5 目录行不再有「复制路径」按钮（2026-11-01 用户要求移除）', !(t1.nodes || []).some((p) => p && p['data-mpw-scan-dir-copy'] !== undefined), '');
+  ok('D5 目录行不再有「复制路径」按钮（2026-11-01 需求移除）', !(t1.nodes || []).some((p) => p && p['data-mpw-scan-dir-copy'] !== undefined), '');
 }
 
 console.log('\n== K. 「已应用」回填（#1 2026-11-03：背景来源选中 ⇒ 扫描页识别/高亮）==');

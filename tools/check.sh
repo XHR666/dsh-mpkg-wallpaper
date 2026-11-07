@@ -352,7 +352,7 @@ node tools/scene-fit-contain-test.mjs || fail=$((fail + 1))
 #       `/custom-mpkg-preview` 收 `.pkg`、任意名容器的 kindReason=scene-container；
 #     C 回收：连导 5 次 ≤ 上限、最旧先删、**正在播放**（/media 读过）与 settings.json 引用的
 #       绝不删、用户自己的文件一个不动；
-#     D 用户原话硬语义：预检只吃条目表（**不依赖 preview / project.json**——上游 oneincase
+#     D 需求硬语义：预检只吃条目表（**不依赖 preview / project.json**——上游 oneincase
 #       的包这两者一般是缺失的）；
 #     E 变异自证 6 组（accept / 嗅探 / preview 路由 / 失败清理 / 回收 / reason 两处各自承重）。
 node tools/pkg-import-test.mjs || fail=$((fail + 1))
@@ -362,7 +362,7 @@ node tools/pkg-import-test.mjs || fail=$((fail + 1))
 #   回退位 `MPW_UPLOAD_DEDUP=0`（环境变量 ⇒ 不进 URL 开关表）。判据：A 去重语义五条 + B 回退档 + 变异自证
 #   （撤掉"命中即复用" ⇒ 期望红集 == 实际红集 == ["A2","A3","A4","A4b"]）。详见 docs/RESOURCE-AUDIT-20260923.md。
 node tools/upload-dedup-test.mjs || fail=$((fail + 1))
-# ①(2026-09-27 类型判定轮) 同一路线的**类型判定**判据（`/custom-dir` 目录级判定）：用户点名
+# ①(2026-09-27 类型判定轮) 同一路线的**类型判定**判据（`/custom-dir` 目录级判定）：点名要求
 #   「包含 mp4 的 scene 壁纸的 MPKG 形式会不会被只识别成 MP4、丢掉 scene 效果」。
 #   实测错判（真机可复现）：`signals.scene` 第三顺位是**任意 `.pkg/.mpkg`** ⇒ "是容器就是场景"；
 #   逐容器拆条又被 `!det.signals.video` 关掉 ⇒ `wallpaperE/伊蕾娜`（5 容器 + 松散 VID_*.mp4）
@@ -402,7 +402,7 @@ node tools/audio-bus-test.mjs || fail=$((fail + 1))
 #   （顶层缺省 `redirect` 只归因 / 帧内缺省 `1` 真压 / 显式档照办 / 帧内不接受 `redirect`）、静音跟随设置
 #   `mute` 同步（800ms 轮询 + 走模块 API）、三条分辨力自证。20 断言，~0.1s，无浏览器。
 node tools/audio-bus-wiring-test.mjs || fail=$((fail + 1))
-# ①(P-225 2026-09-30 用户实测"幽灵声音") 探针侧静音纪律：tools/*.mjs 里每个 `firefox.launch`/
+# ①(P-225 2026-09-30 真机实测"幽灵声音") 探针侧静音纪律：tools/*.mjs 里每个 `firefox.launch`/
 #   `chromium.launch` 调用点都必须带 `_audio-mute.mjs` 的三件套（volume_scale=0 + 禁自动播放 +
 #   音频通道默认静音）——无头 Firefox(Nightly) 加载测试台/插件面时自动播放会真的建出 PulseAudio 流。
 #   静态扫（纯 Node ~0.1s）+ 三件套逐键钉值 + 反例自证（改坏必红）+ MPW_PROBE_AUDIO 逃生门。
@@ -420,7 +420,7 @@ node tools/fog-model-test.mjs || fail=$((fail + 1))
 #   判据 16 条：闸门行为（拦下/零布局/补跑/账目）+ 接线静态断言 + 变异自证。
 #   读数与机制：docs/ANIMATION-PERF.md（P1A 探针 tools/sidebar-anim-probe.mjs）
 node tools/anim-guard-test.mjs || fail=$((fail + 1))
-# ①(第13条 用户点名"长期没修好"的 bug) 选择文件夹/选择文件的选择器：
+# ①(第13条 点名要求"长期没修好"的 bug) 选择文件夹/选择文件的选择器：
 #   滚动位置（重渲染/容器被重建后不跳顶）、不抢焦点、键盘导航、500 项大目录、滚轮不串联宿主。
 #   A 组源码级（**同一套断言对 `git show HEAD:lib/client.js` 必须变红** ⇒ 证明用例有分辨力）
 #   B 组假 DOM + 迷你 React（切 lib/client.js 的 MPW-DIRPICK 块，跑生产实现）

@@ -37,7 +37,7 @@ const base = Object.assign({}, readSection(), { image: true, enabled: true })
 // 核心开关：全组合（2^9 = 512）——覆盖"透出/虚化/悬浮/玻璃/水色"之间的相互影响
 const CORE = ['sidebar', 'unifyTint', 'headerBg', 'headerBlur', 'float', 'lgCss', 'aquaMask', 'aquaTint', 'rightSidebarBlur']
 // 其余开关：随机组合抽样（含面板里的次要开关 + 数值极值）
-// ①(2026-09-19) 去掉 `glassWindow`：该字段已按用户裁定**退役删除**（无 toggleRow、无读取点，见
+// ①(2026-09-19) 去掉 `glassWindow`：该字段已按口径**退役删除**（无 toggleRow、无读取点，见
 //   tools/switch-wiring-test.mjs 的 RETIRED 段）⇒ 再放进组合里只是给 buildCss 传一个不存在的键。
 const EXTRA = ['headerFrostOwn', 'sidebarBlur', 'popoverBlur', 'confirmBlur', 'maskBlur', 'dialogBlur', 'settingsBlur', 'todoBlur',
   'chatFollow', 'sessionFollow', 'clock', 'sharp', 'aquaInk', 'aquaTextEnhance']
@@ -136,7 +136,7 @@ function check(label, patch, css) {
   if (patch.lgTest) {
     /* ①(2026-11-06 Z4 口径演进留痕) lgTest（液态玻璃测试模式）是 buildCss 的**特殊构建分支**：
        lib/client.js buildCss 对 lgTest 强制 `headerBg:false / headerBlur:false`（规格=「外观类全部禁用，
-       纯环境测玻璃」，用户实测口径）——上面的普通档断言不知道这个覆盖，把"该禁用"判成"规则缺失"。
+       纯环境测玻璃」，真机实测口径）——上面的普通档断言不知道这个覆盖，把"该禁用"判成"规则缺失"。
        产品无缺陷，判据分支显式条件化（原两条误报留痕：'该有顶栏磨砂但规则缺失' /
        '有磨砂层但缺 --mpw-hdr-blur 半径变量' —— 它们把 lgTest 的正确产物当普通档判了）。
        lgTest 自己的契约（双向断言）：

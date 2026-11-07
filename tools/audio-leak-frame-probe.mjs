@@ -1,7 +1,7 @@
 // audio-leak-frame-probe.mjs —— 插件侧真机探针：**壁纸 iframe 里的声音有没有被"静音"压住**
 //
 // 为什么要有它：`tools/audio-bus-live-probe.mjs` 只问"总线装上了吗"（宿主自己那一侧）；
-//   用户报的是"静音开着仍有声音"，那问的是**帧内**：谁在出声、静音信号到没到帧里、到了之后出不出声。
+//   报障所述是"静音开着仍有声音"，那问的是**帧内**：谁在出声、静音信号到没到帧里、到了之后出不出声。
 //   本探针把这三件事分开量：
 //     A 通道：宿主 → 帧 的静音信号**走哪条路**（iframe.muted expando / contentDocument 逐元素 /
 //       shim policy postMessage / 新增的 `mpw-audio-policy` postMessage）——逐条实测可达性；
@@ -23,7 +23,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { pathToFileURL } from 'node:url'
-import { withAudioMute } from './_audio-mute.mjs'   // ①(P-225) 探针浏览器一律静音（用户实测幽灵声音）
+import { withAudioMute } from './_audio-mute.mjs'   // ①(P-225) 探针浏览器一律静音（真机实测幽灵声音）
 
 const argv = process.argv.slice(2)
 const has = (n) => argv.includes('--' + n)
@@ -231,7 +231,7 @@ try {
 
   if (CONFIGURE) {
     /* 用户序列：设置里"静音"打开 + 渲染器调试参数带 audio=1（渲染器的场景音轨只在 `?audio=1` 时接图）。
-       写完 **重新加载** = 用户说的"刷新"。 */
+       写完 **重新加载** = 所述"刷新"。 */
     const DBG = argOf('debug', 'audio=1')
     await page.evaluate(({ k, dbg }) => {
       const s = JSON.parse(localStorage.getItem(k) || '{}')

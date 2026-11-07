@@ -1,6 +1,6 @@
 // tools/sidebar-frost-team-panel-test.mjs —— P-307：展开「智能体团队」不得摘掉左侧栏磨砂（用户 bug 回归）
 //
-// 现象（用户原话）：「把智能体团队展开时，会导致左侧边栏的模糊效果消失；一关闭又恢复」。
+// 现象（需求）：「把智能体团队展开时，会导致左侧边栏的模糊效果消失；一关闭又恢复」。
 // 根因（真机读数 + 源码切片复现，见 docs/HEADER-FROST.md §8）：
 //   `setupSblurObserver()` 的 `check()` 原来在**全文档**里找"近全屏 fixed 弹层"（第一支），
 //   而智能体团队面板（DSH `dsh-experimental-client-ui-agent-team` 的 `.VoX2oq_panel`，
