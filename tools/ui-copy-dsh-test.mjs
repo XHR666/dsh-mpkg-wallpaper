@@ -7,14 +7,24 @@
 //        命令  `dsh web` / `dsh plugin update` / `dsh --profile`
 //        路径  `~/.dsh/`（前缀是 `.` 的 `dsh/`，如 `~/.dsh/.dsh-mpkg-wallpaper/`）
 //        包名  `dsh-mpkg-wallpaper`（若出现在 value 里）
-//   B  反向：命令形态必须仍存在 —— zh 与 en 各至少 1 处 `dsh web` 与 `dsh plugin update`
+//   B  反向：命令形态必须仍存在 —— zh 与 en 的 `hybrid.desc` 都含 `dsh web`（计数 ≥1）
 //      （有人把命令误改成 `DSH web` ⇒ B 红）
 //   C  一致性：zh/en 键集合相等（与 panel-fixes a2 同口径，重复钉一层不冲突）
 //   D  回归：panel-fixes-test.mjs 全绿（子进程跑，退出码真实）
 // 变异自证（隔离副本 os.tmpdir()；期望红集 == 实际红集，逐条相等）：
 //   M1 zh "hybrid" 改回 `dsh` ⇒ 期望红 ["A"]
-//   M2 zh "update.applied" 的 `dsh web` 改成 `DSH web` ⇒ 期望红 ["B"]
+//   M2 zh "hybrid.desc" 的 `dsh web` 改成 `DSH web` ⇒ 期望红 ["B"]
 //   M3 zh/en 各塞一条 "x.y"（含裸 dsh）⇒ 期望红 ["A"]（两套同塞，键集合保持一致，C 不参与）
+//
+// 判据演进留痕（R19，2026-11-07 Z2/F1 轮）：
+//   原断言：B 钉 `update.applied`/`update.readonly` 两键各含 `dsh web` / `dsh plugin update`（zh+en）；
+//           M2 变异打在 zh `update.applied` 的 `dsh web` 上。
+//   新断言：B 只钉 `hybrid.desc`（zh+en）含 `dsh web`；M2 打在 zh `hybrid.desc` 上。
+//   为什么：Z2（F1）移除内置自更新入口后，`update.applied` / `update.readonly` 两键随调用点一起
+//           被 zh/en 同步删除（任务书 §2 Z2 ③ 明文），字典里 `dsh plugin update` 的唯一载体随之消失。
+//   语义如何保持：B 的语义仍是"命令语境的小写 dsh 不被误改成产品名"——锚点换成仍存活的
+//           `hybrid.desc`（任务书 Z1"必须保留"表第 1 行）；A 的白名单仍放行全部命令/路径形态，
+//           将来任何新增含 `dsh web`/`dsh plugin update` 的文案仍不会被误伤。
 //
 // 用法: node tools/ui-copy-dsh-test.mjs
 import fs from 'node:fs'
@@ -64,16 +74,14 @@ function runChecks(clientPath) {
   r['A'] = vZh.length === 0 && vEn.length === 0
   r.__viol = vZh.concat(vEn)
   const cnt = (dict, re) => Object.values(dict).filter((x) => typeof x === 'string' && re.test(x)).length
-  /* 任务书"必须保留"表：hybrid.desc / update.applied 含命令 `dsh web`；update.readonly 含 `dsh plugin update`；
-     zh 与 en 四份都要在（误改成 DSH web / 删键 ⇒ B 红）。 */
+  /* 任务书"必须保留"表（Z2/F1 后仍存活的载体）：hybrid.desc 含命令 `dsh web`，zh 与 en 都要
+     （误改成 DSH web / 删键 ⇒ B 红）。演进留痕见文件头（R19）。 */
   const cmdKeep = (dict, key, re) => typeof dict[key] === 'string' && re.test(dict[key])
   r['B'] = ['zh', 'en'].every((lg) => {
     const dict = lg === 'zh' ? zh : en
     return cmdKeep(dict, 'hybrid.desc', /\bdsh web\b/)
-      && cmdKeep(dict, 'update.applied', /\bdsh web\b/)
-      && cmdKeep(dict, 'update.readonly', /\bdsh plugin update\b/)
-  }) && cnt(zh, /\bdsh plugin update\b/) >= 1 && cnt(en, /\bdsh plugin update\b/) >= 1
-  r.__b = `hybrid.desc/update.applied 含 dsh web、update.readonly 含 dsh plugin update（zh+en）；计数 zh web=${cnt(zh, /\bdsh web\b/)} en web=${cnt(en, /\bdsh web\b/)} zh upd=${cnt(zh, /\bdsh plugin update\b/)} en upd=${cnt(en, /\bdsh plugin update\b/)}`
+  }) && cnt(zh, /\bdsh web\b/) >= 1 && cnt(en, /\bdsh web\b/) >= 1
+  r.__b = `hybrid.desc 含 dsh web（zh+en）；计数 zh web=${cnt(zh, /\bdsh web\b/)} en web=${cnt(en, /\bdsh web\b/)}`
   const zk = Object.keys(zh), ek = Object.keys(en)
   r['C'] = zk.every((k) => k in en) && ek.every((k) => k in zh)
   r.__c = `${zk.length} 键`
@@ -105,13 +113,13 @@ console.log('\n== M 变异自证（隔离副本；期望红集 == 实际红集�
 const CLIENT = fs.readFileSync(path.join(ROOT, 'lib', 'client.js'), 'utf8')
 const HYB_ZH_OLD = '"hybrid": "上传到 dsh 进程流式播放",'
 const HYB_ZH_NEW = '"hybrid": "上传到 DSH 宿主进程流式播放",'
-const APPLIED_OLD = '"update.applied": "更新完成！请重启 dsh web 并 Ctrl+F5 生效",'
-const APPLIED_MUT = '"update.applied": "更新完成！请重启 DSH web 并 Ctrl+F5 生效", /* M2 */'
+const HYBDESC_OLD = '需重启 dsh web 使宿主端生效'
+const HYBDESC_MUT = '需重启 DSH web 使宿主端生效 /* M2 */'
 const MUT = [
   { id: 'M1', what: 'zh hybrid 改回 `dsh` ⇒ A 必红', expect: ['A'],
     patch: (s) => s.replace(HYB_ZH_NEW, HYB_ZH_OLD), verify: (s) => s.includes(HYB_ZH_OLD) && !s.includes(HYB_ZH_NEW) },
   { id: 'M2', what: 'zh `dsh web` 误改 `DSH web` ⇒ B 必红', expect: ['B'],
-    patch: (s) => s.replace(APPLIED_OLD, APPLIED_MUT), verify: (s) => s.includes(APPLIED_MUT) },
+    patch: (s) => s.replace(HYBDESC_OLD, HYBDESC_MUT), verify: (s) => s.includes(HYBDESC_MUT) },
   { id: 'M3', what: 'zh/en 各塞 "x.y"（裸 dsh）⇒ A 必红', expect: ['A'],
     patch: (s) => s.replace(HYB_ZH_NEW, HYB_ZH_NEW + '\n\t\t\t"x.y": "dsh 服务不可用",')
       .replace('"hybrid": "Upload to the DSH host for streaming playback",',
