@@ -3,7 +3,7 @@
  * hdr-probe.mjs —— 真机 computed 值探针（无头 Firefox + 复用 DSH 会话 Cookie）
  *
  * 为什么需要它（2026-09-16 第 N 轮"顶栏磨砂 / 顶栏描边 / 右侧时间线条"三个视觉 bug）：
- *   前几轮都在"读代码猜根因"，用户原话「这个问题已经处理过好几轮了」。
+ *   前几轮都在"读代码猜根因"，需求：「这个问题已经处理过好几轮了」。
  *   本脚本把**真实 DSH 页面**（http://127.0.0.1:3080/）加载进无头 Firefox，直接取
  *   `getComputedStyle` 的实测值：这是唯一能定案的证据来源（不是推断）。
  *   同一脚本在"改前 / 改后"各跑一次，逐项对照即为自证。
@@ -36,7 +36,7 @@
  *   E. 右侧时间线条（.eGxaPq_mark::before）background 非透明
  *   F. 磨砂"真的看得见"的可判据差异：hdrfrost=off 对照截图的顶栏带像素差（见 --diff 说明）
  *
- * 开销纪律（用户要求）：本脚本是**离线探针**，只在手动运行时开浏览器；
+ * 开销纪律（需求）：本脚本是**离线探针**，只在手动运行时开浏览器；
  *   插件运行时侧不新增任何轮询/监听（状态变化时同步一次 + ≥3s 低频保险，见 docs/HEADER-FROST.md）。
  */
 import fs from 'node:fs'
@@ -249,7 +249,7 @@ function pageCollector() {
 function diffStats(pngA, pngB, box) {
   const py = `
 import json,sys
-import { withAudioMute } from './_audio-mute.mjs'   // ①(P-225) 探针浏览器一律静音（用户实测幽灵声音）
+import { withAudioMute } from './_audio-mute.mjs'   // ①(P-225) 探针浏览器一律静音（真机实测幽灵声音）
 from PIL import Image, ImageChops, ImageStat
 a=Image.open(sys.argv[1]).convert('RGB'); b=Image.open(sys.argv[2]).convert('RGB')
 x,y,w,h=[int(float(v)) for v in sys.argv[3].split(',')]

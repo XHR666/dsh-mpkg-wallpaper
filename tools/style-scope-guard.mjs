@@ -91,7 +91,7 @@ const ALLOWLIST = [
   { id: 'host:state-attrs', kind: 'attr', tier: 'refine', match: /^\[data-(dragging|sidebar-collapsed|phase=|dsh-sidebar)/, reason: '宿主瞬时状态标记（拖拽/折叠/激活阶段）：只用于**抑制我们自己的规则**（"拖拽时别磨砂"），不单独改宿主样式', doc: 'docs/STYLE-SCOPE-GUARD.md:68', docKind: 'ledger' },
   /* ①(2026-10-02 用户第 3 条第⑤⑥项 · 真机 HTML 由用户给出) */
   { id: 'host:aria-modal', kind: 'attr', tier: 'refine', match: /^\[aria-modal="true"\]/, reason: '真正的模态对话框标记：只有模态才禁止玻璃（避免 backdrop-filter 成为下拉的 containing block）；非模态的 role=dialog 小面板（如上下文已用）保留玻璃效果', doc: 'docs/STYLE-SCOPE-GUARD.md:220', docKind: 'ledger' },
-  { id: 'host:JObwrW-panel', kind: 'attr', tier: 'anchor', match: /^\[class\*="JObwrW_panel"/, reason: '宿主"上下文已用"小面板（div.JObwrW_panel[role=dialog][aria-label=上下文已用]，内含 JObwrW_track/fill 圆环）：用户要求它与其他弹层同一套玻璃效果（探针实测 bg 纯白、bf=none）', doc: 'docs/STYLE-SCOPE-GUARD.md:218', docKind: 'ledger' },
+  { id: 'host:JObwrW-panel', kind: 'attr', tier: 'anchor', match: /^\[class\*="JObwrW_panel"/, reason: '宿主"上下文已用"小面板（div.JObwrW_panel[role=dialog][aria-label=上下文已用]，内含 JObwrW_track/fill 圆环）：需求它与其他弹层同一套玻璃效果（探针实测 bg 纯白、bf=none）', doc: 'docs/STYLE-SCOPE-GUARD.md:218', docKind: 'ledger' },
   { id: 'host:groupTitle', kind: 'attr', tier: 'anchor', match: /^\[class\*="(_?groupTitle|GroupTitle)"/, reason: '宿主弹层里的分组标题条（模型选择的提供商名，div._7KE1Ra_groupTitle）：只清它的宿主白底、让它透出容器玻璃；不单独给它加底/模糊（用户第 3 条⑤）', doc: 'docs/STYLE-SCOPE-GUARD.md:219', docKind: 'ledger' },
   { id: 'host:aria-roles', kind: 'attr', tier: 'anchor', match: /^\[role="(dialog|alertdialog|menu|listbox|combobox|tooltip|alert|status)"/, reason: '宿主弹层/菜单/提示的 ARIA 语义角色：弹窗虚化/菜单半透明的唯一稳定锚点（只改背景与模糊，不改布局）', doc: 'docs/STYLE-SCOPE-GUARD.md:69', docKind: 'ledger' },
   { id: 'host:aria-refine', kind: 'attr', tier: 'refine', match: /^\[role="(menuitem|option)"/, reason: '只在 :not(...) 里排除"菜单项/选项"，避免给交互项误加背景', doc: 'docs/STYLE-SCOPE-GUARD.md:70', docKind: 'ledger' },
@@ -564,7 +564,7 @@ function classifyRule(rule) {
     for (const d of decls) {
       if (!/^border/.test(d.prop) || !d.important) continue
       if (!/transparent|rgba\(\s*[^)]*,\s*0\s*\)|alpha\([^)]*,\s*0\s*\)/i.test(d.value)) continue
-      push('RED', 'header:transparent-border', `把宿主顶栏描边改成透明（${d.prop}: ${d.value}）：历史事故（用户实测"顶栏下描边被去掉"）；描边一律交还宿主`, 'docs/HEADER-FROST.md:61')
+      push('RED', 'header:transparent-border', `把宿主顶栏描边改成透明（${d.prop}: ${d.value}）：历史事故（真机实测"顶栏下描边被去掉"）；描边一律交还宿主`, 'docs/HEADER-FROST.md:61')
     }
   }
   return { verdict, reasons, perPart, decls }

@@ -19,7 +19,7 @@
 //         （不在用户导入链上，但库目录同时有 `.mpkg`+`index.html` 或走 scene 系路由时会踩到）。
 //         修法＝判据放宽到容器族 `PKG[VM]`（G 段：同一条目表两种 magic 的合成夹具钉"同源、不是两套逻辑"）。
 //
-// 关键语义（用户原话）：上游 oneincase 的项目**只导入 PKG 文件**，因为 `preview`/`project.json`
+// 关键语义（需求）：上游 oneincase 的项目**只导入 PKG 文件**，因为 `preview`/`project.json`
 //   **一般是缺失的** ⇒ 导入路径**不得**依赖 preview 或 project.json 存在（本文件 D 段专门钉这条）。
 //
 // 纪律（本机可用内存 ~4GB）：不跑 ffmpeg、不开浏览器、**不读真机语料**；夹具全部由本文件合成
@@ -353,7 +353,7 @@ console.log('══ A 客户端导入链（真源码切片）══');
     !!zhPick && /\.pkg/.test(zhPick[1]) && /\.mpkg/.test(zhPick[1]) && !!zhHint && /\.pkg/.test(zhHint[1]) && /\.mpkg/.test(zhHint[1]) && !!enHint && /\.pkg/.test(enHint[1]) && /\.mpkg/.test(enHint[1]),
     'zh.pick=' + (zhPick && zhPick[1]) + ' | en.hint=' + (enHint && enHint[1].slice(0, 60)));
 
-  // D 段判据（用户原话）：导入链不得依赖 preview / project.json
+  // D 段判据（需求）：导入链不得依赖 preview / project.json
   const precheckSrc = sliceFn(clientSrc, 'mpkgAssetPrecheck').src;
   ok('A8 关键语义：预检只吃条目名/大小——不出现 preview、不出现 project.json',
     !/preview/i.test(precheckSrc) && !/project\.json/i.test(precheckSrc));
@@ -515,7 +515,7 @@ console.log('\n══ C 上传容器副本回收（G9，上限 + 在用保护）
   } finally { await H.stop(); }
 }
 
-/* ═══════════ D 段：不依赖 preview / project.json（用户原话的硬语义） ═══════════ */
+/* ═══════════ D 段：不依赖 preview / project.json（需求的硬语义） ═══════════ */
 console.log('\n══ D 关键语义：导入链不依赖 preview / project.json ══');
 {
   const pre = loadPrecheck(clientSrc);

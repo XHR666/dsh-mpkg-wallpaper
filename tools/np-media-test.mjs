@@ -427,7 +427,7 @@ console.log('\n== C. 传输动作的落点：真实媒体 + 按清单顺序 + �
   F3.video.setAttribute('src', SEC_VIDEO.image)
   F3.video.paused = true
   F3.T.transport('play', SEC_VIDEO)
-  ok('C6 视频壁纸：play ⇒ video.play()（此前 play 落在空壳 video 上，用户看到"点了没用"）', F3.video.__plays >= 1 && F3.video.paused === false, 'plays=' + F3.video.__plays + ' paused=' + F3.video.paused)
+  ok('C6 视频壁纸：play ⇒ video.play()（此前 play 落在空壳 video 上，所见"点了没用"）', F3.video.__plays >= 1 && F3.video.paused === false, 'plays=' + F3.video.__plays + ' paused=' + F3.video.paused)
   F3.T.transport('pause', SEC_VIDEO)
   ok('C6b 视频壁纸：pause ⇒ video.pause()', F3.video.__pauses >= 1 && F3.video.paused === true, 'pauses=' + F3.video.__pauses)
 }
@@ -549,7 +549,7 @@ console.log('\n== D. 静音落点：设置项 + video/audio/帧内元素（真�
       (() => { const r = globalThis.__mpwRendererAudioPush; return !!r && r.n >= 1 && r.last && typeof r.last.stale === 'boolean' })(),
       JSON.stringify(globalThis.__mpwRendererAudioPush && globalThis.__mpwRendererAudioPush.last))
     /* ══════ D10/D11 ①(2026-09-25 任务 ㉑ 追加) 「响的不是当前壁纸的音频」：隐藏/切走 ⇒ 停源 ══════
-       真机现场（用户原话）："又开始播放音频了，这个音频并不是我当前壁纸的音频（没动音频、也没刷新页面）"。
+       真机现场（需求）："又开始播放音频了，这个音频并不是我当前壁纸的音频（没动音频、也没刷新页面）"。
        机制：宿主"**隐藏但保留**"跨源渲染器 iframe（看门狗兜底 `sceneFallbackActivate` 等迟到首帧、
        总开关关掉、省电暂停），而 `display:none` 不停媒体、跨源帧又读不到 DOM/expando ⇒ 旧帧一直响。 */
     {
@@ -1024,7 +1024,7 @@ const MUTS = [
     id: 'renderer-audio-policy-not-resent-after-reload', expect: 'D', file: 'client',
     why: '①(任务 ㉑) 把"帧重载（`contentWindow` 换了）⇒ 即使值相同也重发"那半条判据删掉'
       + '（`stale = !prev || prev.win !== cw` → `stale = !prev`）⇒ **刷新之后新文档收不到静音策略**，'
-      + '壁纸又开始出声（用户原话："网页刚刷新之后…还是会有声音"）',
+      + '壁纸又开始出声（需求："网页刚刷新之后…还是会有声音"）',
     mut: (s) => s.replace('const stale = !prev || prev.win !== cw;', 'const stale = !prev;'),
   },
   {

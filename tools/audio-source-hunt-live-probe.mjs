@@ -2,7 +2,7 @@
 /**
  * audio-source-hunt-live-probe.mjs —— **彻查「静音状态下仍然突然冒出来的声音」**
  *
- * 用户原话（判据来源）：①「莫名其妙播放音频又出现了，我刚才什么都没动，他又开始播放了……有时候可能响几声」；
+ * 需求（判据来源）：①「莫名其妙播放音频又出现了，我刚才什么都没动，他又开始播放了……有时候可能响几声」；
  *                      ②「我现在静音状态下，他还是突然冒出来的声音，你必须把这个问题必须彻查出来」。
  *
  * 与 `np-pause-persist-live-probe.mjs` 的分工：那条验"暂停意图持久化"；**这条只回答一个问题：
@@ -24,7 +24,7 @@
  *
  * 用法：
  *   node tools/audio-source-hunt-live-probe.mjs                 # 默认守 180s（250ms/拍）
- *   node tools/audio-source-hunt-live-probe.mjs --sec 600       # 守 10 分钟（用户说"有时候"⇒ 越长越好）
+ *   node tools/audio-source-hunt-live-probe.mjs --sec 600       # 守 10 分钟（口径："有时候"⇒ 越长越好）
  *   node tools/audio-source-hunt-live-probe.mjs --poke          # 顺带做温和交互（移动鼠标/点击空白）诱发
  *   node tools/audio-source-hunt-live-probe.mjs --out /tmp/np-live
  *   node tools/audio-source-hunt-live-probe.mjs --selftest      # 无浏览器：验判据分辨力
@@ -38,7 +38,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { execFileSync } from 'node:child_process'
-import { withAudioMute } from './_audio-mute.mjs'   // ①(P-225) 探针浏览器一律静音（用户实测幽灵声音）
+import { withAudioMute } from './_audio-mute.mjs'   // ①(P-225) 探针浏览器一律静音（真机实测幽灵声音）
 
 const argv = process.argv.slice(2)
 const arg = (n, d) => { const i = argv.indexOf('--' + n); return i >= 0 && argv[i + 1] ? argv[i + 1] : d }
@@ -81,7 +81,7 @@ if (argv.includes('--selftest')) {
   let p = 0, f = 0
   const ck = (c, label, extra = '') => { if (c) { p++; console.log('PASS ' + label + (extra ? '  ' + extra : '')) } else { f++; console.log('FAIL ' + label + (extra ? '  ' + extra : '')) } }
   const leak = { t: 1, kind: 'unmute', paused: false, muted: false, volume: 0.33, np: { mute: true }, el: { tag: 'VIDEO', id: 'mpw-bgVideo', owner: 'ours' }, win: { top: true, url: 'x', foreign: false } }
-  ck(muteOnAudible([leak]).length === 1, 'S1 静音设置开着却可听 ⇒ 判据必须抓到（用户原话就是这个组合）')
+  ck(muteOnAudible([leak]).length === 1, 'S1 静音设置开着却可听 ⇒ 判据必须抓到（需求就是这个组合）')
   ck(audibleAny([leak]).length === 1, 'S2 可听播放判据同样抓到（两条分开报，便于区分"没开静音"与"漏音"）')
   ck(muteOnAudible([Object.assign({}, leak, { np: { mute: false } })]).length === 0, 'S3 设置本来就没静音 ⇒ 不算漏音（判据不许把设计行为判红）')
   ck(muteOnAudible([Object.assign({}, leak, { muted: true })]).length === 0, 'S4 静音状态下元素真的 muted ⇒ 不算漏音')
@@ -217,11 +217,11 @@ try {
     console.log('=== 逐条（含调用栈，用来指认"谁把它变成可听的"）===')
     for (const r of leaks.slice(0, 8)) console.log(' · ' + JSON.stringify(r).slice(0, 700))
   } else {
-    console.log('\n（本窗口内没有抓到出声。注意：这不等于"用户听到的不存在"——跨源帧内的 WebAudio、或用户真机上的'
+    console.log('\n（本窗口内没有抓到出声。注意：这不等于"用户听到的不存在"——跨源帧内的 WebAudio、或真机上的'
       + '具体手势/时序可能与本探针不同；本探针的结论只覆盖"这 ' + SEC + ' 秒 + 这些交互"的范围。）')
   }
   /* ═══ ①(2026-09-20 彻查结论的可复现判定) `--whale`：第三方鲸鱼控件的 UI 音效因果链 ═══
-     背景：用户报「静音状态下还是突然冒出来的声音」。实测根因 = **第三方 `dsh-whale-widget`**：
+     背景：报障「静音状态下还是突然冒出来的声音」。实测根因 = **第三方 `dsh-whale-widget`**：
      它把 `pointerdown` 挂在 document 的**捕获阶段**，命中鲸鱼像素就 `pressDown() → new Audio('/dsh-whale/sound/press.mp3').play()`
      （松手再放 `release.mp3`）—— 音量 1、不受本插件 `mute` 影响，而且这些 Audio 对象**不在 DOM 里**
      （旧采样只查 DOM 元素 ⇒ 永远看不到它）。这一段的判据就是"在被审计的页面里复现这条因果链"。

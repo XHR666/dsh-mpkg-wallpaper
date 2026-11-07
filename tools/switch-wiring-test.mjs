@@ -43,7 +43,7 @@ const ok = (name, cond, detail) => {
 /* ── A. 「不影响 buildCss 产物」白名单：只影响**运行时**的开关（每条必须写清为什么） ── */
 const NON_CSS = {
   /* ①(2026-11-01 T02 预设补全) 外观/兼容/调试类开关：产物 CSS 不随它们变化（运行时或已退役），
-     但用户要求它们随预设保存/导入 ⇒ 登记为"仅运行时"，接线审计仍然逐条点名。 */
+     但需求它们随预设保存/导入 ⇒ 登记为"仅运行时"，接线审计仍然逐条点名。 */
   fontColorGray: '字体灰化：运行时改文字颜色（JS 写 style/变量），不生成规则',
   flipX: '画面水平翻转：由 JS/媒体样式作用，不生成规则',
   flipY: '画面垂直翻转：同上',
@@ -107,14 +107,14 @@ const NON_BOOL_PROBES = [
 ]
 
 /* ── B. 已证实失效 / 未接线（尚未修）：审计会每次把它们显式列出来 ──
- * 已修并从本表删除：lgCss（TDZ，2026-09-18）、sessionFollow（无人读，2026-09-18 按用户裁定接线）、
- * glassWindow（2026-09-19 **按用户裁定的政策删除**，见下方 RETIRED —— 不是接线，所以不进本表）。
+ * 已修并从本表删除：lgCss（TDZ，2026-09-18）、sessionFollow（无人读，2026-09-18 按口径接线）、
+ * glassWindow（2026-09-19 **按口径的政策删除**，见下方 RETIRED —— 不是接线，所以不进本表）。
  * 为什么要双向断言：条目一旦被修好，本表必须删掉（否则"已知失效"会变成永久遮羞布）。
  * **本表现在是空的**：45 个布尔开关要么真的改变产物，要么在 NON_CSS 里逐条写了"为什么只影响运行时"。 */
 const KNOWN_DEAD = {}
 
 /* ── B2. 已**退役**（删掉）的开关：必须 0 悬空引用、0 孤儿文案 ──
- * 政策（2026-09-19 用户原话）：**不留"看得见却点不动"的死文案**。
+ * 政策（2026-09-19 需求）：**不留"看得见却点不动"的死文案**。
  * `glassWindow`（设置窗口液态玻璃）当时的处境：`lib/client.js` 里只有 i18n 2 键 ×2 语言 + 2 处默认值
  * + 导出/导入名单，**既没有 toggleRow（没人看得见）、也没有任何 `section.glassWindow` 读取点（点不动）**；
  * 而它文案承诺的功能（"整个设置卡片/弹窗玻璃化"）**已由 `settingsBlur`（设置面板虚化）+ `dialogBlur` /
@@ -238,7 +238,7 @@ const HEADER_PSEUDO_GLASS = (css) => CSS_RULES(css).some(([sel, body]) => /\.wSk
 
 /* ── 1a0. sessionFollow（新会话按钮跟随面板不透明度）双向判据 ──
  * 来历：设置页有开关 + 文案 + DEFAULT_SESSION_FOLLOW，但**全仓没有任何地方读 section.sessionFollow**
- * （开关点了没效果）。用户裁定按**用户可见文案**实现：开 = 跟随那条透明度（U(panel) 现状公式）；
+ * （开关点了没效果）。口径按**用户可见文案**实现：开 = 跟随那条透明度（U(panel) 现状公式）；
  * 关 = 回到宿主原色 var(--dsw-alias-button-elevated-fill)（不混 transparent）。 */
 const NEW_SESSION_BG = /background-color:\s*(color-mix\(in srgb, var\(--dsw-alias-button-elevated-fill\)[^;]*|var\(--dsw-alias-button-elevated-fill\)) !important;/g
 const sessionCases = []

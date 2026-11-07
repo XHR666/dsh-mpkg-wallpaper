@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // tools/transcode-limit-test.mjs —— 用户第 1 条（2026-09-17）的**资源占用 / 误判转码**回归
 //
-// 用户原话与现场：
+// 需求与现场：
 //   "我现在并没有使用视频转码，我用的是 video 类的 mpkg，然后解码帧率无上限，
 //    分辨率也是原始分辨率，什么都没调。你看一下这是不是 bug。"
 //   实测：`ffmpeg -threads 1 -filter_threads 1 … -i ~/.dsh-mpkg-wallpaper/transcodes/src_1789…`

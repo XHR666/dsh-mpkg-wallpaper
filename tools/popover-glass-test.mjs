@@ -116,7 +116,7 @@ ok('A6 反自激②：兜底底标记把理由写进属性值、复核只走结�
    ① 判据必须存在（属性优先，宿主声明 data-menu-material 就撤我们的底）；
    ② CSS 兜底不许把 material 家族再刷上我们的表面 token（防"表面先插入那一帧"）；
    ③ Token 用量 / 会话统计（bRhRbq_panel，role=dialog）维持宿主白底：走 --mpw-surface-panel，
-      不许被 pop-bg / trunc 那两条接管（用户明确说这两块现在是正常效果）。 */
+      不许被 pop-bg / trunc 那两条接管（明确口径说这两块现在是正常效果）。 */
 ok('M1 宿主 material 菜单不再叠我们的底（data-menu-material 判据在位 + sticky 复核只走结构判据）',
   CLIENT.includes('data-menu-material') && CLIENT.includes('mpwPopHostMaterial')
   && CLIENT.includes('if (el.hasAttribute && el.hasAttribute("data-menu-material")) { need = false; why = "host-material" }'))
@@ -126,16 +126,16 @@ ok('M2 CSS 兜底把 material 家族排除在我们的兜底底之外（:not([da
 ok('M3 Token 用量 / 会话统计（role=dialog）仍走宿主面板白底，不被 pop-bg/trunc 接管',
   /\[role="dialog"\][^{]*\{[^}]*--mpw-surface-panel/.test(CLIENT) || CLIENT.includes('--mpw-surface-panel'))
 
-/* ①(2026-10-09 DSH 0.2.0) E/I 的"不许改坏"钉子：用户明确说下面两块现在是**想要的效果**，
+/* ①(2026-10-09 DSH 0.2.0) E/I 的"不许改坏"钉子：明确口径说下面两块现在是**想要的效果**，
    所以我们**一个字符都不许碰**（今天事实上就是 0 命中，这两条断言把它钉死；将来真要接管
    必须先删掉断言并写明理由 —— 让"改坏"必须是一次显式决定，而不是顺手）。 */
-ok('M4 目标条（nLMEza_bar）不在我们的任何 CSS/JS 里（用户说它现在就是要的效果）',
+ok('M4 目标条（nLMEza_bar）不在我们的任何 CSS/JS 里（口径：它现在就是要的效果）',
   !/nLMEza/.test(CLIENT))
 /* ①(2026-10-09 用户第三批第 2 项：'会话统计和 token 用量的地方，它的模糊好像也是没有生效的')
    ⇒ 这是**显式决定**要接管：真机读数原本是 bg=rgb(255,255,255)（不透明）⇒ 宿主自带 blur(40px)
    一点都看不见；现在换成霜化底（--mpw-surface-panel-frost 80%）+ 常量 blur(11px)。
    断言随之改向：钉**新**行为（这两块必须走霜化表面），而不是"零接管"。 */
-/* ②(2026-10-10 第四批真机) 用户报"会话统计 / Token 用量弹框里的 grid 容器是纯白、没有模糊"。
+/* ②(2026-10-10 第四批真机) 报障"会话统计 / Token 用量弹框里的 grid 容器是纯白、没有模糊"。
    真机 + 宿主 CSS 定案：`dl.bRhRbq_details` 与 `._7KE1Ra_cell/_option/_groups` 在宿主里全是
    `background:0 0`（自己不画底）⇒ 白是**我们叠出来的**：面板已经 80% 霜化，内层再刷 80%
    ⇒ 合成 96% ≈ 纯白。断言随之改向"**内层不吃我们的底**、只有面板本身霜化"，
@@ -152,7 +152,7 @@ ok('M5 弹框内层不再叠白底：dl[data-session-stats-*] 不被我们刷底
   && CLIENT.includes('mpwPopInsideMenuShell')
   && CLIENT.includes('[data-team-panel]::before,'))
 
-/* ②(2026-10-10 第五批真机) 用户报"有壁纸时加号菜单/子代理树只剩白底、没模糊"。机制：这两类弹层
+/* ②(2026-10-10 第五批真机) 报障"有壁纸时加号菜单/子代理树只剩白底、没模糊"。机制：这两类弹层
    落在我们自己的玻璃祖先里（卡片 blur14/侧栏/面板）⇒ 自己的 blur 采样不到页面；而主路去截断只扫
    [data-mpw-pop-bg]，宿主 material 菜单按 H 判据**故意没有**这个标记 ⇒ 永远不去截断。
    这里钉住新加的**专用趟**的三条纪律：只加不删（不能重演上轮把 B1 输入框卡片 case 弄坏的那次）、

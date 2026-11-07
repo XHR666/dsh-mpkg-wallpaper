@@ -25,7 +25,7 @@
 //                     ②半透明 + 用户显式关过（composerBlurUserSet）⇒ 永不自动开；
 //                     ③不透明（默认）主题 ⇒ 不动作；④关掉 themeAssist ⇒ 不动作；
 //                     ⑤用户显式开 ⇒ 照开；⑥自动开过之后用户显式关 ⇒ 属性与样式节点**摘除无残留**
-//   D 组 ≥4K 自动降 1080p（2026-10-02 用户拍板：**只对当前壁纸临时生效、不写设置、不弹条**）：
+//   D 组 ≥4K 自动降 1080p（2026-10-02 口径：**只对当前壁纸临时生效、不写设置、不弹条**）：
 //                     ①全条件满足 ⇒ 盘上**一个字都不写**（无 commit / 无 writeSection / 档里 resMax 不变）
 //                       + 临时覆盖 maxW=1920 + 软重挂 1080p 档（URL 带 maxW=1920）+ 新文案 + 台账 mode=transient；
 //                     ①b 临时覆盖是上限的**唯一读取口**：没设过 ⇒ 1920；用户自己设了 3000 ⇒ 3000（让位）；换壁纸 ⇒ 0；
@@ -116,7 +116,7 @@ const FN_AUTOCAP_TRANSCODABLE = sliceFn('mpw4kAutoCapTranscodable')
 const FN_AUTOCAP_DECISION = sliceFn('mpw4kAutoCapDecision')
 const FN_AUTOCAP_LEDGER = sliceFn('mpw4kAutoCapLedger')
 const FN_AUTOCAP_KEY = sliceFn('mpw4kAutoCapKey')
-/* ①(2026-10-02 用户拍板"不写设置" ⇒ 临时覆盖) `mpwAutoCapCommit()` 与死代码 `mpwAutoCapTransientActive()`
+/* ①(2026-10-02 口径"不写设置" ⇒ 临时覆盖) `mpwAutoCapCommit()` 与死代码 `mpwAutoCapTransientActive()`
    已从真源**彻底删除**（不是"主路径不再调用"，是整份真源里连函数声明都不存在）⇒ 这里不再切片；
    A14 改为 `fnGone` + `noCodeRef` 断言"声明没了、代码行也没引用"（比整份字符串 grep 更强/更准）。 */
 const FN_AUTOCAP_MAIN = sliceFn('mpwAutoCap4kForSource')
@@ -391,7 +391,7 @@ ok('A15 读数"在飞"不算"拿不到"：判据函数出 `await-transcode-probe
 ok('A16 唯一上限读取口：外观应用路径的转码规格从 `mpwResMaxEffective(section)` 取上限（不再直接读 `section.resMax`）；读取口内部"用户设过优先、否则命中当前壁纸的临时覆盖"',
   /const resMaxN = mpwResMaxEffective\(section\);/.test(SRC) && !/const resMaxN = section\.resMax/.test(SRC)
   && /if \(own > 0\) return own;/.test(FN_RESMAX_EFF) && /t\.key === mpwAutoCapKeyOf\(s2\)/.test(FN_RESMAX_EFF))
-/* ①(2026-10-02 用户拍板原话"不弹条" ⇒ **完全静默**) 两层守卫 + 窗口生命周期都在真源里：
+/* ①(2026-10-02 口径原话"不弹条" ⇒ **完全静默**) 两层守卫 + 窗口生命周期都在真源里：
    ① 占位事件（`auto:true`）拦在 `mpwBusyEmit`；② 静音窗口里的**真实**转码进度（label 以 `tc:` 开头）也拦在 `mpwBusyEmit`；
    窗口在软重挂后、发起轮询**之前**打开（下面的顺序断言：开窗必须在 `pollTranscodeProgress(` 之前，
    否则轮询自己第一发 `tc:0` 会漏出去 = 用户那条"不弹条"没落实）；
@@ -573,7 +573,7 @@ const noWrite = (g) => g.commits.length === 0 && g.w.win.__writes === void 0
     && g.w.win.__mpw4kAutoCap.applied === true && g.w.win.__mpw4kAutoCap.resMax === 1920 && g.w.win.__mpw4kAutoCap.mode === 'transient'
     && g.w.win.__mpwPerfNote.autoCap === n1.autoCap,
     JSON.stringify({ writes: g.w.win.__writes || null, commits: g.commits, remount: remounts(g), notes: g.r.notes, autoCap: n1 && n1.autoCap }))
-  // ①b 临时覆盖的读取语义（用户拍板：用户设过 resMax ⇒ 临时覆盖让位；换壁纸 ⇒ 覆盖失效）
+  // ①b 临时覆盖的读取语义（口径：用户设过 resMax ⇒ 临时覆盖让位；换壁纸 ⇒ 覆盖失效）
   const other = Object.assign({}, g.section, { image: HOST4K_B })
   ok('D1b 临时覆盖是上限的**唯一读取口**（`mpwResMaxEffective`）：没设过 ⇒ 1920；用户自己设了 3000 ⇒ **3000（让位）**；别张壁纸 ⇒ 0（按 key 失效）；空档 ⇒ 0',
     g.r.api.resMaxEff(g.section) === 1920
@@ -779,13 +779,13 @@ const noWrite = (g) => g.commits.length === 0 && g.w.win.__writes === void 0
     JSON.stringify({ autoCap: g.w.win.__mpwPerfNote.autoCap, seen: g.w.win.__mpw4kAutoCap.seen }))
 }
 {
-  // ⑬busy **完全静默**（2026-10-02 用户拍板，原话"不弹条"）：自动降档是**后台行为** ⇒ 它引起的进度事件一律不进进度条：
+  // ⑬busy **完全静默**（2026-10-02 口径，原话"不弹条"）：自动降档是**后台行为** ⇒ 它引起的进度事件一律不进进度条：
   //    ① 占位事件 `{auto:true}` 被 `mpwBusyEmit` 拦下；② 软重挂起来的**真实**转码进度（label 以 `tc:` 开头）
   //    被 `mpwAutoCapSilence(true)` 打开的静音窗口拦下（`mpwBusyEmit` 里第二道守卫）。
   //    为什么这样判：`mpw:busy` 是组件进度条的唯一进料口（组件 onBusy 收到 detail 就 setBusyState({visible:true})）
   //    ⇒ 判据直接看**真窗口派发出去的事件**（真实现 mpwBusyEmit + 真 pollTranscodeProgress），不是查字符串；
   //    "事件确实会被发出"由 E10 变异自证（去掉静音窗口守卫 ⇒ 它出现在派发里 ⇒ 本判据必红）。
-  //    ⚠ 上一版口径（已作废）：只拦占位事件、真实 `tc:` 进度照弹（"真的在转码时显示"）；用户拍板"不弹条"后
+  //    ⚠ 上一版口径（已作废）：只拦占位事件、真实 `tc:` 进度照弹（"真的在转码时显示"）；口径"不弹条"后
   //    连真实进度也静默。轮询本身照跑（真机上宿主照样转码）⇒ 判据同时要求 `/transcode-progress?...maxW=1920`
   //    真的发出去了、且窗口确实开着，否则"零派发"可能只是"轮询没跑"（上一版夹具漏切 mpwAutoCapSilence 时就是这形态）。
   const g = dWorld({ section: { image: HOST4K, blur: 0, unifyTint: false, unifyAmount: 0 }, ffmpeg: true, realPoll: true })
@@ -885,7 +885,7 @@ console.log('\n== E 组：变异自证（真源零改动；改坏关键判断必
      这条同时证明 D14 不是恒真：两次跑的静音窗口都开着（`silent() === true`，同一个真实现），
      差别只在那一行守卫 —— 而锚点 `SILENCE_GUARD` 必须真在切出来的 `FN_BUSY` 里（否则变异没发生 ⇒ 自证无效）。
      注：占位事件的 `payload.auto === true` 守卫留着不动 ⇒ 变异体多出来的事件只能来自真实 `tc:` 进度，
-     即这次变异精确地打在"完全静默"新增的那一层上（2026-10-02 用户拍板原话"不弹条"）。 */
+     即这次变异精确地打在"完全静默"新增的那一层上（2026-10-02 口径原话"不弹条"）。 */
   const SILENCE_GUARD_IN_BUSY = 'if (mpwAutoCapSilent && payload && typeof payload.label === "string" && payload.label.indexOf("tc:") === 0) return'
   const mk = (mutate) => {
     const w = mkWorld({ bgBase: 'rgb(249,250,251)' })

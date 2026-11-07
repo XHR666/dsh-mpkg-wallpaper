@@ -1,6 +1,6 @@
 // tools/chrome-surface-live-probe.mjs —— **真页面（:3080 用户 DSH）**上量四个界面外壳的**实际计算样式**
 //
-// 为什么要有它（2026-10-02 用户第 1 项反馈）：用户实测"统一虚化/透明度"观感自相矛盾 ——
+// 为什么要有它（2026-10-02 第 1 项反馈）：真机实测"统一虚化/透明度"观感自相矛盾 ——
 //   左栏像"壁纸色 + 模糊"、标题栏像"固定白底 + 模糊"、右栏/dock 全透明无模糊，设置弹窗一开左栏发黑。
 //   这一轮已经把语义改成"**不虚化 ⇒ 外壳实心**"（`mpwFogModel().shellPct`，见 lib/client.js），
 //   但"改完到底长什么样"只能拿**真页面上的 computed 值**说话 —— 不是推理，也不是截图（无头 Firefox 在本机
@@ -8,10 +8,10 @@
 //
 // 这一条不是判据（不入常驻门禁，和别的真机探针同规矩：**必须串行**），它只做**采集 + 如实打印**：
 //   · 场景矩阵：`unifyAmount ∈ {0,5,30}` × `sidebarAlpha ∈ {0,45,100}` × `blurFollowUnify ∈ {true,false}`（18 个场景）
-//     —— 只在这三个键上做 patch，其余字段（壁纸源/mpkgKey/opacity/…）全部沿用用户真机现值；
+//     —— 只在这三个键上做 patch，其余字段（壁纸源/mpkgKey/opacity/…）全部沿用真机现值；
 //   · 每个场景：写插件自己的 localStorage 键 → **reload** → 等插件就绪 → `getComputedStyle` 采集
 //     左栏 / 标题栏（含 `.mpw-hdrFrost` 层）/ 右栏+dock / 聊天区 / 壁纸层 + 主题 + 插件台账 + 三个 CSS token；
-//   · 每个场景额外**打开一次设置面板**再采一遍左栏（用户报"设置打开时左栏变黑"；打不开就如实记 `dialog:skipped`）；
+//   · 每个场景额外**打开一次设置面板**再采一遍左栏（报障"设置打开时左栏变黑"；打不开就如实记 `dialog:skipped`）；
 //   · 结果落 `tools/probe-out/chrome-surface-live.json`（已在 .gitignore，不入库），stdout 每个场景**一行 JSON** +
 //     末尾一张人读表（场景 → 四个表面的 color / alpha / blur）。
 //
@@ -25,7 +25,7 @@
 //   · 意图 vs 现实都给：`__mpwBuildCss(patch)` 生成的 CSS 里抠出的 token/规则（插件"打算画什么"）
 //     ＋ computed 值（页面"实际是什么"）。
 //
-// ⚠ 副作用（如实写明）：会**写用户真机的插件 localStorage**（`dsh.mpkg-wallpaper.v2`）并在每个场景 reload；
+// ⚠ 副作用（如实写明）：会**写真机的插件 localStorage**（`dsh.mpkg-wallpaper.v2`）并在每个场景 reload；
 //   脚本结束前把原始整串**还原**（`--keep` 可关掉还原；还原结果记在 JSON 的 `restore` 里并打印）。
 //   不写用户的 `settings.json`（插件自己的宿主写回不归本探针管；如出现写回，JSON 里 `hostPuts` 记请求计数）。
 //
@@ -33,7 +33,7 @@
 //   `MPW_PROBE_LOCKED=1` 防递归）；也可以按仓库惯例在外面再包一层：
 //     flock /tmp/.mpw-firefox.lock -c 'node tools/chrome-surface-live-probe.mjs'
 //   锁路径可用 `MPW_FIREFOX_LOCK` 覆盖；确信没有别的浏览器探针在跑时可 `MPW_PROBE_NO_FLOCK=1` 跳过。
-//   静音三件套：`_audio-mute.mjs` 的 `withAudioMute()`（探针一律静音，用户实测过"幽灵声音"）。
+//   静音三件套：`_audio-mute.mjs` 的 `withAudioMute()`（探针一律静音，真机实测过"幽灵声音"）。
 //
 // 用法:
 //   node tools/chrome-surface-live-probe.mjs                       # 18 场景，写 tools/probe-out/chrome-surface-live.json
@@ -97,7 +97,7 @@ const VIEWPORT = (() => {
   const m = String(arg('viewport', '1920x1200')).match(/^(\d+)x(\d+)$/)
   return m ? { width: Number(m[1]), height: Number(m[2]) } : { width: 1920, height: 1200 }
 })()
-/* 用户真机的 settings.json（插件会把设置写回这里）。默认：拦掉写回 + 跑前跑后快照比对，
+/* 真机的 settings.json（插件会把设置写回这里）。默认：拦掉写回 + 跑前跑后快照比对，
    变了就按快照原样还原 —— 探针只该改浏览器里那份 localStorage，不该动用户的真档。 */
 const SETTINGS_JSON = path.resolve(arg('settings', path.join(os.homedir(), '.dsh-mpkg-wallpaper', 'settings.json')))
 const SETTINGS_SHOWN = SETTINGS_JSON.replace(os.homedir(), '~')
@@ -118,7 +118,7 @@ if (process.env.MPW_PROBE_LOCKED !== '1' && process.env.MPW_PROBE_NO_FLOCK !== '
   console.log('⚠ 本机没有 flock ⇒ 本次**没有**加串行锁（同时跑多个浏览器探针会互相干扰；只影响并发安全）')
 }
 
-/* ── 1 场景矩阵（只 patch 三个键；其余字段沿用用户真机现值） ──────────────────────── */
+/* ── 1 场景矩阵（只 patch 三个键；其余字段沿用真机现值） ──────────────────────── */
 const AMOUNTS = [0, 5, 30]
 const SIDES = [0, 45, 100]
 const FOLLOWS = [true, false]
@@ -240,7 +240,7 @@ const COLLECT = () => {
         } catch (e) { return [] }
       }
       /* 顶部横带清单（比 frostedTop 宽）：视口顶部 220px 内、可见、宽≥100 高≥12，且**有底色或磨砂**的元素。
-         为什么要它：用户说的"标题栏"在当前宿主布局里不是 `.wSkVaW_header`（那个 hidden+0×0）⇒ 得让用户
+         为什么要它：所述"标题栏"在当前宿主布局里不是 `.wSkVaW_header`（那个 hidden+0×0）⇒ 得让用户
          按"选择器 + rect + 颜色/模糊"来指认。按面积降序取前 12，并去重（同 rect+同底色只留一个）。 */
       const topBand = (() => {
         try {
@@ -419,7 +419,7 @@ const SESSION_STATE = () => {
   } catch (e) { return { err: String(e && e.message || e) } }
 }
 
-/** 聊天列**顶部 120px** 内"可见 + 有底色或有磨砂"的元素 —— 用来把用户说的"标题栏"钉出来。 */
+/** 聊天列**顶部 120px** 内"可见 + 有底色或有磨砂"的元素 —— 用来把所述"标题栏"钉出来。 */
 const CHAT_TOP_SCAN = (rootSel) => {
   try {
     const root = document.querySelector(rootSel) || (() => {
@@ -704,7 +704,7 @@ try {
     await page.waitForTimeout(SETTLE)
   }
 
-  // 备份用户真机设置（整串），供最后还原
+  // 备份真机设置（整串），供最后还原
   const original = await page.evaluate((k) => { try { return localStorage.getItem(k) } catch (e) { return null } }, STORE)
   result.originalLen = original ? original.length : 0
   const originalSec = (() => { try { return original ? JSON.parse(original) : {} } catch (e) { return {} } })()
@@ -756,7 +756,7 @@ try {
       const eff = rec.closed.effective || {}
       rec.effectiveMismatch = !(Number(eff.unifyAmount) === sc.patch.unifyAmount && Number(eff.sidebarAlpha) === sc.patch.sidebarAlpha && !!eff.blurFollowUnify === sc.patch.blurFollowUnify && eff.unifyTint === true)
 
-      /* 开设置面板（用户报"设置打开时左栏变黑"）—— 拿不到入口就 skipped（不伪造） */
+      /* 开设置面板（报障"设置打开时左栏变黑"）—— 拿不到入口就 skipped（不伪造） */
       const opened = await page.evaluate(OPEN_SETTINGS)
       let state = await page.evaluate(DIALOG_STATE)
       if (opened.ok && !state.open) await page.waitForTimeout(1200)
@@ -780,7 +780,7 @@ try {
         await page.waitForTimeout(400)
         rec.dialogCollect = await page.evaluate(COLLECT)
         rec.headerProbe.open = await page.evaluate(CHAT_TOP_SCAN, CHAT_ROOT_SEL).catch(() => null)
-        /* 设置面板开/关对左栏的影响（用户报"设置打开时左栏变黑"）——只记有界字段，便于人读 */
+        /* 设置面板开/关对左栏的影响（报障"设置打开时左栏变黑"）——只记有界字段，便于人读 */
         const pick = (surf) => (surf && surf.found ? { bg: surf.backgroundColor, bf: surf.backdropFilter, display: surf.display } : null)
         rec.dialogDelta = {
           sidebarCol: { closed: pick(rec.closed.surfaces.sidebarCol), open: pick(rec.dialogCollect.surfaces.sidebarCol) },
@@ -839,7 +839,7 @@ try {
     }))
   }
 
-  /* ⑤ 还原用户真机设置（默认做；--keep 跳过） */
+  /* ⑤ 还原真机设置（默认做；--keep 跳过） */
   if (!KEEP) {
     try {
       await page.evaluate(({ k, raw }) => { try { if (raw === null) localStorage.removeItem(k); else localStorage.setItem(k, raw) } catch (e) { /* ignore */ } }, { k: STORE, raw: original })
@@ -967,7 +967,7 @@ for (const rec of result.scenarios) {
   console.log(rec.id.padEnd(14) + '| ' + fmt(g('sidebarCol')).padEnd(34) + '| ' + hdrCell.padEnd(62) + '| ' + fmt(g('rightPanel')).padEnd(30) + '| ' + fmt(g('dockStrip')).padEnd(26) + '| ' + chat)
 }
 
-/* ── 顶部横带并集（给用户认"你说的标题栏是哪一个"） ─────────────────────────────
+/* ── 顶部横带并集（给用户认"所述标题栏是哪一个"） ─────────────────────────────
    每个场景都有 topBand；这里按"选择器 + 颜色 + 模糊"去重合并，附第一次出现的场景与 rect。 */
 {
   const seen = new Map()
@@ -989,7 +989,7 @@ for (const rec of result.scenarios) {
   }
 }
 
-/* ── 聊天列顶部候选（把用户说的"标题栏"钉出来） ─────────────────────────────── */
+/* ── 聊天列顶部候选（把所述"标题栏"钉出来） ─────────────────────────────── */
 {
   const seen = new Map()
   for (const rec of result.scenarios) {
@@ -1002,7 +1002,7 @@ for (const rec of result.scenarios) {
     }
   }
   result.headerCandidates = [...seen.values()]
-  console.log('\n===== 聊天列顶部 120px 候选（"可见 + 有底色或有磨砂"；用户说的标题栏应是其中之一）=====')
+  console.log('\n===== 聊天列顶部 120px 候选（"可见 + 有底色或有磨砂"；所述标题栏应是其中之一）=====')
   if (!result.headerCandidates.length) console.log('  （空：聊天列顶部 120px 内没有"有底色或磨砂"的可见横条）')
   for (const x of result.headerCandidates) {
     console.log('  · ' + selectorOf(x.path) + '   [' + x.cls + ']' + (x.text ? '  text="' + x.text + '"' : ''))

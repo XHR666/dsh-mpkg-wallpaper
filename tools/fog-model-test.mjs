@@ -11,7 +11,7 @@
 //      钉回旧 token（宿主打开设置面板时换上的深色导航被盖掉 → "设置一开左栏就变黑"）、聊天区
 //      顶栏被写死 `rgba(255,255,255,0.38)` 白底 + 无条件注入磨砂层 ⇒ 宿主的原生外观全被覆盖。
 //
-// 语义（2026-10-02 用户拍板；代码里 `mpwSurfacePlan()` 是**唯一源**，`mpwFogModel()` 只是薄包装）：
+// 语义（2026-10-02 口径；代码里 `mpwSurfacePlan()` 是**唯一源**，`mpwFogModel()` 只是薄包装）：
 //   · 「界面透明度」`sidebarAlpha`：**0 = 完全不透明（正常界面）**、**100 = 完全透明（看到壁纸）**；
 //     生效不透明度 = `100 - 透明度`。**与模糊解耦**：模糊 0 时照样按透明度透出（壁纸是清晰的）。
 //   · 基色 = **宿主自己的 token**：左栏/右栏/dock = `var(--dsw-specific-sidebar-fill)`、
@@ -214,7 +214,7 @@ ok('A3 四处接线齐全：默认值对象 / BACKUP_FIELDS / 导入布尔净化
   && /toggleRow\(t\("blurFollowUnify"\), t\("blurFollowUnify\.desc"\), "blurFollowUnify", DEFAULT_BLUR_FOLLOW_UNIFY/.test(SRC),
   '"blurFollowUnify" 出现 ' + (SRC.match(/"blurFollowUnify"/g) || []).length + ' 次')
 {
-  /* 位置判据（用户第3项）：说明行 + 开关必须在 **tab 栏之后、界面虚化标题之前**。 */
+  /* 位置判据（第3项）：说明行 + 开关必须在 **tab 栏之后、界面虚化标题之前**。 */
   const iTab = SRC.indexOf('"data-mpw-tabkey": "blur"')
   const iHint = SRC.indexOf('t("blur.follow.hint")')
   const iSw = SRC.indexOf('toggleRow(t("blurFollowUnify")')
@@ -224,7 +224,7 @@ ok('A3 四处接线齐全：默认值对象 / BACKUP_FIELDS / 导入布尔净化
     JSON.stringify({ iTab, iHint, iSw, iTitle }))
 }
 {
-  /* 用户第4项：右侧边栏/dock 虚化必须在「界面虚化」页里（外观页不再有那两行）。 */
+  /* 第4项：右侧边栏/dock 虚化必须在「界面虚化」页里（外观页不再有那两行）。 */
   const iBlurTab = SRC.indexOf('"data-mpw-tabkey": "blur"')
   const iOtherTab = SRC.indexOf('"data-mpw-tabkey": "other"')
   const iRsRow = SRC.indexOf('toggleRow(t("rightSidebarBlur")')
@@ -807,7 +807,7 @@ console.log('\n== G 组：透明度语义搬值（旧档 100 = 全不透明 → 
    ══════════════════════════════════════════════════════════════════ */
 console.log('\n== H 组：无雾层 ⇒ 不给宿主叠 backdrop-filter（+ chrome 去 saturate）==')
 {
-  /* 用户真机档：界面透明度 100%（无雾）+ chatFollow 关 + 整屏虚化 40 */
+  /* 真机档：界面透明度 100%（无雾）+ chatFollow 关 + 整屏虚化 40 */
   const NOFOG_ST = { enabled: true, image: true, unifyTint: true, unifyAmount: 40, sidebarAlpha: 100, chatFollow: false, blurFollowUnify: true }
   const cssNoFog = boot(NOFOG_ST)
   const bn = STRIP(cssNoFog)
@@ -877,7 +877,7 @@ console.log('\n== H 组：无雾层 ⇒ 不给宿主叠 backdrop-filter（+ chro
     && /--mpw-surface-side-frost:\s*color-mix\(in srgb, var\(--dsw-specific-sidebar-fill\) 55\.0%, transparent\)/.test(css)
     && /--mpw-surface-rs-dock:\s*color-mix\(in srgb, var\(--dsw-specific-sidebar-fill\) 55\.0%, transparent\)/.test(css),
     '')
-  ok('H9 右栏/dock 家族只给**最外层**刷表面（嵌套两层 55% 会合成 ~80% ≈ 一块近白板 = 用户说的"右栏更白"）',
+  ok('H9 右栏/dock 家族只给**最外层**刷表面（嵌套两层 55% 会合成 ~80% ≈ 一块近白板 = 所述"右栏更白"）',
     /\[data-mpw-rs-surface\]/.test(css)
     /* 底线（用规则解析器逐条判，别拿正则糊）：凡是从 --mpw-surface-rs-dock / -dark 上色、
        且主体命中了右栏/dock 家族选择器的规则，选择器里必须带最外层标记。 */
