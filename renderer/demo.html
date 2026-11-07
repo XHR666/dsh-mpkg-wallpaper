@@ -35,7 +35,7 @@ html.mpw-noui #mpw-audio-btn,
   html.mpw-noui #__mpwHealthTag,
   html.mpw-noui #mpw-props-panel,
   html.mpw-noui #mpw-fx-panel { display: none !important; }
-/* 壁纸模式按实际屏幕覆盖裁切（用户要求：不要上下黑边，左右按需裁切） */
+/* 壁纸模式按实际屏幕覆盖裁切（需求：不要上下黑边，左右按需裁切） */
 html.mpw-noui canvas {
   /* 壁纸铺满：fitCanvas() 仍算 16:9 盒，这里在壁纸模式覆盖成整屏，再用 cover 裁切 */
   position: fixed !important; inset: 0 !important;
@@ -285,11 +285,11 @@ html.mpw-noui canvas {
     if (tries >= 32) clearInterval(timer)
   }, 250)
   // ═══ MPW-EMPTYSTATE-BEGIN ②(2026-10-13 P-345 语义纠正) **「没有壁纸」= 合法空态；只有「选了但取不到」才提示** ═══
-  /* P-343 把"没有壁纸"当成了要提示的异常 ✗ —— 它不是异常，是**合法空态** ✓（用户口径）。
+  /* P-343 把"没有壁纸"当成了要提示的异常 ✗ —— 它不是异常，是**合法空态** ✓（口径）。
      现在两条路径**彻底分离**：
        ⓐ **合法空态（没有壁纸）** ⇒ 页面**什么都不显示**：不要占位/提示/报错、不要全屏纯黑、
           不要吞指针；底色 = 直接打开时的**中性浅色**，被宿主 iframe 嵌进来时**透明**
-          （由宿主自己的背景显示 = 用户说的"正常的白"）。落在 `mpwApplyNoWallpaperPage()`：
+          （由宿主自己的背景显示 = 所述"正常的白"）。落在 `mpwApplyNoWallpaperPage()`：
           加 `html.mpw-no-wallpaper`（藏 canvas 与调试 chrome + 换底），boot 里**直接 return**
           ⇒ 不加载任何包、不报任何错、没有"永远撤不掉的占位"。
        ⓑ **失败态（选了壁纸但取不到/解不开）** ⇒ 才显示**诊断占位**：底部卡片、非纯黑、
@@ -492,7 +492,7 @@ html.mpw-noui canvas {
   // 看门狗：module 脚本 7s 内没启动（静态 import 404/非 JS MIME/解析失败/半截写入/顶层抛错）→ 主动 ok:false。
   //   初始的 ok:true 已发出，插件 8s 窗口不会再兜底；不主动判失败的话 strict 下就是永久白屏（契约 §1）。
   // ①(P-135 甲) **本块必须把失败原因写进 `#log`**：旧实现只 postMessage 给插件宿主，页面自己一个字都不说
-  //   ⇒ 用户在 `#log` 里永远只看到初始的 `loading…`（= 用户原话"整面板只有 loading…、后面什么都没有"）
+  //   ⇒ 用户在 `#log` 里永远只看到初始的 `loading…`（= 需求："整面板只有 loading…、后面什么都没有"）
   //   且"脚本没到"与"到了但某个 await 没回"**无法区分**。本块把这两类写成两条可区分的话：
   //     · 甲 `__mpwModuleStarted` 未置位 ⇒ `❌ …module 未启动（脚本没到）…` + 早期 error/资源错误摘要；
   //     · 乙 已置位但 7s 无首帧   ⇒ `⚠ …已启动但 7s 无首帧… 最后一行日志 = <#log 末行>`（不发 ok:false：
@@ -564,7 +564,7 @@ html.mpw-noui canvas {
         __mpwWatchdogNote('⚠ 7s 内没有首帧，但 module 已启动（`window.__mpwModuleStarted=1`）'
           + '= "到了但某个 await 没回"这一类：最后一行日志 = ' + __mpwLastLogLine()
           + '（对照 docs/RENDER-BUGS-20260918.md §1.4 判据表；P-135 起每个网络/解码 await 超时都会自写一行 `⚠ 超时 <URL>`）')
-        // ①(2026-10-13 空态修复) 只写日志的话用户看到的仍是一块全屏黑画布 ⇒ 同时立起看得见的占位
+        // ①(2026-10-13 空态修复) 只写日志的话所见仍是一块全屏黑画布 ⇒ 同时立起看得见的占位
         try { if (window.__mpwEmptyState) window.__mpwEmptyState.fromLog(__mpwLastLogLine()) } catch (e) {}
         return
       }
@@ -831,7 +831,7 @@ let webFitScale = 1
 let webState = 'idle', webReadyMs = null, webShimVersion = null, webFitState = null
 
 /* ═══ ①(2026-09-25 任务「把所有没接线的东西都接上」) 宿主 API 的**真送达**通路 ═══════════════════════════
-   背景（用户原话：`updateWebProps` 那句「网页壁纸属性推送未接线 ⇒ 本次调用被忽略」"搞得我都不好测试了"）：
+   背景（需求：`updateWebProps` 那句「网页壁纸属性推送未接线 ⇒ 本次调用被忽略」"搞得我都不好测试了"）：
    桩改成真做事，目的地按**当前档位**选，两条都不可达时如实降级（原因 + 替代 API，不再用"未接线"这种含糊词）。
      · `updateWebProps`：web 帧 ⇒ `props` op（同源直调帧内 shim `__mpwWebControl`，否则既有 postMessage+队列
        `mpwWebSend`）；场景档 ⇒ 写 `window.__mpwUserProps` + 面板同一条应用链 `__mpwPropsApplyHost`。
@@ -1373,7 +1373,7 @@ function mpwBlobMediaRetry(el, label) {
 //     手动喂读数，不需要真传感器）。
 //   · `?gyro=0|off|none`：**完全不监听**（一个 deviceorientation 监听都不挂，判据 ④ 钉住）。
 //   · 与 `?parallax=` 正交：`?parallax` 只门控"视差"那一支（bundle :11200 的
-//     `parEnabled && parallaxOff !== true`）；缺省**关**是 2026-09-12 的用户要求，本段不碰。
+//     `parEnabled && parallaxOff !== true`）；缺省**关**是 2026-09-12 的需求，本段不碰。
 //     ⇒ 没开 `?parallax=1` 时姿态源**仍然喂指针**（乙/丙两条链），只是相机视差不跟。
 //   · 与 `?ptrfx=` 正交：`?ptrfx=legacy` 只让效果链那 7 个 uniform **一个都不写**（逐位回到改动前），
 //     姿态源照常喂指针/视差 ⇒ 那 7 个 uniform 看不到姿态（这是 legacy 的定义，不是本段的 bug）。
@@ -2193,7 +2193,7 @@ try {
     const cur = seq.indexOf(id)
     const isLast = cur === seq.length - 1
     const next = cur >= 0 ? seq[(cur + 1) % seq.length] : seq[0]
-    // 单程结束：最后一场景 45s 后停（不再跳回首个）——用户反馈"循环停不下来"即此 bug
+    // 单程结束：最后一场景 45s 后停（不再跳回首个）——现象："循环停不下来"即此 bug
     const vv = Date.now()
     setTimeout(() => { try { window.location.href = isLast ? '/?autorundone=1&v=' + vv : '/?id=' + next + '&report=1&autorun=1&v=' + vv } catch {} }, 45000)
   }
@@ -2301,7 +2301,7 @@ function fetchWithTimeout(url, ms) {
 // ═══ ①(P-135 乙 2026-09-19) 全链路超时原语（**模块常量**，不新增任何 URL 开关）═══
 // 为什么：本文件此前只有上面那一个 `fetchWithTimeout`（全文仅 1 处调用 = 着色器兜底），其余 13 处
 //   裸 `fetch` / `arrayBuffer()` / `json()` / `createImageBitmap` **没有上限**：服务端某个请求
-//   （慢盘读整包、连接不返回 FIN……）一挂，装载链就永久停在上一行日志 —— 用户报的"只有 loading…"
+//   （慢盘读整包、连接不返回 FIN……）一挂，装载链就永久停在上一行日志 —— 报障所述"只有 loading…"
 //   里属于"(乙) 已出现 ✅ WebGL2 之后停住"的那一类，无法与"卡在哪个 fetch"区分。
 // 口径：
 //   · 健康路径**零行为变化**：成功的响应/正文/位图按原样返回，一行新日志都不加（只有超时才写 ⚠）；
@@ -2393,7 +2393,7 @@ try { window.__mpwHealthPost = mpwHealthPost } catch (e) {}
 async function bootInstance(inst) {
   // ①(2026-09-19 P0 修复) `objById`（scene.json 的 `objects[]` 按 id 建表）原来只在下面**内层块**里
   //   用 `const` 声明 ⇒ 块作用域；而 P-139 的附件锚点代码在**本函数**（`bootInstance`）的另一处用它
-  //   ⇒ 场景一装载就 `ReferenceError: objById is not defined` ⇒ 整页 `❌ 启动失败`（用户看到白屏）。
+  //   ⇒ 场景一装载就 `ReferenceError: objById is not defined` ⇒ 整页 `❌ 启动失败`（所见白屏）。
   //   这里声明在本函数作用域，赋值仍在原处（parse 块内）。
   let objById = null
   // ═══ ①(P-77 一页多实例·第 1 步 2026-09-15) 装载层抽成 bootInstance(inst) ═══
@@ -2577,7 +2577,7 @@ async function bootInstance(inst) {
       })
       // ② 明确降级（有日志、有 caps 位，不假装成功）：本页的场景路径没有这三样语义
       put('setFit', (v) => { note('setFit', '⚠ 本仓渲染器的场景路径没有"舞台适配档"（cover/contain/stretch 是上游产物页给 iframe 视口用的）⇒ 本档位在预览里不生效：' + String(v)); return false }, false)
-      /* ①(2026-09-25 「把所有没接线的东西都接上」) 这两条**真接线**（用户原话：'你这怎么还有没接线的东西'）：
+      /* ①(2026-09-25 「把所有没接线的东西都接上」) 这两条**真接线**（需求：'你这怎么还有没接线的东西'）：
          · `setSceneFps`：走 `mpwSceneFpsConfigure()` —— 抽稀只降不升；`legacy/off/0/vsync` = 每 rAF 一帧
            = **改动前行为**；实测提交帧率读 `window.__mpwSceneFps.effective`。`?fps=` 是同一个解析点。
          · `updateWebProps`：web 帧 ⇒ `mpwWebControlSend('props')`（同源直调帧内 shim `__mpwWebControl`，
@@ -2677,7 +2677,7 @@ async function bootInstance(inst) {
         + (__capsFalse.length ? '；明确降级 ' + __capsFalse.join('/') : '') + '（读数见 window.__mpwHostCaps）')
     } catch (e) { logf('⚠ 宿主 API 发布失败: ' + ((e && e.message) || e)) }
   }
-  /* ⑧(2026-11-06 用户要求 DSH 插件「壁纸设置 → 渲染器」等价接线) **宿主命令通道**：
+  /* ⑧(2026-11-06 需求 DSH 插件「壁纸设置 → 渲染器」等价接线) **宿主命令通道**：
      strict iframe 是不透明源，宿主读不到也调不到本页的 window.__wp ⇒ 只能 postMessage：
        {type:'mpw-host-cmd', op:'display', patch:{flipH,playbackRate,brightness,colorOptions,...}}
        {type:'mpw-host-cmd', op:'sceneFps', v:24|30|48|60|0}
@@ -3253,7 +3253,7 @@ async function loadTexInner(name, opts = {}) {
       try { m.rgba = null } catch {}
       // ①(关键修复) 旧代码这里只 return 了 glTex、**没有 textures.set(name, …)** →
       //   layer.textureName 虽被赋值，但之后 textures.get() 取不到 → 该层永远不绘制。
-      //   6000px 背景正好是唯一走本分支的层 = 用户看到的"背景一直没有"。
+      //   6000px 背景正好是唯一走本分支的层 = 所见"背景一直没有"。
       const g0 = gl.getError()   // 清掉历史错误，随后只看本次上传是否报错
       /* ①(P-168 2026-09-20 上游 1.3.18 REPEAT 契约) 创建后按**名字**决定 wrap：
          云/神光那类 uv 随 `g_Time` 无界增长的贴图必须 REPEAT（CLAMP 会把天空拉成静止伪影），
@@ -3340,7 +3340,7 @@ async function loadTexInner(name, opts = {}) {
       // ①(W1② P-36 GirlCat 实锤) 位图上传路径加固：houseback(3840×2160)/housebasic(4948×2935)
       //   在真机上整层采样为黑——旧实现 createImageBitmap 后直接 texImage2D，**无降采样、
       //   无 getError 检查**：超设备上限（housebasic 4948 > 4096）或大位图上传失败的设备上
-      //   纹理静默为黑（效果链把黑底+光斑一起输出=用户看到的"全黑只剩窗帘/光斑"）。
+      //   纹理静默为黑（效果链把黑底+光斑一起输出=所见"全黑只剩窗帘/光斑"）。
       //   现在：超 min(4096, 设备上限) 先 canvas 缩图；上传后查错，失败按 2048→1024 阶梯
       //   重试并逐级记日志（下一份上报能直接回答"为什么黑"）。
       /* ①(P-223) contentWidth/Height = 解码位图原尺寸（降档重试只改物理上传尺寸） */
@@ -3391,7 +3391,7 @@ async function loadTexInner(name, opts = {}) {
       }
       // ①(P-163 第 3 处) 全部上传尝试都报错 ⇒ **不登记这张坏纹理**：登记了它，层照画不误，而
       //   WebGL 对"不完整的纹理"采样恒为 (0,0,0,1) = **不透明白黑**——整屏铺满的层（本包正是
-      //   "7680×4320 整屏底图"）于是一帧变纯黑，用户看到"整个画面完全是黑色的"。返回 null 让该层
+      //   "7680×4320 整屏底图"）于是一帧变纯黑，所见"整个画面完全是黑色的"。返回 null 让该层
       //   走既有的"缺纹理"路径（透明兜底 + 明确日志），画面退到清屏色而不是黑幕，且原因写在日志里。
       if (r.gerr !== gl.NO_ERROR) {
         logf('  ⚠ 位图上传仍报错 0x' + r.gerr.toString(16) + ' ' + name + '（' + w + 'x' + h + '）——该纹理按**缺纹理**处理（旧实现登记坏纹理 ⇒ 整层采样为不透明黑）')
@@ -4547,7 +4547,7 @@ function loadScene() {
   // 消除固定窗口截断（如 180 帧呼吸半周期）所致的回绕阶跃（呼吸变成 3s 吸+3s 呼的连续往复）。
   const animLoopPingpong = new URLSearchParams(location.search).get('animloop') !== 'saw'
   // ②(回退 2026-09-11) MDLA 逐帧动画**默认关闭**、?anim=1 显式开启。
-  // 原因（用户真机实测）：在本渲染器里附件位置由"锚点偏移"决定，而 MDLA 的骨骼位移被当作
+  // 原因（真机实测）：在本渲染器里附件位置由"锚点偏移"决定，而 MDLA 的骨骼位移被当作
   // "层的整体位移"施加 → 头发/主体被大幅拖动（"头发上下呼吸、结尾左右颤抖、画面像翻转"）。
   // 正解=骨骼**顶点蒙皮**（g_Bones，属大工程）：骨骼微动应体现在 mesh 顶点上，而非层 origin。
   // 数据层（真实 fps/frameCount/mode + 两帧插值）已按官方语义实现，供将来蒙皮复用。
@@ -5638,7 +5638,7 @@ function loadScene() {
      旧实现（钉死提交 151ce0a 的 demo.html，`mpwHandle.dispose()` 内的视频清理段）只暂停/撤销**视频**
      元素与清纹理，`sceneAudio` 的 `<audio>` 元素、它们的 blob URL、MediaElementSource 与那个
      AudioContext **一个都不动** ⇒ `__wp.release()`（测试台/宿主的显式释放路径）之后声音照放；
-     同一文档里再挂载时 `sceneAudio.started` 仍是 true ⇒ 新实例接不上音频、旧元素继续响 = 用户报的
+     同一文档里再挂载时 `sceneAudio.started` 仍是 true ⇒ 新实例接不上音频、旧元素继续响 = 报障所述
      "偶发漏音 / 声音对不上画面"。这里按"谁建谁释放"收干净，并记台账（`window.__mpwAudioLedger`）。
      幂等：连调两次不会重复计数（vols/els 已清空）。 */
   function mpwReleaseSceneAudio() {
@@ -5710,13 +5710,13 @@ function loadScene() {
     if (audioGate.parked === true) { try { window.__mpwAudioSilentReason = 'parked' } catch (e) {} return true }          // 被收起来（隐藏/兜底/省电）⇒ 停源（不只是压增益）
     if (Number(audioGate.volume) === 0) { try { window.__mpwAudioSilentReason = 'volume-zero' } catch (e) {} return true }
     if (audioGate.muted === null && __mpwAudioEmbedFlag && mpwAudioEmbedded() && !audioGate.allow && !audioGate.gesture) { try { window.__mpwAudioSilentReason = 'host-iframe-unstated' } catch (e) {} return true }
-    /* ①(P-225 2026-09-30) **顶层直接打开 ≠ 自动外放**：用户报的幽灵声音就是门禁无头浏览器顶层
+    /* ①(P-225 2026-09-30) **顶层直接打开 ≠ 自动外放**：报障所述幽灵声音就是门禁无头浏览器顶层
        打开渲染器页（`mpwAudioSilent()` 只读宿主 iframe 的 muted ⇒ 顶层恒 false）⇒ BGM 真放。
        现在：顶层（window===top）默认静音，直到 **用户手势**（pointerdown/keydown 一次即可）
        或显式 `?muted=0` / `_wp.setMuted(false)`。iframe 内保持现行为（宿主 muted 说了算，不许改坏）。 */
     try { if (window.self === window.top && !audioGate.gesture && !audioGate.allow && audioGate.muted !== false) { window.__mpwAudioSilentReason = 'top-level-awaiting-gesture'; return true } } catch (e) {}
     /* ①(P-225) **后台不出声**：`document.hidden` ⇒ 静音（visibilitychange 驱动，恢复按原意图）。
-       真机/多标签页用户报过"切走还在响"。 */
+       真机/多标签页报障过"切走还在响"。 */
     try { if (typeof document !== 'undefined' && document.hidden) { window.__mpwAudioSilentReason = 'hidden'; return true } } catch (e) {}
     /* ①(P-225) **多实例只准一个出声**：BroadcastChannel 单例仲裁——非 owner 且被压制 ⇒ 静音。
        仲裁失败（无 BroadcastChannel）⇒ 退化为"各自决定"，但台账记 degraded（不静默）。 */
@@ -6076,7 +6076,7 @@ function loadScene() {
     } else {
       /* ①(2026-09-24 任务 ⑫「音条无数据时不画/白块」) **缺省档（auto）无数据源 ⇒ 时间驱动的占位源**。
          语义变更：旧语义（钉死提交 151ce0a 的 `git show 151ce0a:demo.html` 同一分支）是"全 0 +
-         `source='silent'`"；改动原因 = 用户原话「原本的渲染是可以将音频条渲染出来的，虽然它没有数据源，
+         `source='silent'`"；改动原因 = 需求：「原本的渲染是可以将音频条渲染出来的，虽然它没有数据源，
          但是音频条确实是在动的」+ 上游行为：oneincase/webwallgl（MIT，本仓 vendored 参考
          `references/vendor-ref/webwallgl/renderer/vendor/we-scene/render/audio.js` 的
          `createSimulatedAudio()`）在没有系统音频的独立测试台里就是**纯时间驱动**合成一段仿音乐频谱
@@ -6086,7 +6086,7 @@ function loadScene() {
          为什么"必须动"不只是观感问题：全 0 频谱会让作者 shader 的音条高度退化为 0
          （`enhanced_simple_audio_bars`：`barHeight = mix(max(u_BarBoundsX, minBarHeight), …, 0) = 0`
          ⇒ 零尺寸 SDF + 零宽 AA 过渡带 ⇒ `smoothstep(0,0,0)` 在部分驱动上求值成 1 ⇒ 整层被
-         `Bar Color`(1 1 1) 以 alpha=1 铺满 = 用户看到的**白色实心块**，把后面的层全挡掉）。
+         `Bar Color`(1 1 1) 以 alpha=1 铺满 = 所见**白色实心块**，把后面的层全挡掉）。
          渲染器侧另有 `AUDIO_SILENCE_FLOOR` 兜底（显式静音/宿主不注入时也不把全 0 喂给 shader）。
          `?bandfeed=real|mic`（只要真实源）与 `?bandfeed=off`（不接源）的语义**不变**。 */
       const bands = simulatedBandArray(t)
@@ -6398,7 +6398,7 @@ function loadScene() {
         // (2026-09-12 定案②) 坏帧处理 = **跳过 + 相位插值**（关键：绝不"停顿保持再跳变"）
         //   证据链: 1) 每条 per-bone 轨道存 length+1 帧(segBytes/36 = length+1)，但结尾 1~17 帧是导出垃圾
         //   （实测 主体 177-179、眼睛 234-239、耳朵 298-299、girl 177-179、人物 58-74 步进是正常值的
-        //   数百倍 → 用户看到的"每层动画末帧抽一下"）；2) 截断窗口会破坏周期（耳朵回绕差 431）；
+        //   数百倍 → 所见"每层动画末帧抽一下"）；2) 截断窗口会破坏周期（耳朵回绕差 431）；
         //   3) "坏帧保持前一帧"会在快速段产生 停顿+跳变（实测耳朵 f41→f42 步进 121 = 合法值的 2 倍）。
         //   故：先用 detectBadAnimFrames 找出坏帧，采样时按**相位**在相邻好帧之间线性插值
         //   （坏帧被跳过，位移分摊到多帧 → 结构上不可能出现跳变）。
@@ -6522,7 +6522,7 @@ function loadScene() {
   //   病灶（已实测）：`objects[]` 顺序 22 `右眼上眼睑(67)` → 26 `眼睛组合(115)`，而本仓库渲染器
   //   **按层序逐层画**、材质 `depthtest/write:disabled`、全仓无 CULL_FACE ⇒ 遮挡 100% 由层序 +
   //   层内 index 顺序决定（`demo.html` 绘制循环 `onMeshLayer`）。于是同一次眨眼时睑被眼球盖住
-  //   = 用户看到的"眼睛在下面冒出来"。官方语义不改（层内 index 顺序不动），只把**同皮肤的一组
+  //   = 所见"眼睛在下面冒出来"。官方语义不改（层内 index 顺序不动），只把**同皮肤的一组
   //   睑层**延后到眼球之后：`P139_EYE_LID_DEFER: lidId → ballId`，`onMeshLayer` 里见到 lid 就
   //   先补画 ball、再画 lid（见那里注释）。
   //   名单只按**层名**（"右眼上眼睑/左眼皮/上眼睑/下眼皮"），且**只在同场景确实存在**一个
@@ -6919,7 +6919,7 @@ function loadScene() {
     return o
   }
   // ①(2026-09-12) 动画时间平滑：渲染慢时 tSec 步长会忽大忽小（如 0.03s→0.3s）→ 骨骼姿势瞬时跳变
-  // （用户实测"人物/耳朵/眼睛偶尔抽搐一下"）。这里把"用于采样的动画时间"限制在稳定步长
+  // （真机实测"人物/耳朵/眼睛偶尔抽搐一下"）。这里把"用于采样的动画时间"限制在稳定步长
   // （每帧最多推进 maxStep 秒），并保持与实际时间的长期一致（漂移用追赶系数限制）。
   let skinAnimTime = 0, skinLastWall = 0
   function updateSkinBones(tSec) {
@@ -6929,7 +6929,7 @@ function loadScene() {
     skinLastWall = wall
     // ②(修复 2026-09-12) 固定步进、**不做瞬时追赶**：
     //   上一版 `if (skinAnimTime > wall) skinAnimTime = wall` 会在累计若干快帧后把动画时间
-    //   一次性拉到 wall = **瞬时跳跃**（用户实测"每层动画播完/衔接时抽一下"）。
+    //   一次性拉到 wall = **瞬时跳跃**（真机实测"每层动画播完/衔接时抽一下"）。
     //   现在：每帧最多推进 1/30s（慢渲染时动画变慢，但绝不跳帧）；仅当落后 > 2s 才重置。
     const maxStep = 1 / 30
     skinAnimTime += Math.min(dt, maxStep)
@@ -6943,7 +6943,7 @@ function loadScene() {
       if (!sk) continue
       // ①(2026-09-12) 两帧线性插值（第三方参考 wer-ref WPPuppet.cpp genInterpolationInfo）：
       //   rate=t*fps; fa=floor(rate)%len; fb=(fa+1)%len; tt=frac(rate) → 骨骼姿势插值
-      //   （此前单帧取样 → 姿势阶跃 = 用户实测"弯耳朵成直角、眨眼后半段抽搐、人物突然后倾"）
+      //   （此前单帧取样 → 姿势阶跃 = 真机实测"弯耳朵成直角、眨眼后半段抽搐、人物突然后倾"）
       const rate = tAnim * sk.fps
       const period = sk.frameCount
       let ph = rate - Math.floor(rate / period) * period     // 相位 ∈ [0, period)
@@ -7099,7 +7099,7 @@ function loadScene() {
     const writePropsStore = (o) => { try { if (typeof localStorage === 'undefined') return; if (o && Object.keys(o).length) mpwLsSet(propsKey, JSON.stringify(o)); else localStorage.removeItem(propsKey) } catch (e) { /* 不透明源 / 隐私模式 */ } }
     try {
       // ①(P-85 回退开关) ?proj=off：跳过 /project/<id> 读取 = 回到"无属性表"旧行为（属性面板空白、
-      //   {user:...} 绑定回落作者默认、visible:{user:{condition:…}} 全按可见）。用户点名"要保留可以
+      //   {user:...} 绑定回落作者默认、visible:{user:{condition:…}} 全按可见）。点名要求"要保留可以
       //   回退的按钮"，这是 URL 形态的回退口。写法与文件内既有开关同形
       //   （new URLSearchParams(location.search).get(...)），diag-flag-check 靠这个形态抓取。
       const __projOff = new URLSearchParams(location.search).get('proj') === 'off'
@@ -7393,7 +7393,7 @@ function loadScene() {
     btnEl.type = 'button'
     btnEl.id = 'mpw-props-btn'
     // ①(P-64 第 10/22 项 → 用户第 2 条反馈回退) 顶栏按钮**保持 P-64 之前的文字形态**（'⚙ 属性'）。
-    //   用户原话："8899 属性这里的设置不要把它做成 SVG，你这样一来导致他整条都变宽了" —— 顶栏在
+    //   需求："8899 属性这里的设置不要把它做成 SVG，你这样一来导致他整条都变宽了" —— 顶栏在
     //   `#mpw-props-panel` 之外，面板里的 `.ico svg{width:14px}` 约束够不到它，`<svg viewBox>` 无
     //   width/height 时按替换元素默认 300×150 参与布局 → 整条顶栏被撑宽。这里不再放 SVG。
     btnEl.textContent = '⚙ 属性'
@@ -7460,7 +7460,7 @@ function loadScene() {
     /* ①(P-203 2026-09-25) **把面板同一条应用链交给宿主属性通道**：`window.__mpwPropsApplyHost`
        是 `mpwWebApplyProps` 场景档分支按名字读的契约点（见该函数头部注释），但此前**全仓 0 处赋值**
        ⇒ 宿主/插件推属性恒落"本档有属性表但没有运行期应用链"（`ok:false`），属性只在**下次应用壁纸**
-       时才生效 —— 这正是用户报的那个现象的那一半。这里补上交接（对象引用同一份，无拷贝）。 */
+       时才生效 —— 这正是报障所述那个现象的那一半。这里补上交接（对象引用同一份，无拷贝）。 */
     try { window.__mpwPropsApplyHost = applyAll } catch (e) { /* 无 window */ }
     let api = null
     const hooks = {
@@ -7504,7 +7504,7 @@ function loadScene() {
       open = !!o
       root.className = open ? 'open' : ''
       // ⑥(b)(P-124 用户第 6 项) 面板整体收起 = 锚点被 display:none 藏掉 ⇒ 取色浮窗必须跟着关，
-      //   否则它会悬空留在空面板上方（用户原话"属性这个选项整体关闭的情况下，你取色盘不会自动关闭"）。
+      //   否则它会悬空留在空面板上方（需求："属性这个选项整体关闭的情况下，你取色盘不会自动关闭"）。
       if (!open && typeof API.closePicker === 'function') API.closePicker()
       btnEl.setAttribute('aria-expanded', open ? 'true' : 'false')
       if (persist) { try { localStorage.setItem(LS_KEY, open ? '1' : '0') } catch (e) { /* ignore */ } }
@@ -7699,7 +7699,7 @@ function loadScene() {
     })
     logf('?nobg=1：背景层已隐藏（粒子融合前临时对照）');
   }
-  // ①(2026-09-12 用户要求"让我一层一层的去加载，看看是哪一层出了问题") 逐层调试 v2：
+  // ①(2026-09-12 需求："让我一层一层的去加载，看看是哪一层出了问题") 逐层调试 v2：
   //   · `←/→` = ±1 层，`↑/↓` = ±10 层，`Alt` 退出（Home 也保留），`Ctrl` 进入/退出"组合"（容器层的子层）
   //   · 按键全部 preventDefault + stopImmediatePropagation（捕获阶段），**不再传给宿主页**
   //     （用户在 DSH 里测试时会触发宿主的壁纸列表选择）；同时 postMessage 通知宿主在调试期间吞掉这些键。
@@ -7716,7 +7716,7 @@ function loadScene() {
     // ②(P-64-MEDIA 轮顺带，用户："未开启逐层调试时按一下右键，它会直接切到第 2 层，而不是从第 1 层开始")
     //   根因：旧写法 `Math.max(0, __lnOnly)` 把"未进入调试"（-1）夹成 0 → `setPos(0 + 1)` 落在**索引 1**。
     //   口径：未进入调试（`__lnOnly < 0`）时，**→ 与 ← 都从第 0 层进入**（角标显示"第 1/n 层"）；
-    //   保守且与用户原话一致（← 不选"从最后一层进"，避免同一次按键两种语义）。
+    //   保守且与需求一致（← 不选"从最后一层进"，避免同一次按键两种语义）。
     //   注：未进入调试时 ↑/↓ 本就不响应（下面/上面的守卫），只有 →/← 能进入。
     const curPos = () => (stack.length ? stack[stack.length - 1].pos : __lnOnly)
     // 纯函数（便于单测切片）：未进入调试（entering=true）→ 一律落到第 0 层；否则按 delta 移动。
@@ -7915,7 +7915,7 @@ function loadScene() {
     }
   } catch (e) { logf('?fit 相机错误: ' + e.message) }
   // ①(校准) own-puppet 附件层：网格尺寸显示（pivot 中心+网格 bbox 成对，长发才能贴回首部）
-  // ①(2026-09-13 用户实测"人物被拉伸延伸/长发3与右侧发不对") **默认不再覆盖附件层尺寸**。
+  // ①(2026-09-13 真机实测"人物被拉伸延伸/长发3与右侧发不对") **默认不再覆盖附件层尺寸**。
   //   这段把"自带 puppet 的附件层"的 size 换成**网格 bbox**，实测该 bbox 只有 authored size 的
   //   ~1/1.9（右眼上眼睑 116×68 vs 211×163、左耳朵1 640×568 vs 1211×1146、眼睛组合 305×253 vs 584×759）
   //   → 层被压扁/拉伸；而 **CPU 预览（正确构图的基准）根本不执行这段** → 典型的"预览对、真机错"分叉。
@@ -8191,7 +8191,7 @@ function loadScene() {
     // ①(P-100 根因) 第二个实参 `camInfo` = 本帧相机取景（`{view:[vx,vy], framed:[fw,fh]}`，
     //   由 `renderScene` 用**与四边形层同一份** `cam` 算好；无相机姿态 / `?charfit=legacy` 时是 null）。
     //   旧实现只按 `[projW, projH]`（设计画布）1:1 映射 ⇒ 相机层动画带不动蒙皮角色：
-    //   hina 入场（zoom 3→1 + 平移）里背景/钢琴/花朵都动、只有人物钉在屏幕上 —— 用户真机实测
+    //   hina 入场（zoom 3→1 + 平移）里背景/钢琴/花朵都动、只有人物钉在屏幕上 —— 真机实测
     //   "把人物固定在屏幕中间、去移动背景"。现在原样转交 ⇒ 角色与其它层一起吃相机。
     onMeshLayer: (layer, camInfo) => {
       try {
@@ -8199,7 +8199,7 @@ function loadScene() {
         // ①(P-139 用户第 5 项「眨眼…会穿到下眼皮下面」) 同纹理的"睑层"必须画在"眼球 mesh 层"之后。
         //   病灶：`objects[]` 顺序是 22 `右眼上眼睑(67)` → 26 `眼睛组合(115)`（本仓库渲染器**按层序
         //   逐层画**、材质 `depthtest/write:disabled`、全仓无 CULL_FACE ⇒ 遮挡 100% 由绘制顺序决定），
-        //   于是同一次眨眼时睑被眼球盖住 = 用户看到的"眼睛在睑下面冒出来"。官方语义（`renderMeshLayer`
+        //   于是同一次眨眼时睑被眼球盖住 = 所见"眼睛在睑下面冒出来"。官方语义（`renderMeshLayer`
         //   的"层内 index 顺序 + 层间层序"）不改，只把**同一块皮肤的睑层**延后到眼球之后。
         //   判据（tests/kaltsit-puppet-anchor-test.mjs B-2b）：该层与"眼球 mesh 层"实绘矩形重叠量；
         //   本包实测 67 与 115 实绘矩形 x 向不重叠（间隙 82u）⇒ 重排对画面零影响、只把语义钉正
@@ -8412,13 +8412,13 @@ function loadScene() {
     //   offset=((node_pos−cam_pos)+mouse)∘depth×amount + exp(ln100) 平滑；
     //   `?parallax=legacy` 保留旧 lwe 近似式（(depth+amount)×disp）做 A/B。
     parallaxLegacy: new URLSearchParams(location.search).get('parallax') === 'legacy',
-    // ①(2026-09-12 用户要求"先把视差关掉，不然有些壁纸不好测试") 视差默认**关**：
+    // ①(2026-09-12 需求："先把视差关掉，不然有些壁纸不好测试") 视差默认**关**：
     //   层不再跟随鼠标位移（否则截图/验收的位置都带随机偏移）。
     // ①(WEBWALLGL #5 2026-09-23 **接线不一致的真 bug**)：旧式 `get('parallax') !== '1'` 只认 `1`，
     //   于是 `?parallax=legacy` **仍然关着视差** —— 而插件诊断项文案（client.js 的 `?parallax=legacy`）
     //   说它能"切到旧公式" ⇒ 用户点了那个诊断项**什么都不会发生**（视差整体没开）。
     //   现在三个值都**打开**视差，`legacy` 只切公式（与上一行 `parallaxLegacy` 同一份取值）；
-    //   其余取值（含缺省/空/垃圾值）仍是**关** ⇒ 缺省行为与 2026-09-12 的用户要求逐位一致。
+    //   其余取值（含缺省/空/垃圾值）仍是**关** ⇒ 缺省行为与 2026-09-12 的需求逐位一致。
     parallaxOff: !/^(1|official|legacy)$/.test(String(new URLSearchParams(location.search).get('parallax') || '')),
     // P-21 A3：?align=0 → 复现旧行为（origin 恒几何中心，非 center 对齐层不偏移）
     align: new URLSearchParams(location.search).get('align') !== '0',
@@ -9121,7 +9121,7 @@ if (!MPW_PROPS_COMPAT_LEGACY) {
   //   `__mpwLayerLedger`/上报 payload/parity-check 对非蒙皮层全部失明——C0② 受控实验抓到：
   //   287 次 fire / 164 次过 FBO 守卫 / 0 次 push，err=`mpwLedgerYDown is not defined`）。
   //   纯函数与页级单例无关 ⇒ 搬到 module 层（`mpwSamplePixel` 同层），两处调用点不变。
-  // 用户原话："有些层应该渲染出来，却没标不可见、也看不到" —— 上报里必须能分开
+  // 需求："有些层应该渲染出来，却没标不可见、也看不到" —— 上报里必须能分开
   //   「不可见（谁关的）」与「可见、有几何、却没画（missing）」。
   //   判据镜像 = bundle 里决定"谁关掉层"的两个谓词（`core/we-scene-bundle.js:2004` uiRe、`:2006-2011` catRe+catOn）。
   //   为什么抄一份：bundle 不导出它们；**props-panel-test T19c 会逐字比对两处字面量** → 不许悄悄漂移。
@@ -9602,7 +9602,7 @@ if (!MPW_PROPS_COMPAT_LEGACY) {
     // ═══ MPW-CAMPOSE-BTN-END ═══
   }
   }   // ①(P-77) end 页级门（自动上报/台账/手动上报按钮：多实例只由 primary 实例挂）
-  // ═══ MPW-SHOT-BTN-BEGIN ①(P-88 2026-09-15 用户点名："你加一个功能上报截图的功能 —— 这样我就不用
+  // ═══ MPW-SHOT-BTN-BEGIN ①(P-88 2026-09-15 点名要求："你加一个功能上报截图的功能 —— 这样我就不用
   //   下载下来，点一下不需确认就能直接上传到你的后台，因为我下载下来可能卡不好他的时机") ═══
   //   需求内核 = **抓时机**（人物面部/眉毛那一瞬），所以四条硬口径：
   //     ① 单击 = **连拍**（默认 60 帧 × ≥100ms ≈ 6 秒），不是只拍一帧；期间再点 = 停止（已拍的报完）；
@@ -10166,7 +10166,7 @@ if (!MPW_PROPS_COMPAT_LEGACY) {
       //   渲染器层循环是：`if (!layer.visible || layer.isContainer) continue` →
       //   `if (opts.onMeshLayer && layer.__skinReady) { onMeshLayer(layer); continue }`。
       //   置 false 会让 continue 先命中 → mesh 回调**永不触发**（设备实测 mesh 绘制 0）
-      //   → 主体/长发3/眼睛/耳朵/眼睑全部消失，只剩非蒙皮的发片与飘带 = 用户看到的"只有几块、像倒了"。
+      //   → 主体/长发3/眼睛/耳朵/眼睑全部消失，只剩非蒙皮的发片与飘带 = 所见"只有几块、像倒了"。
       //   正确做法：保持 visible=true，只靠 __skinReady 让渲染器走 mesh 分支并 continue（quad 不会重复画）。
 		// mesh 层按原层序位置绘制（onMeshLayer 回调），不再统一最后画
 		if (skinEnabled) { updateSkinBones(tSec); skinLayers.forEach((l) => { l.__skinReady = true }) }
@@ -10198,7 +10198,7 @@ if (!MPW_PROPS_COMPAT_LEGACY) {
 		const __first = !mpwFirstFrameDone
 		try { if (!sceneAudio.started && mpwFirstFrameDone) startSceneAudio() } catch (e) { /* ignore */ }
 		// ①(2026-09-12) 看门狗：渲染 6s 未返回（着色器/FBO 卡住）则强制解锁重试，
-		//   否则 renderBusy 永远 true → 定格残缺首帧（用户实测"只有飘带和几块"）。
+		//   否则 renderBusy 永远 true → 定格残缺首帧（真机实测"只有飘带和几块"）。
 		const __wd = setTimeout(() => {
 		  if (renderBusy) { renderBusy = false; logf('⚠ 渲染 6s 未返回 → 强制解锁重试（[首帧] 日志会停在卡住那层）') }
 		}, 6000)
@@ -10353,7 +10353,7 @@ if (!MPW_PROPS_COMPAT_LEGACY) {
   //   页面日志写 `can't access lexical declaration 'frame' before initialization`、画面全空）。
   mpwHostFrameFn = frame;
   // ═══ MPW-AUDIO-PANEL-BEGIN ①(N6 2026-09-14 用户决策 C) :8899 顶栏 🔊 音频面板 ═══
-  //   用户口径 C：**先在 :8899 加按钮**、**现场解析当前包内音轨**、逐条播放/导出；反应效果只留接口位。
+  //   口径 C：**先在 :8899 加按钮**、**现场解析当前包内音轨**、逐条播放/导出；反应效果只留接口位。
   //   纯客户端（服务端零改动）：包已整体读进内存 —— `pkg.entries` + `lib.getEntry(pkg, path)`，
   //   与既有 makeSoundElement 的 Blob→createObjectURL→Audio 是同一条链路 ⇒ **不在仓库预置任何音频文件**，
   //   真实壁纸的音轨一律在运行时从包内切片。
