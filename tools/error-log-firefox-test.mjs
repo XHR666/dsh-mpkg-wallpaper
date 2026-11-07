@@ -35,9 +35,9 @@ function runChecks(clientText, indexText, rendererText) {
     if (!/function mpwSceneGLFailNote\(probe\)/.test(clientText)) a.push('分流函数缺失')
     for (const k of ['scnGl.none', 'scnGl.webgl1only', 'scnGl.ctxFailed']) if ((clientText.match(new RegExp('"' + k + '"', 'g')) || []).length < 2) a.push('i18n 键缺一套: ' + k)
     if (!/if \(!p\.webgl2 && !p\.webgl1\)[\s\S]{0,80}scnGl\.none[\s\S]{0,220}else if \(!p\.webgl2 && p\.webgl1\)[\s\S]{0,80}scnGl\.webgl1only[\s\S]{0,220}else[\s\S]{0,40}scnGl\.ctxFailed/.test(clientText)) a.push('三分支顺序/条件不符')
-    if (!/const __gl = mpwSceneWebGLProbe\(\);[\s\S]{0,60}if \(!__gl\.ok\) \{[\s\S]{0,300}mpwSandboxHoldFallback\("no-webgl"/.test(clientText)) a.push('挂载前预检未接 holdFallback')
+    if (!/const __gl = mpwSceneWebGLProbe\(\);[\s\S]{0,60}if \(__gl\.conclusive && !__gl\.ok\) \{[\s\S]{0,300}mpwSandboxHoldFallback\("no-webgl"/.test(clientText)) a.push('挂载前预检未接 holdFallback（须 conclusive 门控——桩世界 getContext 恒 null 不能当无 WebGL）')
     {
-      const __i = clientText.indexOf('if (!__gl.ok) {')
+      const __i = clientText.indexOf('if (__gl.conclusive && !__gl.ok) {')
       const __seg = __i >= 0 ? clientText.slice(__i, __i + 900) : ''
       if (!__seg.includes('mpwSceneGLFailNote(__gl)') || __seg.indexOf('return;') < 0) a.push('预检失败未 return（还会进 8s 空等）')
     }

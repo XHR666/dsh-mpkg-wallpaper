@@ -179,8 +179,11 @@ await withMutant('M-auto-dead', 'header-auto 倒退回 _overlay 恒真条件（�
     'html body:not(:has([class*="_overlay"])):has(.dsh-conv-panel) header.wSkVaW_header,\nhtml body:not(:has([class*="_overlay"])):has(.dsh-conv-panel) header[class*="_header_"] { /* M-auto-dead */']],
   ['T4', 'N-T4']);
 await withMutant('M-noimg', '无壁纸早退路径不再输出 conv 层级块（LAYER2-A 回退）',
-  [['css += __convPanelLayerCss;\n\t\t\tcss += __rsFloatGeoCss;\n\t\t\treturn emitSurfaceTokens(css + buildUiCss(section, false)) + __npCss;',
-    '/* M-noimg */\n\t\t\tcss += __rsFloatGeoCss;\n\t\t\treturn emitSurfaceTokens(css + buildUiCss(section, false)) + __npCss;']],
+  /* 判据演进留痕（R19，2026-11-07 门禁修复轮）：原锚点把 return 行与两条 css+= 连在一起；
+     无壁纸路径的 return 行前后来了一行 2026-11-06 的说明注释 ⇒ 原锚点失配、变异打不上（基线即红）。
+     新锚点只钉"两行 css+= 对"（3-tab 缩进在无壁纸路径唯一）；语义不变：删掉 conv 层级块 ⇒ N 组必红。 */
+  [['css += __convPanelLayerCss;\n\t\t\tcss += __rsFloatGeoCss;',
+    '/* M-noimg */\n\t\t\tcss += __rsFloatGeoCss;']],
   ['N-T0', 'N-T1', 'N-T2', 'N-T3', 'N-T4', 'N-R1']);
 
 if (redWith.length || redNo.length) {

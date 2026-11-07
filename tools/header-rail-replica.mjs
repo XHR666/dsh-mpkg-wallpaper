@@ -101,7 +101,7 @@ function buildCssFor(variant) {
         //   :not([data-code-block-banner]):not([data-disclosure-header]) ⇒ 锚点再同步一次。
       //   ①(2026-11-07 Z8/R19) 标题栏选择器族结构限定 header.wSkVaW_header ⇒ before 锚点同步
       //   （语义不变：before 变体仍=删掉整套层叠修复）。
-      ['.header.wSkVaW_header:not([data-code-block-banner]):not([data-disclosure-header]):has(> .mpw-hdrFrost) > :not(.mpw-hdrFrost) { position: relative; z-index: 1; }\n.mpw-hdrFrost:first-child ~ * { position: relative; z-index: 1; }\n.header.wSkVaW_header:not([data-code-block-banner]):not([data-disclosure-header]) > .mpw-hdrFrost { z-index: 0 !important; }', ''],
+      ['header.wSkVaW_header:not([data-code-block-banner]):not([data-disclosure-header]):has(> .mpw-hdrFrost) > :not(.mpw-hdrFrost) { position: relative; z-index: 1; }\n.mpw-hdrFrost:first-child ~ * { position: relative; z-index: 1; }\nheader.wSkVaW_header:not([data-code-block-banner]):not([data-disclosure-header]) > .mpw-hdrFrost { z-index: 0 !important; }', ''],
     ]
     for (const [a, b] of reps) { if (!src.includes(a)) throw new Error('before 变体：源码锚点缺失 → ' + a.slice(0, 50)); src = src.replace(a, b) }
     src = src.replace(/\tbox-shadow: 0 0 0 1px var\(--mpw-rail-halo, rgba\(255, 255, 255, 0\.55\)\);\n/g, '')
