@@ -819,6 +819,8 @@ node tools/error-log-firefox-test.mjs || fail=$((fail + 1))            # Z6：�
 node tools/market-op-panel-test.mjs || fail=$((fail + 1))              # Z7：市场 opPanel + DSH Mobile 实底补偿
 node tools/command-output-header-test.mjs || fail=$((fail + 1))        # Z8：标题栏族 header 限定（命令输出头不再误伤）
 node tools/np-conflict-test.mjs || fail=$((fail + 1))                  # Z9：NP 槽位冲突归因/自动关闭
+# ①(2026-11-08 Z10–Z15 轮) 本轮新判据同样登记进第 6 步（不新增步骤编号）：
+node tools/no-wallpaper-host-surfaces-test.mjs || fail=$((fail + 1))   # Z15：无壁纸 tooltip/轮次预览表面门控 + data-mpw-no-wallpaper 标记（A/B 双向 + 3 变异）
 fi                                     # ← 第 6 步结束
 gate_end 6
 step "7/12 音频扫描提速（惰性索引 + Range/探测路由；真包与规格参考实现逐项一致）"
