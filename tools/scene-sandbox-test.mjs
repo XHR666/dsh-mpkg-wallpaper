@@ -1,3 +1,9 @@
+// ①(R19 演进留痕 2026-11-08 Z10) B4b/F5b 断言演进：原断言 `noteEl.textContent 含「刷新壁纸」`
+//   → 新断言 `(noteEl.getAttribute('data-mpw-note-msg') || noteEl.textContent) 含「刷新壁纸」`
+//   → 原因：黑条加「×关闭」按钮后消息改由 span[data-mpw-note-msg] 承载（textContent 赋值会清掉
+//   按钮子节点），消息原文同时落在 bar 的 data-mpw-note-msg 属性上（真机/桩一致可读）
+//   → 语义保持：仍是"壁纸面底部提示条在且含可操作指引（刷新壁纸）"，且 2026-11-08 起同一断言
+//   还覆盖"消息随 key 更新"（属性每次 show 重写）。
 // tools/scene-sandbox-test.mjs — P0-2「token-first」场景沙箱契约（2026-11-06 整体重写）
 //
 // ═══ 判据演进留痕（R19：原断言 → 新断言 → 为什么）═══
@@ -170,7 +176,7 @@ console.log('\n== B. 无 token 首挂 ⇒ 不建 legacy URL、不挂帧（deferr
   ok(!!hint && hint.indexOf('场景壁纸暂未挂载') >= 0 && hint.indexOf('刷新壁纸') >= 0, 'B4 底部明确可操作提示（含「刷新壁纸」）', String(hint).slice(0, 60))
   /* ①(对抗审查 P1-2) 提示必须落在**壁纸面**：宿主页底部常驻提示条（不依赖设置面板打开）。 */
   const noteEl = globalThis.document.getElementById('mpw-sceneNote')
-  ok(!!noteEl && String(noteEl.textContent || '').indexOf('刷新壁纸') >= 0, 'B4b 壁纸面底部提示条在（#mpw-sceneNote，含「刷新壁纸」）', noteEl ? String(noteEl.textContent || '').slice(0, 50) : 'missing')
+  ok(!!noteEl && String(noteEl.getAttribute('data-mpw-note-msg') || noteEl.textContent || '').indexOf('刷新壁纸') >= 0, 'B4b 壁纸面底部提示条在（#mpw-sceneNote，含「刷新壁纸」）', noteEl ? String(noteEl.getAttribute('data-mpw-note-msg') || noteEl.textContent || '').slice(0, 50) : 'missing')
   ok(!/[?&]pkgurl=/.test(String(frame.getAttribute('src') || '')), 'B5 场景帧 src 未被导航')
   eq(SB.diag().deferred, null, 'B6 token 取不到 ⇒ 挂起记录收尾清空（不悬挂）')
   restore()
@@ -261,7 +267,7 @@ console.log('\n== F. strict 失败 ⇒ 保持兜底（绝不以 legacy 同源重
   const hint = P.takePending()
   ok(!!hint && hint.indexOf('场景壁纸暂未挂载') >= 0, 'F5 底部提示（保持静态画面兜底）')
   const noteF = globalThis.document.getElementById('mpw-sceneNote')
-  ok(!!noteF && String(noteF.textContent || '').indexOf('刷新壁纸') >= 0, 'F5b strict 失败 ⇒ 壁纸面底部提示条在（P1-2）', noteF ? String(noteF.textContent || '').slice(0, 50) : 'missing')
+  ok(!!noteF && String(noteF.getAttribute('data-mpw-note-msg') || noteF.textContent || '').indexOf('刷新壁纸') >= 0, 'F5b strict 失败 ⇒ 壁纸面底部提示条在（P1-2）', noteF ? String(noteF.getAttribute('data-mpw-note-msg') || noteF.textContent || '').slice(0, 50) : 'missing')
   /* G. 用户重选 = 显式重试 ⇒ 清 failed 表、重新走 strict */
   applyScene(T); await flush()
   eq(SB.plan(IDENT).mode, 'strict', 'G1 用户显式重选 ⇒ failed 表清空、计划回 strict')
