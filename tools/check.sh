@@ -806,6 +806,19 @@ node tools/gate-cache-test.mjs || fail=$((fail + 1))
 #                    + 真包与**规格字面量参考实现**逐项比对。
 #                    （2026-09-16 洁净室重写 P-89：不再读取/切片渲染器文件，详见 THIRD-PARTY.md）
 #   scene-audio-route-test：真 index.js 路由桩（206 只回 64KB / 预检 / 探测 JSON / 安全）。
+# ①(2026-11-07 Z1–Z9 轮，审查返工 P2-1/R38-9) 本轮 10 个新判据**登记进运行清单**（挂第 6 步，
+#   不新增步骤编号——integrity-check ⑨b 断言编号自洽）。此前游离在门禁外 ⇒ 同轮提交打破同轮
+#   判据时全量门禁失明（审查 P1-1 的教训）。
+node tools/ui-copy-dsh-test.mjs || fail=$((fail + 1))                  # Z1：UI 文案 dsh→DSH + 命令/路径反向锚点
+node tools/update-ui-test.mjs || fail=$((fail + 1))                    # Z2：徽标橙→黑/弹窗两按钮/自更新 0 残留/路由保留
+node tools/comment-quote-lint.mjs || fail=$((fail + 1))                # Z3 判据1：注释对话痕迹 0 + 合法词=基线 + 排除面哈希
+node tools/comment-quote-facts-test.mjs || fail=$((fail + 1))          # Z3 判据2：改写行硬事实保留 oracle
+node tools/scan-detail-overlay-test.mjs || fail=$((fail + 1))          # Z4：扫描页占位门控/白蒙层/SVG 徽标复核
+node tools/scene-static-only-test.mjs || fail=$((fail + 1))            # Z5：scene 静态层三根因形态 + R-MUT 重放 + N 变异
+node tools/error-log-firefox-test.mjs || fail=$((fail + 1))            # Z6：无 WebGL 话术分流/导出字段/双导出/脱敏
+node tools/market-op-panel-test.mjs || fail=$((fail + 1))              # Z7：市场 opPanel + DSH Mobile 实底补偿
+node tools/command-output-header-test.mjs || fail=$((fail + 1))        # Z8：标题栏族 header 限定（命令输出头不再误伤）
+node tools/np-conflict-test.mjs || fail=$((fail + 1))                  # Z9：NP 槽位冲突归因/自动关闭
 fi                                     # ← 第 6 步结束
 gate_end 6
 step "7/12 音频扫描提速（惰性索引 + Range/探测路由；真包与规格参考实现逐项一致）"

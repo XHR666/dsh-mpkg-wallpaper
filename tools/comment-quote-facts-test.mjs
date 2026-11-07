@@ -20,8 +20,8 @@ const here = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.join(here, '..')
 const BASE = '64476d420873f87d42f996272d37f768af4a60da'
 const U = '用' + '户'
-const PAT = new RegExp([U + '原话', U + '说', U + '反馈', U + '要求', U + '明确', U + '口径', U + '裁定', U + '拍板', U + '指出', U + '提到', U + '问', U + '想', '你说的', '你报的', '你反馈的', U + '第[0-9]'].join('|'))
-const PAT2 = new RegExp([U + '实测', U + '真机', U + '报', U + '点名', U + '看到', '你正在看的'].join('|'))
+const PAT = new RegExp([U + '原话', U + '说', U + '反馈', U + '要求', U + '明确', U + '口径', U + '裁定', U + '拍板', U + '指出', U + '提到', U + '问', U + '想', '你' + '说的', '你' + '报的', '你' + '反馈的', U + '第[0-9]'].join('|'))
+const PAT2 = new RegExp([U + '实测', U + '真机', U + '报', U + '点名', U + '看到', '你' + '正在看的'].join('|'))
 const MARK = (s) => PAT.test(s) || PAT2.test(s)
 
 const FACTS = [
@@ -57,6 +57,24 @@ function parseDiff(text) {
   return hunks
 }
 
+/* 判据演进留痕（R19，2026-11-07 审查返工 P1-1）：
+   原断言：删除行抽取的**反引号事实**（如 `.wSkVaW_header`）必须逐字出现在新增行。
+   新断言：反引号事实做"点前缀无关"匹配——剥掉首点取核心名（wSkVaW_header），要求它在新增行的
+           某个反引号 token 内出现（如 `header.wSkVaW_header`）。其余事实类型仍逐字匹配。
+   为什么：Z8（320ab8f）把标题栏选择器族结构限定为 header.wSkVaW_header，注释里原 token 随产物
+           演进被合法改名 ⇒ 逐字匹配在 HEAD 恒红（审查 P1-1：基线 3ef8223 绿、HEAD 4/1）。
+   语义如何保持：标识符**本体**未丢才放行（只允许合法前缀扩展）；整体删除/换名仍红（见 M6）。 */
+const factInAdds = (f, addText) => {
+  if (addText.includes(f)) return true
+  const m = /^`\.(.+)`$/.exec(f)
+  if (m) {
+    const core = m[1]
+    for (const tok of addText.matchAll(/`[^`\n]{1,80}`/g)) {
+      if (tok[0].includes(core)) return true
+    }
+  }
+  return false
+}
 function checkHunks(hunks) {
   const missing = [], orphans = []
   let pairs = 0
@@ -68,7 +86,7 @@ function checkHunks(hunks) {
     const addText = h.adds.join('\n')
     for (const d of markedDels) {
       for (const f of extractFacts(d)) {
-        if (!addText.includes(f)) missing.push(h.file + ' 事实[' + f + '] 未出现在新增行: ' + d.trim().slice(0, 90))
+        if (!factInAdds(f, addText)) missing.push(h.file + ' 事实[' + f + '] 未出现在新增行: ' + d.trim().slice(0, 90))
       }
     }
   }
@@ -110,6 +128,18 @@ const pairHunkNum = hunks.find((h) => h.dels.some(MARK) && h.adds.length && extr
   const red = date && !mutatedAdds.join('\n').includes(date)
   if (red) { pass++; console.log('  ✓ MUTANT-RED-OK M5  删除日期[' + date + '] ⇒ 事实检查必红  期望红=["A"] 实际红=["A"]') }
   else { fail++; console.error('  ✗ MUTANT-MISMATCH M5 red=' + red) }
+}
+{
+  // M6（R19 演进的反向）：点前缀无关匹配**不许**把"标识符本体删掉"也放行 ⇒ 删掉核心名必须红
+  const h = hunks.find((x) => x.dels.some(MARK) && x.adds.length && /`\.[\w-]+`/.test(x.dels.find(MARK)))
+  const del = h.dels.find(MARK)
+  const bt = (del.match(/`\.[\w-]+`/g) || [])[0]           // 如 `.wSkVaW_header`
+  const core = bt.slice(2, -1)                              // wSkVaW_header
+  const mutatedAdds = h.adds.map((a) => a.split(core).join(''))
+  const stillOk = mutatedAdds.join('\n').match(/`[^`\n]*`/g)?.some((t) => t.includes(core)) || mutatedAdds.join('\n').includes(core)
+  const red = !stillOk
+  if (red) { pass++; console.log('  ✓ MUTANT-RED-OK M6  点前缀无关匹配下删掉标识符本体[' + core + '] ⇒ 事实检查必红  期望红=["A"] 实际红=["A"]') }
+  else { fail++; console.error('  ✗ MUTANT-MISMATCH M6 red=' + red) }
 }
 
 console.log(`\n===== ${pass} 通过 / ${fail} 失败 =====`)

@@ -32,8 +32,8 @@ const BASE = '64476d420873f87d42f996272d37f768af4a60da'
 /* 标记词用拼接构造，避免本文件源码出现字面量（见文件头说明） */
 const U = '用' + '户'
 const YJ = (s) => U + s
-const PAT = new RegExp([YJ('原话'), YJ('说'), YJ('反馈'), YJ('要求'), YJ('明确'), YJ('口径'), YJ('裁定'), YJ('拍板'), YJ('指出'), YJ('提到'), YJ('问'), YJ('想'), '你说的', '你报的', '你反馈的', YJ('第[0-9]')].join('|'), 'g')
-const PAT2 = new RegExp([YJ('实测'), YJ('真机'), YJ('报'), YJ('点名'), YJ('看到'), '你正在看的'].join('|'), 'g')
+const PAT = new RegExp([YJ('原话'), YJ('说'), YJ('反馈'), YJ('要求'), YJ('明确'), YJ('口径'), YJ('裁定'), YJ('拍板'), YJ('指出'), YJ('提到'), YJ('问'), YJ('想'), '你' + '说的', '你' + '报的', '你' + '反馈的', YJ('第[0-9]')].join('|'), 'g')
+const PAT2 = new RegExp([YJ('实测'), YJ('真机'), YJ('报'), YJ('点名'), YJ('看到'), '你' + '正在看的'].join('|'), 'g')
 const MARK = (s) => { PAT.lastIndex = 0; PAT2.lastIndex = 0; return PAT.test(s) || PAT2.test(s) }
 
 /* ---------- 注释/字符串状态机 ----------
