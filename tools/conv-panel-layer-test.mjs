@@ -1,3 +1,5 @@
+// 判据演进留痕（R19，2026-11-07 Z8）：untrap/层级规则钉住字面量随产物同步 header.wSkVaW_header
+// （Z8 结构限定；断言语义=同一规则在场，文本随产物演进）。
 // tools/conv-panel-layer-test.mjs —— dsh-conversation 浮窗（.dsh-conv-panel）层级判据（2026-10-25 任务 3；2026-10-26 契约演进 ×2）
 //
 // 契约（lib/client.js 的「dsh-conv-panel 层级」块 __convPanelLayerCss；机制与证据链见该块注释）：
@@ -73,7 +75,7 @@ function contractReds(css, prefix = '') {
   if (crs.length < 3) red.push(prefix + 'T0');
   if (!(panel && zv === '880' && /!important/.test(panel.body))) red.push(prefix + 'T1');
   if (!crs.every((r) => zOf(r) !== '9999')) red.push(prefix + 'T1b');
-  const untrap = crs.find((r) => r.sel.indexOf('.wSkVaW_header :has([class*="dsh-conv-panel"])') >= 0 && !/auto/.test(r.body));
+  const untrap = crs.find((r) => r.sel.indexOf('header.wSkVaW_header :has([class*="dsh-conv-panel"])') >= 0 && !/auto/.test(r.body));
   if (!(untrap && /position\s*:\s*relative/.test(untrap.body) && zOf(untrap) === '60')) red.push(prefix + 'T2');
   const yr = crs.find((r) => r.sel.includes(':has([role="dialog"][aria-modal="true"]) .dsh-conv-panel'));
   if (!(yr && zOf(yr) === 'auto' && /!important/.test(yr.body))) red.push(prefix + 'T3');
@@ -94,7 +96,7 @@ function reportGroup(css, label, prefix) {
   const crs = convRules(rs);
   const panel = crs.find((r) => r.sel === 'html body .dsh-conv-panel' && /z-index/.test(r.body));
   const zv = panel ? zOf(panel) : null;
-  const untrap = crs.find((r) => r.sel.indexOf('.wSkVaW_header :has([class*="dsh-conv-panel"])') >= 0 && !/auto/.test(r.body));
+  const untrap = crs.find((r) => r.sel.indexOf('header.wSkVaW_header :has([class*="dsh-conv-panel"])') >= 0 && !/auto/.test(r.body));
   const yr = crs.find((r) => r.sel.includes(':has([role="dialog"][aria-modal="true"]) .dsh-conv-panel'));
   const cy = crs.filter((r) => r.sel.includes('.dsh-conv-panel') && /:has\(\[class\*="_(?:overlay|overlayLayer|modal)"\]\)/.test(r.sel) && !/:not\(/.test(r.sel));
   ok(`[${label}] T0 产物 CSS 里有 conv-panel 规则（≥3 组）`, crs.length >= 3, 'n=' + crs.length);
@@ -163,7 +165,7 @@ await withMutant('M-value', '面板层值 880→9999（盖过模态与弹层，�
   [['html body .dsh-conv-panel { z-index: 880 !important; }', 'html body .dsh-conv-panel { z-index: 9999 !important; } /* M-value */']],
   ['T1', 'T1b', 'R2', 'R3', 'N-T1', 'N-T1b', 'N-R2', 'N-R3']);
 await withMutant('M-untrap', '祖先盒规则删掉（header 内与面板同域的内容不再有 60 档排序）',
-  [['html body .wSkVaW_header :has([class*="dsh-conv-panel"]) {\n\tposition: relative;\n\tz-index: 60 !important;\n}', '/* M-untrap */']],
+  [['html body header.wSkVaW_header :has([class*="dsh-conv-panel"]) {\n\tposition: relative;\n\tz-index: 60 !important;\n}', '/* M-untrap */']],
   ['T2', 'N-T2']);
 await withMutant('M-yield', '让位规则删掉（真模态打开不让位）',
   [['html body:has([role="dialog"][aria-modal="true"]) .dsh-conv-panel {\n\t\tz-index: auto !important;\n\t}', '/* M-yield */']],

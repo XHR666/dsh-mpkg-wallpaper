@@ -133,7 +133,11 @@ const selMatch = (el, sel) => {
     else { const m = base.match(/^\[([^=\]]+)(?:=["']?([^"'\]]+)["']?)?\]$/)
       if (m) hit = m[2] !== undefined ? el.getAttribute(m[1]) === m[2] : el.hasAttribute(m[1])
       else if (/^\./.test(base)) hit = String(el.className || '').split(/\s+/).includes(base.slice(1))
-      else if (/^[a-zA-Z][\w-]*$/.test(base)) hit = String(el.tagName).toLowerCase() === base.toLowerCase() }
+      /* Z8(2026-11-07 R19) compound "tag.cls" 形态：Z8 把标题栏选择器族结构限定为 header.wSkVaW_header
+         （产物文本演进）；桩匹配引擎补这个形态——语义与真 CSS 一致（tag 相等 且 类名在列）。 */
+      else { const cm = base.match(/^([a-zA-Z][\w-]*)\.([\w-]+)$/)
+        if (cm) hit = String(el.tagName).toLowerCase() === cm[1].toLowerCase() && String(el.className || '').split(/\s+/).includes(cm[2])
+        else if (/^[a-zA-Z][\w-]*$/.test(base)) hit = String(el.tagName).toLowerCase() === base.toLowerCase() } }
     if (hit && notAttr && el.hasAttribute(notAttr)) hit = false
     if (hit) return true
   }

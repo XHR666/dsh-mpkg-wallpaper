@@ -1,3 +1,7 @@
+// 判据演进留痕（R19，2026-11-07 Z8）：原断言把产物里的 `body[data-mpw-float] .wSkVaW_header` 字面量
+// 逐字钉死；Z8 把标题栏选择器族结构限定为 `header.wSkVaW_header`（防命令输出头 div._header_8z71b_32.
+// wSkVaW_header 误伤），本文件的钉住字面量与变异锚点同步改为 `header.wSkVaW_header`。
+// 为什么：断言对象=产物文本，产物文本随 Z8 演进；语义保持=同一规则、同一几何值，只加 tag 限定。
 // tools/float-family-geo-test.mjs —— 2026-10-30 任务书 §1 判据：标题栏悬浮恢复 + 悬浮三面同族
 //
 // 根因定案（真机探针 probe-out/before.float-glow.txt + 源码考古，2026-10-30）：
@@ -5,7 +9,7 @@
 //   （自带收尾符）+ body[data-mpw-float]{--mpw-side-radius…} 令牌规则，旧注释的后半段
 //   （「②(修正) 标题栏下边保留描边…圆角描边完整」+ 它自己的收尾符）从此**没有开启符**
 //   ⇒ 产物 CSS 里出现一段裸文本；浏览器把这段文本连同紧随其后的
-//   `body[data-mpw-float] .wSkVaW_header {…}` 一起解析成一条"选择器非法"的规则**整条丢弃**
+//   `body[data-mpw-float] header.wSkVaW_header {…}` 一起解析成一条"选择器非法"的规则**整条丢弃**
 //   ⇒ 真机标题栏悬浮丢失（margin=0/radius=0）。左栏/右栏规则在丢弃点之后，解析器在下一个
 //   块边界恢复 ⇒ 不受影响（真机：左栏 margin=12px 正常悬浮——这正是"侧栏浮、标题栏不浮"
 //   的机制解释）。glow-fixed-safety-test A3 的 text 级 indexOf 断言探不到"文本在场但被
@@ -22,7 +26,7 @@
 //   C1 产物 CSS 注释配平 + 前导合法：float:on 与 float:off 两条产物路径，逐字符扫描
 //      （注释状态机 + 块深度）⇒ 无未闭合注释/未闭合块；每条顶层规则的前导（选择器段）
 //      只含选择器安全字符集（CJK 文本、`!` 等裸文本特征 = 必红）。
-//   C2 规则存活：`body[data-mpw-float] .wSkVaW_header` / `.pI_x6G_sidebarCol`（float 门控
+//   C2 规则存活：`body[data-mpw-float] header.wSkVaW_header` / `.pI_x6G_sidebarCol`（float 门控
 //      左栏）/ 右栏 push 三条规则在解析出的规则列表里以**独立规则**存在（前导逐字相等，
 //      不与垃圾文本合并）。
 //   C3 悬浮三面同族：三处规则都 ① 引用 var(--mpw-side-radius)（同一圆角令牌）
@@ -94,7 +98,7 @@ function ruleBody(css, sel) {
 }
 
 const FAM = [
-  { name: '标题栏', sel: 'body[data-mpw-float] .wSkVaW_header', bodyMust: /margin:\s*10px 16px 0/ },
+  { name: '标题栏', sel: 'body[data-mpw-float] header.wSkVaW_header', bodyMust: /margin:\s*10px 16px 0/ },
   { name: '左栏', sel: 'body[data-mpw-float] .pI_x6G_sidebarCol', bodyMust: /margin:\s*12px(\s*!important)?\s*;/ },
   { name: '右栏push', sel: 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]:not(:has([data-sidebar-right-open="true"]))) [data-sidebar-right-panel="push"]', bodyMust: /top:\s*10px !important/ },
 ]
@@ -139,7 +143,7 @@ for (const f of FAM) bodies[f.name] = ruleBody(CSS_ON, f.sel)
 console.log('\n== C. float-off 让位（设置面板打开期间不残留悬浮外壳）==')
 {
   const offSidebar = ruleBody(CSS_ON, 'body[data-mpw-float-off] body[data-mpw-float] .pI_x6G_sidebarCol, body[data-mpw-float-off] body[data-mpw-float] [class*="sidebarCol"]')
-  const offHeader = ruleBody(CSS_ON, 'body[data-mpw-float-off] body[data-mpw-float] .wSkVaW_header')
+  const offHeader = ruleBody(CSS_ON, 'body[data-mpw-float-off] body[data-mpw-float] header.wSkVaW_header')
   ok('C1 float-off 左栏重置含 box-shadow: none', !!offSidebar && /box-shadow:\s*none/.test(offSidebar), offSidebar || '规则缺失')
   ok('C2 float-off 标题栏重置含 box-shadow: none', !!offHeader && /box-shadow:\s*none/.test(offHeader), offHeader || '规则缺失')
 }
@@ -152,7 +156,7 @@ console.log('\n== C3. 空栏兜底（⑪翻转：空栏全量归零 + 非空栏�
      （margin/padding/border-width/border-radius/box-shadow，!important）；并新增反向断言
      C3d（非空栏态悬浮外壳仍在且同令牌、无 !important），防止把归零扩到有会话态。 */
   // header 本体的空栏兜底：材质压制（底色/磨砂/最小高）仍在
-  const blankHeader = ruleBody(CSS_ON, '} html body[data-mpw-hdr-blank][data-mpw-hdr-blank] .wSkVaW_header')
+  const blankHeader = ruleBody(CSS_ON, '} html body[data-mpw-hdr-blank][data-mpw-hdr-blank] header.wSkVaW_header')
   ok('C3a 空栏兜底（header 本体）保留材质压制（背景透明 + backdrop none + min-height 0）',
     !!blankHeader && /background-color:\s*transparent !important/.test(blankHeader)
     && /backdrop-filter:\s*none !important/.test(blankHeader) && /min-height:\s*0 !important/.test(blankHeader),
@@ -163,16 +167,16 @@ console.log('\n== C3. 空栏兜底（⑪翻转：空栏全量归零 + 非空栏�
   ok('C3b 空栏兜底（header 本体）含 5 条外壳归零（margin/padding/border-width/border-radius/box-shadow，!important）',
     missing.length === 0, missing.length ? '缺=' + missing.join(' , ') : '5 条齐')
   // ::before/::after/磨砂子层组的压制原样保留（10-09 细磨砂条根因不回潮）
-  let blankPseudo = ruleBody(CSS_ON, 'html body[data-mpw-hdr-blank][data-mpw-hdr-blank] .wSkVaW_header::before, html body[data-mpw-hdr-blank][data-mpw-hdr-blank] .wSkVaW_header::after, html body[data-mpw-hdr-blank][data-mpw-hdr-blank] .wSkVaW_header:not(:where([data-code-block-banner])) > .mpw-hdrFrost')
+  let blankPseudo = ruleBody(CSS_ON, 'html body[data-mpw-hdr-blank][data-mpw-hdr-blank] header.wSkVaW_header::before, html body[data-mpw-hdr-blank][data-mpw-hdr-blank] header.wSkVaW_header::after, html body[data-mpw-hdr-blank][data-mpw-hdr-blank] header.wSkVaW_header:not(:where([data-code-block-banner])) > .mpw-hdrFrost')
     if (!blankPseudo) { // ①(2026-11-01 判据演进：T04 给第三个逗号项加了 :not([data-disclosure-header])) 允许前缀匹配
-      const mm = /html body\[data-mpw-hdr-blank\]\[data-mpw-hdr-blank\] \.wSkVaW_header::before[^{]*\{([\s\S]*?)\}/.exec(CSS_ON)
+      const mm = /html body\[data-mpw-hdr-blank\]\[data-mpw-hdr-blank\] \header.wSkVaW_header::before[^{]*\{([\s\S]*?)\}/.exec(CSS_ON)
       blankPseudo = mm ? mm[1] : null
     }
   ok('C3c 空栏兜底（伪元素/磨砂子层）原样保留（含 margin:0 !important 与 background-image:none）',
     !!blankPseudo && /margin:\s*0 !important/.test(blankPseudo) && /background-image:\s*none !important/.test(blankPseudo),
     blankPseudo ? blankPseudo.slice(0, 90) : '规则缺失')
   // 反向断言（⑪新增）：归零只许落在空栏，非空栏（有会话）悬浮外壳必须完好
-  const floatHeader = ruleBody(CSS_ON, 'body[data-mpw-float] .wSkVaW_header')
+  const floatHeader = ruleBody(CSS_ON, 'body[data-mpw-float] header.wSkVaW_header')
   const shellOk = !!floatHeader
     && /margin:\s*10px 16px 0(?!\s*!important)/.test(floatHeader)
     && /padding:\s*8px 16px 8px(?!\s*!important)/.test(floatHeader)
@@ -194,17 +198,17 @@ function runChecksOn(clientText, clientPath) {
   const p = parseTopRules(css)
   r['A1'] = !p.unclosedComment && !p.unterminatedBlock
     && p.rules.every((x) => !x.pre || SAFE_PRELUDE.test(x.pre))
-  r['B1标题栏'] = !!findRule(p, 'body[data-mpw-float] .wSkVaW_header')
+  r['B1标题栏'] = !!findRule(p, 'body[data-mpw-float] header.wSkVaW_header')
   r['B4阴影'] = FAM.every((f) => { const b = ruleBody(css, f.sel); return b && /box-shadow:\s*var\(--mpw-float-shadow/.test(b) })
-  const offHeader = ruleBody(css, 'body[data-mpw-float-off] body[data-mpw-float] .wSkVaW_header')
+  const offHeader = ruleBody(css, 'body[data-mpw-float-off] body[data-mpw-float] header.wSkVaW_header')
   r['C2float-off'] = !!offHeader && /box-shadow:\s*none/.test(offHeader)
   /* C3（⑪翻转）：空栏 5 条归零必须在 + 非空栏外壳必须完好（反向） */
-  const blankHeader = ruleBody(css, '} html body[data-mpw-hdr-blank][data-mpw-hdr-blank] .wSkVaW_header')
+  const blankHeader = ruleBody(css, '} html body[data-mpw-hdr-blank][data-mpw-hdr-blank] header.wSkVaW_header')
   r['C3a'] = !!blankHeader && /background-color:\s*transparent !important/.test(blankHeader)
     && /backdrop-filter:\s*none !important/.test(blankHeader) && /min-height:\s*0 !important/.test(blankHeader)
   r['C3b'] = !!blankHeader && ['margin: 0 !important', 'padding: 0 !important', 'border-width: 0 !important',
     'border-radius: 0 !important', 'box-shadow: none !important'].every((z) => blankHeader.indexOf(z) >= 0)
-  const floatHeader = ruleBody(css, 'body[data-mpw-float] .wSkVaW_header')
+  const floatHeader = ruleBody(css, 'body[data-mpw-float] header.wSkVaW_header')
   r['C3d'] = !!floatHeader
     && /margin:\s*10px 16px 0(?!\s*!important)/.test(floatHeader)
     && /padding:\s*8px 16px 8px(?!\s*!important)/.test(floatHeader)
@@ -221,25 +225,25 @@ function cssOfPath(clientPath, settings) {
 }
 const MUT = [
   { id: 'M1', what: '孤儿裸文本塞回（复刻 55da7a8 注释截断）⇒ A1/B1 必红', expect: ['A1', 'B1标题栏'],
-    patch: (s) => s.replace('body[data-mpw-float] .wSkVaW_header {\n\tmargin: 10px 16px 0;',
-      '   ②(修正) 变异孤儿文本（无开启符）：headerBg 规则的 border-bottom transparent\n   用 !important 会取消下边线 → 这里用 !important 覆盖回来，圆角描边完整。 */\nbody[data-mpw-float] .wSkVaW_header {\n\tmargin: 10px 16px 0;'),
+    patch: (s) => s.replace('body[data-mpw-float] header.wSkVaW_header {\n\tmargin: 10px 16px 0;',
+      '   ②(修正) 变异孤儿文本（无开启符）：headerBg 规则的 border-bottom transparent\n   用 !important 会取消下边线 → 这里用 !important 覆盖回来，圆角描边完整。 */\nbody[data-mpw-float] header.wSkVaW_header {\n\tmargin: 10px 16px 0;'),
     verify: (s) => s.indexOf('变异孤儿文本（无开启符）') >= 0 },
   { id: 'M2', what: '标题栏阴影改回异源字面量 ⇒ B4 必红（⑪联动：C3d 的同令牌检查一并红，如实计入）', expect: ['B4阴影', 'C3d'],
-    patch: (s) => s.replace('\tborder-radius: var(--mpw-side-radius);\n\tbox-shadow: var(--mpw-float-shadow);\n}\nbody[data-mpw-float] body[data-ds-dark-theme] .wSkVaW_header,',
-      '\tborder-radius: var(--mpw-side-radius);\n\tbox-shadow: 0 8px 28px rgba(0,0,0,0.2);\n}\nbody[data-mpw-float] body[data-ds-dark-theme] .wSkVaW_header,'),
+    patch: (s) => s.replace('\tborder-radius: var(--mpw-side-radius);\n\tbox-shadow: var(--mpw-float-shadow);\n}\nbody[data-mpw-float] body[data-ds-dark-theme] header.wSkVaW_header,',
+      '\tborder-radius: var(--mpw-side-radius);\n\tbox-shadow: 0 8px 28px rgba(0,0,0,0.2);\n}\nbody[data-mpw-float] body[data-ds-dark-theme] header.wSkVaW_header,'),
     verify: (s) => s.indexOf('box-shadow: 0 8px 28px rgba(0,0,0,0.2);') >= 0 },
   { id: 'M3', what: 'float-off 标题栏重置去掉 box-shadow:none ⇒ C2 必红', expect: ['C2float-off'],
-    patch: (s) => s.replace('body[data-mpw-float-off] body[data-mpw-float] .wSkVaW_header {\n\tmargin: 0; padding: 0; border: none; border-radius: 0; box-shadow: none;\n}',
-      'body[data-mpw-float-off] body[data-mpw-float] .wSkVaW_header {\n\tmargin: 0; padding: 0; border: none; border-radius: 0;\n}'),
-    verify: (s) => /body\[data-mpw-float-off\] body\[data-mpw-float\] \.wSkVaW_header \{\n\tmargin: 0; padding: 0; border: none; border-radius: 0;\n\}/.test(s) },
+    patch: (s) => s.replace('body[data-mpw-float-off] body[data-mpw-float] header.wSkVaW_header {\n\tmargin: 0; padding: 0; border: none; border-radius: 0; box-shadow: none;\n}',
+      'body[data-mpw-float-off] body[data-mpw-float] header.wSkVaW_header {\n\tmargin: 0; padding: 0; border: none; border-radius: 0;\n}'),
+    verify: (s) => /body\[data-mpw-float-off\] body\[data-mpw-float\] \header.wSkVaW_header \{\n\tmargin: 0; padding: 0; border: none; border-radius: 0;\n\}/.test(s) },
   { id: 'M4', what: '⑪去掉空栏 5 条归零（回退到 ⑩ 外壳放行形态）⇒ C3b 必红', expect: ['C3b'],
     patch: (s) => s.replace('\tmin-height: 0 !important;\n\tmargin: 0 !important;\n\tpadding: 0 !important;\n\tborder-width: 0 !important;\n\tborder-radius: 0 !important;\n\tbox-shadow: none !important;\n}',
       '\tmin-height: 0 !important;\n}'),
     verify: (s) => !/min-height: 0 !important;\n\tmargin: 0 !important;\n\tpadding: 0 !important;\n\tborder-width: 0 !important;\n\tborder-radius: 0 !important;\n\tbox-shadow: none !important;\n\}/.test(s) },
   { id: 'M5', what: '⑪把归零扩到非空栏（float 标题栏 margin 压成 0 !important）⇒ C3d 必红', expect: ['C3d'],
-    patch: (s) => s.replace('body[data-mpw-float] .wSkVaW_header {\n\tmargin: 10px 16px 0;\n\tpadding: 8px 16px 8px;',
-      'body[data-mpw-float] .wSkVaW_header {\n\tmargin: 0 !important;\n\tpadding: 8px 16px 8px;'),
-    verify: (s) => /body\[data-mpw-float\] \.wSkVaW_header \{\n\tmargin: 0 !important;\n\tpadding: 8px 16px 8px;/.test(s) },
+    patch: (s) => s.replace('body[data-mpw-float] header.wSkVaW_header {\n\tmargin: 10px 16px 0;\n\tpadding: 8px 16px 8px;',
+      'body[data-mpw-float] header.wSkVaW_header {\n\tmargin: 0 !important;\n\tpadding: 8px 16px 8px;'),
+    verify: (s) => /body\[data-mpw-float\] \header.wSkVaW_header \{\n\tmargin: 0 !important;\n\tpadding: 8px 16px 8px;/.test(s) },
 ]
 let expectRed = [], actualRed = []
 for (const m of MUT) {

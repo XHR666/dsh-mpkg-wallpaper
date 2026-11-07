@@ -1,7 +1,9 @@
+// 判据演进留痕（R19，2026-11-07 Z8）：同 float-family-geo——产物选择器族结构限定为 header.wSkVaW_header，
+// 本文件钉住的规则文本/变异锚点同步更新；selMatch 桩补 compound "tag.cls" 形态（语义=真 CSS 同节点命中）。
 // tools/glow-fixed-safety-test.mjs —— 2026-10-29 任务书判据（3D 倾斜回归修复的防线）
 //
 // 背景（真机回归，根因见 lib/client.js 光晕模块头部注释）：
-//   2026-10-28 §3 的 3D 倾斜把 transform/perspective 写在 .wSkVaW_header 等**内部含
+//   2026-10-28 §3 的 3D 倾斜把 transform/perspective 写在 header.wSkVaW_header 等**内部含
 //   position:fixed 后代的容器**上 ⇒ 容器成为 containing block ⇒ dsh-conversation 的
 //   .dsh-conv-panel（fixed，挂在标题栏 slot 内，lib/client.js __convPanelLayerCss 注释取证）
 //   被钉进容器局部坐标系 ⇒ 逐帧漂移；跨面移动时祖先链 transform 忽有忽无 ⇒ 位置闪。
@@ -88,7 +90,7 @@ const ruleBody = (css, sel) => {
   cancelWorldTimers()
   const bodies = {
     左栏: ruleBody(css, 'body[data-mpw-float] .pI_x6G_sidebarCol {'),
-    标题栏: ruleBody(css, 'body[data-mpw-float] .wSkVaW_header {'),
+    标题栏: ruleBody(css, 'body[data-mpw-float] header.wSkVaW_header {'),
     右栏: ruleBody(css, 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]:not(:has([data-sidebar-right-open="true"]))) [data-sidebar-right-panel="push"] {'),
   }
   const bad = Object.keys(bodies).filter((k) => !bodies[k])
@@ -138,7 +140,11 @@ const selMatch = (el, sel) => {
     else if (/^\[[^\]=]+\]$/.test(base)) hit = el.hasAttribute(base.slice(1, -1))   // ⑧修正：补收尾 \]（原式缺它 ⇒ attr-only 选择器永不命中）
     else if (/^\[[^\]=]+=["']?[^"']/.test(base)) { const m = base.match(/^\[([^\]=]+)=["']?([^"']+)["']?\]$/); hit = m && el.getAttribute(m[1]) === m[2] }
     else if (/^\./.test(base)) hit = String(el.className || '').split(/\s+/).includes(base.slice(1))
-    else if (/^[a-zA-Z][\w-]*$/.test(base)) hit = String(el.tagName).toLowerCase() === base.toLowerCase()
+    /* Z8(2026-11-07 R19) compound "tag.cls" 形态：产物选择器族结构限定为 header.wSkVaW_header；
+       桩匹配引擎补这个形态——语义与真 CSS 一致（tag 相等 且 类名在列）。 */
+    else { const cm = base.match(/^([a-zA-Z][\w-]*)\.([\w-]+)$/)
+      if (cm) hit = String(el.tagName).toLowerCase() === cm[1].toLowerCase() && String(el.className || '').split(/\s+/).includes(cm[2])
+      else if (/^[a-zA-Z][\w-]*$/.test(base)) hit = String(el.tagName).toLowerCase() === base.toLowerCase() }
     if (hit && notAttr && el.hasAttribute(notAttr)) hit = false
     if (hit) return true
   }
@@ -380,8 +386,8 @@ const MUT = [
       'for (let n = null, k = 0; n && n.nodeType === 1 && k < 12; n = n.parentElement, k++) { /* 变异：解析恒空 */'),
     verify: (s) => s.indexOf('for (let n = null, k = 0;') >= 0 },
   { id: 'M3', what: 'float 标题栏规则被改成 transform 实现 ⇒ A3 必红', expect: ['A3'],
-    patch: (s) => s.replace('body[data-mpw-float] .wSkVaW_header {\n\tmargin: 10px 16px 0;', 'body[data-mpw-float] .wSkVaW_header {\n\ttransform: translateY(-2px);\n\tmargin: 10px 16px 0;'),
-    verify: (s) => s.indexOf('body[data-mpw-float] .wSkVaW_header {\n\ttransform: translateY(-2px);') >= 0 },
+    patch: (s) => s.replace('body[data-mpw-float] header.wSkVaW_header {\n\tmargin: 10px 16px 0;', 'body[data-mpw-float] header.wSkVaW_header {\n\ttransform: translateY(-2px);\n\tmargin: 10px 16px 0;'),
+    verify: (s) => s.indexOf('body[data-mpw-float] header.wSkVaW_header {\n\ttransform: translateY(-2px);') >= 0 },
   /* ①(2026-11-03 #Bug2/3/5) 家族变异：把磨砂写回"本体"⇒ C 组必红 */
   { id: 'M4', what: '侧栏磨砂写回 sidebarCol 本体（Bug2/3 回归复刻）⇒ C1 必红', expect: ['C1'],
     // ①(2026-11-01 T11) 锚点再演进：稳定层叠上下文的 z 由 0 → 5（0 会被正文按 DOM 顺序盖住）
@@ -421,7 +427,7 @@ function runChecksOn(clientPath) {
     const css = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({ float: true }) : '')
     const bodies = {
       左栏: ruleBody(css, 'body[data-mpw-float] .pI_x6G_sidebarCol {'),
-      标题栏: ruleBody(css, 'body[data-mpw-float] .wSkVaW_header {'),
+      标题栏: ruleBody(css, 'body[data-mpw-float] header.wSkVaW_header {'),
       右栏: ruleBody(css, 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]:not(:has([data-sidebar-right-open="true"]))) [data-sidebar-right-panel="push"] {'),
     }
     r['A3'] = bodies.左栏 && bodies.标题栏 && bodies.右栏
