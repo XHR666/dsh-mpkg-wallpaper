@@ -17,7 +17,8 @@
 // 三场景（任务书 §2 Z12-1）：A=token-only 半残档刷新；B=墓碑+身份并存（task-22 反例）；
 // C=验活失败（mpwBgArmErrorSet 路径，经 __mpwArmNoteProbe 驱动生产实现）。
 // 变异（隔离副本，R2 生效断言 + 期望红集==实际红集）：
-//   M1 UI 回退改回旧写法 ⇒ A4/C3b 红；M2 失败路径清身份 ⇒ C2 红；M3 墓碑吞身份（task-22 回退）⇒ B1/B2 红。
+//   M1 UI 回退改回旧写法 ⇒ A4/C3b/C4 红；M2 失败路径清身份（append 型）⇒ C2 红；
+//   M3 墓碑吞身份（task-22 回退）⇒ B1/B3 红（2026-11-08 审查 P2-1：头注释与代码期望红集对齐）。
 //
 // 用法: node tools/wallpaper-fail-identity-test.mjs [--client <path>]
 

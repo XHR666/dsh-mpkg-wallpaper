@@ -156,13 +156,19 @@ async function runSuite(clientPath) {
       ck('W3a', t1.indexOf('网络较慢') >= 0 && t1.indexOf('自动恢复动态') >= 0, '慢链路 strict-fail 提示含"网络较慢/自动恢复"=' + JSON.stringify(t1.slice(-40)))
       setEnvLocation('127.0.0.1')
       sb.sceneHintedReset()
-      /* 回环 + 无移动外壳：提示不带慢链路话术（分流可判别） */
-      try { if (globalThis.document.getElementById('mpw-sceneNote')) globalThis.document.getElementById('mpw-sceneNote').remove() } catch (e) {}
+      /* 回环 + 无移动外壳：提示不带慢链路话术（分流可判别）。
+         ①(2026-11-08 审查返工 P1-1 R19) 清场改用**生产入口** __mpwSandbox.sceneNoteRemove
+         （旧写法用桩 remove()：桩节点 parentElement/parentNode 在 removeChild 后残留 ⇒
+         mpwBottomNoteEnsure 的复用判据误判"仍在树"返回离树节点 ⇒ byId 已注销 ⇒ n2 恒 null
+         ⇒ 本断言读恒空串、对目标语义零判别力——审查 R1 变异实证"回环也塞话术 W3b 仍绿"）。
+         新增前置断言 W3pre：n2 必须真实存在（null ⇒ 显式红），杜绝空转。 */
+      sb.sceneNoteRemove()
       sb.holdFallback('strict-fail', 'ident-l', 'cap-no-first-frame', null)
       const n2 = globalThis.document.getElementById('mpw-sceneNote')
       const t2 = n2 ? String(n2.getAttribute('data-mpw-note-msg') || '') : ''
-      ck('W3b', t2.indexOf('网络较慢') < 0, '回环 strict-fail 无慢链路话术=' + JSON.stringify(t2.slice(-30)))
-      try { if (n2 && n2.parentNode) n2.parentNode.removeChild(n2) } catch (e) {}
+      ck('W3pre', !!n2, '回环 strict-fail 提示条必须真实在（前置，防空转）=' + !!n2)
+      ck('W3b', !!n2 && t2.indexOf('网络较慢') < 0, '回环 strict-fail 无慢链路话术=' + JSON.stringify(t2.slice(-30)))
+      if (n2 && n2.parentNode) { try { n2.parentNode.removeChild(n2) } catch (e) {} }
       resetEnv()
     }
   }
