@@ -5,6 +5,15 @@
 //   G  光晕：#6 根因 = web/scene 分支提前 return 跳过 glow sync ⇒ 共享入口 mpwGlowApplyAll 在三处调用
 //   S  扫描页：#2 占位层（白色滤镜+类型字）只在 data-mpw-thumb-shown 时显示；#3 已应用角标换 SVG
 // 纪律：每条都配变异自证（期望红集 == 实际红集）；不跑浏览器。
+//
+// 判据演进留痕（R19，2026-11-07 Z5 对抗核查）：
+//   原断言：`const ok = (n) => { pass++; … }` —— ok 只收 1 参，全文件 24 处 `ok('…', 条件)` 的
+//           第二个参数被**静默丢弃**，任何条件都打印 ✓ ⇒ 整个 V/H/G/S/R 组是"恒绿"假门禁
+//           （独立重放：把兜底 CSS 改回 display:none 后本判据仍 24/0 "全绿"，见
+//           tools/scene-static-only-test.mjs 的 R-MUT 重放段——假绿证据链）。
+//   新断言：`ok(n, cond, d)` 真评估条件（cond 假 ⇒ fail++ 并打 ✗），全部断言文本/正则一字未改。
+//   为什么：R1（判据必须能失败）——不能失败的判据=没有判据；Z5 任务书"反假绿硬要求"。
+//   语义如何保持：断言集合与期望值零改动，只是把"已经算好的条件"真正接进 pass/fail 计数。
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -15,7 +24,7 @@ const CLIENT = fs.readFileSync(path.join(repo, 'lib', 'client.js'), 'utf8')
 const RENDERER = fs.readFileSync(path.join(repo, 'renderer', 'demo.html'), 'utf8')
 
 let pass = 0, fail = 0
-const ok = (n) => { pass++; console.log('  ✓ ' + n) }
+const ok = (n, cond, d) => { if (cond) { pass++; console.log('  ✓ ' + n + (d ? '  [' + d + ']' : '')) } else { fail++; console.error('  ✗ ' + n + (d ? '  — ' + d : '')) } }
 const bad = (n, d) => { fail++; console.error('  ✗ ' + n + (d ? ' → ' + d : '')) }
 const has = (src, re) => re.test(src)
 
