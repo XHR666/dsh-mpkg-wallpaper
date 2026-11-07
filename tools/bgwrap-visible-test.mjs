@@ -36,6 +36,11 @@ let pass = 0
 let fail = 0
 const ok = (n) => { pass++; console.log('  ✓ ' + n) }
 const bad = (n, d) => { fail++; console.error('  ✗ ' + n + (d ? ' → ' + d : '')) }
+/* ①(2026-11-08 Z14b R19) 统一双向断言口：原写法大量 `if (cond) ok(name)` 没有 else，条件
+   不成立时**不计数也不红**（失败静默 ⇒ 假绿风险，Z5 曾发现同类问题）。改为 ck(name, cond)：
+   条件为真走 ok、为假走 bad（计数并退出码 1）。断言**名称与条件逐字保留**（语义零变化），
+   只是把"静默少计"变成"显式红"。 */
+const ck = (n, cond, d) => { if (cond) ok(n); else bad(n, d) }
 
 const IMG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg=='
 const NONE = /\.mpw-bgWrap\s*\{\s*display:\s*none/
@@ -62,51 +67,42 @@ function boot (settings, { fetchImpl, search } = {}) {
   // ① 有源 + 默认不透明度 82（默认档）→ 不得隐藏
   const b = boot(SRC_SETTINGS)
   const css = b.css()
-  if (!NONE.test(css)) ok('有壁纸源 + opacity 82 ⇒ CSS 不含 `.mpw-bgWrap{display:none}`')
-  else bad('有壁纸源 + opacity 82 却被隐藏', '命中 display:none')
-  if (!NO_SRC.test(css)) ok('有源分支不含"无源"独有锚点（判据可判别）')
-  else bad('有源却走了"无源"分支', 'NO_SRC 锚点命中')
+  ck('有壁纸源 + opacity 82 却被隐藏', !NONE.test(css), '命中 display:none')
+  ck('有源却走了"无源"分支', !NO_SRC.test(css), 'NO_SRC 锚点命中')
 
   // ② 边界：opacity 99 仍不得隐藏
   const css99 = b.css({ opacity: 99 })
-  if (!NONE.test(css99)) ok('有壁纸源 + opacity 99（边界）⇒ 不隐藏')
-  else bad('opacity 99 就被隐藏了', '阈值不该早于 100')
+  ck('opacity 99 就被隐藏了', !NONE.test(css99), '阈值不该早于 100')
 
   // ③ opacity 100（面板完全不透明）→ 允许隐藏，但必须是"不透明语义"而不是"无源语义"
   const css100 = b.css({ opacity: 100 })
-  if (NONE.test(css100) && !NO_SRC.test(css100)) ok('opacity 100 ⇒ 隐藏，且判据=面板不透明（不是无源分支）')
-  else bad('opacity 100 的隐藏来源不对', `none=${NONE.test(css100)} noSrc=${NO_SRC.test(css100)}`)
+  ck('opacity 100 的隐藏来源不对', NONE.test(css100) && !NO_SRC.test(css100), `none=${NONE.test(css100)} noSrc=${NO_SRC.test(css100)}`)
 
   // ④ 无源 → 隐藏，且必须命中"无源"独有锚点（反向对照：证明锚点有分辨力）
   const cssNo = b.css({ image: '', webUrl: '', converted: '' })
-  if (NONE.test(cssNo) && NO_SRC.test(cssNo)) ok('无源 ⇒ 隐藏，且判据=无源分支（正常语义）')
-  else bad('无源的正常语义没走到', `none=${NONE.test(cssNo)} noSrc=${NO_SRC.test(cssNo)}`)
+  ck('无源的正常语义没走到', NONE.test(cssNo) && NO_SRC.test(cssNo), `none=${NONE.test(cssNo)} noSrc=${NO_SRC.test(cssNo)}`)
 
   // ⑤ web 壁纸（image 为 ""，只有 webUrl）也算有源
   const cssWeb = b.css({ image: '', webUrl: 'http://127.0.0.1:9/x.html', converted: 'web' })
-  if (!NONE.test(cssWeb) && /\.mpw-bgWrap\.mpw-web iframe\.mpw-webFrame\s*\{\s*display:\s*block/.test(cssWeb)) ok('web 壁纸（image 为空、有 webUrl）⇒ 不隐藏且 iframe 可见规则在')
-  else bad('web 壁纸被当成无源', `none=${NONE.test(cssWeb)}`)
+  ck('web 壁纸被当成无源', !NONE.test(cssWeb) && /\.mpw-bgWrap\.mpw-web iframe\.mpw-webFrame\s*\{\s*display:\s*block/.test(cssWeb), `none=${NONE.test(cssWeb)}`)
 
   // ⑥ 总开关关闭 → 隐藏（用户显式关掉）。注意：`enabled:false → image:""` 的换算在**调用点**
   //    （applyFromStorageInner 3289-3291 / 样式自愈 12201），buildCss 只认 image/webUrl ⇒ 这里按调用点口径造 patch。
   const cssOff = b.css({ enabled: false, image: '' })
-  if (NONE.test(cssOff) && NO_SRC.test(cssOff)) ok('总开关关闭 ⇒ 隐藏（走无源语义，与调用点换算一致）')
-  else bad('总开关关闭的语义不对', `none=${NONE.test(cssOff)} noSrc=${NO_SRC.test(cssOff)}`)
+  ck('总开关关闭的语义不对', NONE.test(cssOff) && NO_SRC.test(cssOff), `none=${NONE.test(cssOff)} noSrc=${NO_SRC.test(cssOff)}`)
 }
 
 {
   // ⑦ 宿主 /settings 不可用（桩默认 404）→ localStorage 兜底，有源不得隐藏
   const b = boot(SRC_SETTINGS)
-  if (!NONE.test(b.css())) ok('宿主 /settings 不可用（404）⇒ 有源仍不隐藏（localStorage 兜底）')
-  else bad('宿主不可用时把有源当无源', '命中 display:none')
+  ck('宿主不可用时把有源当无源', !NONE.test(b.css()), '命中 display:none')
 }
 
 {
   // ⑧ 宿主 /settings 返回 settings:null → 不得把有源当无源
   const b = boot(SRC_SETTINGS, { fetchImpl: () => ({ ok: true, status: 200, json: async () => ({ ok: true, settings: null }) }) })
   await tick()
-  if (!NONE.test(b.css())) ok('宿主 /settings 返回 settings:null ⇒ 有源仍不隐藏')
-  else bad('宿主空设置覆盖掉了本地壁纸源', '命中 display:none')
+  ck('宿主空设置覆盖掉了本地壁纸源', !NONE.test(b.css()), '命中 display:none')
 }
 
 {
@@ -115,12 +111,10 @@ function boot (settings, { fetchImpl, search } = {}) {
   const slow = new Promise((r) => { release = r })
   const b = boot(SRC_SETTINGS, { fetchImpl: () => slow })
   const early = b.css()
-  if (!NONE.test(early)) ok('宿主 /settings 慢响应（合并未落地）⇒ 早期就不隐藏（无"先亮后灭"窗口）')
-  else bad('合并未落地时就被隐藏', '早期即 display:none')
+  ck('合并未落地时就被隐藏', !NONE.test(early), '早期即 display:none')
   release({ ok: true, status: 200, json: async () => ({ ok: true, settings: { enabled: true, opacity: 82, unifyTint: true } }) })
   await tick()
-  if (!NONE.test(b.css())) ok('慢响应落地后 ⇒ 仍不隐藏（合并保留本地壁纸源）')
-  else bad('宿主慢响应落地后把壁纸隐藏了', '合并结果丢了 image')
+  ck('宿主慢响应落地后把壁纸隐藏了', !NONE.test(b.css()), '合并结果丢了 image')
 }
 
 {
@@ -130,8 +124,7 @@ function boot (settings, { fetchImpl, search } = {}) {
   })
   await tick()
   const css = b.css()
-  if (NONE.test(css) && !NO_SRC.test(css)) ok('宿主 opacity:100 + 本地有源 ⇒ 合并后按"不透明语义"隐藏（不是无源）')
-  else bad('合并后的隐藏判据不对', `none=${NONE.test(css)} noSrc=${NO_SRC.test(css)}`)
+  ck('合并后的隐藏判据不对', NONE.test(css) && !NO_SRC.test(css), `none=${NONE.test(css)} noSrc=${NO_SRC.test(css)}`)
 }
 
 console.log('\n== PART 2 运行时断言：有源时 img.src 必须留下（切真源码块 + 假 DOM）==')
@@ -214,33 +207,28 @@ function runShowImageEl (source, { search = '', mutate = '' } = {}) {
   // 模拟 applyFromStorageInner 的图片分支：先设 src，再切图层（旧写法会在此被清掉）
   h.img.src = IMG
   h.showImageEl()
-  if (h.img.getAttribute('src') === IMG) ok('有源路径：showImageEl() 之后 img.src 仍在（旧写法会丢）')
-  else bad('有源路径 img.src 被清掉（壁纸层可见但没有画面）', 'src=' + JSON.stringify(h.img.getAttribute('src')))
-  if (h.wrap.classList.contains('mpw-img')) ok('图片图层类切换正常（mpw-img）')
-  else bad('图片图层类没切上', [...h.wrap.__cls].join(','))
+  ck('有源路径 img.src 被清掉（壁纸层可见但没有画面）', h.img.getAttribute('src') === IMG, 'src=' + JSON.stringify(h.img.getAttribute('src')))
+  ck('图片图层类没切上', h.wrap.classList.contains('mpw-img'), [...h.wrap.__cls].join(','))
 
   // 场景兜底视觉仍必须被撤掉（只是不清 src）
   const h2 = runShowImageEl(src)
   h2.wrap.classList.add('mpw-scene-fallback')
   h2.img.src = IMG
   h2.showImageEl()
-  if (!h2.wrap.classList.contains('mpw-scene-fallback') && h2.img.getAttribute('src') === IMG) ok('切到图片壁纸时仍撤掉场景兜底类，但保留壁纸源')
-  else bad('兜底类/壁纸源处理不对', `cls=${[...h2.wrap.__cls].join(',')} src=${h2.img.getAttribute('src')}`)
+  ck('兜底类/壁纸源处理不对', !h2.wrap.classList.contains('mpw-scene-fallback') && h2.img.getAttribute('src') === IMG, `cls=${[...h2.wrap.__cls].join(',')} src=${h2.img.getAttribute('src')}`)
 
   // 看门狗自己的路径（不传 keepSrc）照旧清 src —— 原有行为不回退
   const h3 = runShowImageEl(src)
   h3.wrap.classList.add('mpw-scene-fallback')
   h3.img.src = 'host:?scene=1&file=frame.png'
   h3.mpwSceneClearFallback()
-  if (h3.img.getAttribute('src') === null && !h3.wrap.classList.contains('mpw-scene-fallback')) ok('看门狗兜底清理路径照旧清 src（场景失效/恢复语义不变）')
-  else bad('兜底清理路径行为变了', 'src=' + JSON.stringify(h3.img.getAttribute('src')))
+  ck('兜底清理路径行为变了', h3.img.getAttribute('src') === null && !h3.wrap.classList.contains('mpw-scene-fallback'), 'src=' + JSON.stringify(h3.img.getAttribute('src')))
 
   // 回退开关：?bgwrapfix=legacy → 回到旧行为（仍清 src）
   const h4 = runShowImageEl(src, { search: '?bgwrapfix=legacy' })
   h4.img.src = IMG
   h4.showImageEl()
-  if (h4.img.getAttribute('src') === null) ok('?bgwrapfix=legacy ⇒ 回到旧行为（可一键回退）')
-  else bad('回退开关没接线', 'src 仍在=' + JSON.stringify(h4.img.getAttribute('src')))
+  ck('回退开关没接线', h4.img.getAttribute('src') === null, 'src 仍在=' + JSON.stringify(h4.img.getAttribute('src')))
 }
 
 console.log('\n== PART 3 分辨力自证：变异回旧写法必须变红 ==')
@@ -248,31 +236,25 @@ console.log('\n== PART 3 分辨力自证：变异回旧写法必须变红 ==')
   const h = runShowImageEl(src, { mutate: 'drop-keepsrc' })
   h.img.src = IMG
   h.showImageEl()
-  if (h.img.getAttribute('src') === null) ok('变异（去掉 keepSrc）后同一条断言变红 ⇒ PART 2 有分辨力')
-  else bad('变异后仍绿 ⇒ 断言没有分辨力', 'src=' + JSON.stringify(h.img.getAttribute('src')))
+  ck('变异后仍绿 ⇒ 断言没有分辨力', h.img.getAttribute('src') === null, 'src=' + JSON.stringify(h.img.getAttribute('src')))
 }
 {
   // 源码级守卫：showImageEl 必须以 keepSrc 调用看门狗解除；兜底校验必须在 applyFromStorage 里排上
   const show = cut(src, 'function showImageEl() {', 'function showVideoEl(')
-  if (/disarmSceneWatchdog\(true,\s*true\)/.test(show)) ok('源码守卫：showImageEl 以 keepSrc=true 解除看门狗')
-  else bad('源码守卫：showImageEl 丢了 keepSrc', '禁止改回 disarmSceneWatchdog(true)')
+  ck('源码守卫：showImageEl 丢了 keepSrc', /disarmSceneWatchdog\(true,\s*true\)/.test(show), '禁止改回 disarmSceneWatchdog(true)')
   const apply = cutOpt(src, 'function applyFromStorage() {', '①(2026-09-17 壁纸层可见性轮) "有壁纸源就必须挂上"')
-  if (apply && /mpwBgSrcHealSchedule\(\)/.test(apply)) ok('源码守卫：applyFromStorage 里排了"有源必挂"复核')
-  else bad('源码守卫：applyFromStorage 没排复核', '补挂兜底缺失/块锚点丢失')
-  if (/function mpwBgSrcHealCheck/.test(src) && /window\.__mpwBgSrcHeal/.test(src)) ok('源码守卫：补挂兜底与计数存在（可诊断）')
-  else bad('源码守卫：补挂兜底不完整', '缺 mpwBgSrcHealCheck / 计数')
+  ck('源码守卫：applyFromStorage 没排复核', apply && /mpwBgSrcHealSchedule\(\)/.test(apply), '补挂兜底缺失/块锚点丢失')
+  ck('源码守卫：补挂兜底不完整', /function mpwBgSrcHealCheck/.test(src) && /window\.__mpwBgSrcHeal/.test(src), '缺 mpwBgSrcHealCheck / 计数')
 }
 
 console.log('\n== PART 4 诊断接口 ==')
 {
   const on = boot(SRC_SETTINGS)
   const st = on.state()
-  if (st && st.fixOn === true) ok('默认：__mpwBgWrapState().fixOn === true')
-  else bad('诊断接口默认值不对', JSON.stringify(st))
+  ck('诊断接口默认值不对', st && st.fixOn === true, JSON.stringify(st))
   const off = boot(SRC_SETTINGS, { search: '?bgwrapfix=legacy' })
   const st2 = off.state()
-  if (st2 && st2.fixOn === false) ok('?bgwrapfix=legacy：__mpwBgWrapState().fixOn === false')
-  else bad('回退开关没反映到诊断接口', JSON.stringify(st2))
+  ck('回退开关没反映到诊断接口', st2 && st2.fixOn === false, JSON.stringify(st2))
 }
 
 console.log('\n== PART 5 「有源、有 src、但一直没有画面」的补画校验（真机第 3 条）==')

@@ -90,6 +90,33 @@ const CLIENT = fs.readFileSync(path.join(ROOT, 'lib', 'client.js'), 'utf8')
   if (forGlow && forWide && forFrost) ok('B2 关键功能面仍接真标题栏（光晕面/wide 桥/磨砂）')
   else bad('B2 关键功能面丢失', 'glow=' + forGlow + ' wide=' + forWide + ' frost=' + forFrost)
 }
+/* ══ F 组（2026-11-08 Z14a R37 同族审计）：_floatHeader_ 族收窄为 header[tag] 限定 ══
+   R19 留痕：Z8 轮该族"另族登记、不在范围"（当前真机 DOM 计数 0，无用户可见 bug）；
+   Z14a 审计结论：G 块（z-index:900 + ::before 磨砂）与 wide 桥是**样式/接线面**——
+   子串匹配会命中同前缀非标题栏元素（Z8 命令输出头的同族风险）⇒ 收窄为
+   header[class*="_floatHeader_"]（浮动标题栏本体是 <header>，不丢功能）。
+   诊断组（只读枚举 L~10904）与 :has 让位组（安全方向 L~20515）不在此判据范围（如实保留）。 */
+{
+  const gBlock = (() => { const i = CLIENT.indexOf('z-index: 900 !important'); return i >= 0 ? CLIENT.slice(Math.max(0, i - 400), i) : '' })()
+  const f1 = /header\[class\*="_floatHeader_"\]\s*\{/.test(gBlock) || /header\[class\*="_floatHeader_"\]\s*$/.test(gBlock.trim())
+  /* bare 检测先剥离限定形态（限定串包含裸串作子串，直接测会恒误报）。 */
+  const bare = /\[class\*="_floatHeader_"\]\s*\{/.test(gBlock.replace(/header\[class\*="_floatHeader_"\]/g, ''))
+  if (f1 && !bare) ok('F1 G 块：floatHeader 选择器已 header 限定（z-index/磨砂面）')
+  else bad('F1 G 块 floatHeader 未限定/丢失', 'qualified=' + f1 + ' bare=' + bare)
+  const f2 = /'header\[class\*="_floatHeader_"\]', 'wSkVaW_header', 'wide', false\]/.test(CLIENT)
+  if (f2) ok('F2 wide 桥：floatHeader 条目已 header 限定')
+  else bad('F2 wide 桥 floatHeader 未限定', 'bridge entry 不匹配')
+  /* 结构化计数：G 块区域（锚定首选择器 + 700 字符，覆盖本体与 ::before 两条）恰 2 处，
+     桥恰 1 处 —— 注释里的文本不算（区域从选择器行起算）。 */
+  const gSel = '[role="menu"], [class*="_menu_"]:not([class*="_pane_"]), [class*="_popover_"], header[class*="_floatHeader_"] {'
+  const gIdx = CLIENT.indexOf(gSel)
+  const gRegion = gIdx >= 0 ? CLIENT.slice(gIdx, gIdx + 700) : ''
+  const gCount = (gRegion.match(/header\[class\*="_floatHeader_"\]/g) || []).length
+  const bCount = (CLIENT.match(/'header\[class\*="_floatHeader_\"]', 'wSkVaW_header', 'wide', false\]/g) || []).length
+  const f3 = gCount === 2 && bCount === 1
+  if (f3) ok('F3 反向：限定形态在位（G 块×2 + 桥×1）')
+  else bad('F3 限定形态被收没', 'g=' + gCount + ' b=' + bCount)
+}
 {
   resetGlobals(); cancelWorldTimers()
   const w = loadPlugin({ quiet: true, settings: { enabled: true, image: 'stub-wallpaper.png' } })
@@ -124,6 +151,14 @@ const MUT = [
   { id: 'M3', what: '全部 header 限定删光 ⇒ B 必红（真标题栏也被收没；删限定必然产生裸选择器 ⇒ A 同时红，这是该变异的固有伴生红）', expect: ['A', 'B'],
     patch: (s) => s.replace(/header\.wSkVaW_header/g, '.wSkVaW_header'),
     verify: (s) => (s.match(/(?<![\w.])header\.wSkVaW_header(?![A-Za-z])/g) || []).length === 0 },
+  /* ①(2026-11-08 Z14a) F 组变异：floatHeader 限定回退 ⇒ F1/F3 红；桥回退 ⇒ F2 红 */
+  { id: 'M4', what: 'G 块 floatHeader 限定回退（去 header 前缀）⇒ F1/F3 红', expect: ['F1', 'F3'],
+    patch: (s) => s.replace('header[class*="_floatHeader_"] {', '[class*="_floatHeader_"] {').replace('header[class*="_floatHeader_"]::before', '[class*="_floatHeader_"]::before'),
+    verify: (s) => /\[class\*="_floatHeader_"\] \{/.test(s) && !/header\[class\*="_floatHeader_"\] \{/.test(s),
+  },
+  { id: 'M5', what: 'wide 桥 floatHeader 条目回退 ⇒ F2/F3 红', expect: ['F2', 'F3'],
+    patch: (s) => s.replace("'header[class*=\"_floatHeader_\"]', 'wSkVaW_header', 'wide', false]", "'[class*=\"_floatHeader_\"]', 'wSkVaW_header', 'wide', false]"),
+    verify: (s) => s.includes("'[class*=\"_floatHeader_\"]', 'wSkVaW_header', 'wide', false]") },
 ]
 for (const m of MUT) {
   const mut = m.patch(CLIENT)
@@ -133,7 +168,16 @@ for (const m of MUT) {
   const cnt = (mut.match(/header\.wSkVaW_header/g) || []).length
   /* 与主判据 B 同口径：计数下限 90（Blank/Sessionless 等同前缀类会抬高裸计数，不影响该下限语义） */
   r['B'] = cnt >= 90 && /header\[class\*="_header_"\]/.test(mut) && /MPW_GLOW_FACE_SEL = 'header\.wSkVaW_header/.test(mut)
-  const red = ['A', 'B'].filter((id) => !r[id])
+  /* F 组与主判据同口径（M4/M5 需要） */
+  const gBlockM = (() => { const i = mut.indexOf('z-index: 900 !important'); return i >= 0 ? mut.slice(Math.max(0, i - 400), i) : '' })()
+  r['F1'] = /header\[class\*="_floatHeader_"\]\s*\{/.test(gBlockM) || /header\[class\*="_floatHeader_"\]\s*$/.test(gBlockM.trim())
+  if (/header\[class\*="_floatHeader_"\]/.test(gBlockM) && /\[class\*="_floatHeader_"\]\s*\{/.test(gBlockM)) r['F1'] = r['F1'] && !/\[class\*="_floatHeader_"\]\s*\{/.test(gBlockM.replace(/header\[class\*="_floatHeader_"\]/g, ''))
+  r['F2'] = /'header\[class\*="_floatHeader_"\]', 'wSkVaW_header', 'wide', false\]/.test(mut)
+  const gSelM = '[role="menu"], [class*="_menu_"]:not([class*="_pane_"]), [class*="_popover_"], header[class*="_floatHeader_"] {'
+  const gIdxM = mut.indexOf(gSelM)
+  const gRegionM = gIdxM >= 0 ? mut.slice(gIdxM, gIdxM + 700) : ''
+  r['F3'] = (gRegionM.match(/header\[class\*="_floatHeader_"\]/g) || []).length === 2 && (mut.match(/'header\[class\*="_floatHeader_\"]', 'wSkVaW_header', 'wide', false\]/g) || []).length === 1
+  const red = ['A', 'B', 'F1', 'F2', 'F3'].filter((id) => !r[id])
   const eq = m.expect.length === red.length && m.expect.every((x) => red.indexOf(x) >= 0)
   if (eq) { pass++; console.log('  ✓ MUTANT-RED-OK ' + m.id + '  ' + m.what + '  期望红=' + JSON.stringify(m.expect) + ' 实际红=' + JSON.stringify(red)) }
   else { fail++; console.error('  ✗ MUTANT-MISMATCH ' + m.id + '  期望红=' + JSON.stringify(m.expect) + ' 实际红=' + JSON.stringify(red)) }
