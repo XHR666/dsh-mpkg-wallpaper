@@ -114,3 +114,25 @@ node tools/switch-wiring-test.mjs      # 开关接线审计（含 accent/aquaTex
 | `?mpwperf=off` | `off` | 本次页面加载**完全不装**插件的 CSS / MutationObserver / 壁纸（`apply()` 幂等守卫之后直接 return，一行 CSS 都不产出）。用途 = 「侧栏动画卡顿」等运行期开销的 A/B 对照（探针 `tools/sidebar-anim-probe.mjs` 的"页内中性化"同口径的**官方开关**）；带这个参数的页面里 `__mpwSectionTest` / `__mpwPersist` 照常存在（模块级安装），但界面外壳/壁纸/观察器全部缺席。诊断 payload 不受影响；不带参数时行为与历史版本逐字节一致。 |
 
 判据：`tools/anim-guard-test.mjs` C 组（off ⇒ applyInner 未执行：`__mpwHeavyTest` 缺席；默认 ⇒ 全部就位）。
+
+---
+
+## 7. 错误日志导出新增字段（Z6 2026-11-07，只追加）
+
+错误日志导出（查看错误日志弹窗 → 导出）在既有 `app/version/url/userAgent/environment/hostRuntime/logSource + error{at,where,message,environment,detail,stack}` 之上**只增不删**；读不到的字段为 `null` 或 `{degraded:"原因"}`，不消失：
+
+| 组 | 键 | 说明 |
+|---|---|---|
+| `error` | `count/firstAt/lastAt` | 同 key 重复错误：ring 条目计数累加、不再新增噪声条目；导出可见"发生了几次" |
+| `exportContext.ui` | `errLogOpen/tab` | 导出时的 UI 现场 |
+| `exportContext.errStats` | `key/count/firstAt/lastAt[]` | 同 key 最近若干条摘要 |
+| `exportContext.collectors.renderer` | `ctxAcquire/caps/capLast.debug/liveStart/liveRes/bootError/resTier/bootLogTail/pkgPerf` | 渲染器现场（帧内计数器跨源读不到 ⇒ 标 degraded；frameNo 经 mpw-health 消息带出） |
+| `exportContext.collectors.scene` | `diag/watchdog/displayPush/hostCmdLast/hostCmdCount/health/wrap{cls,live,defer,iframe{computedDisplay,computedOpacity,rect},poster,sceneNote}/glProbe` | 场景面现场 |
+| `exportContext.collectors.browser` | `webgl{probe,statusMessage}/glInfo{version,vendor,renderer,maxTextureSize,extensions}/offscreenCanvas/webAssembly/webCodecsVideoDecoder/audioContext/webgpu/crossOriginIsolated/isSecureContext/hardwareConcurrency/deviceMemory/maxTouchPoints/canPlayType{h264,vp9,av1,mp3,m4a}/buildID/oscpu/uaBrands/visibilityState/hasFocus/colorDepth/prefersReducedMotion/forcedColors/performanceMemory` | 浏览器能力（导出时现探、进程内缓存一次） |
+| `exportContext.collectors.host` | `…/osRelease/container/startedAt/uptimeMs/lastOkAt/lastErr` | 宿主 /compat 只读追加 + 不可达时 `{ok:false,error,degraded}`（不再静默 null） |
+| `exportContext.collectors.settings` | 档位白名单快照 | `mpkgKey/source/converted/fromMpkg/enabled/…/glow/float`；不含 token/完整路径 |
+| `exportMode / redaction` | `"sanitized"|"full"` | sanitized：token/`_mpwr`/本机绝对路径/内网 IP/插件 bundle URL → `<redacted>/<local-path>/<local-ip>/<plugin-bundle>`，并列出每条规则命中数；full：`redaction:"none"` 保留全部 |
+| 文件名 | `mpw-error-log-sanitized-<ISO>.json` / `mpw-error-log-full-<ISO>.json` | 双导出按钮（完整导出为两步确认） |
+| 体积 | 单条 ≤32KB | 超限先截 stack、再截超长字符串，仍超 ⇒ `truncated:true` |
+
+场景壁纸无 WebGL 环境（Firefox 常见）行为：挂载前一次性 canvas 预检（webgl2/webgl1 + `webglcontextcreationerror.statusMessage`）→ 都不可用 ⇒ 不进 8s 严格看门狗空等，直接静态帧兜底 + 底部常驻条按 `no-webgl2 / webgl1-only / ctx-failed` 三种话术分流（15s 去重、不弹模态、不自动换壁纸）；错误 ring 记 `scene-fallback(no-webgl)` 一次（重复累加计数）。宿主不可达窗口：scene 失败不重复记错，底部提示"宿主正在重启/不可达，恢复后自动重试"，恢复探测有界（30s/90s/180s 三次），恢复后幂等重挂一次。

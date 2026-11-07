@@ -740,3 +740,11 @@ dsh-mpkg-wallpaper/
 - 根 [`LICENSE`](LICENSE) 是上述双许可的说明页；`package.json` 的 `license` 字段为 `SEE LICENSE IN LICENSE`。
 
 再分发提示：`lib/**` 部分按 MIT 履行义务；`renderer/**` 部分按 GPL-3.0-or-later 履行义务（本包已随附其完整源码、许可全文与第三方声明）。
+
+---
+
+## 16. 错误日志导出与无 WebGL 环境说明（2026-11-07 只追加）
+
+- 「查看错误日志」弹窗提供两个导出：**导出脱敏日志（推荐）**（token / 本机绝对路径 / 内网 IP / 插件 bundle URL 替换为占位符，可公开分享）与**导出完整日志**（含敏感信息，两步确认，请勿公开发布）。字段表见 `docs/DIAGNOSTICS.md` §7。
+- 场景壁纸需要 **WebGL2**。浏览器没有可用 WebGL（Firefox 常见：设置里 `webgl.disabled=true`、驱动/黑名单、无 GPU 的虚拟机/远程 X11）时只能显示静态帧兜底：本插件会在挂载前做一次性预检，并在屏幕底部给出明确的分流提示（没有 WebGL / 只有 WebGL1 / 上下文瞬时失败），不再让用户只看到"壁纸不可用"。Firefox 排查入口：`about:config` 查 `webgl.disabled` / `webgl.force-enabled`，`about:support` 看图形栈（硬件加速、Mesa/驱动版本）。
+- 宿主正在重启/不可达时（如插件管理器报 `Failed to fetch`），场景失败不会刷错误：底部提示"宿主正在重启/不可达，恢复后自动重试"，恢复后自动重挂一次（有界、幂等）。

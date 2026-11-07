@@ -255,6 +255,24 @@ html.mpw-noui canvas {
       tainted: !!window.__mpwTainted,
       thumbToken: !!TOKEN,
       errs: CAP_ERRS.slice(0, 3),
+      /* Z6(2026-11-07 6.2) 渲染器 debug（<2KB、同内容去重）：只放准静态字段（ctxAcquire/能力/启动日志尾/档位）。
+         frameNo 这类逐帧易变的量**不放这里**（capPush 按内容去重，放进去会每帧重发）；它经 mpw-health 消息带出。 */
+      debug: (function () {
+        try {
+          var d = {
+            ctxAcquire: window.__mpwCtxAcquire || null,
+            caps: window.__mpwHostCaps || null,
+            liveStart: window.__mpwLiveStart || null,
+            liveRes: window.__mpwLiveRes || null,
+            bootError: window.__mpwBootError || null,
+            resTier: window.__mpwResTier || null,
+            bootLogTail: (window.__mpwBootLogTail ? window.__mpwBootLogTail().slice(-20) : null),
+          }
+          var j = JSON.stringify(d)
+          if (j && j.length > 2000) return { truncated: true, bootLogTail: d.bootLogTail ? d.bootLogTail.slice(-6) : null }
+          return d
+        } catch (e) { return { degraded: String(e && e.message || e) } }
+      })(),
     }
   }
   function capPush() {
@@ -1143,7 +1161,14 @@ function mpwDiagMirror(m) {
    此时 `log` 已是 null ⇒ `logf()` 首调即 TypeError（`log.textContent`）⇒ module 顶层中断、
    场景永不建帧（真机表现：strict cap ok:true / firstFrame:false / 10s 后 cap-no-first-frame 兜底）。
    日志是调试面，绝不能反过来打断渲染 ⇒ 这里空安全（无 #log 就只走 console/diag 通道）。 */
-const logf = (m) => { try { if (log) log.textContent += m + '\n'; } catch (e) {} console.log(m); mpwDiagMirror(m); };
+/* Z6(2026-11-07 6.2) logf 有界环形缓冲（≤20 行 × 每行 ≤200 字符）：错误导出一次拿到启动尾部，
+   不再只靠 #log（noui 模式下 #log 会被摘除）。只追加诊断面，不影响渲染主流程。 */
+const MPW_BOOT_LOG_RING = [];
+const logf = (m) => {
+  try { MPW_BOOT_LOG_RING.push(String(m == null ? "" : m).slice(0, 200)); if (MPW_BOOT_LOG_RING.length > 20) MPW_BOOT_LOG_RING.shift() } catch (e) {}
+  try { if (log) log.textContent += m + '\n'; } catch (e) {} console.log(m); mpwDiagMirror(m);
+};
+try { window.__mpwBootLogTail = () => MPW_BOOT_LOG_RING.slice() } catch (e) {}
 
 // ═══ MPW-SCENEFILE-BEGIN ═══
 /* ①(P-261 2026-10-07) `__wp.loadSceneFile(blob)` 的**落地实现**（此前是"明确降级"的 no-op）：
