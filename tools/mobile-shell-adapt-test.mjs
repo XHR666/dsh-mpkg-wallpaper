@@ -124,6 +124,18 @@ async function runSuite(clientPath) {
     const cssNo = String(globalThis.__mpwBuildCss({ enabled: true, image: '', webUrl: '' }) || '')
     ck('S3', /data-mpw-solid-surface="l1"/.test(cssWall.replace(/\/\*[\s\S]*?\*\//g, '')) && !/data-mpw-solid-surface="l1"/.test(cssNo.replace(/\/\*[\s\S]*?\*\//g, '')),
       'l1 规则：有壁纸在 / 无壁纸不在（消费面双向）')
+    /* S4（2026-11-08 review 补强）：真实背景层是外层 [data-dsh-mobile-sidebar]（sidebarCol），
+       只标内层 root 仍会看到外层半透明 ⇒ 移动门控实底 CSS 必须同时覆盖外层/内层/::before；
+       无壁纸不输出（保持宿主默认）。 */
+    const cssWallNoC = cssWall.replace(/\/\*[\s\S]*?\*\//g, '')
+    const cssNoNoC = cssNo.replace(/\/\*[\s\S]*?\*\//g, '')
+    ck('S4', /data-mpw-mobile-shell\] \[data-dsh-mobile-sidebar\]/.test(cssWallNoC)
+      && /--mpw-surface-mobile-sidebar/.test(cssWallNoC)
+      && /--mpw-surface-mobile-sidebar:/.test(cssWallNoC)
+      && /data-dsh-mobile-sidebar-root/.test(cssWallNoC)
+      && /::before/.test(cssWallNoC)
+      && !/data-mpw-mobile-shell/.test(cssNoNoC),
+      '移动实底 CSS：外层/内层/::before 齐（有壁纸）且无壁纸不输出')
   }
 
   /* == W 组：远程慢链路分流（③）== */
@@ -223,6 +235,11 @@ await withMutant('M2b', '移动补偿只剩打标、不撤标',
   [['						else if (el.getAttribute("data-mpw-solid-surface") === "l1") el.removeAttribute("data-mpw-solid-surface");\n',
     '						else ;\n']],
   ['S2'])
+
+/* M4 删移动实底 CSS（buildCss 不拼 mpwMobileShellOpaqueCss）⇒ S4 红 */
+await withMutant('M4', '删移动外壳实底 CSS 拼装',
+  [[' + (hasImage ? mpwMobileShellOpaqueCss() : "")', '']],
+  ['S4'])
 
 /* M3 把远程分流应用到回环（预算恒 60s/15s）⇒ W1b/W1a 红（回环 8s 语义被破坏）*/
 await withMutant('M3', '把远程分流应用到回环（预算恒 60s）',

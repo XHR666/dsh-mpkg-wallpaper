@@ -240,3 +240,7 @@ bash tools/check.sh                           # 门禁第 11 步就是全量模�
 | `host:model-menu-list` | refine | `[class*="_7KE1Ra_groups"]` | 模型/推理等级弹层内的滚动列表容器（也带 role=menu，宿主给它伪元素加了 blur）：只允许关伪元素模糊，避免与外壳 blur 叠加成双层 | 本表 |
 | `host:list-4ub78` | anchor | `[class*="_list_4ub78_7"]` | 宿主下拉列表家族（权限/更多操作/模型列表等共用 `_list_`）：只允许关掉它内层伪元素模糊，避免与外壳 blur 叠成双层 | 本表 |
 | `host:team-inner` | anchor | `[class*="VoX2oq_member"]` / `[class*="VoX2oq_task"]` | 宿主智能体团队面板内部成员/任务卡片（`data-team-panel` 子层）：2026-11-04 层叠审计把它们的第二层 63% 白底透明化，保留边框/阴影，消除团队内"更白"；不改布局/z | 本表 |
+
+| `host:dsh-mobile-sidebar` | anchor | `[data-dsh-mobile-sidebar]` / `[data-dsh-mobile-sidebar-root]` | dsh-mobile 0.8.3 移动外壳稳定标记（宿主命名空间，非第三方适配）：移动门控实底/`::before` 撤磨砂只打这两个容器 | 本表 |
+
+| `host:dsh-native-mobile` | anchor | `.dsh-native-mobile-active` | dsh-mobile 0.8.3 根标记（宿主/官方插件命名空间）：移动外壳侧栏实底与 ::before 撤磨砂只在此门控下生效 | 本表 |
