@@ -122,6 +122,8 @@ async function runSuite(clientPath) {
        不据此猜类型（类型仍由 A4 钉"不显示伪 image"）。 */
     const nameNode = findNode(tree, (p) => p && p.title && String(p.title).indexOf('SomeWall.mp4') >= 0)
     ck('A6', !!nameNode, 'token-only 残档显示名来自 token=' + JSON.stringify(nameNode ? nameNode.title : null))
+    const innerNode = findNode(tree, (p) => p && p.title === 'SomeWall.mp4' && String(p.className || '').indexOf('mpw_hint') >= 0)
+    ck('A6b', !!innerNode, 'token-only 残档内部名来自 token（仅展示，不据此猜类型）=' + JSON.stringify(innerNode ? innerNode.title : null))
   }
 
   /* ══ B 组：场景 B —— 墓碑 + 身份并存（task-22 反例）：身份不被吞、墓碑作废 ══ */
