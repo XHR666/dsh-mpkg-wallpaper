@@ -117,6 +117,11 @@ async function runSuite(clientPath) {
     const typeText = typeNode ? textOf(typeNode) : ''
     ck('A4', !!typeNode && typeText.indexOf('image') < 0, '类型行不显示伪 image=' + JSON.stringify(typeText))
     ck('A5', !findNode(tree, (p) => p && p['data-mpw-wall-error'] === '1'), '无 arm error 时无失败状态行（两态可判别）')
+    /* A6（2026-11-08 review 补漏）：token-only 半残档的 image token 就是可信文件名线索
+       ⇒ 名称/内部不能显示"无"（旧 UI 的"名称/内部/预览全无"现场）。只断言显示名，
+       不据此猜类型（类型仍由 A4 钉"不显示伪 image"）。 */
+    const nameNode = findNode(tree, (p) => p && p.title && String(p.title).indexOf('SomeWall.mp4') >= 0)
+    ck('A6', !!nameNode, 'token-only 残档显示名来自 token=' + JSON.stringify(nameNode ? nameNode.title : null))
   }
 
   /* ══ B 组：场景 B —— 墓碑 + 身份并存（task-22 反例）：身份不被吞、墓碑作废 ══ */
