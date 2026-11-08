@@ -78,6 +78,11 @@ async function runSuite(clientPath) {
     'btn css 含 pointer-events:auto=' + /pointer-events:\s*auto/.test(b1css) + ' bar css 含 none=' + /pointer-events:\s*none/.test(bar1css))
   ck('A1d', /width:\s*24px/.test(b1css) && /height:\s*24px/.test(b1css),
     'btn css 可点区=' + ((b1css.match(/width:\s*\d+px/) || [''])[0] + 'x' + (b1css.match(/height:\s*\d+px/) || [''])[0]))
+  /* A1f（2026-11-08 review 补）：按钮与文字必须 flex 同行，不能 absolute 叠字（真机 X 叠字现场）。 */
+  const span1 = (bar1 && bar1.children || []).find((c) => String(c.tagName) === 'SPAN')
+  const s1css = span1 ? String(span1.style.cssText) : ''
+  ck('A1f', /display:\s*flex/.test(bar1css) && /position:\s*static/.test(b1css) && /flex:\s*1/.test(s1css),
+    'bar flex=' + /display:\s*flex/.test(bar1css) + ' btn static=' + /position:\s*static/.test(b1css) + ' span flex=' + /flex:\s*1/.test(s1css))
   ck('A1e', String(bar1.getAttribute('data-mpw-dismiss-key') || '') === 'image|http://127.0.0.1:3080/api/mpkg/wall1.mpkg',
     'dismiss-key=' + (bar1 ? bar1.getAttribute('data-mpw-dismiss-key') : 'null'))
 
@@ -192,7 +197,7 @@ console.log('\n== 变异自证（隔离副本）==')
 /* M1 删 × 按钮（arm+scene 共用构造里的 appendChild(btn)）⇒ ①② 红 */
 await withMutant('M1', '删 × 按钮（两黑条都无关闭控件）',
   [['bar.appendChild(btn);', ';']],
-  ['A1a', 'A1b', 'A1c', 'A1d', 'A2', 'A2b', 'A3', 'B1', 'B2', 'B3'])
+  ['A1a', 'A1b', 'A1c', 'A1d', 'A1f', 'A2', 'A2b', 'A3', 'B1', 'B2', 'B3'])
 /* M2 关闭不记账（onDismiss 写成空操作）⇒ ③ 红（同 key 重放又出现）*/
 await withMutant('M2', '关闭不记录 dismissed（同 key 重放重现）',
   [['(k) => { try { mpwArmNoteDismissed.add(String(k || "")) } catch (e) {} }', '(k) => {}'],
