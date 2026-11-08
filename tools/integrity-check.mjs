@@ -93,16 +93,21 @@ ok(String(pkg.name || '') === 'dsh-mpkg-wallpaper', 'package.name == dsh-mpkg-wa
 ok(repoSlug === pkg.name, 'repository 仓库名 == package.name（' + (repoSlug || '缺') + '）')
 ok(String(pkg.homepage || '').replace(/\/+$/, '').split('/').pop() === pkg.name, 'homepage 指向同一仓库名')
 ok(String((pkg.bugs && pkg.bugs.url) || '').includes(String(pkg.name || '\u0000')), 'bugs.url 指向同一仓库名')
-/* ⑧（2026-10-31 任务书 B 契约演进）本分支改为**双许可**：lib/**=MIT + renderer/**=GPL-3.0-or-later，
-   package.json license="SEE LICENSE IN LICENSE"、根 LICENSE=双许可说明页（license-boundary 判据 A1–A5
-   钉的同一套事实）。旧断言（license=MIT / 首行 "MIT License"）是纯 MIT 时代的形态，分支上必然红。
-   演进后的保护意图不变：包**没有**被 GPL 单边吞掉 —— license 字段不许是 GPL-only 标识，LICENSE 页
-   必须同时点名 MIT 与 GPL-3.0-or-later 两部分。 */
-ok(pkg.license === 'SEE LICENSE IN LICENSE', 'package.license = SEE LICENSE IN LICENSE（双许可；不许标 GPL-only）（' + (pkg.license || '缺') + '）')
+/* ⑧（2026-11-08 需求：GitHub 根目录可扫出两个证书）：根目录拆分双许可证：
+   LICENSE=纯 MIT 全文、LICENSE-render=GPLv3 全文、NOTICE=范围说明；
+   package.json license="SEE LICENSE IN NOTICE"（不许标纯 MIT/GPL-only）。
+   保护意图不变：插件本体不被 GPL 吞掉 —— 根 LICENSE 不出现 GPL 标识，GPL 只在独立文件。 */
+ok(pkg.license === 'SEE LICENSE IN NOTICE', 'package.license = SEE LICENSE IN NOTICE（双许可；不许标 GPL-only/MIT-only）（' + (pkg.license || '缺') + '）')
 {
   const rootLicense = read('LICENSE') || ''
-  ok(/GPL-3\.0-or-later/.test(rootLicense) && /MIT/.test(rootLicense) && /lib\/\*\*/.test(rootLicense) && /renderer\/\*\*/.test(rootLicense),
-    'LICENSE 仍是"MIT + GPL-3.0-or-later"双许可说明页（点名两目录）')
+  const renderLicense = read('LICENSE-render') || ''
+  const noticeText = read('NOTICE') || ''
+  ok(/^MIT License/m.test(rootLicense) && !/GPL-3\.0|GNU GENERAL PUBLIC LICENSE/.test(rootLicense),
+    '根 LICENSE = 纯 MIT 全文（插件本体；无 GPL 文本）')
+  ok(/GNU GENERAL PUBLIC LICENSE/.test(renderLicense) && /Version 3, 29 June 2007/.test(renderLicense),
+    '根 LICENSE-render = GPLv3 全文（GitHub 可识别第二证书）')
+  ok(['MIT', 'GPL-3.0-or-later', 'lib/**', 'renderer/**', 'LICENSE', 'LICENSE-render'].every((x) => noticeText.includes(x)),
+    'NOTICE 点名两部分/两目录/两份根证书')
 }
 // 历史踩坑（点名要求）：包名曾是 `we-scene-renderer`，与仓库名不一致 ⇒ 机器闸门防复发
 ok(!/we-scene-renderer/.test(readmeAll), '★ README(中/英) 不残留旧包名 we-scene-renderer')
@@ -155,6 +160,8 @@ if (packPaths) {
   // ②(2026-09-17) MIT 侧的署名必须随包分发：README 引用了 THIRD-PARTY.md 作为洁净室/归属依据
   ok(packPaths.includes('THIRD-PARTY.md'), '★ THIRD-PARTY.md 随包发布（第三方归属/洁净室记录，MIT 署名义务）')
   ok(packPaths.includes('LICENSE'), '★ LICENSE 随包发布')
+  ok(packPaths.includes('LICENSE-render'), '★ LICENSE-render 随包发布（GPL 全文，第二证书）')
+  ok(packPaths.includes('NOTICE'), '★ NOTICE 随包发布（双许可范围声明）')
 }
 
 console.log('\n== ⑩ tracked 文件里的「本机绝对路径」门禁（全量，不只发布面）==')

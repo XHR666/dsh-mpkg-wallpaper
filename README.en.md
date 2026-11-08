@@ -6,7 +6,7 @@
 
 Adds background wallpapers to the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) Web UI (`dsh web`): **Wallpaper Engine `.mpkg` parsing, Steam Workshop folders, video/web/image wallpapers, time-of-day switching for Time Variation wallpapers, a full-screen blur system, theme colours and glass surfaces, a local wallpaper library, scheduled rotation, a Now playing widget and one-click update**. Almost every appearance detail is adjustable.
 
-> Version scope: this document describes the implementation shipped as **`3.10.1`** in `package.json`. The publish surface is **15 files** (`lib/` runtime files + `package.json`, `icon.svg`, `cordis.patch.yml`, `README.md`, `README.en.md`, `THIRD-PARTY.md`, `LICENSE`; measured with `npm pack --dry-run`: 15 files / 2,088,240 B unpacked); `lib/liquid-glass/**`, `lib/liquid-glass-bundle.js`, `dist/`, `tools/` and `docs/` never enter the npm package (`package.json:8-21`). Defaults that changed: **`npNowPlaying` off → on** (since 3.8.0) and **`powPauseHidden` off → on** (since 3.9.0, migrating only profiles that never set it; see [What changed in this version](#what-changed-in-this-version)).
+> Version scope: this document describes the implementation shipped as **`3.10.1`** in `package.json`. The publish surface is measured with `npm pack --dry-run` (runtime `lib/` files + `renderer/**` + `package.json`, `icon.svg`, `cordis.patch.yml`, `README.md`, `README.en.md`, `THIRD-PARTY.md`, `LICENSE`, `LICENSE-render`, `NOTICE`); `lib/liquid-glass/**`, `lib/liquid-glass-bundle.js`, `dist/`, `tools/` and `docs/` never enter the npm package (`package.json:8-21`). Defaults that changed: **`npNowPlaying` off → on** (since 3.8.0) and **`powPauseHidden` off → on** (since 3.9.0, migrating only profiles that never set it; see [What changed in this version](#what-changed-in-this-version)).
 
 ---
 
@@ -575,7 +575,7 @@ This section lists the plugin's network behaviour, data locations and isolation 
 
 This section covers this package's own licence, the third-party attribution ledger that ships with it, and the "GPL never enters the plugin" boundary.
 
-- **This package is MIT** (`LICENSE`; the `license` field in `package.json` is `"MIT"`). Third-party provenance, clean-room records, per-item attribution and the "what was copied / why / what was not" ledger all live in **`THIRD-PARTY.md`** (**shipped with the package** — it carries the MIT attribution obligation).
+- **This package is dual-licensed by component**: the plugin body `lib/**` is **MIT** (root `LICENSE`); the bundled renderer `renderer/**` is **GPL-3.0-or-later** (root `LICENSE-render`); the exact scope and directory boundary are in **`NOTICE`**. The `license` field in `package.json` is `"SEE LICENSE IN NOTICE"`. Third-party provenance, clean-room records, per-item attribution and the "what was copied / why / what was not" ledger all live in **`THIRD-PARTY.md`** (**shipped with the package** — it carries the MIT attribution obligation).
 - **The only vendored third-party code** is `lib/liquid-glass/**` (the liquid-glass renderer library): **moved out of the publish surface by P-127** (`files` negative patterns `!lib/liquid-glass/**` + `!lib/liquid-glass-bundle.js`). **Every file is still in the repository** and all 10 sha256 digests are still registered (`THIRD-PARTY.md` §1.3). The host's `/api/mpkg-wallpaper/lg/*` hosting route is still a live path (on a hit it really reads `lib/liquid-glass/<file>`); on an npm-installed copy it returns 404 by design.
 - **Now playing component**: a **line-by-line port** of Bencho's "Now playing" (MIT) with upstream comments kept verbatim; the sidebar mount controller, self-drawn icons, token mapping and gates are written here (`THIRD-PARTY.md` §6).
 - **Web wallpapers**: the API list and semantics of `lib/web-wallpaper.js` were **studied against** `oneincase/webwallgl` (MIT), which is **not vendored**; one function, `hasBlockingCsp`, is **copied verbatim** (line-by-line provenance in `THIRD-PARTY.md` §5). The difference list is in `docs/WEB-WALLPAPER.md` §10.
@@ -594,7 +594,10 @@ This section is a file-by-file map of the repository: what enters the npm packag
 dsh-mpkg-wallpaper/
 ├── package.json      # version 3.10.1; dsh.bundle + dsh.client declarations; files allow-list = publish surface (15 files)
 ├── cordis.patch.yml  # install declaration used by dsh plugin add
-├── LICENSE           # MIT
+├── LICENSE           # MIT full text (plugin body)
+├── LICENSE-render    # GPLv3 full text (renderer/**; second licence GitHub can detect)
+├── NOTICE            # dual-licence scope / directory boundary / GPLv3 §5a notice
+├── LICENSES/         # MIT.txt + GPL-3.0-or-later.txt (SPDX texts)
 ├── THIRD-PARTY.md    # third-party provenance / clean-room records / licence attribution (shipped)
 ├── icon.svg
 ├── README.md / README.en.md

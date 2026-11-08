@@ -1101,15 +1101,21 @@ console.log('\n== F. 洁净度：插件不含任何 GPL 代码/派生物 ==')
   }
   eq(codeHits.length, 0, 'F1 lib/** 代码里无 GPL-2.0-only 项目的派生标识符（注释剥离后 grep）' + (codeHits.length ? ' → ' + codeHits.join(', ') : ''))
   eq(textHits.length, 0, 'F1 lib/** 无 GPL 许可文本/版本标识（含注释）' + (textHits.length ? ' → ' + textHits.join(' | ') : ''))
-  /* F2（任务书 B 2026-10-31 契约演进）：本分支把包改为**双许可**（lib/**=MIT + renderer/**=GPL-3.0-or-later，
-     根 LICENSE 是双许可说明页、package.json license="SEE LICENSE IN LICENSE" —— license-boundary 判据 A1–A5
-     钉的同一套事实）。旧断言（首行 MIT License / license=MIT）是纯 MIT 时代的形态，分支上必然红。
-     演进后的保护意图不变：**插件本体不被 GPL 吞掉** —— LICENSE 必须仍是"MIT + GPL 双许可说明页"
-     （同时点名两部分），package.json 不得标成纯 GPL。 */
-  const rootLicenseHead = read('LICENSE').slice(0, 800)
-  ok(rootLicenseHead.includes('MIT') && rootLicenseHead.includes('GPL-3.0-or-later') && rootLicenseHead.includes('renderer/**'),
-    'F2 插件 LICENSE 仍是"MIT + GPL-3.0-or-later"双许可说明页（点名两目录；不许被 GPL 单边吞掉）')
-  eq(JSON.parse(read('package.json')).license, 'SEE LICENSE IN LICENSE', 'F2 package.json license = SEE LICENSE IN LICENSE（不许标纯 GPL）')
+  /* F2（2026-11-08 需求：GitHub 根目录可扫出两个证书）：根目录拆分双许可证：
+     LICENSE=纯 MIT 全文（插件本体）、LICENSE-render=GPLv3 全文（renderer）、NOTICE=范围说明；
+     package.json license="SEE LICENSE IN NOTICE"。旧断言（根 LICENSE 同时含 MIT/GPL 说明页、
+     license=SEE LICENSE IN LICENSE）是上一轮形态，按 R19 演进。保护意图不变：
+     **插件本体不被 GPL 吞掉** —— 根 LICENSE 不得出现 GPL 全文/标识，GPL 只在独立文件。 */
+  const rootLicense = read('LICENSE')
+  const renderLicense = read('LICENSE-render')
+  const noticeText = read('NOTICE')
+  ok(/^MIT License/m.test(rootLicense) && !/GPL-3\.0|GNU GENERAL PUBLIC LICENSE/.test(rootLicense),
+    'F2 根 LICENSE = 纯 MIT 全文（插件本体，不许被 GPL 单边吞掉）')
+  ok(/GNU GENERAL PUBLIC LICENSE/.test(renderLicense) && /Version 3, 29 June 2007/.test(renderLicense),
+    'F2 根 LICENSE-render = GPLv3 全文（GitHub 可独立识别第二证书）')
+  ok(['MIT', 'GPL-3.0-or-later', 'lib/**', 'renderer/**', 'LICENSE', 'LICENSE-render'].every((x) => noticeText.includes(x)),
+    'F2 NOTICE 点名两部分/两目录/两份根证书')
+  eq(JSON.parse(read('package.json')).license, 'SEE LICENSE IN NOTICE', 'F2 package.json license = SEE LICENSE IN NOTICE（不许标纯 GPL）')
 
   // 不 import/内嵌渲染器：lib/** 不得 import 出包外、代码里不得出现 GPL 侧仓库名
   const crossHits = []

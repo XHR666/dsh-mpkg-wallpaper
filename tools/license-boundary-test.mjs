@@ -4,9 +4,10 @@
 //   · lib/**            = MIT（插件本体）
 //   · renderer/**       = GPL-3.0-or-later（内置渲染器，随包分发、iframe 内运行）
 // 本判据钉住四件事（任何一件被改坏都必须红）：
-//   A. npm pack --dry-run 的发布物**包含** renderer/ 与 LICENSES/（且含 PROVENANCE.md）；
-//      package.json 的 license 字段 = "SEE LICENSE IN LICENSE"（不许再标纯 MIT —— 包内含 GPL 却标 MIT 是分发合规问题）。
-//   B. 根 LICENSE 含双许可说明；renderer/LICENSE 首行是 GPLv3。
+//   A. npm pack --dry-run 的发布物**包含** renderer/、LICENSES/、根 LICENSE-render 与 NOTICE（且含 PROVENANCE.md）；
+//      package.json 的 license 字段 = "SEE LICENSE IN NOTICE"（不许标纯 MIT —— 包内含 GPL 却标 MIT 是分发合规问题）。
+//   B. 根 LICENSE = 纯 MIT 全文；根 LICENSE-render = GPLv3 全文；renderer/LICENSE 首行是 GPLv3；
+//      根 NOTICE 写清 MIT/GPL 两部分的目录范围（GitHub 多许可证扫描看根目录文件，见 2022 changelog）。
 //   C. lib/** 里**不得**出现对 renderer/ 的模块级引用（import / require / 动态 import）——
 //      许可边界 = "聚合 + 公开接口调用"；host 路由用 fs/new URL **发渲染器的静态文件**是任务单 P2 明文许可的形态，
 //      不算模块级引用，因此扫描只认模块加载语法，不认任意字符串。
@@ -109,18 +110,29 @@ check('A1 npm pack --dry-run 可执行且产出文件清单', Array.isArray(pack
 check('A2 发布物含 renderer/ 文件', packFiles.some((p) => p.startsWith('renderer/')), packFiles.filter((p) => p.startsWith('renderer/')).length + ' 个 renderer 文件');
 check('A3 发布物含 LICENSES/ 两份全文', packFiles.includes('LICENSES/MIT.txt') && packFiles.includes('LICENSES/GPL-3.0-or-later.txt'), 'LICENSES/MIT.txt + GPL-3.0-or-later.txt');
 check('A4 发布物含 renderer/LICENSE 与 renderer/PROVENANCE.md', packFiles.includes('renderer/LICENSE') && packFiles.includes('renderer/PROVENANCE.md'), 'GPL 全文 + 边界声明随包分发');
+check('A4b 发布物含根 LICENSE-render 与 NOTICE（多许可证/范围声明随包分发）', packFiles.includes('LICENSE-render') && packFiles.includes('NOTICE'), 'LICENSE-render=' + packFiles.includes('LICENSE-render') + ' NOTICE=' + packFiles.includes('NOTICE'));
 let pkgLicense = '';
 try { pkgLicense = String(JSON.parse(readFileSync(join(PLUGIN, 'package.json'), 'utf8')).license || '') } catch (e) { packErr = String(e) }
-check('A5 package.json license = SEE LICENSE IN LICENSE（不许标纯 MIT）', pkgLicense === 'SEE LICENSE IN LICENSE', 'license=' + JSON.stringify(pkgLicense));
+check('A5 package.json license = SEE LICENSE IN NOTICE（不许标纯 MIT）', pkgLicense === 'SEE LICENSE IN NOTICE', 'license=' + JSON.stringify(pkgLicense));
 
 /* ── B. 许可文件形态 ─────────────────────────────────────────────── */
 const license = (p) => { try { return readFileSync(p, 'utf8') } catch { return '' } };
 const rootLicense = license(join(PLUGIN, 'LICENSE'));
-check('B1 根 LICENSE 含双许可说明（MIT + GPL-3.0-or-later + 两目录）',
-  rootLicense.includes('GPL-3.0-or-later') && rootLicense.includes('MIT')
-  && rootLicense.includes('lib/**') && rootLicense.includes('renderer/**')
-  && rootLicense.includes('LICENSES/MIT.txt') && rootLicense.includes('LICENSES/GPL-3.0-or-later.txt'),
-  '双许可说明页（指向两份全文）');
+const rootLicenseRender = license(join(PLUGIN, 'LICENSE-render'));
+const noticeText = license(join(PLUGIN, 'NOTICE'));
+check('B1 根 LICENSE 是纯 MIT 全文（不含 GPL/范围说明）',
+  /^MIT License/m.test(rootLicense) && /Permission is hereby granted/.test(rootLicense) && !/GPL-3\.0|GNU GENERAL PUBLIC LICENSE/.test(rootLicense),
+  '首行=' + JSON.stringify((rootLicense.split('\n').find((s) => s.trim()) || '').trim()));
+check('B1b 根 LICENSE-render 是 GPLv3 全文（Licensee 可识别的独立证书）',
+  /GNU GENERAL PUBLIC LICENSE/.test(rootLicenseRender) && /Version 3, 29 June 2007/.test(rootLicenseRender) && /TERMS AND CONDITIONS/.test(rootLicenseRender),
+  '首行=' + JSON.stringify((rootLicenseRender.split('\n').find((s) => s.trim()) || '').trim()));
+check('B1c 根 NOTICE 点名 MIT/GPL 两部分、两目录与三份全文',
+  ['MIT', 'GPL-3.0-or-later', 'lib/**', 'renderer/**', 'LICENSE', 'LICENSE-render'].every((x) => noticeText.includes(x)),
+  'NOTICE 范围声明');
+const thirdPartyText = license(join(PLUGIN, 'THIRD-PARTY.md'));
+check('B1d THIRD-PARTY.md 头部同步双许可口径（MIT + GPL + 根 LICENSE-render/NOTICE）',
+  ['MIT', 'GPL-3.0-or-later', 'LICENSE-render', 'NOTICE'].every((x) => thirdPartyText.slice(0, 700).includes(x)),
+  'THIRD-PARTY 头部=' + JSON.stringify(thirdPartyText.split('\n')[2] ? thirdPartyText.split('\n')[2].slice(0, 100) : ''));
 const gplFirst = (() => {
   // 任务书 B：对象 = 随包分发的副本 renderer/LICENSE（演进留痕见文件头）
   const t = license(join(RENDERER_COPY, 'LICENSE'));
@@ -207,12 +219,11 @@ else console.log('# 开发树解析：无任何候选在位 ⇒ 自校验按红�
       '期望=' + JSON.stringify(want) + ' 实际=' + JSON.stringify(got));
   } finally { try { rmSync(tmp, { recursive: true, force: true }) } catch { /* 清理失败不影响判定 */ } }
 }
-/* ══ 自证 M2：删掉双许可段落的 LICENSE 副本 ⇒ 同一断言必须红 ══ */
+/* ══ 自证 M2：删掉 NOTICE 里的 GPL 范围声明 ⇒ B1c 同一断言必须红 ══ */
 {
-  const mutated = rootLicense.replace(/GPL-3\.0-or-later/g, '');
-  const wouldPass = mutated.includes('GPL-3.0-or-later') && mutated.includes('MIT')
-    && mutated.includes('lib/**') && mutated.includes('renderer/**');
-  check('M2 变异自证：LICENSE 断言在"双许可段落被删"的副本上变红', !wouldPass, '删段后断言放行=' + wouldPass + '（必须 false）');
+  const mutated = noticeText.replace(/GPL-3\.0-or-later/g, '');
+  const wouldPass = ['MIT', 'GPL-3.0-or-later', 'lib/**', 'renderer/**', 'LICENSE', 'LICENSE-render'].every((x) => mutated.includes(x));
+  check('M2 变异自证：NOTICE 断言在"GPL 范围被删"的副本上变红', !wouldPass, '删段后断言放行=' + wouldPass + '（必须 false）');
 }
 
 /* ── 汇总 ────────────────────────────────────────────────────────── */

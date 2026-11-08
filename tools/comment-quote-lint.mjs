@@ -12,7 +12,8 @@
 //      （用户可见文案不改 ⇒ 报告待裁定）。
 //   B  合法技术词保留（反向）：7 个合法词按"含该词的行数"计，≥ 任务书基线（7/6/6/6/5/1/1）
 //      ——把合法词也删了 ⇒ 红。
-//   C  排除面未被误改（反向）：THIRD-PARTY.md 与 renderer/core/** 逐文件 sha256 等于基线
+//   C  排除面未被误改（反向）：renderer/core/** 逐文件 sha256 等于基线（THIRD-PARTY.md 因
+//      2026-11-08 双许可拆分有意更新，改由 license-boundary 校验其范围声明）
 //      64476d420873f87d42f996272d37f768af4a60da 的版本 ⇒ 被顺手动过 ⇒ 红。
 // 变异自证（内存副本；期望红集 == 实际红集，逐条相等）：
 //   M1 往一条注释里塞回标记词 ⇒ A 红；M2 把合法词批量改掉 ⇒ B 红；
@@ -130,9 +131,10 @@ function runChecks() {
   const bFail = Object.keys(legalBase).filter((w) => (legalLines[w] || 0) < legalBase[w]).map((w) => w + ' ' + legalLines[w] + '<' + legalBase[w])
   r['B'] = bFail.length === 0
   r.__b = bFail.length ? bFail.join('；') : Object.keys(legalBase).map((w) => w + '=' + legalLines[w]).join(' ')
-  // C：排除面哈希与基线一致
+  // C：排除面哈希与基线一致（THIRD-PARTY.md 因双许可拆分有意更新，从哈希面移出；
+  //    范围声明由 license-boundary-test 的 B1c/B1d 校验）
   const cFail = []
-  const cPaths = ['THIRD-PARTY.md'].concat(fs.existsSync(path.join(ROOT, 'renderer', 'core'))
+  const cPaths = [].concat(fs.existsSync(path.join(ROOT, 'renderer', 'core'))
     ? fs.readdirSync(path.join(ROOT, 'renderer', 'core'), { withFileTypes: true }).flatMap((e) => e.isDirectory() ? [] : ['renderer/core/' + e.name]) : [])
   for (const rel of cPaths) {
     const abs = path.join(ROOT, rel)
@@ -158,7 +160,7 @@ else bad('A 注释仍有对话痕迹', main.__a)
 for (const k of main.__keep) console.log('    · keep-list（字符串字面量，不改，报告待裁定）: ' + k)
 if (main['B']) ok('B 合法技术词全部保留（按行数 ≥ 任务书基线）', main.__b)
 else bad('B 合法技术词被误删', main.__b)
-if (main['C']) ok('C 排除面未被误改（THIRD-PARTY.md + renderer/core/** 哈希=基线）', main.__c)
+if (main['C']) ok('C 排除面未被误改（renderer/core/** 哈希=基线）', main.__c)
 else bad('C 排除面被改动', main.__c)
 
 console.log('\n== M 变异自证（内存副本；期望红集 == 实际红集，逐条相等）==')

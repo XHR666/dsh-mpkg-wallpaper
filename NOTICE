@@ -1,0 +1,41 @@
+dsh-mpkg-wallpaper — 许可范围与归属 / License scope and attribution
+
+本仓库/本包包含两个独立许可的部分：
+
+1. 插件本体 —— lib/**（以及 icon.svg、README、THIRD-PARTY.md、NOTICE、LICENSES/ 等）
+   许可证：MIT License
+   全文：根目录 LICENSE（同时见 LICENSES/MIT.txt）
+   Copyright (c) 2026 dsh-mpkg-wallpaper contributors
+
+2. 内置渲染器组件 —— renderer/**
+   许可证：GNU General Public License v3.0 or later（GPL-3.0-or-later）
+   全文：根目录 LICENSE-render（同时见 renderer/LICENSE 与 LICENSES/GPL-3.0-or-later.txt）
+   第三方组件台账：renderer/THIRD-PARTY.md
+   与插件的边界声明（iframe + postMessage 通信、无代码互抄）：renderer/PROVENANCE.md
+
+两部分是彼此独立的程序：插件只以 iframe + postMessage 的公开接口调用渲染器，
+不把渲染器源码复制进 lib/**，也不把渲染器打进插件 bundle；渲染器也不复制插件源码。
+两个许可证各自独立适用于各自的目录，互不覆盖。
+
+再分发提示：lib/** 部分按 MIT 履行义务；renderer/** 部分按 GPL-3.0-or-later
+履行义务（本包已随附其完整源码、许可全文与第三方声明）。
+
+This package contains two independently licensed parts:
+- lib/** (the plugin itself) is MIT-licensed (root LICENSE; also LICENSES/MIT.txt);
+- renderer/** (the bundled Wallpaper Engine web renderer) is licensed under the
+  GNU General Public License v3.0 or later (root LICENSE-render; also
+  renderer/LICENSE and LICENSES/GPL-3.0-or-later.txt).
+The two parts run as separate programs and communicate only via an iframe plus
+postMessage; neither copies the other's source code. The two licenses apply
+independently to their respective directories and do not override each other.
+
+修改声明（GPLv3 §5a）与归属
+
+内置渲染器组件（renderer/**）来自 wallpaper-engine-web-loader 项目，本包内这份
+副本**有修改**（为内置托管与 iframe/postMessage 调用所做的增量改动，不改变其渲染
+语义）。修改清单与日期见 renderer/MODIFICATIONS.md。
+
+版权归属：
+- lib/**（MIT 部分）：Copyright (c) 2026 dsh-mpkg-wallpaper contributors
+- renderer/**（GPL-3.0-or-later 部分）：Copyright (c) 2026 the
+  wallpaper-engine-web-loader project 及 renderer/THIRD-PARTY.md 中登记的第三方组件作者

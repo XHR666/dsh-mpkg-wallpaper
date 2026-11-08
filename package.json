@@ -18,6 +18,8 @@
     "README.en.md",
     "THIRD-PARTY.md",
     "LICENSE",
+    "LICENSE-render",
+    "NOTICE",
     "LICENSES",
     "renderer"
   ],
@@ -52,7 +54,7 @@
       "optional": true
     }
   },
-  "license": "SEE LICENSE IN LICENSE",
+  "license": "SEE LICENSE IN NOTICE",
   "keywords": [
     "dsh",
     "dsh-plugin",

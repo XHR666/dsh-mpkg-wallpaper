@@ -1,6 +1,6 @@
 # Third-Party Notices / 洁净室来历记录
 
-本包（`dsh-mpkg-wallpaper`）的许可：**MIT**（全文见 `LICENSE`；`package.json` 的 `license` 字段 = `"MIT"`）。
+本包（`dsh-mpkg-wallpaper`）是**双许可**：插件本体 `lib/**` 为 **MIT**（根 `LICENSE` 全文）；内置渲染器 `renderer/**` 为 **GPL-3.0-or-later**（根 `LICENSE-render` 全文）；目录边界/再分发提示见根 `NOTICE`；`package.json` 的 `license` 字段 = `"SEE LICENSE IN NOTICE"`。
 本文件记录与本包有关的第三方代码来历、处置与规则；**本文件不是法律意见**。
 
 ---

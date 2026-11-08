@@ -9,10 +9,10 @@
 - 仓库：<https://github.com/XHR666/dsh-mpkg-wallpaper>（已发布 npm 包 `dsh-mpkg-wallpaper`）
 - 配套渲染器（纯 Scene 壁纸用，**GPL-3.0-or-later，另行安装**）：本包**不包含**它，也不 import/内嵌其任何代码；
   获取方式见本插件仓库主页的链接与 `docs/` 说明
-- 许可：**MIT**（见[许可与归属](#13-许可与归属)）；第三方台账见 `THIRD-PARTY.md`
+- 许可：插件本体 **MIT**（根 `LICENSE`）；内置渲染器 **GPL-3.0-or-later**（根 `LICENSE-render`）；范围见 `NOTICE` 与[许可与归属](#13-许可与归属)；第三方台账见 `THIRD-PARTY.md`
 
 > **版本口径**：本文件描述的是 `package.json` 里的 **`3.16.6`**（= npm `latest`）。
-> **发布面**以 `npm pack --dry-run` 实测为准：**16 个文件**（9 个 `lib/*.js` 运行时文件 + `package.json`、`icon.svg`、`cordis.patch.yml`、`README.md`、`README.en.md`、`THIRD-PARTY.md`、`LICENSE`）；
+> **发布面**以 `npm pack --dry-run` 实测为准（含 `lib/*.js` 运行时文件与 `renderer/**` 渲染器；根 `LICENSE`/`LICENSE-render`/`NOTICE` 随包）；
 > `lib/liquid-glass/**`、`lib/liquid-glass-bundle.js`、`dist/`、`tools/`、`docs/` 都**不进** npm 包（`package.json` 的 `files` 负向模式）。
 > 历史发布记录见 [`docs/RELEASE.md`](docs/RELEASE.md)。
 
@@ -654,7 +654,10 @@ MPW_SKIP_PRECOMMIT=1 git commit -m …   # 单次绕过（走脚本内显式口�
 dsh-mpkg-wallpaper/
 ├── package.json      # 版本 + dsh.bundle + dsh.client 声明；files 白名单 = 发布面
 ├── cordis.patch.yml  # 插件安装声明（dsh plugin add 使用）
-├── LICENSE           # MIT
+├── LICENSE           # MIT 全文（插件本体）
+├── LICENSE-render    # GPLv3 全文（renderer/**，GitHub 可独立识别的第二证书）
+├── NOTICE            # 双许可范围/目录边界/GPLv3 §5a 修改声明
+├── LICENSES/         # MIT.txt + GPL-3.0-or-later.txt（SPDX 全文）
 ├── THIRD-PARTY.md    # 第三方来历/洁净室记录与许可归属（随包发布）
 ├── icon.svg
 ├── README.md / README.en.md
@@ -697,7 +700,7 @@ dsh-mpkg-wallpaper/
 
 ## 13. 许可与归属
 
-- **本包许可：MIT**（`LICENSE`；`package.json` 的 `license` 字段 = `"MIT"`）。第三方来历、洁净室记录、逐项归属与"抄了什么/为什么抄/哪些不是抄的"全部登记在 **`THIRD-PARTY.md`**（**随包发布**，是 MIT 署名义务的载体）。
+- **本包是双许可**：插件本体 `lib/**` 为 **MIT**（根 `LICENSE`）；内置渲染器 `renderer/**` 为 **GPL-3.0-or-later**（根 `LICENSE-render`）；完整范围与目录边界见根 `NOTICE`。`package.json` 的 `license` 字段 = `"SEE LICENSE IN NOTICE"`。第三方来历、洁净室记录、逐项归属与"抄了什么/为什么抄/哪些不是抄的"全部登记在 **`THIRD-PARTY.md`**（**随包发布**，是 MIT 署名义务的载体）。
 - **唯一 vendored 的第三方代码**是 `lib/liquid-glass/**`（液态玻璃渲染器库）：**自 P-127 起移出发布面**（`files` 负向模式），**仓库内一个不少**，仍如实登记全部 sha256（`THIRD-PARTY.md` §1.3）。宿主的 `/api/mpkg-wallpaper/lg/*` 托管路由仍是活路径（命中时真的读 `lib/liquid-glass/<file>`），从 npm 安装的副本上按设计返回 404。
 - **Now playing 组件**：Bencho 的 "Now playing"（MIT）**逐行移植**（注释原文保留）；侧栏挂载控制器、自绘图标、token 映射与门禁为本仓自写（`THIRD-PARTY.md` §6）。
 - **网页壁纸**：`lib/web-wallpaper.js` 的 API 名单与语义**参考** `oneincase/webwallgl`（MIT），**未 vendored**；其中 `hasBlockingCsp` 一处**照抄**（逐行出处见 `THIRD-PARTY.md` §5）。差异清单见 `docs/WEB-WALLPAPER.md` §10。
@@ -728,16 +731,17 @@ dsh-mpkg-wallpaper/
 
 ## 15. 许可证（双许可）
 
-本包包含**两个独立许可**的部分：
+本包包含**两个独立许可**的部分，根目录分别放**纯许可证全文**（便于 GitHub Licensee 自动识别两个证书）：
 
-| 部分 | 许可 | 全文 |
-|---|---|---|
-| 插件本体 `lib/**`（以及图标、README、THIRD-PARTY.md 等） | **MIT** | [`LICENSES/MIT.txt`](LICENSES/MIT.txt) |
-| 内置渲染器组件 `renderer/**`（Wallpaper Engine 浏览器渲染器，随包分发、在沙箱 iframe 内运行） | **GPL-3.0-or-later** | [`renderer/LICENSE`](renderer/LICENSE) |
+| 部分 | 许可 | 根目录全文 | 其他副本 |
+|---|---|---|---|
+| 插件本体 `lib/**`（以及图标、README、NOTICE、THIRD-PARTY.md 等） | **MIT** | [`LICENSE`](LICENSE) | [`LICENSES/MIT.txt`](LICENSES/MIT.txt) |
+| 内置渲染器组件 `renderer/**`（Wallpaper Engine 浏览器渲染器，随包分发、在沙箱 iframe 内运行） | **GPL-3.0-or-later** | [`LICENSE-render`](LICENSE-render) | [`renderer/LICENSE`](renderer/LICENSE)、[`LICENSES/GPL-3.0-or-later.txt`](LICENSES/GPL-3.0-or-later.txt) |
 
+- 双许可的目录边界/再分发提示/GPLv3 §5a 修改声明与归属见根 [`NOTICE`](NOTICE)；
 - 渲染器的第三方组件台账见 [`renderer/THIRD-PARTY.md`](renderer/THIRD-PARTY.md)；
 - 渲染器与插件的集成边界（**只有 iframe + postMessage 通信，无代码互相复制**）见 [`renderer/PROVENANCE.md`](renderer/PROVENANCE.md)；
-- 根 [`LICENSE`](LICENSE) 是上述双许可的说明页；`package.json` 的 `license` 字段为 `SEE LICENSE IN LICENSE`。
+- `package.json` 的 `license` 字段为 `SEE LICENSE IN NOTICE`。GitHub 的 About 侧栏会分别列出根目录的 MIT 与 GPL-3.0 证书（多许可证支持见 GitHub 2022-05-26 changelog）。
 
 再分发提示：`lib/**` 部分按 MIT 履行义务；`renderer/**` 部分按 GPL-3.0-or-later 履行义务（本包已随附其完整源码、许可全文与第三方声明）。
 
