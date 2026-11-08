@@ -70,16 +70,20 @@ function runChecks(clientText, indexText, rendererText) {
   /* C 双导出 */
   {
     const c = []
-    if (!/exportErrLog\("sanitized"\)/.test(clientText)) c.push('sanitized 按钮/调用缺失')
-    if (!/exportErrLog\("full"\)/.test(clientText)) c.push('full 按钮/调用缺失')
-    if (!/errLogFullArm/.test(clientText)) c.push('full 两步确认缺失')
-    if (!/mpw-error-log-" \+ \(isFull \? "full" : "sanitized"\)/.test(clientText)) c.push('文件名未区分 sanitized/full')
+    /* 2026-11-08 需求：每个错误块右侧两个按钮（脱敏/完整），底部不再放全局导出；每块完整导出两步确认。 */
+    if (!/exportErrOne\([^)]*"sanitized"\)/.test(clientText)) c.push('每条脱敏导出调用缺失')
+    if (!/exportErrOne\([^)]*"full"\)/.test(clientText)) c.push('每条完整导出调用缺失')
+    if (!/errLogOneFullArm/.test(clientText)) c.push('每条完整导出两步确认缺失')
+    if (!/mpw_errBlockActions/.test(clientText)) c.push('每块按钮容器缺失')
+    if (!/errlog\.close/.test(clientText)) c.push('底部关闭按钮 i18n 缺失')
+    if (!/mpw-error-log-" \+ \(isFull \? "full" : "sanitized"\)/.test(clientText)) c.push('全局文件名未区分 sanitized/full')
+    if (!/mpw-error-" \+ \(i \+ 1\) \+ "-" \+ \(isFull \? "full" : "sanitized"\)/.test(clientText)) c.push('单条文件名未区分 sanitized/full')
     if (!/isFull \? Object\.assign\(payload, \{ redaction: "none" \}\) : mpwErrRedact\(payload\)/.test(clientText)) c.push('full=redaction:none / sanitized=脱敏 分流缺失')
     if (!/exportMode: isFull \? "full" : "sanitized"/.test(clientText)) c.push('exportMode 字段缺失')
     if (!/mpwErrCapSize/.test(clientText) || !/32768/.test(clientText)) c.push('32KB 截断缺失')
     if (!/count: \(x && x\.count\) \|\| 1, firstAt/.test(clientText)) c.push('条目 count/firstAt/lastAt 缺失')
     r['C'] = c.length === 0
-    r.__c = c.join('；') || '双按钮 + 双文件名 + exportMode/redaction + 32KB 截断 + 计数字段'
+    r.__c = c.join('；') || '每块双按钮 + 双文件名 + exportMode/redaction + 32KB 截断 + 计数字段'
   }
   /* D 脱敏（行为级：提取真函数在内存跑） */
   {
@@ -145,7 +149,10 @@ const MUT = [
   { id: 'M3', what: '脱敏 token 规则失效（替换值改恒等）⇒ D 必红', expect: ['D'],
     patch: (s) => s.replace(/(\[\s*\/\(\[\?&\]\(\?:st\|thumbtoken\|token\|access_token\)=\)\[\^&\\s"'\]\+\/gi, )"(\$1<redacted>")/s, '$1"$1"') || s.replace('"$1<redacted>"', '"$1"'), verify: (s) => s.split('"$1"').length > s.split('"$1<redacted>"').length },
   { id: 'M4', what: 'full 也走脱敏 ⇒ C 必红', expect: ['C'],
-    patch: (s) => s.replace('const final = isFull ? Object.assign(payload, { redaction: "none" }) : mpwErrRedact(payload);', 'const final = mpwErrRedact(payload); /* M4 */'), verify: (s) => s.includes('const final = mpwErrRedact(payload); /* M4 */') },
+    /* 2026-11-08：导出分叉现在有两处（全局与每条）⇒ 必须两处都改，否则只改一处仍留下另一处
+       合法分叉 ⇒ 假变异。 */
+    patch: (s) => s.split('const final = isFull ? Object.assign(payload, { redaction: "none" }) : mpwErrRedact(payload);').join('const final = mpwErrRedact(payload); /* M4 */'),
+    verify: (s) => (s.split('/* M4 */').length - 1) === 2 && !s.includes('const final = isFull ? Object.assign(payload, { redaction: "none" }) : mpwErrRedact(payload);') },
 ]
 for (const m of MUT) {
   let mutC
