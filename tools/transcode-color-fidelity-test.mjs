@@ -197,10 +197,16 @@ if (HAS_FFMPEG) {
   try {
     // 10bit HDR 夹具：**HEVC Main10 + bt2020 + PQ(HLG 之外最典型的 HDR10)** —— 这条正是
     // `browserPlayable` 判 "not playable ⇒ 必须转码" 的编码（也是"浏览器吃不下才转码"的现场）。
+    // ①(2026-11-15 R19 环境回归留痕) Debian 13 ffmpeg 7.1.5-0+deb13u1（2026-11-14 起）把裸
+    //   `-color_primaries/-color_trc` 从编码流丢掉（基线 ab8d50d 同判据同红 ⇒ 环境变更而非
+    //   代码回归，取证见 DELIVERY.md §3）⇒ 夹具改用 x265 VUI 参数打标（两代 ffmpeg 都落盘；
+    //   裸 flags 保留，值一致，旧 ffmpeg 重复声明无害）。断言本体一字未放宽。
     execFileSync('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'lavfi',
       '-i', 'testsrc2=size=128x96:rate=30:duration=1',
       '-pix_fmt', 'yuv420p10le', '-color_primaries', 'bt2020', '-color_trc', 'smpte2084', '-colorspace', 'bt2020nc', '-color_range', 'tv',
-      '-c:v', 'libx265', '-preset', 'ultrafast', '-crf', '26', '-tag:v', 'hvc1', '-an', HDR_FIX],
+      '-c:v', 'libx265', '-preset', 'ultrafast', '-crf', '26',
+      '-x265-params', 'colorprim=bt2020:transfer=smpte2084:colormatrix=bt2020nc',
+      '-tag:v', 'hvc1', '-an', HDR_FIX],
       { timeout: 180000, stdio: ['ignore', 'ignore', 'pipe'] });
     if (!fs.existsSync(HDR_FIX) || fs.statSync(HDR_FIX).size < 400) HDR_FIX = null;
   } catch { HDR_FIX = null; }
@@ -246,9 +252,16 @@ if (!HAS_FFMPEG || !HAS_FFPROBE) {
   skip('C3 10bit HDR 源：本插件命令 ⇒ 8bit；旧命令 ⇒ 仍 10bit', '本机没有 ffmpeg/ffprobe');
 } else {
   // 源全部用真 ffmpeg 从 lavfi 造（确定性、可复现；不依赖工作区语料）
+  // ①(2026-11-15 R19 环境回归留痕) 带 bt709 标签的源改用 x264 VUI 参数补一份（同 HDR_FIX 注：
+  //   新 Debian ffmpeg 丢裸 primaries/trc flags；值一致 ⇒ 两代 ffmpeg 夹具等价）。
+  //   只在 extra 里有 -color_trc 时补（pc 源夹具不打 bt709 标签，保持 C2 的"pc 直通"语义）。
+  //   断言本体一字未放宽。
   const mk = (out, extra) => {
+    const tagged = extra.includes('-color_trc');
+    const vui = tagged ? ['-x264-params', 'colorprim=bt709:transfer=bt709:colormatrix=bt709'] : [];
     execFileSync('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'lavfi',
-      '-i', 'testsrc2=size=128x96:rate=30:duration=1', ...extra, '-c:v', 'libx264', '-crf', '18', '-preset', 'veryfast', '-an', out],
+      '-i', 'testsrc2=size=128x96:rate=30:duration=1', ...extra,
+      '-c:v', 'libx264', '-crf', '18', '-preset', 'veryfast', ...vui, '-an', out],
       { timeout: 120000, stdio: ['ignore', 'ignore', 'pipe'] });
     return out;
   };

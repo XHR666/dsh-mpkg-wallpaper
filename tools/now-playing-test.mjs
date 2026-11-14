@@ -762,9 +762,11 @@ const MUTS = [
     id: 'np-css-dropped-on-no-image-path',
     expect: 'B',
     why: '①(NP-3) 把"无壁纸"那条 return 上的 NP 段删掉（= 真机 bug 原样：section 少了 image/webUrl 时'
-      + '控件整份样式丢失、传输键掉到卡片外点不到；真机上用户的档正是这种半残档）',
-    mut: (s) => s.replace('return emitSurfaceTokens(css + buildUiCss(section, false)) + noImagePopCss + __npCss;',
-      'return emitSurfaceTokens(css + buildUiCss(section, false)) + noImagePopCss;'),
+      + '控件整份样式丢失、传输键掉到卡片外点不到；真机上用户的档正是这种半残档）。'
+      + '①(2026-11-15 R19 留痕) 锚点随 DSH022 的 B12 改动更新：该 return 追加了 + mpwMsgBlurOffCss(section)'
+      + '（B12 关档段），变异仍只摘 __npCss（语义不变：只删 NP 段）',
+    mut: (s) => s.replace('return emitSurfaceTokens(css + buildUiCss(section, false)) + noImagePopCss + __npCss + mpwMsgBlurOffCss(section);',
+      'return emitSurfaceTokens(css + buildUiCss(section, false)) + noImagePopCss + mpwMsgBlurOffCss(section);'),
   },
   {
     id: 'generated-region-drifted',
