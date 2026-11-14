@@ -19,9 +19,13 @@
 //     B4 关档规则只出现在两条 return 路径（无壁纸/有壁纸）都覆盖。
 //     B5 全链路登记：boolFields / MPW_PRESET_FIELDS / resetSettings / toggleRow(appearance) / zh+en i18n。
 //   变异自证（隔离副本；期望红集 == 实际红集，逐条相等）：
-//     M1 摘掉主路径的 mpwMsgBlurOffCss 拼接 ⇒ B2/B3/B4 红
-//     M2 内层 material 透明化改回只认 ri079 ⇒ A1 红
-//     M3 暗色 dialog 兜底去掉 dialog[open] ⇒ D1 红
+//     M1  摘掉主路径 msgBlurOffCss 拼接 ⇒ B2a+B2d+B3 红（审查返工轮起，B2d=直接子代回归钉）
+//     M1b 摘掉无壁纸路径 msgBlurOffCss 拼接 ⇒ B4 红（返工轮新增：两条 return 路径各自承重）
+//     M2  内层 material 透明化改回只认 ri079 ⇒ A1a 红（复现 0.2.2 双层白）
+//     M3  暗色 dialog 兜底去掉 dialog[open] ⇒ D1b 红
+//     M4  从 MPW_PRESET_FIELDS 摘掉 msgBlur ⇒ B5b 红（返工轮新增：预设快照漏键）
+//   判据演进留痕（R19）：初版 B2a/B2c/B5a/B5b 正则含直接子代 `>` 且未钉"不得用 >"（审查
+//   BLOCKER-1：宿主 renderSlot 槽位包装层使 `>` 0 命中）⇒ 76cbc08 改后代组合器并新增 B2d/B5f。
 // 复现: node tools/dsh022-ui-test.mjs
 import fs from 'node:fs';
 import os from 'node:os';
