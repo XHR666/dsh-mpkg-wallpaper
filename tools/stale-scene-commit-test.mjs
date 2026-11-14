@@ -287,6 +287,47 @@ eq('G4b 挂载后帧数 +1', iframes().length, ifN3 + 1)
 eq('G4b 丢弃计数没再涨（合法挂载没被误判）', SB().diag().staleDrops, 1)
 eq('G4b 挂载后 8s 定时器已武装', timers(8000).length, 1)
 
+/* ══════════ G6 Z16 首帧预算：cap 心跳/大包 ⇒ 60s 续等；用户设置/关开关生效 ══════════ */
+console.log('\n== G6 Z16 首帧预算：渲染器已 boot ⇒ 续等；sceneWatchdog=false ⇒ 不武装 ==')
+{
+  boot()
+  SB().prefetch(IDENT); await sleep(12)
+  mountScene(); flush()
+  eq('G6a 默认 8s 一次性定时器已武装（无 cap 心跳时口径不变）', timers(8000).length, 1)
+  SB().setCap({ ok: true, firstFrame: false })
+  const w0 = SB().diag().watch
+  ok('G6b diag.watch 可读（当前计划=renderer-alive/60s/15s）', !!(w0 && w0.cur && w0.cur.budget === 60000 && w0.cur.step === 15000 && w0.cur.reason === 'renderer-alive'), JSON.stringify(w0 && w0.cur))
+  fireDue(8000); flush()
+  eq('G6c 8s 到点不判死（不再记 strict-failed）', !!SB().diag().failed[IDENT], false)
+  eq('G6c2 也没有落 strict-fallback diag', diag.some((d) => d.kind === 'scene-sandbox' && d.why === 'strict-fallback'), false)
+  eq('G6d 续等一档 15s 已重排', timers(15000).length, 1)
+  eq('G6d2 legacy 看门狗也同步续等（未兜底）', SC().state().fallback, false)
+  eq('G6d3 legacy 看门狗预算读数 = 60s', SC().state().budgetMs, 60000)
+  SB().setCap({ ok: true, firstFrame: true })
+  fireDue(15000); flush()
+  eq('G6e 首帧到后到点不判死', !!SB().diag().failed[IDENT], false)
+  eq('G6e2 不再悬挂 15s 定时器', timers(15000).length, 0)
+}
+{
+  boot()
+  P().commit({ sceneWatchdog: false })
+  SB().prefetch(IDENT); await sleep(12)
+  mountScene(); flush()
+  eq('G6f sceneWatchdog=false ⇒ strict 不武装（旧实现无视该开关）', timers(8000).length, 0)
+  ok('G6f2 diag.watch 标 disabled', !!(SB().diag().watch && SB().diag().watch.plan && SB().diag().watch.plan.disabled), JSON.stringify(SB().diag().watch && SB().diag().watch.plan))
+  fireDue(8000); flush()
+  eq('G6f3 到点也不判死（用户显式关了看门狗）', !!SB().diag().failed[IDENT], false)
+}
+{
+  boot()
+  P().commit({ sceneWatchdogSecs: 20 })
+  SB().prefetch(IDENT); await sleep(12)
+  mountScene(); flush()
+  eq('G6g 用户设 20s：一步判死预算按完整 20s 排', timers(20000).length, 1)
+  fireDue(20000); flush()
+  ok('G6g3 20s 到点才判死（用户「看门狗等待时长」对 strict 生效）', /^cap-/.test(String(SB().diag().failed[IDENT] || '')), JSON.stringify(SB().diag().failed))
+}
+
 /* ══════════ G5 ④变异必红（内存副本；真树一字不动） ══════════ */
 console.log('\n== G5 变异自证（真源码副本，真树不动）==')
 const SRC = fs.readFileSync(CLIENT, 'utf8')

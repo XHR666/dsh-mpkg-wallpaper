@@ -58,6 +58,9 @@ function runChecks(clientText, indexText, rendererText) {
       for (const k of keys) if (!seg.includes(k)) b.push(grp + ' 缺键: ' + k)
     }
     if (!/exportContext\(\)\.collectors/.test(clientText)) b.push('exportContext.collectors 未挂进导出')
+    /* Z16(2026-11-15) 宿主缓存必须**有声明**：此前只有读写点 ⇒ 每次开错误日志都
+       ReferenceError（被 catch 成 host degraded、导出 hostRuntime 恒 null；用户 2026-11-14 导出实证）。 */
+    if (!/let __mpwHostCompatCache = \{ last: null, lastOkAt: null, lastErr: null \};/.test(clientText)) b.push('宿主 /compat 缓存未声明（__mpwHostCompatCache ReferenceError 根因）')
     if (!/ok: false, error: msg, degraded: true/.test(clientText) && !/ok: false, error: String\(\(err2 && err2\.message\) \|\| err2\), degraded: true/.test(clientText)) b.push('host 失败仍静默 null')
     for (const k of ['startedAt', 'uptimeMs', 'osRelease', 'container', 'dshVersion', 'pluginRev']) if (!indexText.includes(k)) b.push('/compat 缺只读字段: ' + k)
     if (!/debug: \(d && d\.debug\) \|\| null/.test(clientText)) b.push('__mpwSandboxCap 不保留渲染器 debug')
@@ -153,6 +156,9 @@ const MUT = [
        合法分叉 ⇒ 假变异。 */
     patch: (s) => s.split('const final = isFull ? Object.assign(payload, { redaction: "none" }) : mpwErrRedact(payload);').join('const final = mpwErrRedact(payload); /* M4 */'),
     verify: (s) => (s.split('/* M4 */').length - 1) === 2 && !s.includes('const final = isFull ? Object.assign(payload, { redaction: "none" }) : mpwErrRedact(payload);') },
+  { id: 'M5', what: '删宿主 /compat 缓存声明 ⇒ B 必红（ReferenceError 根因）', expect: ['B'],
+    patch: (s) => s.replace(/let __mpwHostCompatCache = \{ last: null, lastOkAt: null, lastErr: null \};\n/, ''),
+    verify: (s) => !s.includes('let __mpwHostCompatCache = { last: null, lastOkAt: null, lastErr: null };') },
 ]
 for (const m of MUT) {
   let mutC

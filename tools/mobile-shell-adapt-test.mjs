@@ -146,6 +146,26 @@ async function runSuite(clientPath) {
     const b = probe.wdBudget(false)
     ck('W1b', b.budget === 8000 && b.step === 0 && b.remote === false, '回环预算=8s 一步判死（既有口径逐字不变）' + JSON.stringify(b))
   }
+  /* == W4 组：Z16（2026-11-15）首帧预算分流 =========================================
+     现场：236MB scene.pkg 在真机 /raw 实测 34MB/s ⇒ 仅取包 ~7.2s；旧 8s 一步判死把
+     "渲染器已 boot（cap 心跳）正在加载"误判成 strict-failed（用户 2026-11-14 导出）。
+     判据：remote / cap 心跳 / 大包 ⇒ 60s+15s；本地无信号 ⇒ 用户秒数一步判死。 */
+  {
+    const f = probe.firstFrameBudget
+    ck('W4a', typeof f === 'function', '首帧预算探针（Z16）')
+    if (typeof f === 'function') {
+      const b1 = f(false, false, false, 8)
+      ck('W4b', b1.budget === 8000 && b1.step === 0 && b1.reason === 'local-no-signal', '回环无心跳/无大包 ⇒ 用户 8s 一步判死 ' + JSON.stringify(b1))
+      const b2 = f(false, true, false, 8)
+      ck('W4c', b2.budget === 60000 && b2.step === 15000 && b2.reason === 'renderer-alive', '渲染器已 boot（cap 心跳）⇒ 60s/15s 续等 ' + JSON.stringify(b2))
+      const b3 = f(false, false, true, 8)
+      ck('W4d', b3.budget === 60000 && b3.step === 15000 && b3.reason === 'big-pkg', '大包（>=150MB）⇒ 60s/15s ' + JSON.stringify(b3))
+      const b4 = f(false, false, false, 20)
+      ck('W4e', b4.budget === 20000 && b4.step === 0, '用户 20s 生效 ' + JSON.stringify(b4))
+      const b5 = f(true, false, false, 8)
+      ck('W4f', b5.budget === 60000 && b5.step === 15000 && b5.remote === true, '远程仍 60s/15s ' + JSON.stringify(b5))
+    }
+  }
   setEnvLocation('wallpaper-dsh.example.com')
   ck('W2a', probe.slowLink() === true, '非回环 origin（Cloudflare 隧道）⇒ slowLink=true')
   {
@@ -246,6 +266,12 @@ await withMutant('M3', '把远程分流应用到回环（预算恒 60s）',
   [['		function mpwSceneWdBudget(remote) {\n\t\t\treturn remote ? { budget: 60000, step: 15000, remote: true } : { budget: 8000, step: 0, remote: false };\n\t\t}',
     '		function mpwSceneWdBudget(remote) {\n\t\t\treturn { budget: 60000, step: 15000, remote: true };\n\t\t}']],
   ['W1b'])
+
+/* M5 删"cap 心跳/大包 ⇒ 60s 续等"分支（本地回到 8s 一步判死）⇒ W4c/W4d 红（Z16 误杀修复失效）*/
+await withMutant('M5', '删 cap 心跳/大包续等分支（本地恒 8s）',
+  [['			if (alive || big) {\n				return { budget: 60000, step: 15000, remote: false, alive: !!alive, big: !!big, reason: alive ? "renderer-alive" : "big-pkg" };\n			}',
+    '			if (false) {\n				return { budget: 60000, step: 15000, remote: false, alive: !!alive, big: !!big, reason: alive ? "renderer-alive" : "big-pkg" };\n			}']],
+  ['W4c', 'W4d'])
 
 console.log('\n===== ' + pass + ' 通过 / ' + fail + ' 失败 =====')
 process.exit(fail ? 1 : 0)

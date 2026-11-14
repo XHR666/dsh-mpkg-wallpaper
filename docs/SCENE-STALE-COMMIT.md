@@ -6,7 +6,12 @@
 > （真机 headless Firefox 复现：S2 1/5、S4 1/3、S5 **3/3** 轮翻盘；S1/S3 同类型连点不翻盘 —— 
 > 这正是它容易被漏测的原因：**只有"scene 之后又切走"才看得见**）。
 >
-> 判据：`node tools/stale-scene-commit-test.mjs`（74 条；6 组变异各自必红，~1s，全离线）。
+> 判据：`node tools/stale-scene-commit-test.mjs`（Z16 起 90 条；6 组变异各自必红，~1s，全离线）。
+
+> **Z16(2026-11-15) 口径更新**：本文的"8s strict 看门狗"是 2026-09 的事件与当时口径。现在
+> strict/legacy 共用首帧预算裁决：本地无进展仍默认 8s 一步判死，但渲染器 cap 心跳 / ≥150MB 大包 /
+> 远程慢链路 ⇒ 60s / 15s 步进续等，且 `sceneWatchdog` / `sceneWatchdogSecs` 两个用户设置真正生效
+> （见 `docs/FIRSTFRAME-BUDGET.md`）。本文第 1 节的 8s 定时器根因与取消/迟到判定判据仍然有效。
 
 ---
 
