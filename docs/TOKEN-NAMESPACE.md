@@ -220,3 +220,18 @@ node tools/token-namespace-test.mjs
 排除内层滚动视口）、`style-scope-guard`（`host:JObwrW-panel` / `host:groupTitle` 登记）、
 真机由 `tools/host-popover-probe.mjs --groups popover-surfaces` 读每个弹层的
 `bg / bf / tagPopBg / token` 逐项核对。
+
+## 7. DSH 0.2.2 菜单 material 家族换代备忘（2026-11-15，DSH022 任务）
+
+DSH `0.2.2-rc.2` 把通用菜单的 material 家族从 `ri079` 换代为 `1w4el`（`_surface_1w4el_1` 外壳 +
+`_material_1w4el_21` 内层 + darwin `_backing_1w4el_2`），旧 hash 在全部 `@deepseek-ai/*` 包 **0 命中**
+（注意：`dsh-web-frontend/dist/assets/index-*.css` 只是壳层 CSS；`wSkVaW_*`/`pI_x6G_*`/`JObwrW_*`/
+`_7KE1Ra_*`/`QsffPG_*`/`ZKlsPq_*`/`bRhRbq_*` 等**会话/侧栏/输入框类名仍在各自 client-ui 包里活着**，
+任务书 §4.1"旧 hash 全部消失"只对壳层成立）。插件应对：material/外壳选择器统一放宽到
+`[class*="_material_"]` / `[class*="_surface_1w4el_"]` 与旧代同收（R45 枚举：`_material_` 前缀全仓只有
+material 装饰层一家）。`--dsw-menu-surface-fill`/`--dsw-specific-menu` 在 0.2.2 亮/暗 = `#fcfdfeb3`/
+`#303136a3`（70%/64%），`--dsw-alias-bg-overlay` 在壳层 CSS 中 0 消费者；0.2.2 的模态弹窗
+（`_dialog_1ytzq_33`，role=dialog）背景吃 **`--dsw-alias-bg-layer-2`**，dsh-mobile 的原生
+`<dialog>`（`.dsh-module-dialog`）吃 **`--dsw-alias-bg-layer-1`** —— 两者都被我们的
+applyTokenOverrides 半透明化，需各自的实底兜底（后者无 role 属性，见 B11 判据）。
+判据：`node tools/dsh022-ui-test.mjs`。

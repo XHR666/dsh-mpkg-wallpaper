@@ -825,6 +825,7 @@ node tools/error-note-dismiss-test.mjs || fail=$((fail + 1))           # Z10：�
 node tools/renderer-source-switch-test.mjs || fail=$((fail + 1))       # Z11：渲染器来源两预设（内置默认/原仓库）+ guard 不绕过（3 变异）
 node tools/wallpaper-fail-identity-test.mjs || fail=$((fail + 1))      # Z12：加载失败身份保真（三场景 A/B/C + 伪 image 修复 + 3 变异）
 node tools/mobile-shell-adapt-test.mjs || fail=$((fail + 1))           # Z13：移动外壳门控/l1 实底补偿/慢链路看门狗分流（4 变异）
+node tools/dsh022-ui-test.mjs || fail=$((fail + 1))                    # DSH022(2026-11-15)：菜单 material 1w4el 换代（B2/B5/B7）+ 原生 dialog 兜底（B11）+ 用户消息框模糊开关全链路（B12；4 变异）
 fi                                     # ← 第 6 步结束
 gate_end 6
 step "7/12 音频扫描提速（惰性索引 + Range/探测路由；真包与规格参考实现逐项一致）"

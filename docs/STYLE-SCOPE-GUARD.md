@@ -244,3 +244,7 @@ bash tools/check.sh                           # 门禁第 11 步就是全量模�
 | `host:dsh-mobile-sidebar` | anchor | `[data-dsh-mobile-sidebar]` / `[data-dsh-mobile-sidebar-root]` | dsh-mobile 0.8.3 移动外壳稳定标记（宿主命名空间，非第三方适配）：移动门控实底/`::before` 撤磨砂只打这两个容器 | 本表 |
 
 | `host:dsh-native-mobile` | anchor | `.dsh-native-mobile-active` | dsh-mobile 0.8.3 根标记（宿主/官方插件命名空间）：移动外壳侧栏实底与 ::before 撤磨砂只在此门控下生效 | 本表 |
+| `host:native-dialog` | anchor | `dialog`（元素，配合 `[open]` 与 `:not([class*="dshm-picker"])`） | DSH022(2026-11-15)：原生 `<dialog>`（dsh-mobile `.dsh-module-dialog`，profile 内唯一 showModal 创建者）背景消费 `--dsw-alias-bg-layer-1`，被我们 token 半透明化后无 role 属性进不了 `[role="dialog"]` 规则 ⇒ B11 补 `dialog[open]` 不透明兜底（排除 dshm-picker 全屏透明包装层）；`host:native-dialog-open`（`[open]` refine 原子）登记在本行 | 本表 |
+| `host:chat-user-msg` | anchor | `[data-chat-flow-kind=…]` | DSH022(2026-11-15)：宿主消息流节点的稳定类型属性（`data-chat-flow-kind="user"`，dsh-client-ui-chat）：B12「用户消息框背景模糊」开关只作用 user 子树，不影响 assistant/工具输出/输入框 | 本表 |
+| `host:chat-user-stack` | refine | `[class*="userRow"]` / `[class*="userStack"]` | DSH022(2026-11-15)：用户消息行/内容壳（Sixlwa_userRow/userStack，右对齐、宽上限 70%）：B12 关档只给 userStack 刷表面 token + 撤子树 blur，行本体与几何不动 | 本表 |
+| `host:aria-hidden-deco` | refine | `[aria-hidden="true"]` | DSH022(2026-11-15)：宿主装饰层标记（菜单 material 内层 div aria-hidden=true，无子节点）：只作为已锚定弹层壳下的特异性细化（DSH022 内层 material 透明化的暗色抬档变体），不单独命中任何元素 | 本表 |
