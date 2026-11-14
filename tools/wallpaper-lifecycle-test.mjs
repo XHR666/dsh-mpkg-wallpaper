@@ -1035,7 +1035,12 @@ console.log('\n== R. NP-5 暂停持久化：刷新后保持暂停 + 不跑起播
   ok('R8 用户按播放 ⇒ npPaused=false（持久化跟着用户意图走）', L.persistedPaused() === false, 'persisted=' + L.persistedPaused())
   const src = fs.readFileSync(clientPath, 'utf8')
   ok('R9 写入口径写明"只有用户显式操作才写"（内部状态不串味）', /只有用户显式操作才会走到这里/.test(src) && /一个都不许写进来/.test(src))
-  ok('R10 `npPaused` 已登记进 BACKUP_FIELDS + boolFields（导入净化 + 随备份走）', /"npPaused" \/\/ ①\(NP-4\)/.test(src) && /"npLinkWallpaper", "npPaused"\]/.test(src))
+  /* ①(2026-11-15 R19 留痕) 锚点随 DSH022 的 B12 追加更新：MPW_PRESET_FIELDS 末尾在 npPaused
+     之后新增了 "msgBlur"（B12 预设快照键，997ca37），npPaused 行从"末位无逗号"变"带逗号"；
+     boolFields 同样在其后追加。断言语义不变（npPaused 两表登记在位），只放宽为
+     `"npLinkWallpaper", "npPaused"` 键对在场（允许后面继续追加新键）。 */
+  ok('R10 `npPaused` 已登记进 BACKUP_FIELDS + boolFields（导入净化 + 随备份走）',
+    /"npPaused", \/\/ ①\(NP-4\)/.test(src) && /"npLinkWallpaper", "npPaused"/.test(src))
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════════
