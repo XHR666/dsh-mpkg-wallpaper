@@ -7,6 +7,7 @@
 ## 1. 现场（用户导出，2026-11-14）
 
 - 场景：`custom|3326873240|scene.pkg`，体积 **246,875,625 B（235.4 MiB）**；本机 `dd/3326873240`。
+  （口径：任务书/提交信息/代码注释里的"236MB"即本条 235.4 MiB 的十进制约数，同一数字。）
 - 渲染器：strict 沙箱，挂载后 ~1.1s 已回 `mpw-cap{ok:true, firstFrame:false}` = **已 boot、正在加载**；
   `8.2s` 后父页判定 `scene-fallback(strict-fail)|cap-no-first-frame`，视频/静态兜底接管。
 - 同一导出里 `host:__mpwHostCompatCache is not defined`：宿主 `/compat` 采集器 ReferenceError，

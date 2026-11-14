@@ -86,17 +86,19 @@ console.log('== B. 用户消息框背景模糊开关（B12，默认开=现状）
   const cssOffNoWall = cssOf(CLIENT_PATH, { image: '', msgBlur: false });
   ok('B1 默认档与显式开档都不含关档规则（默认=现状零输出）',
     !cssDefault.includes('data-chat-flow-kind="user"') && !cssOn.includes('data-chat-flow-kind="user"'), '');
-  ok('B2a 关档：userStack 实底 = var(--mpw-surface-panel)（不写死白色）',
-    /\[data-chat-flow-kind="user"\] > \[class\*="userRow"\] > \[class\*="userStack"\] \{\s*background-color: var\(--mpw-surface-panel, #ffffff\) !important;/s.test(cssOff), '');
+  ok('B2a 关档：userStack 实底 = var(--mpw-surface-panel)（不写死白色；后代组合器——宿主槽位包装层不能直接子代）',
+    /\[data-chat-flow-kind="user"\] \[class\*="userRow"\] \[class\*="userStack"\] \{\s*background-color: var\(--mpw-surface-panel, #ffffff\) !important;/s.test(cssOff), '');
   ok('B2b 关档：子树 blur 撤销规则在（防御性，宿主未来加 blur 时开关仍有效）',
     /html body \[data-chat-flow-kind="user"\] \* \{\s*-webkit-backdrop-filter: none !important;\s*\n\s*backdrop-filter: none !important;/s.test(cssOff), '');
   ok('B2c 关档：暗色变体用 --mpw-surface-panel-dark',
-    /body\[data-ds-dark-theme\] \[data-chat-flow-kind="user"\] > \[class\*="userRow"\] > \[class\*="userStack"\] \{\s*background-color: var\(--mpw-surface-panel-dark, #1b1e24\) !important;/s.test(cssOff), '');
+    /body\[data-ds-dark-theme\] \[data-chat-flow-kind="user"\] \[class\*="userRow"\] \[class\*="userStack"\] \{\s*background-color: var\(--mpw-surface-panel-dark, #1b1e24\) !important;/s.test(cssOff), '');
+  ok('B2d 关档实底规则不得用直接子代 >（真机 DOM：flowItem 与 userRow 之间隔 data-slot display:contents 包装层，> 会 0 命中——审查 BLOCKER-1 回归钉）',
+    (() => { const m = /html body(?:\[data-ds-dark-theme\])? \[data-chat-flow-kind="user"\]([^{}]*)\{\s*background-color: var\(--mpw-surface-panel/s.exec(cssOff); return !!m && !m[1].includes('>'); })(), '');
   ok('B3 开/关两档产物逐字节不同（开关真的接线）', cssOn !== cssOff, '');
   ok('B4 无壁纸关档同样产出（两条 return 路径都覆盖）',
     cssOffNoWall.includes('data-chat-flow-kind="user"'), '');
   ok('B5a boolFields 登记（导入布尔净化链）', /const boolFields = \[[^\]]*"msgBlur"\]/.test(CLIENT), '');
-  ok('B5b MPW_PRESET_FIELDS 登记（预设快照白名单）', /const MPW_PRESET_FIELDS = \[[\s\S]*?"msgBlur"/.test(CLIENT), '');
+  ok('B5b MPW_PRESET_FIELDS 登记（预设快照白名单；[^\]] 防跨数组误配）', /const MPW_PRESET_FIELDS = \[[^\]]*"msgBlur"/.test(CLIENT), '');
   ok('B5c resetSettings 复位 msgBlur（恢复默认 = 回开）', /msgBlur: DEFAULT_MSG_BLUR/.test(CLIENT), '');
   ok('B5d 外观 tab 有 toggleRow（data-mpw-tabkey="appearance" 区块内）', (() => {
     const i = CLIENT.indexOf('"data-mpw-tabkey": "appearance"');
@@ -105,21 +107,37 @@ console.log('== B. 用户消息框背景模糊开关（B12，默认开=现状）
     return /toggleRow\(t\("msgBlur"\), t\("msgBlur\.desc"\), "msgBlur", DEFAULT_MSG_BLUR\)/.test(seg);
   })(), '');
   ok('B5e zh/en 词典都有 msgBlur 两键', /"msgBlur": "用户消息框背景模糊"/.test(CLIENT) && /"msgBlur": "User message background blur"/.test(CLIENT), '');
+  {
+    // B5f 行为级往返（审查 P2-2）：写入口走**真 writeSection**（__mpwSectionTest.write 与
+    // 设置面板 commit() 同一条持久化路径），随后 __mpwBuildCss({}) 读的是同一份 sectionCache
+    // ⇒ "写入 → 生效"零重建往返。预设快照白名单的净化语义由 B5b + M4 钉（mpwPresetSanitizeSettings
+    // 按 boolFields 放行布尔、按 MPW_PRESET_FIELDS 收白名单外键）。
+    reset();
+    loadPlugin({ quiet: true, clientPath: CLIENT_PATH, settings: { enabled: true, image: 'data:image/png;base64,AAA' } });
+    const w = (globalThis.__mpwSectionTest && globalThis.__mpwSectionTest.write({ msgBlur: false }));
+    const cssRound = String(globalThis.__mpwBuildCss ? globalThis.__mpwBuildCss({}) : '');
+    ok('B5f 行为往返：真 writeSection 写 msgBlur:false ⇒ 同一持久化路径下的产物含关档规则',
+      w === true && /data-chat-flow-kind="user"\] \[class\*="userRow"\]/.test(cssRound), 'write=' + JSON.stringify(w));
+    reset();
+  }
 }
 
 console.log('== M. 变异自证（隔离副本；期望红集 == 实际红集）==');
 const runChecks = (clientPath) => {
   const red = [];
   try {
+    const src = fs.readFileSync(clientPath, 'utf8');
+    if (!/const MPW_PRESET_FIELDS = \[[^\]]*"msgBlur"/.test(src)) red.push('B5b');
     const cssOn = cssOf(clientPath, { image: 'data:image/png;base64,AAA', float: true });
     const cssDefault = cssOf(clientPath, { image: 'data:image/png;base64,AAA' });
     const cssOff = cssOf(clientPath, { image: 'data:image/png;base64,AAA', msgBlur: false });
     const cssOffNoWall = cssOf(clientPath, { image: '', msgBlur: false });
     if (!/html body :is\(\[data-menu-material\], \[data-trigger-menu\]\) \[class\*="_material_"\],\s*\n\s*html body :is\(\[data-menu-material\], \[data-trigger-menu\]\) \[class\*="_material_"\]\[aria-hidden="true"\]/.test(cssOn)) red.push('A1a');
-    if (!/\[data-chat-flow-kind="user"\] > \[class\*="userRow"\]/.test(cssOff)) red.push('B2a');
+    if (!/\[data-chat-flow-kind="user"\] \[class\*="userRow"\] \[class\*="userStack"\] \{\s*background-color: var\(--mpw-surface-panel/s.test(cssOff)) red.push('B2a');
     if (!(!cssDefault.includes('data-chat-flow-kind="user"'))) red.push('B1');
     if (!(cssOff.includes('data-chat-flow-kind="user"') && cssDefault !== cssOff)) red.push('B3');
     if (!cssOffNoWall.includes('data-chat-flow-kind="user"')) red.push('B4');
+    { const m = /html body(?:\[data-ds-dark-theme\])? \[data-chat-flow-kind="user"\]([^{}]*)\{\s*background-color: var\(--mpw-surface-panel/s.exec(cssOff); const b2dOk = !!(m && !m[1].includes('>')); if (!b2dOk) red.push('B2d'); }
     if (!/dialog\[open\]:not\(\[class\*="dshm-picker"\]\)/.test(cssOn)) red.push('D1a');
     if (!(cssOn.match(/body\[data-ds-dark-theme\] dialog\[open\]/g) || []).length) red.push('D1b');
   } catch (e) { red.push('THROW:' + String(e && e.message || e).slice(0, 60)); }
@@ -127,6 +145,8 @@ const runChecks = (clientPath) => {
 };
 const mutant = (id, from, to, expect) => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mpw-dsh022-'));
+  const anchorCount = CLIENT.split(from).length - 1;
+  if (anchorCount !== 1) { console.log(`  ✗ ${id} 变异锚点必须唯一（R2）：实际出现 ${anchorCount} 次`); fail++; return; }
   const mut = CLIENT.replace(from, to);
   if (mut === CLIENT) { console.log(`  ✗ ${id} 变异锚点缺失（R2：变异必须真的打上去）`); fail++; return; }
   const p = path.join(dir, 'client.js');
@@ -140,7 +160,7 @@ const mutant = (id, from, to, expect) => {
 mutant('M1 摘掉主路径 msgBlurOffCss 拼接',
   'return emitSurfaceTokens(css + buildUiCss(section, dlgFrosted) + (hasImage ? mpwMobileShellOpaqueCss() : "")) + __npCss + mpwMsgBlurOffCss(section);',
   'return emitSurfaceTokens(css + buildUiCss(section, dlgFrosted) + (hasImage ? mpwMobileShellOpaqueCss() : "")) + __npCss;',
-  ['B2a', 'B3']);
+  ['B2a', 'B2d', 'B3']);
 mutant('M1b 摘掉无壁纸路径 msgBlurOffCss 拼接',
   'return emitSurfaceTokens(css + buildUiCss(section, false)) + noImagePopCss + __npCss + mpwMsgBlurOffCss(section);',
   'return emitSurfaceTokens(css + buildUiCss(section, false)) + noImagePopCss + __npCss;',
@@ -153,6 +173,10 @@ mutant('M3 暗色 dialog 兜底去掉 dialog[open]',
   'body[data-ds-dark-theme] [role="dialog"],\nbody[data-ds-dark-theme] [role="alertdialog"],\nbody[data-ds-dark-theme] dialog[open]:not([class*="dshm-picker"]) {',
   'body[data-ds-dark-theme] [role="dialog"],\nbody[data-ds-dark-theme] [role="alertdialog"] {',
   ['D1b']);
+mutant('M4 从 MPW_PRESET_FIELDS 摘掉 msgBlur（预设快照漏键 ⇒ B5b 红）',
+  '\n\t\t\t"msgBlur" // ①(2026-11-15 B12) 用户消息框背景模糊开关随预设走',
+  '',
+  ['B5b']);
 
 console.log(`===== ${pass} 通过 / ${fail} 失败 =====`);
 process.exit(fail ? 1 : 0);
