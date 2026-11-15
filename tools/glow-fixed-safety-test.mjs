@@ -1,3 +1,5 @@
+// 判据演进留痕（R19，2026-11-15 4.A）：同 float-family-geo，右栏展开门改认可见会话；本文件钉住的
+// 规则文本同步换锚点，光晕几何期望值没有改。
 // 判据演进留痕（R19，2026-11-07 Z8）：同 float-family-geo——产物选择器族结构限定为 header.wSkVaW_header，
 // 本文件钉住的规则文本/变异锚点同步更新；selMatch 桩补 compound "tag.cls" 形态（语义=真 CSS 同节点命中）。
 // tools/glow-fixed-safety-test.mjs —— 2026-10-29 任务书判据（3D 倾斜回归修复的防线）
@@ -91,7 +93,7 @@ const ruleBody = (css, sel) => {
   const bodies = {
     左栏: ruleBody(css, 'body[data-mpw-float] .pI_x6G_sidebarCol {'),
     标题栏: ruleBody(css, 'body[data-mpw-float] header.wSkVaW_header {'),
-    右栏: ruleBody(css, 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]:not(:has([data-sidebar-right-open="true"]))) [data-sidebar-right-panel="push"] {'),
+    右栏: ruleBody(css, 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]:not(:has([data-sidebar-right-session]:not([hidden]) [data-sidebar-right-open="true"]))) [data-sidebar-right-panel="push"] {'),
   }
   const bad = Object.keys(bodies).filter((k) => !bodies[k])
   ok('A3a float 三处悬浮几何规则都在（左栏/标题栏/右栏）', bad.length === 0,
@@ -431,7 +433,7 @@ function runChecksOn(clientPath) {
     const bodies = {
       左栏: ruleBody(css, 'body[data-mpw-float] .pI_x6G_sidebarCol {'),
       标题栏: ruleBody(css, 'body[data-mpw-float] header.wSkVaW_header {'),
-      右栏: ruleBody(css, 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]:not(:has([data-sidebar-right-open="true"]))) [data-sidebar-right-panel="push"] {'),
+      右栏: ruleBody(css, 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]:not(:has([data-sidebar-right-session]:not([hidden]) [data-sidebar-right-open="true"]))) [data-sidebar-right-panel="push"] {'),
     }
     r['A3'] = bodies.左栏 && bodies.标题栏 && bodies.右栏
       && !Object.keys(bodies).some((k) => /(^|[;\s])(transform|perspective)\s*:/.test(bodies[k]))

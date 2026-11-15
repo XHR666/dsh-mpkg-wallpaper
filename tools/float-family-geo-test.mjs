@@ -1,3 +1,5 @@
+// 判据演进留痕（R19，2026-11-15 4.A）：悬浮块的"右栏已展开"门从裸 :has(open) 收成可见会话里的 open，
+// 本文件钉住的几何字面量同步换锚点；圆角/描边/阴影的期望值没有改。
 // 判据演进留痕（R19，2026-11-07 Z8）：原断言把产物里的 `body[data-mpw-float] .wSkVaW_header` 字面量
 // 逐字钉死；Z8 把标题栏选择器族结构限定为 `header.wSkVaW_header`（防命令输出头 div._header_8z71b_32.
 // wSkVaW_header 误伤），本文件的钉住字面量与变异锚点同步改为 `header.wSkVaW_header`。
@@ -100,7 +102,7 @@ function ruleBody(css, sel) {
 const FAM = [
   { name: '标题栏', sel: 'body[data-mpw-float] header.wSkVaW_header', bodyMust: /margin:\s*10px 16px 0/ },
   { name: '左栏', sel: 'body[data-mpw-float] .pI_x6G_sidebarCol', bodyMust: /margin:\s*12px(\s*!important)?\s*;/ },
-  { name: '右栏push', sel: 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]:not(:has([data-sidebar-right-open="true"]))) [data-sidebar-right-panel="push"]', bodyMust: /top:\s*10px !important/ },
+  { name: '右栏push', sel: 'html body[data-mpw-float]:not([data-mpw-rightbar-parked]:not(:has([data-sidebar-right-session]:not([hidden]) [data-sidebar-right-open="true"]))) [data-sidebar-right-panel="push"]', bodyMust: /top:\s*10px !important/ },
 ]
 
 console.log('== A. 解析级（注释配平 + 规则存活，float:on/off 两条产物路径）==')
