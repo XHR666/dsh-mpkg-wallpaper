@@ -63,7 +63,7 @@ When enabled:
 | **Playback & power saving** | Play/pause; auto-pause on tab switch, window blur and battery power (configurable) |
 | **Library & rotation** | Local folders, WE playlists, previous/next, 1–120 minute scheduled rotation |
 | **Now Playing** | Sidebar player: wallpaper track list, play/pause, volume/seek, system media session (MPRIS/SMTC) |
-| **Scan wallpapers page** | Right-sidebar thumbnail grid of the current folder; apply without leaving the page |
+| **Scan wallpapers** | First item of the right-sidebar **Wallpaper** tab: thumbnail grid of the current folder, then apply |
 | **Diagnostics & error log** | One-click environment/render/settings snapshot; per-block error log with sanitized/full export; never uploaded automatically |
 | **Hybrid mode** | `.mpkg` files are streamed to the DSH host and played over HTTP Range, so >600 MB files do not have to fit in memory |
 
@@ -155,8 +155,10 @@ Optional cleanup:
 
 ## Quick start
 
-1. Install, restart `dsh web`, hard-refresh the browser.
-2. Open **Settings → DSH wallpaper engine** from the left sidebar.
+1. Install, restart `dsh web`, hard-refresh the browser. A saved wallpaper is applied as soon as the page opens; opening settings is not required.
+2. Two entries read and write the same settings:
+   - right sidebar **Wallpaper** (includes **Scan wallpapers**);
+   - left sidebar **Settings → DSH Wallpaper Engine** (no scan page).
 3. In **Background source**, choose any source:
    - drop an `.mpkg`;
    - pick a local image/video;
@@ -247,25 +249,29 @@ A soft glow follows the pointer inside the panel under it. Turning it off stops 
 - integrates with the system media session (MPRIS / SMTC) when the host supports it;
 - automatically yields when another plugin already occupies the same sidebar slot.
 
-### Scan wallpapers page
+### Scan wallpapers
 
-The right-sidebar page shows a thumbnail grid of the current folder; select and apply a wallpaper, with name/container file/type in the details area. Previews are separated from the actual wallpaper so the list stays responsive.
+This is the first item of the right-sidebar **Wallpaper** tab. The grid mounts one screen at a time, thumbnail loads are capped, and off-screen cells drop their decoded frames. Previews are loaded separately from the wallpaper itself. The list, the error log and the tab body each keep their own scroll position, so scrolling to the end does not jump back to the top.
 
 ---
 
 ## Where the settings are
 
-**Left sidebar → Settings → DSH wallpaper engine**, seven tabs:
+Two entries, one settings file:
+
+- Right sidebar **Wallpaper**: all 8 rows below, with **Scan wallpapers** first.
+- Left sidebar **Settings → DSH Wallpaper Engine**: the same rows except **Scan wallpapers**.
 
 | Tab | What is there |
 |---|---|
-| Background source | Master switch, hybrid, current wallpaper, file/folder/URL pickers |
-| Wallpaper settings | Blur, zoom/offset, flip, brightness, playback speed, pause/refresh |
+| Scan wallpapers | Wallpaper tab only. Grid of the current folder, select, apply |
+| Background source | Master switch, hybrid, current wallpaper, file/folder/URL pickers, preset export/import |
+| Wallpaper | Blur, zoom/offset, flip, brightness, playback speed, pause/refresh |
 | Appearance | **Floating effect**, mouse glow, theme colour, corner radius, grey text, liquid glass |
-| Unified appearance | Full-screen blur, whether chat/new-session follow |
-| Surface blur | Independent blur for dialogs/settings/popovers/masks/sidebar |
-| Other | Power saving, Now Playing, library/rotation, backup/restore, error log, diagnostics |
-| Tests | Renderer source, diagnostics parameters, compatibility switches, developer options |
+| Surface unify | Full-screen blur, whether chat/new-session follow |
+| UI blur | Independent blur for dialogs/settings/popovers/masks/sidebar |
+| Other | Power saving, Now Playing, library/rotation, error log, diagnostics, reset to defaults |
+| Liquid Glass (test) | Renderer source, diagnostics parameters, compatibility switches, developer options |
 
 Advanced URL switches, renderer diagnostics and environment variables are documented under [`docs/`](docs/).
 
@@ -294,10 +300,10 @@ Advanced URL switches, renderer diagnostics and environment variables are docume
 
 ## Troubleshooting
 
-1. **No wallpaper**: check the master switch and source; restart `dsh web` and `Ctrl+F5`; check the browser console.
-2. **Scene wallpaper is black/static**: check **Tests → Renderer source** uses the bundled renderer; no-WebGL environments show a static-frame notice.
+1. **No wallpaper**: check the master switch and the selected source. A fresh browser reads the short wallpaper address back from the local host settings file. An empty address leaves a blank background and is not written to the error log. Restart `dsh web`, then `Ctrl+F5`.
+2. **Scene wallpaper is black/static**: on **Liquid Glass (test) → Renderer source**, confirm the bundled renderer is selected. Environments without WebGL 2 show a static-frame notice.
 3. **Floating Island does nothing**: make sure **Appearance → Floating effect** is on; narrow windows/mobile layouts may switch automatically and recalibrate when the width is restored.
-4. **Mobile sidebar is see-through**: fully quit and reopen the DSH Mobile app (to refresh the client bundle); if it persists, attach device/DSH Mobile versions.
+4. **A narrow viewport sidebar looks too transparent**: quit and reopen the client so the plugin bundle reloads. If it persists, attach the DSH version and the Chromium version.
 5. **Exporting logs**: each error block has **Export sanitized log** and **Export full log** on its right; the footer has Clear log and Close.
 
 More: DIAGNOSTICS, WALLPAPER-LIFECYCLE, WEB-WALLPAPER and NOW-PLAYING-DSH under `docs/`.
