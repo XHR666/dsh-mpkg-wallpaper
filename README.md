@@ -284,6 +284,7 @@ dsh plugin --profile web remove dsh-mpkg-wallpaper
 - 自定义目录拒绝路径穿越、绝对路径和敏感目录；`/raw` 只提供已登记容器条目。
 - 系统媒体会话命令以 argv 数组传递，不经过 shell。
 - 一键诊断与错误日志只写入本机；导出时支持「脱敏日志」与「完整日志」两种模式。
+- 漏洞请按 [SECURITY.md](SECURITY.md) 私下报告，不要开公开 issue。英文版：[SECURITY.en.md](SECURITY.en.md)。
 
 ---
 
@@ -321,6 +322,8 @@ node tools/style-scope-guard.mjs
 bash tools/check.sh
 ```
 
+贡献流程、许可边界和哪些文件不能手改，见 [CONTRIBUTING.md](CONTRIBUTING.md)（英文 [CONTRIBUTING.en.md](CONTRIBUTING.en.md)）。
+
 生成物说明：
 
 - `lib/client.js` 是宿主下发的客户端单文件；`lib/now-playing.js`、`lib/now-playing-math.js`、`lib/audio-bus.js` 由构建脚本内联进生成区，禁止手改生成区；
@@ -337,6 +340,8 @@ dsh-mpkg-wallpaper/
 ├── cordis.patch.yml      # dsh 安装声明
 ├── LICENSE               # MIT（插件本体）
 ├── LICENSE-render        # GPLv3（renderer/**）
+├── CONTRIBUTING.md       # 贡献说明（英文 CONTRIBUTING.en.md）
+├── SECURITY.md           # 安全策略（英文 SECURITY.en.md）
 ├── NOTICE                # 双许可范围/归属/修改声明
 ├── LICENSES/             # MIT.txt、GPL-3.0-or-later.txt
 ├── lib/                  # 宿主端 + 客户端（client.js 为单文件下发）

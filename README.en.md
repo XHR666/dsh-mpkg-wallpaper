@@ -285,6 +285,7 @@ Advanced URL switches, renderer diagnostics and environment variables are docume
 - Custom folders reject path traversal, absolute paths and sensitive directories; `/raw` serves only registered container entries.
 - System media commands are passed as argv arrays, never through a shell.
 - Diagnostics and error logs stay local. Exports support **sanitized** and **full** modes.
+- Report vulnerabilities privately via [SECURITY.md](SECURITY.md). English: [SECURITY.en.md](SECURITY.en.md). Do not open a public issue for them.
 
 ---
 
@@ -322,6 +323,8 @@ node tools/style-scope-guard.mjs
 bash tools/check.sh
 ```
 
+Contribution flow, the license boundary, and files you must not hand-edit: [CONTRIBUTING.md](CONTRIBUTING.md) (English: [CONTRIBUTING.en.md](CONTRIBUTING.en.md)).
+
 Build notes:
 
 - `lib/client.js` is the single client file served by the host; `lib/now-playing.js`, `lib/now-playing-math.js` and `lib/audio-bus.js` are inlined by build scripts into generated regions — do not hand-edit those regions;
@@ -338,6 +341,8 @@ dsh-mpkg-wallpaper/
 ├── cordis.patch.yml      # dsh install declaration
 ├── LICENSE               # MIT (plugin body)
 ├── LICENSE-render        # GPLv3 (renderer/**)
+├── CONTRIBUTING.md       # contributing guide (English: CONTRIBUTING.en.md)
+├── SECURITY.md           # security policy (English: SECURITY.en.md)
 ├── NOTICE                # dual-license scope / attribution / modification notices
 ├── LICENSES/             # MIT.txt, GPL-3.0-or-later.txt
 ├── lib/                  # host + client (client.js is served as one file)
