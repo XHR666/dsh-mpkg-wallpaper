@@ -58,7 +58,7 @@
 | `host:dark-theme` | anchor | `[data-ds-dark-theme]` | 宿主暗色主题标记：亮/暗两套补偿值必须由此门控 | 本表 |
 | `host:better-sidebar` | anchor | `[data-dsh-*]` | better-sidebar 稳定属性锚点（类名前缀 0.16→0.19 换过一次） | `BETTER-SIDEBAR-COMPAT.md:204`（existing） |
 | `host:bs-panel-host` | anchor | `[data-dsh-panel-host]` | 登记只为让违规信息指得到文档；真实判定走 §3（禁止加背景/模糊） | `BETTER-SIDEBAR-COMPAT.md:196`（existing） |
-| `host:dockkit` | anchor | `[data-dockkit-*]` / `[data-sidebar-right-*]` / `[data-rightbar-fullscreen]` | 宿主右栏/dockkit 浮层：透出/磨砂/悬浮只打这些容器 | `BETTER-SIDEBAR-DOM-CONTRACT-0.19.1.md:37`（existing） |
+| `host:dockkit` | anchor | `[data-dockkit-*]` / `[data-sidebar-right-panel|float-host|open|session]` / `[data-rightbar-fullscreen]` | 宿主右栏/dockkit 浮层：透出/磨砂/悬浮只打这些容器。`data-sidebar-right-session` 只参与「未隐藏会话里右栏是否展开」的判断，不给该节点加样式（2026-11-15） | `BETTER-SIDEBAR-DOM-CONTRACT-0.19.1.md:37`（existing） |
 | `host:slot` | anchor | `[data-slot=…]` | 宿主 slot 标记（sidebar/workspaces/composer） | `TIMELINE-RAIL-TOKEN.md:63`（existing） |
 | `host:composer-card` | anchor | `[data-composer-card]` | 宿主输入卡片：发送键配色 / 输入区磨砂作用域 | 本表 |
 | `host:cordis-panel` | anchor | `[data-cordis-panel]` | 宿主插件面板容器（我们的设置面板挂在这里）：面板底色不能跟着壁纸透 | 本表 |
