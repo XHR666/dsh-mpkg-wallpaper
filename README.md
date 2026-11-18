@@ -8,7 +8,7 @@
 
 [中文](README.md) | [English](README.en.md)
 
-dsh-mpkg-wallpaper 是 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（`dsh web`）的壁纸与界面外观插件：直接解析 Wallpaper Engine 的 `.mpkg`、Steam 创意工坊目录、视频 / 网页 / 场景壁纸，并提供整屏磨砂、透明表面、主题色、**悬浮岛式布局（Floating Island / Floating Cards）**、Now Playing、壁纸库与定时轮换。
+dsh-mpkg-wallpaper 是 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（`dsh web`）的壁纸与界面外观插件：直接解析 Wallpaper Engine 的 `.mpkg`、Steam 创意工坊目录、视频 / 网页 / 场景壁纸，并提供整屏磨砂、透明表面、主题色、悬浮效果、Now Playing、壁纸库与定时轮换。
 
 > **一句话的差异化**：它不只是给 DSH 换一张背景图，而是把背景、磨砂、透明、悬浮卡片和主题色做成一套可调、可恢复、可诊断的完整外观系统。
 
@@ -16,7 +16,6 @@ dsh-mpkg-wallpaper 是 [DeepSeek Harness](https://github.com/deepseek-ai/deepsee
 
 ## 目录
 
-- [亮点：悬浮岛](#亮点悬浮岛)
 - [功能一览](#功能一览)
 - [安装](#安装)
 - [快速开始](#快速开始)
@@ -34,21 +33,6 @@ dsh-mpkg-wallpaper 是 [DeepSeek Harness](https://github.com/deepseek-ai/deepsee
 
 ---
 
-## 亮点：悬浮岛
-
-**悬浮岛（Island / Floating Cards）** 是这个插件最容易一眼认出的界面能力，对应设置里的 **「外观 → 悬浮效果」**（`float`）。
-
-开启后：
-
-- 左侧边栏、标题栏从“贴边的整块面板”变成**带圆角 + 阴影 + 透出壁纸的悬浮卡片**；
-- 壁纸在卡片之间与边缘继续可见，形成类似“玻璃岛浮在桌面上”的层次感；
-- 可与整屏磨砂、侧栏透明度、主题色、鼠标光晕叠加；关闭悬浮后其他透明/虚化设置不受影响；
-- 悬浮几何、Now Playing 卡片和右侧栏的让位/放大逻辑都有独立判据，窗口缩放后自动重新校准。
-
-> 想要最接近“island”的观感：打开「悬浮效果」，再把「界面统一 → 整屏虚化程度」调低到能透出壁纸纹理的档位，并给侧栏/标题栏设置合适的透明度。
-
----
-
 ## 功能一览
 
 | 能力 | 说明 |
@@ -56,7 +40,7 @@ dsh-mpkg-wallpaper 是 [DeepSeek Harness](https://github.com/deepseek-ai/deepsee
 | **Wallpaper Engine `.mpkg`** | 浏览器内直接解析容器：视频类播放内嵌视频，场景类提取静态帧/图层，支持 WE 的时间变化壁纸 |
 | **Steam 创意工坊** | 自动发现 Wallpaper Engine 安装与 `steamapps/workshop/content/431960`，按子文件夹识别壁纸 |
 | **视频 / 图片 / 网页** | 本地视频、图片、动图、URL，以及沙箱 iframe 中的 HTML 网页壁纸 |
-| **悬浮岛** | 左侧边栏 / 标题栏变成圆角悬浮卡片，可叠加磨砂、阴影、透明与主题色 |
+| **悬浮效果** | 左侧边栏 / 标题栏变成圆角卡片，可叠加磨砂、阴影、透明与主题色 |
 | **整屏虚化体系** | 一条统一滑条 + 标题栏/侧栏/右栏/弹窗/菜单/遮罩各自独立的磨砂与透明度 |
 | **主题色与玻璃** | 取色盘、品牌色、Aqua 实验外观、CSS 液态玻璃；默认全关，不影响原版 DSH |
 | **播放与省电** | 暂停/播放；切页、失焦、电池供电时自动暂停（可配置） |
@@ -119,7 +103,7 @@ node tools/bundle-equivalence-test.mjs
       name: /absolute/path/dsh-mpkg-wallpaper.bundle.mjs
 ```
 
-注意：单文件 bundle 只包含**宿主端**（上传/Range/设置/诊断等路由）；客户端界面（设置面板、壁纸层、悬浮岛、Now Playing）需要完整的 npm 包。单文件模式也不建议使用「一键更新」。
+注意：单文件 bundle 只包含**宿主端**（上传/Range/设置/诊断等路由）；客户端界面（设置面板、壁纸层、悬浮效果、Now Playing）需要完整的 npm 包。单文件模式也不建议使用「一键更新」。
 
 ### 更新
 
@@ -201,7 +185,7 @@ dsh plugin --profile web remove dsh-mpkg-wallpaper
 
 ## 外观系统
 
-### 1. 悬浮岛
+### 1. 悬浮效果
 
 - 设置位置：**外观 → 悬浮效果**（默认关）。
 - 效果：左侧边栏、标题栏变成圆角悬浮卡片，带阴影并透出壁纸。
@@ -302,7 +286,7 @@ dsh plugin --profile web remove dsh-mpkg-wallpaper
 
 1. **没看到壁纸**：确认总开关开启、已选来源。新开的浏览器会从本机宿主设置读回短壁纸地址；若地址为空，背景保持空白，这不会写入错误日志。重启 `dsh web` 后 `Ctrl+F5`。
 2. **场景壁纸黑屏/静态帧**：打开「测试项 → 渲染器来源」确认使用内置渲染器；无 WebGL 环境会显示静态帧提示。
-3. **悬浮岛不生效**：确认「外观 → 悬浮效果」已开；窄窗口/移动端布局可能自动切换，宽度恢复后重新校准。
+3. **悬浮效果不生效**：确认「外观 → 悬浮效果」已开；窄窗口/移动端布局可能自动切换，宽度恢复后重新校准。
 4. **窄视口侧栏看起来过透**：完全退出客户端再打开，以重新加载插件。仍异常时附上 DSH 版本和 Chromium 版本。
 5. **导出日志**：错误日志弹窗里每条错误右侧提供「导出脱敏日志 / 导出完整日志」；底部可清除或关闭。
 

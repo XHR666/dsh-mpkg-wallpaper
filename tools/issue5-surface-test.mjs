@@ -15,6 +15,9 @@
 // 变异自证（期望红集 == 实际红集，逐条相等）：
 //   M-solid    实底标记同步失效（stickyHead 选择器锚空）⇒ A1 必红
 //   M-hover    guide hover 变量写入断链 ⇒ B3 必红
+//     ①(2026-11-18 R19) 锚点从 `(hv && hv.light) ? String(hv.light)` 换成
+//     `useAquaHover ? String(hv.light)`。原因：悬停 token 现在始终存在，
+//     右栏条目只在取色打开时才借用它，否则仍走 a+0.08。断链后 B3 仍必须红。
 //   M-listbox  弹层表面规则的 :not([data-dsh-session-delete]) 被去掉 ⇒ C1 必红
 //   M-skip     JS 标记的 closest 排除被去掉 ⇒ C2b 必红
 // 证据出处（宿主/第三方产物，file:line 见交付报告）：
@@ -251,7 +254,7 @@ await withMutant('M-solid', '实底标记同步失效（stickyHead 锚改空）'
 
 // M-hover：guide hover 变量写入断链 ⇒ B3 红（变量不在）
 await withMutant('M-hover', 'guide hover 变量写入断链',
-  [['document.documentElement.style.setProperty("--mpw-guide-hover-light", (hv && hv.light) ? String(hv.light) : toAlpha("--dsw-static-neutral-bluish-00", hA));',
+  [['document.documentElement.style.setProperty("--mpw-guide-hover-light", useAquaHover ? String(hv.light) : toAlpha("--dsw-static-neutral-bluish-00", hA));',
     '/* M-hover */']], ['B3'],
   async (f) => {
     const red = [];

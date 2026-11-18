@@ -8,7 +8,7 @@
 
 [中文](README.md) | [English](README.en.md)
 
-dsh-mpkg-wallpaper is a wallpaper and UI-appearance plugin for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh web`). It parses Wallpaper Engine `.mpkg` files, Steam Workshop folders and video / web / scene wallpapers, and adds a full-screen blur system, transparent surfaces, theme colours, a **Floating Island layout (floating cards)**, Now Playing, a wallpaper library and scheduled rotation.
+dsh-mpkg-wallpaper is a wallpaper and UI-appearance plugin for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh web`). It parses Wallpaper Engine `.mpkg` files, Steam Workshop folders and video / web / scene wallpapers, and adds a full-screen blur system, transparent surfaces, theme colours, a floating layout, Now Playing, a wallpaper library and scheduled rotation.
 
 > **What makes it different**: it is not just a background image switch. It turns background, blur, transparency, floating cards and theme colours into one adjustable, restorable and diagnosable appearance system.
 
@@ -16,7 +16,6 @@ dsh-mpkg-wallpaper is a wallpaper and UI-appearance plugin for [DeepSeek Harness
 
 ## Contents
 
-- [Highlight: Floating Island](#highlight-floating-island)
 - [Features](#features)
 - [Install](#install)
 - [Quick start](#quick-start)
@@ -34,22 +33,6 @@ dsh-mpkg-wallpaper is a wallpaper and UI-appearance plugin for [DeepSeek Harness
 
 ---
 
-## Highlight: Floating Island
-
-**Floating Island (also called Floating Cards)** is the most recognisable UI feature of this plugin. It is enabled with **Appearance → Floating effect** (`float`).
-
-When enabled:
-
-- the left sidebar and title bar become **rounded floating cards with shadows, revealing the wallpaper behind them**;
-- the wallpaper stays visible between and around the cards, creating an "island floating on the desktop" layering effect;
-- it composes with full-screen blur, sidebar/title-bar opacity, theme colours and the mouse glow;
-- turning it off restores the edge-to-edge layout without affecting the other transparency/blur settings;
-- the floating geometry, the Now Playing card and the right-sidebar yield/expand logic are all covered by their own checks and recalibrated on window resize.
-
-> The most "island-like" look: enable Floating effect, lower the full-screen blur enough to let the wallpaper texture show through, and give the sidebar/title bar a suitable opacity.
-
----
-
 ## Features
 
 | Feature | Description |
@@ -57,7 +40,7 @@ When enabled:
 | **Wallpaper Engine `.mpkg`** | Parse containers in the browser: video wallpapers play embedded video, scene wallpapers use a static frame/layer composition, and WE Time Variation is supported |
 | **Steam Workshop** | Auto-discover Wallpaper Engine and `steamapps/workshop/content/431960`; each subfolder is a wallpaper |
 | **Video / image / web** | Local video, images, animated images, URLs, and HTML wallpapers in a sandboxed iframe |
-| **Floating Island** | Sidebar and title bar become rounded floating cards; combines with blur, shadow, transparency and theme colours |
+| **Floating effect** | Sidebar and title bar become rounded cards; combines with blur, shadow, transparency and theme colours |
 | **Blur system** | One full-screen slider plus independent blur/transparency for the title bar, sidebars, dialogs, menus and masks |
 | **Theme and glass** | Colour picker, accent colour, Aqua experiments, CSS liquid glass; all off by default, so stock DSH stays untouched |
 | **Playback & power saving** | Play/pause; auto-pause on tab switch, window blur and battery power (configurable) |
@@ -120,7 +103,7 @@ Copy `dist/dsh-mpkg-wallpaper.bundle.mjs` anywhere and register its **absolute p
       name: /absolute/path/dsh-mpkg-wallpaper.bundle.mjs
 ```
 
-The single-file bundle contains the **host side only** (upload/Range/settings/diagnostics routes). The full client UI (settings panel, wallpaper layer, Floating Island, Now Playing) requires the full npm package. One-click update is not recommended in this mode.
+The single-file bundle contains the **host side only** (upload/Range/settings/diagnostics routes). The full client UI (settings panel, wallpaper layer, floating effect, Now Playing) requires the full npm package. One-click update is not recommended in this mode.
 
 ### Update
 
@@ -202,7 +185,7 @@ Enabled by default: `.mpkg` files are streamed to the DSH host via Range upload 
 
 ## Appearance system
 
-### 1. Floating Island
+### 1. Floating effect
 
 - Location: **Appearance → Floating effect** (off by default).
 - Turns the left sidebar and title bar into rounded floating cards with shadows, revealing the wallpaper.
@@ -303,7 +286,7 @@ Advanced URL switches, renderer diagnostics and environment variables are docume
 
 1. **No wallpaper**: check the master switch and the selected source. A fresh browser reads the short wallpaper address back from the local host settings file. An empty address leaves a blank background and is not written to the error log. Restart `dsh web`, then `Ctrl+F5`.
 2. **Scene wallpaper is black/static**: on **Liquid Glass (test) → Renderer source**, confirm the bundled renderer is selected. Environments without WebGL 2 show a static-frame notice.
-3. **Floating Island does nothing**: make sure **Appearance → Floating effect** is on; narrow windows/mobile layouts may switch automatically and recalibrate when the width is restored.
+3. **Floating effect does nothing**: make sure **Appearance → Floating effect** is on; narrow windows/mobile layouts may switch automatically and recalibrate when the width is restored.
 4. **A narrow viewport sidebar looks too transparent**: quit and reopen the client so the plugin bundle reloads. If it persists, attach the DSH version and the Chromium version.
 5. **Exporting logs**: each error block has **Export sanitized log** and **Export full log** on its right; the footer has Clear log and Close.
 

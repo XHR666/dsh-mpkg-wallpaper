@@ -248,3 +248,5 @@ bash tools/check.sh                           # 门禁第 11 步就是全量模�
 | `host:chat-user-msg` | anchor | `[data-chat-flow-kind=…]` | DSH022(2026-11-15)：宿主消息流节点的稳定类型属性（`data-chat-flow-kind="user"`，dsh-client-ui-chat）：B12「用户消息框背景模糊」开关只作用 user 子树，不影响 assistant/工具输出/输入框 | 本表 |
 | `host:chat-user-stack` | refine | `[class*="userRow"]` / `[class*="userStack"]` | DSH022(2026-11-15)：用户消息行/内容壳（Sixlwa_userRow/userStack，右对齐、宽上限 70%）：B12 关档只给 userStack 刷表面 token + 撤子树 blur，行本体与几何不动 | 本表 |
 | `host:aria-hidden-deco` | refine | `[aria-hidden="true"]` | DSH022(2026-11-15)：宿主装饰层标记（菜单 material 内层 div aria-hidden=true，无子节点）：只作为已锚定弹层壳下的特异性细化（DSH022 内层 material 透明化的暗色抬档变体），不单独命中任何元素 | 本表 |
+| `host:changes-hover-preview` | anchor | `[data-changes-hover-preview]` | 2026-11-18：宿主改动文件悬停预览（FileDiff header/body）。卡片底用 `--dsw-alias-bg-layer-1`，有壁纸时半透明且没有模糊，未改行透出后面的字。只给 `:has(> [data-changes-hover-preview])` 补菜单档模糊，红/绿行底色不动 | 本表 |
+| `host:plugin-page-natural` | anchor | `[data-natural]` | 2026-11-18：插件页吸顶 Header 的 `::before` 用半透明 `--dsw-alias-bg-base` 铺出一条接近「悬浮关掉时标题栏」大小的白底。只把这条伪元素改成透明加模糊 | 本表 |
