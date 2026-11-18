@@ -167,6 +167,20 @@ cd <仓库根> && npm publish --registry=https://registry.npmjs.org
 > 附：本机 `gh` 是 2.4.0，**没有 `gh release edit`** ⇒ 改已发布说明走 REST：
 > `gh api -X PATCH repos/<owner>/<repo>/releases/<id> --input payload.json`（`payload.json` = `{"body":"<全文>"}`；`<id>` 由 `gh api repos/<owner>/<repo>/releases/tags/<tag> -q .id` 取）。
 
+### 2.2 Full changelog（从 v5.0.1 起，每条 Release 必带）
+
+`gh release create` 的正文必须包含一节，标题固定为 `## Full changelog`。
+这一节是**上一枚已发布 tag 到本 tag 的全部提交**，一条不漏：
+
+```bash
+git log --reverse --format='%h %s' v<上一版>..v<本版>
+```
+
+- 前面可以写按模块归纳的变更、兼容性、已知问题和验证；这些**不能代替**这份清单。
+- 清单用提交号 + 该提交实际改了什么。不要只留亮点，也不要把没有提交的计划写进去。
+- 正文仍遵守 2.1：不写原话、本机路径、设备壳名称。没在本 tag 上重跑的门禁，写「未在本 tag 重跑」和上次读数的提交号，不要写成这次通过。
+- 漏了 `## Full changelog`，或条数对不上 `git rev-list --count v<上一版>..v<本版>`，就不要发这版。
+
 ## 3. 发布后验证
 
 ```bash
