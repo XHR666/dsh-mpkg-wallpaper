@@ -1,0 +1,42 @@
+name: publish
+
+# npm 可信发布（OIDC）：仓库里不存任何 NPM_TOKEN / NODE_AUTH_TOKEN。
+#
+# 一次性配置（只有包维护者能做，npmjs.com 网页）：
+#   Packages → dsh-mpkg-wallpaper → Settings → Trusted publishing → GitHub Actions
+#   Organization or user : XHR666
+#   Repository           : dsh-mpkg-wallpaper
+#   Workflow filename    : publish.yml
+#   Environment          : 留空
+#   Allowed actions      : 勾选 "Allow npm publish"（不勾只能 stage publish）
+#
+# 发布方式：推送 v* tag（tag 必须与 package.json 的 version 一致）。
+# 公开仓库 + OIDC 发布时，npm 会自动附带 provenance 证明。
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  id-token: write          # OIDC：npm CLI 用它向 npm 换一次性的短时发布令牌
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"   # 自带 npm >= 11.5.1（可信发布的最低要求）
+          # 注意：不要设 registry-url。空 NODE_AUTH_TOKEN 会挡住 OIDC 发布。
+
+      - name: 校验 tag 与 package.json 版本一致
+        run: |
+          test "v$(node -p 'require("./package.json").version')" = "$GITHUB_REF_NAME"
+
+      - name: npm publish（OIDC 可信发布）
+        run: npm publish --registry=https://registry.npmjs.org
