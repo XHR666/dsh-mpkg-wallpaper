@@ -252,12 +252,12 @@ console.log('\n== F CLI 往返（decide 吐的键必须能被 record 存下、�
 console.log('\n== D 单实例锁（第二个实例快速失败；第一个跑完不留残留锁）==')
 const waitForLock = (child, timeoutMs) => new Promise((resolve, reject) => {
   let out = ''
-  const timer = setTimeout(() => { try { child.kill('SIGKILL') } catch { /* 已退出 */ } reject(new Error('等不到 LOCK-ACQUIRED（' + timeoutMs + 'ms）—— --selftest-lock 没生效？输出：' + out.slice(0, 240))) }, timeoutMs)
+  const timer = setTimeout(() => { killTree(child, 'SIGKILL'); reject(new Error('等不到 LOCK-ACQUIRED（' + timeoutMs + 'ms）—— --selftest-lock 没生效？输出：' + out.slice(0, 240))) }, timeoutMs)
   const onData = (d) => {
     out += String(d)
     if (/== [0-9]+\/12/.test(out)) {          // 保险丝：它要是跑起了判据，立刻杀掉并判红（绝不允许判据测试反过来跑一整套门禁）
       clearTimeout(timer)
-      try { child.kill('SIGKILL') } catch { /* 已退出 */ }
+      killTree(child, 'SIGKILL')
       reject(new Error('危险：--selftest-lock 竟然执行了判据（check.sh 不认这个参数？），已立刻杀掉。输出：' + out.slice(0, 240)))
       return
     }
@@ -270,8 +270,15 @@ const waitForLock = (child, timeoutMs) => new Promise((resolve, reject) => {
 })
 
 const LOCK = path.join(TMP, 'gate-test.lock')
-const envHold = { ...process.env, MPW_GATE_LOCK: LOCK, MPW_GATE_CACHE: CACHE, MPW_GATE_SELFTEST_HOLD: '4' }
-const probe = (env, args = ['--selftest-lock']) => spawn('bash', ['tools/check.sh', ...args], { cwd: ROOT, env, stdio: ['ignore', 'pipe', 'pipe'] })
+/* 持有时间必须盖住中间的 --list。--list 要算整棵工作树的输入指纹，全量门禁把机器打满时
+   这一步会超过 4 秒；持有者先退出后，第二个探针会合法抢到锁并再睡一整段，D2–D5 就变成假红。
+   断言本身不变：第二个实例仍必须非零、快失败、提示里是持有者的 PID。 */
+const envHold = { ...process.env, MPW_GATE_LOCK: LOCK, MPW_GATE_CACHE: CACHE, MPW_GATE_SELFTEST_HOLD: '120' }
+/* detached：持有者自己成为进程组长。sleep 会继承 flock 的 fd，只杀 bash 时锁还在 sleep 手里。 */
+const probe = (env, args = ['--selftest-lock']) => spawn('bash', ['tools/check.sh', ...args], { cwd: ROOT, env, stdio: ['ignore', 'pipe', 'pipe'], detached: true })
+const killTree = (child, sig) => {
+  try { process.kill(-child.pid, sig) } catch { try { child.kill(sig) } catch { /* 已经退出 */ } }
+}
 const runProbe = (env, args = ['--selftest-lock']) => {
   const t0 = Date.now()
   const r = spawnSync('bash', ['tools/check.sh', ...args], { cwd: ROOT, env, encoding: 'utf8', timeout: 20000 })
@@ -313,10 +320,11 @@ if (pid1 !== null) {
   ok('D2..D6 第二个实例快速失败 + 人话提示', false, 'D1 没成功（见上），这组判据无法成立')
 }
 
-if (first) {
+if (first && first.exitCode === null && !first.signalCode) {
+  killTree(first, 'SIGTERM')
   await new Promise((resolve) => {
     if (first.exitCode !== null || first.signalCode) return resolve()
-    const t = setTimeout(() => { try { first.kill('SIGKILL') } catch { /* 已退出 */ } resolve() }, 12000)
+    const t = setTimeout(() => { killTree(first, 'SIGKILL'); resolve() }, 5000)
     first.on('close', () => { clearTimeout(t); resolve() })
   })
 }
