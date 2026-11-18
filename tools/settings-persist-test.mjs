@@ -22,6 +22,12 @@
  *   node tools/settings-persist-test.mjs --client <path>     # 变异用（副本）
  *
  * 根因链/修法/判据/诚实清单：docs/SETTINGS-PERSIST.md
+ *
+ * A13 演进（2026-11-17）：
+ *   原断言：宿主 PUT 的 image 恒为 undefined（image 一律不发）。
+ *   新断言：档内是不超过 2048 字符的 host: 地址时，PUT 里的 image 与它逐字节相同。
+ *   为什么：新开的浏览器没有 localStorage，短地址不进宿主设置就会读到空 image。
+ *   语义：dataURL 和超长串仍然不发；变的只是这条短 host: 地址从「跳过」改成「要写」。
  */
 import fs from 'node:fs'
 import os from 'node:os'
@@ -241,7 +247,9 @@ console.log('== A. 「无关开关保存一轮」不得动其它字段（含壁�
   ok('A11 宿主那份 mpkgKey 还在', host.settings.mpkgKey === USER_APPEARANCE.mpkgKey, String(host.settings.mpkgKey))
   ok('A12 确实走了一轮宿主 PUT（不是"没写"）', host.puts.length >= 1, host.puts.length + ' 次')
   const lastPut = host.puts[host.puts.length - 1] || {}
-  ok('A13 宿主 PUT 仍然**跳过 image**（大字段不发给宿主，老契约不变）', lastPut.image === void 0)
+  ok('A13 宿主 PUT 带短 host: 壁纸地址（dataURL / 超长串仍然不发）',
+    lastPut.image === USER_VIDEO_SRC.image && USER_VIDEO_SRC.image.indexOf('host:') === 0 && USER_VIDEO_SRC.image.length <= 2048,
+    'image=' + (lastPut.image === void 0 ? 'absent' : 'set(' + String(lastPut.image).length + ')'))
   ok('A14 宿主 PUT 带自己的写时刻（两处存储各带时间戳）', !!lastPut[STAMP_HOST], STAMP_HOST + '=' + lastPut[STAMP_HOST])
   ok('A15 这次改的键也在宿主 PUT 里', !!lastPut.fontColorGray, 'fontColorGray=' + lastPut.fontColorGray)
 
