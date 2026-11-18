@@ -6,6 +6,11 @@
 //   反引号标识符(`...`)、数字(含 %/px/ms/s/MB/KB/GB/倍 单位)；
 //   断言这些硬事实**全部出现在同 hunk 的新增行里**（缺失任一 ⇒ 红，打印缺失项）。
 //   同时断言：含标记的删除行所在 hunk 必须有新增行（整行删掉 = 内容被删 ⇒ 红）。
+//   例外（2026-11-18，R19）：整文件删除、hunk 里没有任何新增行时，不要求同一 hunk 里改写。
+//   原断言：这种 hunk 一律红。
+//   新断言：该文件每一条标记行抽出的硬事实，必须逐条出现在 docs/QUOTE-FACT-LEDGER.md。
+//   为什么：未再被 README 和插件引用的说明被整文件移出；事实不能跟着蒸发，但也不必把整份说明留在仓库里。
+//   语义：文件还在时，仍必须在同一 hunk 里改写；只删不留事实，账本对不上，照样红。
 // 变异（内存副本）：M4 删掉某改写行里的一个数字 ⇒ 红；M5 把一条日期删掉 ⇒ 红。
 //
 // 边界：本判据只覆盖"注释里的事实没丢"，不覆盖措辞语义（语义由对抗审查抽样）。
@@ -75,14 +80,22 @@ const factInAdds = (f, addText) => {
   }
   return false
 }
+const LEDGER_PATH = path.join(ROOT, 'docs', 'QUOTE-FACT-LEDGER.md')
 function checkHunks(hunks) {
   const missing = [], orphans = []
   let pairs = 0
+  let ledger = ''
+  try { ledger = fs.readFileSync(LEDGER_PATH, 'utf8') } catch { ledger = '' }
   for (const h of hunks) {
     const markedDels = h.dels.filter((d) => MARK(d))
     if (!markedDels.length) continue
     pairs += markedDels.length
-    if (!h.adds.length) { orphans.push(h.file + ' ← 整行删除无替换: ' + markedDels[0].trim().slice(0, 80)); continue }
+    if (!h.adds.length) {
+      const lost = []
+      for (const d of markedDels) for (const f of extractFacts(d)) if (!factInAdds(f, ledger)) lost.push(f)
+      if (lost.length) orphans.push(h.file + ' ← 整行删除无替换: ' + markedDels[0].trim().slice(0, 80))
+      continue
+    }
     const addText = h.adds.join('\n')
     for (const d of markedDels) {
       for (const f of extractFacts(d)) {
